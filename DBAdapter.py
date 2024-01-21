@@ -94,6 +94,12 @@ class DBAdapter:
 		self.sqlite.execute(sql, values)
 
 
+	def selectWordsForFile(self, audio_file):
+		sql = "SELECT id, word, src_word FROM audio_words WHERE audio_file = ?"
+		resultSet = self.sqlite.select(sql, [audio_file])
+		return resultSet
+
+
 	def selectMFCC(self):
 		sql = "SELECT id, mfccs FROM audio_words"
 		resultSet = self.sqlite.select(sql, [])
@@ -110,18 +116,23 @@ class DBAdapter:
 		return resultSet
 
 
+	def selectTimestamps(self, audio_file):
+		sql = """SELECT id, word, audio_begin_ts, audio_end_ts
+				FROM audio_words WHERE audio_file = ?"""
+		resultSet = self.sqlite.select(sql, [audio_file])
+		return resultSet
+
+
 	def selectTensor(self):
-		sql = """SELECT book_id, chapter, script_num, word_seq,
-			mfccs_norm, word_multi_enc, src_word_multi_enc FROM audio_words"""
+		sql = """SELECT mfccs_norm, word_multi_enc, src_word_multi_enc 
+			FROM audio_words"""
 		resultSet = self.sqlite.select(sql, [])
 		finalSet = []
-		for (book_id, chapter, script_num, word_seqmu, mfccs_norm, 
-			word_multi_enc, src_word_multi_enc) in resultSet:
+		for (mfccs_norm, word_multi_enc, src_word_multi_enc) in resultSet:
 			mfccs_decoded = np.frombuffer(mfccs_norm, dtype=double)
 			word_decoded = np.frombuffer(word_multi_enc, dtype=double)
 			src_word_decoded = np.frombuffer(src_word_multi_enc, dtype=double)
-			finalSet.append([book_id, chapter, script_num, word_seqmu, mfccs_decoded, 
-				word_decoded, src_word_decoded])
+			finalSet.append([mfccs_decoded, word_decoded, src_word_decoded])
 		return finalSet
 
 

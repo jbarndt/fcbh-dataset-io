@@ -54,10 +54,10 @@ class FileAdapter:
 
 
 if __name__ == "__main__":
-	database = "ENG_1_FileAdapterTest.db"
+	database = "ENG_1_Sonnet.db"
 	if os.path.exists(database):
 		os.remove(database)
-	db = DBAdapter("ENG", 1, "FileAdapterTest")
+	db = DBAdapter("ENG", 1, "Sonnet")
 	file = FileAdapter(db)
 	file.loadPoem("../Sandeep_sample1/mplain.txt")
 	resultSet = db.sqlite.select("SELECT * FROM audio_words")
