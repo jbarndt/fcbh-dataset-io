@@ -26,8 +26,12 @@ class DBAdapter:
 			audio_file TEXT NOT NULL,
 			audio_begin_ts REAL,
 			audio_end_ts REAL,
-			mfccs BLOB,
-			mfccs_norm BLOB,
+			mfcc BLOB,
+			mfcc_rows INTEGER,
+			mfcc_cols INTEGER,
+			mfcc_norm BLOB,
+			mfcc_norm_rows INTEGER,
+			mfcc_norm_cols INTEGER,
 			word_enc BLOB,
 			src_word_enc BLOB,
 			word_multi_enc BLOB,
@@ -63,15 +67,33 @@ class DBAdapter:
 		# make certain word is checked here or in calling code
 
 
-	def updateMFCC(self, id, mfccs):
-		sql = "UPDATE audio_words SET mfccs = ? WHERE id = ?"
-		values = [mfccs.tobytes(), id] # serialize mfccs
+	def updateMFCC(self, id, mfcc):
+		print("save type", type(mfcc.dtype), mfcc.shape)
+		sql = """UPDATE audio_words SET mfcc = ? , mfcc_rows = ?,
+			mfcc_cols = ? WHERE id = ?"""
+		dims = mfcc.shape
+		values = [mfcc.tobytes(), dims[0], dims[1], id] # serialize mfcc
 		self.sqlite.execute(sql, values)
 
 
-	def updateNormalizedMFCC(self, id, mfccs_norm):
-		sql = "UPDATE audio_words SET mfccs_norm = ? WHERE id = ?"
-		values = [mfccs_norm.tobytes(), id] # serialize mfccs
+	def selectMFCC(self):
+		sql = "SELECT id, mfcc, mfcc_rows, mfcc_cols FROM audio_words"
+		resultSet = self.sqlite.select(sql, [])
+		finalSet = []
+		for (id, mfcc, mfcc_rows, mfcc_cols) in resultSet:
+			mfcc_decoded = np.frombuffer(mfcc, dtype=np.float32)
+			mfcc_shaped = mfcc_decoded.reshape((mfcc_rows, mfcc_cols))
+			print(mfcc_decoded.shape, mfcc_shaped.shape)
+			finalSet.append((id, mfcc_shaped))
+		return finalSet
+
+
+	def updateNormPaddedFCC(self, id, mfcc):
+		print("save type", type(mfcc.dtype), mfcc.shape)
+		sql = """UPDATE audio_words SET mfcc_norm = ?, mfcc_norm_rows = ?,
+			mfcc_norm_cols = ? WHERE id = ?"""
+		dims = mfcc.shape
+		values = [mfcc.tobytes(), dims[0], dims[1], id] # serialize mfcc
 		self.sqlite.execute(sql, values)
 
 
@@ -100,16 +122,6 @@ class DBAdapter:
 		return resultSet
 
 
-	def selectMFCC(self):
-		sql = "SELECT id, mfccs FROM audio_words"
-		resultSet = self.sqlite.select(sql, [])
-		finalSet = []
-		for (id, mfcc) in resultSet:
-			mfcc_decoded = np.frombuffer(mfcc, dtype=double)
-			finalSet.append(id, mfcc_decoded)
-		return finalSet
-
-
 	def selectWords(self):
 		sql = "SELECT id, word, src_word FROM audio_words"
 		resultSet = self.sqlite.select(sql, [])
@@ -124,15 +136,16 @@ class DBAdapter:
 
 
 	def selectTensor(self):
-		sql = """SELECT mfccs_norm, word_multi_enc, src_word_multi_enc 
-			FROM audio_words"""
+		sql = """SELECT mfcc_norm, mfcc_rows, mfcc_cols, word_multi_enc, 
+			src_word_multi_enc FROM audio_words"""
 		resultSet = self.sqlite.select(sql, [])
 		finalSet = []
-		for (mfccs_norm, word_multi_enc, src_word_multi_enc) in resultSet:
-			mfccs_decoded = np.frombuffer(mfccs_norm, dtype=double)
-			word_decoded = np.frombuffer(word_multi_enc, dtype=double)
-			src_word_decoded = np.frombuffer(src_word_multi_enc, dtype=double)
-			finalSet.append([mfccs_decoded, word_decoded, src_word_decoded])
+		for (mfcc_norm, word_multi_enc, src_word_multi_enc) in resultSet:
+			mfcc_decoded = np.frombuffer(mfcc_norm, dtype=np.float32)
+			mfcc_shaped = mfcc_decoded.shape(mfcc_rows, mfcc_cols)
+			word_decoded = np.frombuffer(word_multi_enc, dtype=np.double)
+			src_word_decoded = np.frombuffer(src_word_multi_enc, dtype=np.double)
+			finalSet.append([mfcc_shaped, word_decoded, src_word_decoded])
 		return finalSet
 
 
