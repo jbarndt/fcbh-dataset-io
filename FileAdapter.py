@@ -1,5 +1,3 @@
-#import os
-#import io
 import re
 from DBAdapter import *
 
@@ -9,7 +7,6 @@ class FileAdapter:
 	def __init__(self, db):
 		self.db = db
 		self.pattern = re.compile(r"(\w+)(\W+)?$")
-
 
 
 	def loadPoem(self, filename):
@@ -23,33 +20,32 @@ class FileAdapter:
 		actor = None
 		src_language = "ENG"
 		audio_file = "../Sandeep_sample1/audio.mp3"
-		pattern = re.compile(r"(\w+)(\W+)?$")
 		with open(filename) as file:
 			for line in file:
 				if len(line.strip()) > 0:
 					script_num += 1
 					word_seq = 0
 					words = self.parseLine(line)
-					for word in words:		
+					for (word, punct) in words:		
 						src_word = word
 						word_seq += 1
 						db.insertWord(book_id, chapter_num, script_num, 
 							word_seq, verse_num, usfm_style, person, actor, 
-							word, src_language, src_word, audio_file)
+							word, punct, src_language, src_word, audio_file)
 				else:
 					verse_num +=1
 
 
+	# This method separates punctuation
 	def parseLine(self, line):
 		parts = []
 		for word in line.split():
 			punct = None
 			match = self.pattern.match(word)
 			if match and match.group(2):
-				parts.append(match.group(1))
-				parts.append(match.group(2))
+				parts.append((match.group(1), match.group(2)))
 			else:
-				parts.append(word)
+				parts.append((word, None))
 		return parts
 
 

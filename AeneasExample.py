@@ -53,23 +53,25 @@ def storeAeneas(db, audioFile, outputFile):
 # Test1
 dir = "../Sandeep_sample1/"
 audioFile = os.path.join(dir, "audio.mp3")
-textFile = os.path.join(dir, "mplain.txt")
-outFile = os.path.join(dir, "poem_single.json")
+#textFile = os.path.join(dir, "mplain.txt")
+#outFile = os.path.join(dir, "poem_single.json")
 #aeneas("eng", audioFile, textFile, outFile)
 
 # Test2
-textFile = os.path.join(dir, "words.txt")
-outFile = os.path.join(dir, "words_single.json")
+#textFile = os.path.join(dir, "words.txt")
+#outFile = os.path.join(dir, "words_single.json")
 #aeneas("eng", audioFile, textFile, outFile)
 
-#Test3
-textOutFile = "../Sandeep_sample1/sonnet.txt"
+#Test3 - 
+textOutFile = "../Sandeep_sample1/sonnet1.txt"
 if os.path.exists(textOutFile):
     os.remove(textOutFile)
 db = DBAdapter("ENG", 1, "Sonnet")
 createWordsFile(db, audioFile, textOutFile)
-outFile = os.path.join(dir, "sonnet.json")
+outFile = os.path.join(dir, "sonnet1.json")
 aeneas("eng", audioFile, textOutFile, outFile)
 storeAeneas(db, audioFile, outFile)
+
+
 
 
