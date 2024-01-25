@@ -16,10 +16,10 @@ def genMFCC(db, audio_file):
 	hopLength = 512 # librosa default
 	frameRate = sampleRate / hopLength
 	resultSet = db.selectTimestamps(audio_file)
-	for (id, word, audio_begin_ts, audio_end_ts) in resultSet:
-		print(id, word, audio_begin_ts, audio_end_ts)
-		startIndex = int(audio_begin_ts * frameRate)
-		endIndex = int(audio_end_ts * frameRate)
+	for (id, word, word_begin_ts, word_end_ts) in resultSet:
+		print(id, word, word_begin_ts, word_end_ts)
+		startIndex = int(word_begin_ts * frameRate)
+		endIndex = int(word_end_ts * frameRate)
 		# Slice the MFCC data
 		segment = mfccs[:, startIndex:endIndex]
 		print("start", startIndex, "end", endIndex, "shape", segment.shape)

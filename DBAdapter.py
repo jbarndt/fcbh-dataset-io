@@ -25,8 +25,8 @@ class DBAdapter:
 			src_language TEXT, /* will this be replaced by script_num */
 			src_word TEXT, /* will this be replaced by script_num */
 			audio_file TEXT NOT NULL,
-			audio_begin_ts REAL,
-			audio_end_ts REAL,
+			word_begin_ts REAL,
+			word_end_ts REAL,
 			mfcc BLOB,
 			mfcc_rows INTEGER,
 			mfcc_cols INTEGER,
@@ -78,16 +78,16 @@ class DBAdapter:
 		return resultSet
 		
 
-	def updateTimestamps(self, id, audio_begin_ts, audio_end_ts):
-		sql = """UPDATE audio_words SET audio_begin_ts = ?, 
-			audio_end_ts = ? WHERE id = ?"""
-		values = [audio_begin_ts, audio_end_ts, id]
+	def updateTimestamps(self, id, word_begin_ts, word_end_ts):
+		sql = """UPDATE audio_words SET word_begin_ts = ?, 
+			word_end_ts = ? WHERE id = ?"""
+		values = [word_begin_ts, word_end_ts, id]
 		self.sqlite.execute(sql, values)
 		# make certain word is checked here or in calling code
 
 
 	def selectTimestamps(self, audio_file):
-		sql = """SELECT id, word, audio_begin_ts, audio_end_ts
+		sql = """SELECT id, word, word_begin_ts, word_end_ts
 				FROM audio_words WHERE audio_file = ?"""
 		resultSet = self.sqlite.select(sql, [audio_file])
 		return resultSet
@@ -167,7 +167,7 @@ if __name__ == "__main__":
 		print(row)
 	db.updateTimestamps(id2, 123.45, 124.56)
 	db.updateTimestamps(id3, 456.78, 456.98)
-	resultSet = db.sqlite.select("SELECT id, audio_begin_ts, audio_end_ts FROM audio_words")
+	resultSet = db.sqlite.select("SELECT id, word_begin_ts, word_end_ts FROM audio_words")
 	for row in resultSet:
 		print(row)
 

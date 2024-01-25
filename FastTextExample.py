@@ -16,7 +16,7 @@ def encodeWords(db):
     file.close()
     sys.exit(1)
     print("start model")
-    model = fasttext.train_unsupervised(filename)#, "cbow")
+    model = fasttext.train_unsupervised(filename, "cbow")
     print("model finished")
     model.save("sonnet.model")
     print("model saved")
