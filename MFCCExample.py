@@ -23,7 +23,8 @@ def genMFCC(db, audio_file):
 		# Slice the MFCC data
 		segment = mfccs[:, startIndex:endIndex]
 		print("start", startIndex, "end", endIndex, "shape", segment.shape)
-		db.updateMFCC(id, segment)
+		db.addMFCC(id, segment)
+	db.updateMFCCs()
 
 
 def prepareMFCC(db, normalize):
@@ -42,7 +43,8 @@ def prepareMFCC(db, normalize):
 	maxLen = max(array.shape[1] for array in mfccList)
 	for (id, mfcc) in mfccTuples:
 		padded = np.pad(mfcc, ((0, 0), (0, maxLen - mfcc.shape[1])), 'constant')
-		db.updateNormPaddedFCC(id, padded)
+		db.addPadMFCC(id, padded)
+	db.updatePadMFCCs()
 
 
 # Example usage:

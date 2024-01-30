@@ -28,12 +28,12 @@ class FileAdapter:
 					script_num += 1
 					for (word_seq, word, punct) in self.parseLine(line):		
 						src_word = word
-						self.db.insertWord(book_id, chapter_num, script_num, 
+						self.db.addWord(book_id, chapter_num, script_num, 
 							word_seq, verse_num, usfm_style, person, actor, 
 							word, punct, src_language, src_word, audio_file)
 				else:
 					verse_num +=1
-		self.db.executeInsert()
+		self.db.insertWords()
 		self.db.close()
 
 
@@ -54,10 +54,10 @@ class FileAdapter:
 			script_num = verse_num
 			#print(book_id, chapter_num, verse_num, text)
 			for (word_seq, word, punct) in self.parseLine(text):
-				self.db.insertWord(book_id, chapter_num, script_num, 
+				self.db.addWord(book_id, chapter_num, script_num, 
 							word_seq, verse_num, usfm_style, person, actor, 
 							word, punct, src_language, src_word, audio_file)
-		self.db.executeInsert()
+		self.db.insertWords()
 		self.db.close()
 		srcDb.close()
 

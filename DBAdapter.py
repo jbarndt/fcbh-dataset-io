@@ -11,6 +11,8 @@ class DBAdapter:
 		name = language_iso + "_" + str(language_id) + "_" + language_name + ".db"
 		self.sqlite = SqliteUtility(name)
 		self.insertRecs = []
+		self.mfccRecs = []
+		self.mfccPadRecs = []
 		sql = """CREATE TABLE IF NOT EXISTS audio_words (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			book_id TEXT NOT NULL,
@@ -61,13 +63,13 @@ class DBAdapter:
 #		return id
 
 
-	def insertWord(self, book_id, chapter_num, script_num, word_seq, verse_num, 
+	def addWord(self, book_id, chapter_num, script_num, word_seq, verse_num, 
 		usfm_style, person, actor, word, punct, src_language, src_word, audio_file):
 		self.insertRecs.append((book_id, chapter_num, script_num, word_seq, verse_num, 
 		usfm_style, person, actor, word, punct, src_language, src_word, audio_file))
 
 
-	def executeInsert(self):
+	def insertWords(self):
 		sql = """INSERT INTO audio_words(book_id, chapter_num, script_num,
 			word_seq, verse_num, usfm_style, person, actor, word, punct,
 			src_language, src_word, audio_file) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)"""
@@ -108,13 +110,26 @@ class DBAdapter:
 		return resultSet
 
 
-	def updateMFCC(self, id, mfcc):
-		print("save type", type(mfcc.dtype), mfcc.shape)
+#	def updateMFCC(self, id, mfcc):
+#		print("save type", type(mfcc.dtype), mfcc.shape)
+#		sql = """UPDATE audio_words SET mfcc = ? , mfcc_rows = ?,
+#			mfcc_cols = ? WHERE id = ?"""
+#		dims = mfcc.shape
+#		values = [mfcc.tobytes(), dims[0], dims[1], id] # serialize mfcc
+#		self.sqlite.execute(sql, values)
+
+
+	def addMFCC(self, id, mfcc):
+		#print("save type", type(mfcc.dtype), mfcc.shape)
+		dims = mfcc.shape
+		self.mfccRecs.append((mfcc.tobytes(), dims[0], dims[1], id))
+
+
+	def updateMFCCs(self):
 		sql = """UPDATE audio_words SET mfcc = ? , mfcc_rows = ?,
 			mfcc_cols = ? WHERE id = ?"""
-		dims = mfcc.shape
-		values = [mfcc.tobytes(), dims[0], dims[1], id] # serialize mfcc
-		self.sqlite.execute(sql, values)
+		self.sqlite.executeBatch(sql, self.mfccRecs)
+		self.mfccRecs = []
 
 
 	def selectMFCC(self):
@@ -129,13 +144,25 @@ class DBAdapter:
 		return finalSet
 
 
-	def updateNormPaddedFCC(self, id, mfcc):
-		print("save type", type(mfcc.dtype), mfcc.shape)
+#	def updateNormPaddedFCC(self, id, mfcc):
+#		print("save type", type(mfcc.dtype), mfcc.shape)
+#		sql = """UPDATE audio_words SET mfcc_norm = ?, mfcc_norm_rows = ?,
+#			mfcc_norm_cols = ? WHERE id = ?"""
+#		dims = mfcc.shape
+#		values = [mfcc.tobytes(), dims[0], dims[1], id] # serialize mfcc
+#		self.sqlite.execute(sql, values)
+
+
+	def addPadMFCC(self, id, mfcc):
+		dims = mfcc.shape
+		self.mfccPadRecs.append((mfcc.tobytes(), dims[0], dims[1], id))	
+
+
+	def updatePadMFCCs(self):
 		sql = """UPDATE audio_words SET mfcc_norm = ?, mfcc_norm_rows = ?,
 			mfcc_norm_cols = ? WHERE id = ?"""
-		dims = mfcc.shape
-		values = [mfcc.tobytes(), dims[0], dims[1], id] # serialize mfcc
-		self.sqlite.execute(sql, values)
+		self.sqlite.executeBatch(sql, self.mfccPadRecs)
+		self.mfccPadRecs = []
 
 
 	def updateEncoding(self, id, word_enc):
