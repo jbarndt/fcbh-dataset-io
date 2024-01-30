@@ -10,6 +10,7 @@ class DBAdapter:
 	def __init__(self, language_iso, language_id, language_name):
 		name = language_iso + "_" + str(language_id) + "_" + language_name + ".db"
 		self.sqlite = SqliteUtility(name)
+		self.insertRecs = []
 		sql = """CREATE TABLE IF NOT EXISTS audio_words (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			book_id TEXT NOT NULL,
@@ -49,15 +50,29 @@ class DBAdapter:
 			self.sqlite = None
 
 
+#	def insertWord(self, book_id, chapter_num, script_num, word_seq, verse_num, 
+#		usfm_style, person, actor, word, punct, src_language, src_word, audio_file):
+#		sql = """INSERT INTO audio_words(book_id, chapter_num, script_num,
+#			word_seq, verse_num, usfm_style, person, actor, word, punct,
+#			src_language, src_word, audio_file) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)"""
+#		values = [book_id, chapter_num, script_num, word_seq, verse_num, 
+#			usfm_style, person, actor, word, punct, src_language, src_word, audio_file]
+#		id = self.sqlite.executeInsert(sql, values)
+#		return id
+
+
 	def insertWord(self, book_id, chapter_num, script_num, word_seq, verse_num, 
 		usfm_style, person, actor, word, punct, src_language, src_word, audio_file):
+		self.insertRecs.append((book_id, chapter_num, script_num, word_seq, verse_num, 
+		usfm_style, person, actor, word, punct, src_language, src_word, audio_file))
+
+
+	def executeInsert(self):
 		sql = """INSERT INTO audio_words(book_id, chapter_num, script_num,
 			word_seq, verse_num, usfm_style, person, actor, word, punct,
 			src_language, src_word, audio_file) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)"""
-		values = [book_id, chapter_num, script_num, word_seq, verse_num, 
-			usfm_style, person, actor, word, punct, src_language, src_word, audio_file]
-		id = self.sqlite.executeInsert(sql, values)
-		return id
+		self.sqlite.executeBatch(sql, self.insertRecs)
+		self.insertRecs = []		
 
 
 	def selectWordsForFile(self, audio_file):
