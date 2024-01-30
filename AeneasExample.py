@@ -46,7 +46,8 @@ def storeAeneas(db, audioFile, outputFile):
                 print("Error lines is not 1 word", seg)
             elif word != seg['lines'][0]:
                 print("Error parsed word and aeneas do not match")
-            db.updateTimestamps(id, float(seg['begin']), float(seg['end']))
+            db.addTimestamp(id, float(seg['begin']), float(seg['end']))
+    db.updateTimestamps()
     
 
 

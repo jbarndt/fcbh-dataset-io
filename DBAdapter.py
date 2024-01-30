@@ -11,9 +11,12 @@ class DBAdapter:
 		name = language_iso + "_" + str(language_id) + "_" + language_name + ".db"
 		self.sqlite = SqliteUtility(name)
 		self.insertRecs = []
+		self.timestampRec = []
 		self.mfccRecs = []
 		self.mfccPadRecs = []
 		self.wordEncRec = []
+		self.srcWordEncRec = []
+		self.multiEncRec = []
 		sql = """CREATE TABLE IF NOT EXISTS audio_words (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			book_id TEXT NOT NULL,
@@ -53,16 +56,6 @@ class DBAdapter:
 			self.sqlite = None
 
 
-#	def insertWord(self, book_id, chapter_num, script_num, word_seq, verse_num, 
-#		usfm_style, person, actor, word, punct, src_language, src_word, audio_file):
-#		sql = """INSERT INTO audio_words(book_id, chapter_num, script_num,
-#			word_seq, verse_num, usfm_style, person, actor, word, punct,
-#			src_language, src_word, audio_file) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)"""
-#		values = [book_id, chapter_num, script_num, word_seq, verse_num, 
-#			usfm_style, person, actor, word, punct, src_language, src_word, audio_file]
-#		id = self.sqlite.executeInsert(sql, values)
-#		return id
-
 
 	def addWord(self, book_id, chapter_num, script_num, word_seq, verse_num, 
 		usfm_style, person, actor, word, punct, src_language, src_word, audio_file):
@@ -94,14 +87,17 @@ class DBAdapter:
 			verse_num, usfm_style, person, word, punct FROM audio_words"""
 		resultSet = self.sqlite.select(sql)
 		return resultSet
-		
 
-	def updateTimestamps(self, id, word_begin_ts, word_end_ts):
+
+	def addTimestamp(self, id, word_begin_ts, word_end_ts):
+		self.timestampRec.append((word_begin_ts, word_end_ts, id))
+
+
+	def updateTimestamps(self):
 		sql = """UPDATE audio_words SET word_begin_ts = ?, 
-			word_end_ts = ? WHERE id = ?"""
-		values = [word_begin_ts, word_end_ts, id]
-		self.sqlite.execute(sql, values)
-		# make certain word is checked here or in calling code
+			word_end_ts = ? WHERE id = ?"""		
+		self.sqlite.executeBatch(sql, self.timestampRec)
+		self.timestampRec = []
 
 
 	def selectTimestamps(self, audio_file):
@@ -109,15 +105,6 @@ class DBAdapter:
 				FROM audio_words WHERE audio_file = ?"""
 		resultSet = self.sqlite.select(sql, [audio_file])
 		return resultSet
-
-
-#	def updateMFCC(self, id, mfcc):
-#		print("save type", type(mfcc.dtype), mfcc.shape)
-#		sql = """UPDATE audio_words SET mfcc = ? , mfcc_rows = ?,
-#			mfcc_cols = ? WHERE id = ?"""
-#		dims = mfcc.shape
-#		values = [mfcc.tobytes(), dims[0], dims[1], id] # serialize mfcc
-#		self.sqlite.execute(sql, values)
 
 
 	def addMFCC(self, id, mfcc):
@@ -145,15 +132,6 @@ class DBAdapter:
 		return finalSet
 
 
-#	def updateNormPaddedFCC(self, id, mfcc):
-#		print("save type", type(mfcc.dtype), mfcc.shape)
-#		sql = """UPDATE audio_words SET mfcc_norm = ?, mfcc_norm_rows = ?,
-#			mfcc_norm_cols = ? WHERE id = ?"""
-#		dims = mfcc.shape
-#		values = [mfcc.tobytes(), dims[0], dims[1], id] # serialize mfcc
-#		self.sqlite.execute(sql, values)
-
-
 	def addPadMFCC(self, id, mfcc):
 		dims = mfcc.shape
 		self.mfccPadRecs.append((mfcc.tobytes(), dims[0], dims[1], id))	
@@ -166,12 +144,6 @@ class DBAdapter:
 		self.mfccPadRecs = []
 
 
-#	def updateEncoding(self, id, word_enc):
-#		sql = "UPDATE audio_words SET word_enc = ? WHERE id = ?"
-#		values = [word_enc.tobytes(), id]
-#		self.sqlite.execute(sql, values)
-
-
 	def addWordEncoding(self, id, word_enc):
 		self.wordEncRec.append((word_enc.tobytes(), id))
 
@@ -179,20 +151,29 @@ class DBAdapter:
 	def updateWordEncoding(self):
 		sql = "UPDATE audio_words SET word_enc = ? WHERE id = ?"
 		self.sqlite.executeBatch(sql, self.wordEncRec)
-		self.wordEncRec = []		
+		self.wordEncRec = []	
 
 
-	def updateSourceEncoding(self, id, src_word_enc):
+	def addSrcWordEncoding(self, id, src_word_enc):
+		self.wordEncRec.append((src_word_enc.tobytes(), id))
+
+
+	def updateSrcWordEncoding(self):
 		sql = "UPDATE audio_words SET src_word_enc = ? WHERE id = ?"
-		values = [src_word_enc.tobytes(), id]
-		self.sqlite.execute(sql, values)
+		self.sqlite.executeBatch(sql, self.srcWordEncRec)
+		self.srcWordEncRec = []
 
 
-	def updateMultiEncodings(self, id, word_multi_enc, src_word_multi_enc):
+
+	def addMultiEncoding(self, id, word_multi_enc, src_word_multi_enc):
+		self.multiEncRec.append((word_multi_enc.tobytes(), src_word_multi_enc.tobytes(), id))
+
+
+	def updateMultiEncodings(self):
 		sql = """UPDATE audio_words SET word_multi_enc = ?,
 			src_word_multi_enc = ? WHERE id = ?"""
-		values = [word_multi_enc.tobytes(), src_word_multi_enc.tobytes(), id]
-		self.sqlite.execute(sql, values)
+		self.sqlite.executeBatch(sql, self.multiEncRec)
+		self.multiEncRec = []		
 
 
 	def selectTensor(self):
@@ -203,8 +184,8 @@ class DBAdapter:
 		for (mfcc_norm, word_multi_enc, src_word_multi_enc) in resultSet:
 			mfcc_decoded = np.frombuffer(mfcc_norm, dtype=np.float32)
 			mfcc_shaped = mfcc_decoded.shape(mfcc_rows, mfcc_cols)
-			word_decoded = np.frombuffer(word_multi_enc, dtype=np.double)
-			src_word_decoded = np.frombuffer(src_word_multi_enc, dtype=np.double)
+			word_decoded = np.frombuffer(word_multi_enc, dtype=np.float32)
+			src_word_decoded = np.frombuffer(src_word_multi_enc, dtype=np.float32)
 			finalSet.append([mfcc_shaped, word_decoded, src_word_decoded])
 		return finalSet
 
