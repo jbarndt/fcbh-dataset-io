@@ -26,7 +26,8 @@ def encodeWords(db, modelName):
             verse_num, usfm_style, person, word, punct) in resultSet:
         word_enc = model.get_word_vector(word)
         print(word, type(word_enc.dtype), word_enc.shape)
-        db.updateEncoding(id, word_enc)
+        db.addWordEncoding(id, word_enc)
+    db.updateWordEncoding()
 
 
 

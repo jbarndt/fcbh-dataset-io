@@ -13,6 +13,7 @@ class DBAdapter:
 		self.insertRecs = []
 		self.mfccRecs = []
 		self.mfccPadRecs = []
+		self.wordEncRec = []
 		sql = """CREATE TABLE IF NOT EXISTS audio_words (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			book_id TEXT NOT NULL,
@@ -165,10 +166,20 @@ class DBAdapter:
 		self.mfccPadRecs = []
 
 
-	def updateEncoding(self, id, word_enc):
+#	def updateEncoding(self, id, word_enc):
+#		sql = "UPDATE audio_words SET word_enc = ? WHERE id = ?"
+#		values = [word_enc.tobytes(), id]
+#		self.sqlite.execute(sql, values)
+
+
+	def addWordEncoding(self, id, word_enc):
+		self.wordEncRec.append((word_enc.tobytes(), id))
+
+
+	def updateWordEncoding(self):
 		sql = "UPDATE audio_words SET word_enc = ? WHERE id = ?"
-		values = [word_enc.tobytes(), id]
-		self.sqlite.execute(sql, values)
+		self.sqlite.executeBatch(sql, self.wordEncRec)
+		self.wordEncRec = []		
 
 
 	def updateSourceEncoding(self, id, src_word_enc):
