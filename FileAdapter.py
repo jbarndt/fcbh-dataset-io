@@ -34,7 +34,6 @@ class FileAdapter:
 				else:
 					verse_num +=1
 		self.db.insertWords()
-		self.db.close()
 
 
 	def loadMyDB(self, databasePath):
@@ -58,7 +57,6 @@ class FileAdapter:
 							word_seq, verse_num, usfm_style, person, actor, 
 							word, punct, src_language, src_word, audio_file)
 		self.db.insertWords()
-		self.db.close()
 		srcDb.close()
 
 
@@ -76,7 +74,7 @@ class FileAdapter:
 				parts.append((word_seq, word, None))
 		return parts
 
-
+'''
 if __name__ == "__main__":
 	database = "ENG_2_WEB.db"
 	if os.path.exists(database):
@@ -85,9 +83,9 @@ if __name__ == "__main__":
 	file = FileAdapter(db)
 	srcPath = os.environ["HOME"] + "/ShortSands/DBL/5ready/WEB.db"
 	file.loadMyDB(srcPath)
-
-
 '''
+
+
 if __name__ == "__main__":
 	database = "ENG_1_Sonnet.db"
 	if os.path.exists(database):
@@ -98,4 +96,4 @@ if __name__ == "__main__":
 	resultSet = db.sqlite.select("SELECT * FROM audio_words")
 	for row in resultSet:
 		print(row)
-'''
+

@@ -193,14 +193,16 @@ class DBAdapter:
 if __name__ == "__main__":
 	os.remove("ENG_103_English.db")
 	db = DBAdapter("ENG", 103, "English")
-	id1 = db.insertWord("GEN", 1, 1, 1, 1, "p", 1, 1, "In", "ENG", "In", "ENG_GEN_1.mp3")
-	id2 = db.insertWord("GEN", 1, 1, 2, 1, "p", 1, 1, "the", "ENG", "the", "ENG_GEN_1.mp3")
-	id3 = db.insertWord("GEN", 1, 1, 3, 1, "p", 1, 1, "beginning", "ENG", "beginning", "ENG_GEN_1.mp3")
+	id1 = db.addWord("GEN", 1, 1, 1, 1, "p", 1, 1, "In", None, "ENG", "In", "ENG_GEN_1.mp3")
+	id2 = db.addWord("GEN", 1, 1, 2, 1, "p", 1, 1, "the", None, "ENG", "the", "ENG_GEN_1.mp3")
+	id3 = db.addWord("GEN", 1, 1, 3, 1, "p", 1, 1, "beginning", ",", "ENG", "beginning", "ENG_GEN_1.mp3")
+	db.insertWords()
 	resultSet = db.sqlite.select("SELECT * FROM audio_words")
 	for row in resultSet:
 		print(row)
-	db.updateTimestamps(id2, 123.45, 124.56)
-	db.updateTimestamps(id3, 456.78, 456.98)
+	db.addTimestamp(id2, 123.45, 124.56)
+	db.addTimestamp(id3, 456.78, 456.98)
+	db.updateTimestamps()
 	resultSet = db.sqlite.select("SELECT id, word_begin_ts, word_end_ts FROM audio_words")
 	for row in resultSet:
 		print(row)
