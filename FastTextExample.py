@@ -10,8 +10,8 @@ def encodeWords(db, modelName):
     print("Words to encode in", filename)
     file = open(filename, "w")
     first = 0
-    for (id, book_id, chapter_num, script_num, word_seq, 
-            verse_num, usfm_style, person, word, punct) in resultSet:
+    for (id, book_id, chapter_num, script_num, usfm_style, person, word_seq, 
+            verse_num, word, punct) in resultSet:
         file.write(word)
         if punct != None:
             file.write(punct)      

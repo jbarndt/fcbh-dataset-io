@@ -2,40 +2,40 @@
 
 ## Introduction
 
-> And this gospel of the kingdom will be proclaimed throughout the whole world as a testimony to all nations, and then the end will come." Matt 24:14.
-This seems to describe a contingency on our Lord's coming, that the gospel has been proclaimed to all nations.  Certainly, the work that SIL is doing in translating the scriptures, and the work FCBH is doing are critical parts.  But is it possible that the word "proclaimed" implies more than the scriptures themselves, but also the preaching of those scriptures.  Recent advances in artificial intelligence (AI) make it conceivable that technology might someday provide the ability to translate spoken words into any language.  And even though this technology might be developed by a  company such as OpenAI, Google, or Microsoft; FCBH houses data that is critical to this development by having audio Bibles in a large number of languages.  and because each language is a translation of the same document.  These audio translations will be especially useful to this AI task.  So, this document describes a means to prepare this data for use by AI researchers.
+> "And this gospel of the kingdom will be proclaimed throughout the whole world as a testimony to all nations, and then the end will come." Matt 24:14.
+This seems to describe a contingency on our Lord's coming, that the gospel has been proclaimed to all nations.  Certainly, the work that SIL is doing in translating the scriptures, and the work FCBH is doing are critical parts.  But is it possible that the word "proclaimed" implies more than the scriptures themselves, but also the preaching of those scriptures?  Recent advances in artificial intelligence (AI) make it conceivable that technology might someday provide the ability to translate spoken words into any language.  And even though this technology might be developed by a company such as OpenAI, Google, or Microsoft; FCBH houses data that is critical to this development by having audio Bibles in a large number of languages.  Because each language is a translation of the same document, these audio translations will be especially useful to this AI task.  So, this document describes a means to prepare this data for use by AI researchers.
 
 ## Methodology
 
-We start with audio data that is in chapter form with timestamps marking the beginning and ending of each segment that was recorded.  These segments are typically no more than a sentence long, and have only one actor's voice.  Associated with each segment, we have the text in the same language for each audio.  [[Not sure: The timestamps will be used to break the chapter audio back into the original segments that were recorded.]]
+The FCBH audio production process breaks text Bible chapters into script segments that are often a sentence long, but always include one speaker.  For all languages, the chapters are broken into the same script segments, so that the content of any script segment is the same in all languages.  The audio is recorded from these scripts into chapter files with timestamps that mark the beginning and end of each script segment.
 
-Using the python module Aeneas, we process the small segments one at a time to obtain a list of timestamps for individual word breaks.  [[Questionable: This process is performed on the smaller files rather than the chapter files so that word alignment errors, if they occur, only affect a small amount of data.]]
+Using the python module Aeneas, we process each chapter to obtain a list of timestamps that mark the beginning and end of each word.  While it might be most efficient to use Aeneas on one chapter at a time.  It might be more accurate to do this on each script segment.
 
 The audio data is converted into Mel-Frequency Cepstral Coefficients (MFCCs) using the python module librosa.  This output is then broken up into word length segments using the timestamps found by Aeneas. And then the segments are normalized and padded to be of equal length.
 
-The text is prepared for the tensor by using multilingual word embedding.  There are a few possible solutions to Facebook's MUSE, Google's mBERT, Google's Universal Sentence Encoder (USE), or Byte Pair Encoding (BPE) and Sentence Piece. In this document, MUSE is being used, but without any certainty that this is the best solution. 
+The text is prepared by using multilingual word embedding.  There are a few possible solutions to Facebook's MUSE, Google's mBERT, Google's Universal Sentence Encoder (USE), or Byte Pair Encoding (BPE) and Sentence Piece.
 
-FastText from Facebook research is used to create a word encoding of all of the available text in the language to be processed, and the source languages.  BERT and Word2Vect are two other tools.  These language encodings and their source language encoding and a translation dictionary are uaed to create a single multilingual encoding that will be used for both languages.
+FastText from Facebook research is used to create a word encoding of all of the available text in each language to be processed.  BERT and Word2Vect are two other tools that could also be used.  Using a lexicon that provides equivant meanings in each language, and other languages, these language encodings are uaed to create a single multilingual encoding that will be used for both languages.
 
-The MFCC data for each word, and the corresponding multilingual word encoding of both the language and the source language are entered into a tensor as a timeseries with the corresponding MFCC, source language encoding, and target language encoding in the same sample.
+The MFCC data for each word, and the corresponding multilingual word encoding of both the language and the source language are used to create a tensor as a timeseries with the corresponding MFCC, target language encoding, and if possible, source language encoding in the same sample.
 
-The tensor is loaded into a Recurrent Neural Net (RNN). The model should be designed to predict the next audio word.  It could also be used to predict the next text word, but if that were the task is there any advantage in having the audio data in the tensor?
+The tensor is loaded into a Recurrent Neural Net (RNN) and/or Natural Language Processor (NLP). I am assuming the model would be designed to predict the next audio word.  
 
-Once the utility of this process has been proven, the data could be loaded into DBP for further access.  AI researchers will expect all of the data required for the analysis of a language to be in one "dataset", often a zip file.
+Once the utility of this process has been proven, the data could be loaded into DBP to simplify access.  AI researchers will expect all of the data required for the analysis of a language to be in one "dataset", often a zip file.
 
 ## Data Sources
 
 This design proposes loading an AI model with records of audio and text data one word at a time.  For an AI model to produce good results, it will be essential that the text words and the audio are perfectly aligned, that is, each record must contain the text and the audio of the same word.  
 
-In order to produce an audio, the text is first parsed into sentence/voice segments, and then the audio of that text is recorded by an actor speaking.  These audio and text segments are later checked and rechecked by people to insure the correctness of the audio, and then repaired or rerecorded when necessary.  This appears to be the best source, although some of this data is in the newer Vessel system, and others are in the Excel system that has a history of versions.
+In order to produce an audio, the text is first parsed into sentence/voice segments, and then the audio of that text is recorded by an actor speaking.  These audio and text segments are later checked and rechecked by people to insure the correctness of the audio, and then repaired or rerecorded when necessary.  This appears to be the best source, although at this moment, it is unclear what data will be gotten from Context, and what data will be gotten from the Vessel system, or the older Excel spreadsheet.
 
-A key problem with other possible sources of this data is getting a consistent handling of non-verse text, for example the section headings at the start of a passage of scripture.  USFM and USX 2.0 contain markers at the beginning of each verse, but they do not explicitly mark the end of a verse, instead the non verse text has a wide variety of format codes that identify the text's purpose.  Consistent handling of this is problematic.  But these are handled consistently in the audio production process, because each audio is an explicit recording made from the parsed text, regardless of how the non-verse text was parsed.
+It is also essential that the input source includes usfm style codes, because these codes identify many different kinds of titles, section heading, and cross references which not part of the scripture canon, and are not be included in all language translations.  It is not possible to correctly align script segments from one language to the next without identifing these non-verse text segments.
 
 ## Data Structures
 
 At this time a single denormalized table is recommended to store the data.  If a normalized database design were employed, the time involved in reworking the database design as this experimental process evolved could be excessive.
 
-If I were to normalize the tables, they would be language, books, script, and words.
+If I were to normalize the tables, they might be language, book, chapter, script, word, and encoding models.
 
 ### Audio Word Record
 
@@ -46,17 +46,17 @@ If I were to normalize the tables, they would be language, books, script, and wo
 + alphabet (questionable)
 + book_id
 + chapter_num
++ audio_file
 + script_num
-+ word_seq
-+ verse_num
 + usfm_style
 + person
 + actor
++ word_seq
++ verse_num
 + word
 + punct
 + src_language (questionable)
 + src_word (questionable)
-+ audio_file
 
 Additional data is produced by a data preparation pipeline.
 
@@ -70,99 +70,121 @@ Additional data is produced by a data preparation pipeline.
 + src_word_multi_enc
 
 
-The logical primary  key, which should be implemented as a unique index, consists of language_id, book_id, chapter_num, script_num, word_seq.
+The logical primary key, which should be implemented as a unique index, consists of language_id, book_id, chapter_num, script_num, word_seq.
 
 ## Data Dictionary
 
-*id* - A surrogate primary key.  It is an integer that begins with 1 for the first record, and increments for each record inserted.
+### Language Attributes
 
-*language_id* - The FCBH language id, which takes into account oral dialect
+**id** - A surrogate primary key.  It is an integer that begins with 1 for the first record, and increments for each record inserted.  It is present primarily to make table updates efficient.
+
+**language_id** - The FCBH language id, which takes into account oral dialect
+    - Context:
     - Vessel: 
     - Excel: 
 
-*language_iso* - The ISO language code using the ISO 639-3 standard.
+**language_iso** - The ISO language code using the ISO 639-3 standard.
+    - Context:
+    - Vessel: 
+    - Excel:
+
+**language_name** - The ISO 639-3 name of the language
+    - Context:
     - Vessel: 
     - Excel: 
 
-*language_name* - The ISO 639-3 name of the language
-    - Vessel: 
-    - Excel: 
+**alphabet** - The 4 digit code of the ISO 15924 standard.  It is also called script code.  The need for this is uncertain, but if it is useful, it might be necessary to analyze the unicode values of the characters to obtain it.
 
-*alphabet* - The 4 digit code of the ISO 15924 standard.  Also called script code.  The need for this is uncertain, but if it is useful, it will be necessary to analyze the unicode values of the characters to obtain it.
-    - Vessel: analyze unicode of text
-    - Excel: analyze unicode of text
+### Book Attributes
 
-*book_id* - The USFM 3 character book code.
+**book_id** - The USFM 3 character book code.
+    - Context:
     - Vessel: BookAbbreviation
     - Excel: 
 
-*chapter_num* - An integer that defines the chapter number.
-    - Vessel: StartChapter [[EndChapter hopefully ignore]]
+### Chapter Attributes
+
+**chapter_num** - An integer that defines the chapter number.
+    - Context:
+    - Vessel: StartChapter [[also, EndChapter can I ignore it?]]
     - Excel:
 
-*script_num* - An integer that defines the script line that this word is part of when the chapter has been parsed into script segments.  The three fields (book_id, chapter_num, script_num) together uniquely identify a script in any language.
-
-*word_seq* - An integer that defines the position of a word in the specific script line that it belongs to.  
-    - Vessel: implicit in JSON seq
-    - Excel:
-
-*verse_num* - This will be an integer. This column will be null when the the word is part of a heading, reference, note, or other non-verse text.
-[[Excel has verse numbers like 2b-3a.  While Vessel has a start verse number and an end verse number field.]]
-    - Vessel: StartVerse [[EndVerse, StartSubVerse hopefully ignore]]
-    - Excel:
-
-*usfm_style* - The USFM style code of the text. In the excel spreadsheet this item is in the verse field for non-verse audio segments, but for clarity it is separated. [[A style code can be a hint to whether text is part of the canon of scripture.  Can a style provide the answer with certainty in all cases?]] USFM document [Click here](https://ubsicap.github.io/usfm/)
-    - Vessel: USFMMarker
-    - Excel:
-
-*person or character* - This is an integer that identifies the character speaking in a script_segment.  Each integer identifies a specific Bible person or the narrator.  The meaning of these integers is the same across all languages.
-    - Vessel: CharacterId
-    - Excel: 
-
-*actor* - This is an integer that identifies an actor that performed this part.  One actor will often perform multiple parts.  There is no reason for this application to know the identity of these people, but there is a chance that knowing when the same actor is used will be useful information to a neural net. 
-
-*word* - The word of the audio segment in UTF-8 format.  This could be more than one word if needed to correctly correspond to a word in the source language.
-    - Vessel: Text
-    - Excel:
-
-*punct* - Any punctuation that followed the word such as: (.,:;!?).  It is parsed out of the word so that it can be included or excluded for different parts of the process.
-    - Vessel: Text
-
-*src_language* - The ISO 639-3 code of the source language that was translated.  This datum is placed here, because some passages might be translated from the source language, and other parts from languages, such as English.
-    - Vessel: I have not found this
-    - Excel:
-
-*src_word* - The related word in the source language that the text was translated from.  This could be more than one word if needed to correctly correspond to a word in the translated language.
-    - Vessel: LinkedReferenceText
-    - Excel
-
-*audio_file* - The filename or full pathname audio containing the chapter.
+**audio_file** - The filename or full pathname audio containing the chapter.
+    - Context:
     - Vessel: 
     - Excel:
 
-*word_begin_ts* - The timestamp for the start of the audio_seqment
-    - Vessel: TBD
-    - Excel: TBD
+### Script Attributes
 
-*word_end_ts* - The timestamp for the end of the audio_segment
-    - Vessel: TBD
-    - Excell: TBD
+**script_num** - An integer that defines the script line that this word is part of when the chapter has been parsed into script segments.  The three fields (book_id, chapter_num, script_num) together uniquely identify a script in *any language*.
 
-*mfccs* - Mel-Frequency Cepstral Coefficients of the audio as produced by the python library librosa, and broken into word segments using the timestamps.
+**usfm_style** - The USFM style code of the text. It is essential for identifying non-verse text, such as headings, titles, footnotes, cross references, and more.  Also, some AI researchers might consider the style information to be a useful source for their AI model.  Note: I think that the style codes being collected are solely the usfm paragraph codes, and not the usfm character codes, but this has not been verified.  Is it really certain there is only one of these for a script segment?
+    - Context:
+    - Vessel:
+    - Excel: 
 
-*mfccs_norm* - The MFCC data after it has been normalized and padded so the segments are of equal length.
+**person** - This is the person or character who is speaking in a script segment. Narrator is the most frequent person.  This data item is an attribute of a script segment, and is the same for each language.  It is included here because some AI researchers might find this information useful for the analysis of text laanguage, since different people have different grammers and styles of speech.
+    - Context:
+    - Vessel: CharacterId
+    - Excel: 
 
-*word_enc* - A numeric encoding that uniquely represents a word, and also carries some semantic meaning.
+**actor** - This is a number that identifies the actor who is speaking this script segment.  Since the Bible has more persons speaking than the number of actors available to record a Bible, actors will need to play many parts.  This data item is included because some AI reasearchers might find this information useful for the analysis of audio data.
+    - Context:
+    - Vessel:
+    - Excel: 
 
-*src_word_enc* - An encoding of the src_word using the same mechanism as the word.
+### Word Attributes
 
-*word_multi_enc* - An encoding of the word which uses an encoding that is common to both languages.
+**word_seq** - An integer that defines the position of a word in the specific script line that it belongs to.  The columns (language_id, book_id, chapter_num, script_num, word_seq) are a unique index.
+    - Context:
+    - Vessel: implicit in JSON seq
+    - Excel:
 
-*src_word_multi_enc* - An encoding of the source word that uses an encoding that is common to both languages.
+**verse_num** - This is an integer. This column will be null when the the word is part of a heading, reference, note, or other non-verse text. When a script segment crosses a verse boundary, the Context system can provide information about which word marks the beginning of a new verse.  Vessel and Excel cannot.  This data item belongs is a Word Attribute only if when a script crosses a verse boundary, we are able to identify the word where the new verse starts.
+    - Context: 
+    - Vessel: StartVerse [[EndVerse, StartSubVerse hopefully ignore]]
+    - Excel: has verse numbers like 2b-3a, but does it define the word where a verse starts?
+
+**word** - The word of an audio segment in UTF-8 format.  This could be more than one word if needed to correctly correspond to a word in the source language.
+    - Context
+    - Vessel: Text
+    - Excel:
+
+**punct** - Any punctuation that followed the word such as: (.,:;!?).  It is parsed out of the word so that it can be included or excluded for different parts of the process as deemed necessary by the AI researcher.
+    - Context:
+    - Vessel: Text
+    - Excel:
+
+**src_language** - The ISO 639-3 code of the source language that was translated.  This datum is placed here, because some passages might be translated from different languages, such as: Hebrew, Greek, Aramic, Latin, or English.  This data item is only needed if src_word is provided.
+
+**src_word** - It is not clear that it will be possible to collect this data item.  But, if it is possible, this would be the word in Hebrew, Greek, Aramic, Latin, English, or some other language that was translated to the data item stored in *word*.  Both the word or the src_word could be multiple words if that was needed to correctly align their meaning.
+
+**word_begin_ts** - The timestamp for the start of a word in an audio script segment.
+    - Aeneas module
+
+**word_end_ts** - The timestamp for the end of a word in an audio script segment.
+    - Aeneas module
+
+**mfccs** - Mel-Frequency Cepstral Coefficients of the audio as produced by the python library librosa, and broken into word segments using the timestamps.
+    - librosa module
+
+**mfccs_norm** - The MFCC data after it has been normalized and padded so the segments are of equal length.
+
+**word_enc** - A numeric encoding that uniquely represents a word, and also carries some semantic meaning.
+    - FastText, Word2Vec, or BERT
+
+**src_word_enc** - An encoding of the src_word using the same mechanism as the word.
+    - FastText, Word2Vec, or BERT
+
+**word_multi_enc** - An encoding of the word which uses an encoding that is common to both languages.
+    - MUSE, mBERT, or other procrustes
+
+**src_word_multi_enc** - An encoding of the source word that uses an encoding that is common to both languages.
+    - MUSE, mBERT, or other procrustes
 
 ## DBP Records
 
-While the data extracted from Vessel and Excel spreadsheets, could be stored in simple records as described above.  When they are to be made externally available, they should be stored in DBP as a means to make it externally available to those outside FCBH who should be given access.
+While the data extracted from Context, Vessel or Excel spreadsheets, could be stored in simple records as described above.  When they are to be made externally available, they should be stored in DBP as a means to make it externally available to those outside FCBH who should be given access.  The following is an untested example of how it might fit into the FCBH bible, bible_fileset, bible_file database design.
 
 ```
 CREATE TABLE audio_script (
@@ -220,19 +242,19 @@ ORDER BY book.protestant_order, file.chapter_start, audio_words.script_seq
 
 This document assumes that it is possible to align the words of text with corresponding words of the source text. If this is possible, one problem that must be handled is text that is outside of verses that might or might not come from the source text.
 
-Some headings that are outside of verses are part of the scripture where they appear and others are not.  For example, the Psalm 119 is an acrostic poem whose sections begin with Hebrew letters, and these letters are part of the poem, and are part of the original Hebrew text.  On the other hand, there are descriptive headings, such as "Jesus at a Wedding in Cana of Galilee".  This is an example of a heading that is not part of the original text, but added in the publishing of some versions of the Bible.
+Some headings that are outside of verses are part of the scripture where they appear and others are not.  For example, the Psalm 119 is an acrostic poem whose sections begin with Hebrew letters, and these letters are part of the poem, and are part of the original Hebrew text.  On the other hand, there are descriptive headings, such as "Jesus at a Wedding in Cana of Galilee".  This is an example of a heading that is not part of the original text, but added in the publishing of some version of the Bible.
 
-This matters because to prepare the text data in a tensor, we need to associate the words in the language with the related words in the source language.  But, when a heading is not part of the canon, there might not be a match for that text in the source version, if the source version is the original Greek or Hebrew.  So, code that is aligning text will need to try to distinguish the headings that are part of the original text from those that are not.  I am hoping the style code will make this possible. [[This needs to be discussed with SIL]]
+This matters because to prepare the text data in a tensor, we need to associate the words in the language with the related words in the source language.  But, when a heading is not part of the canon, there might not be a match for that text in the source version, if the source version is the original Greek or Hebrew.  So, code that is aligning text will need to try to distinguish the headings that are part of the original text from those that are not.  I am hoping the style code will make this possible.
 
 ## Tensor Design
 
-The tensor will contain one word per record with at least three columns.  One for the language text word, another for the source text word, and a final one for the audio of the same word.  But, each of these data items is given a proxy data item that is suitable for input to a Neural Net.
+The tensor will include normalized and padded MFCC's of each audio word, and multi lingual encoding of each text word.  If it is possible, it would also contain a multi lingual encoding of the source language word for each word in the language.  There are other attributes, such as USFM, person, and actor that an AI researcher might also find useful.
+
+**mfccs_norm** - Each audio of a word is replaced with a MFCC (Mel-Frequency Cepstral Coefficients) of the word, that has been normalized and padded so that all MFCC's are the same length.
 
 **word_multi_enc** - The word of text after being multilingual encoded. Each word of text is replaced by a numeric encoding that was created using Facebook MUSE or some other method.
 
 **src_word_multi_enc** - The source text after being multilingual encoded.  Each word of the source language text is also replaced with a numeric encoding that was created using Facebook MUSE or some other method.
-
-**mfccs_norm** - Each audio of a word is replaced with a MFCC (Mel-Frequency Cepstral Coefficients) of the word, that has been normalized and padded so that all MFCC's are the same length.
 
 ## Data Preparation Pipeline
 
@@ -255,12 +277,11 @@ Read each chapter of script capturing text and related metadata.  Parsing the te
 # Load the words from some source
 file = FileAdapter(db)
 file.loadCSVv1("filepath.csv")
-[[What is the correct function name????]]
 ```
 
 ### Locating Each Word in Audio
 
-*Aeneas* is used to find the beginning and ending of each word in the audio, and to output a file of timestamps that mark the beginning and ending of those words.  [[Questionable: This task is performed on the smaller sentence size files so that when an alignment error occurs, the entire chapter is not affected.]]  This process is performed separately on each audio file.
+*Aeneas* is used to find the beginning and ending of each word in the audio, and to output a file of timestamps that mark the beginning and ending of those words.  This example, processes one chapter at a time.  It is an open question whether it might be more accurate to process each script segment one at a time.
 
 ```
 # install ffmpeg
@@ -288,7 +309,6 @@ def aeneas(language, audioFile, textFile, outputFile):
         textFile,
         f"task_language={language}|os_task_file_format=json|is_text_type=plain",
         outputFile,
-        #"-example-words-multilevel --presets-word"
         "-example-words --presets-word"
     ]
     subprocess.run(command)
@@ -311,8 +331,8 @@ def storeAeneas(db, audioFile, outputFile):
                 print("Error lines is not 1 word", seg)
             elif word != seg['lines'][0]:
                 print("Error parsed word and aeneas do not match")
-            db.updateTimestamps(id, float(seg['begin']), float(seg['end']))
-    
+            db.addTimestamp(id, float(seg['begin']), float(seg['end']))
+    db.updateTimestamps()
 
 # A more flexible alternative is to execute the aeneas library
 # [aeneas lib](https://www.readbeyond.it/aeneas/docs/libtutorial.html#overview)
@@ -325,26 +345,20 @@ def storeAeneas(db, audioFile, outputFile):
 ```
 import librosa
 import numpy as np
-import json
 from DBAdapter import *
 
 def genMFCC(db, audio_file):
     audioData, sampleRate = librosa.load(audio_file)
-    print("sampleRate", sampleRate)
     mfccs = librosa.feature.mfcc(y=audioData, sr=sampleRate, n_mfcc=13)
-    print("mfccs shape", mfccs.shape)
-    # Load your timestamps from the JSON file
     hopLength = 512 # librosa default
     frameRate = sampleRate / hopLength
     resultSet = db.selectTimestamps(audio_file)
-    for (id, word, audio_begin_ts, audio_end_ts) in resultSet:
-        print(id, word, audio_begin_ts, audio_end_ts)
-        startIndex = int(audio_begin_ts * frameRate)
-        endIndex = int(audio_end_ts * frameRate)
-        # Slice the MFCC data
+    for (id, word, word_begin_ts, word_end_ts) in resultSet:
+        startIndex = int(word_begin_ts * frameRate)
+        endIndex = int(word_end_ts * frameRate)
         segment = mfccs[:, startIndex:endIndex]
-        print("start", startIndex, "end", endIndex, "shape", segment.shape)
-        db.updateMFCC(id, segment)
+        db.addMFCC(id, segment)
+    db.updateMFCCs()
 ```
 
 ### Final Preparation of MFCC data before loading into a tensor
@@ -355,27 +369,24 @@ After the MFCC's have been generated and stored for the entire document some add
 import sqlite
 import numpy as np
 
-def prepareMFCCs(normalize):
-    mfccsList = sqlite.selecMFCCs() # selects id, MFCCs in numpy
-    sum = 0.0
-    count = 0.0
-    maxLen = 0
-    for id, mfccs in mfccsList:
-        for mfcc in mfccs:
-            for value in mfcc[:]:
-            count += 1
-            sum += value
-            if len(mfcc[0]) > maxLen:
-                maxLen = len(mfcc[0])
-    average = sum / count
-    # iterate again to normalize and pad
-            if normalize:
-            # Pad MFCC segments to the maximum length
-padded_mfcc_segments = []
-for segment in mfcc_segments:
-    padded_segment = np.pad(segment, ((0, 0), (0, max_length - len(segment[0]))), mode='constant')
-    padded_mfcc_segments.append(padded_segment)
-    db.updateNormalizedMFCC(id, padded_mfcc_segments)
+def prepareMFCC(db, normalize):
+    mfccTuples = db.selectMFCC() # selects id, MFCCs in numpy
+    mfccList = []
+    for (id, mfcc) in mfccTuples:
+        mfccList.append(mfcc)
+    if normalize:
+        joinedMFCCs = np.concatenate(mfccList, axis=1)
+        mean = np.mean(joinedMFCCs, axis=1)
+        stds = np.std(joinedMFCCs, axis=1)
+        mfccNorm = []
+        for mfcc in mfccList:
+            mfccNorm.append((mfcc - mean[:, None]) / stds[:, None])
+        mfccList = mfccNorm
+    maxLen = max(array.shape[1] for array in mfccList)
+    for (id, mfcc) in mfccTuples:
+        padded = np.pad(mfcc, ((0, 0), (0, maxLen - mfcc.shape[1])), 'constant')
+        db.addPadMFCC(id, padded)
+    db.updatePadMFCCs()
 
 ```
 
@@ -385,35 +396,35 @@ for segment in mfcc_segments:
 
 ```
 import fasttext
+import tempfile
 from DBAdapter import *
 
-def encodeWords(db):
-    resultSet = db.selectWords()
-    filename = "scripture.text"
+def encodeWords(db, modelName):
+    resultSet = db.selectScript()
+    filename = os.path.join(tempfile.mkdtemp(), "scripture.text")
+    print("Words to encode in", filename)
     file = open(filename, "w")
     first = 0
-    for (id, book_id, chapter_num, script_num, word_seq, 
-            verse_num, usfm_style, person, word) in resultSet:
-        if word not in {'.', ',', ';', ':', '!', '?'} and id > 1:
-            file.write(" ")
+    for (id, book_id, chapter_num, script_num, usfm_style, person, 
+            word_seq, verse_num, word, punct) in resultSet:
         file.write(word)
+        if punct != None:
+            file.write(punct)      
+        file.write(" ")
     file.close()
-    print("start model")
-    model = fasttext.train_unsupervised(filename)#, "cbow")
-    print("model finished")
-    model.save("sonnet.model")
-    print("model saved")
+    model = fasttext.train_unsupervised(filename, "cbow")
+    model.save_model(modelName)
     for (id, book_id, chapter_num, script_num, word_seq, 
-            verse_num, usfm_style, person, word) in resultSet:
+            verse_num, usfm_style, person, word, punct) in resultSet:
         word_enc = model.get_word_vector(word)
-        print(word, type(word.dtype), word.shape)
-        db.updateEncoding(id, word_enc)
+        print(word, type(word_enc.dtype), word_enc.shape)
+        db.addWordEncoding(id, word_enc)
+    db.updateWordEncoding()
 ```
 
 ### Prepare multilingual encoding
 
-[[This step requires glossaries for the languages being processed.  I need to obtain this in order to finish this code.]]
-The following is a solution using scipy.linalg.
+The next step is to use a glossary file that describes the related words of two languages to generate a common encoding for the two languages.  The following is a solution using scipy.linalg.
 
 ```
 import numpy as np
@@ -456,17 +467,9 @@ python supervised.py --src_lang en --tgt_lang fr --src_emb data/wiki.en.vec --tg
 
 ```
 
-### Prepare the text for the tensor
-
-Using the multilingual encoding that was prepared in the step above, locate the correct encoding for each word of the language and each word of the source language in the audio files to be processed.  And create a tensor with the encoding aligned with the MFCC of the audio that spoke the  word.
-
-```
-resultSet = db.
-```
-
 ## Markdown Notes
 
-Markdown was used for formatting so that the document could easily become a Github Readme file.
+Markdown was used for formatting so this document could easily become a Github Readme file.
 
 https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax
 
@@ -494,30 +497,6 @@ Tab - nested list item
 -[x] Checked Task item
 Text needing footnote [^1]
 [^1] footnote text
-
-## Notes on Audio Production by Vessel
-
-How audios are produced is not truly a part of this project, except that it is from the audio production process that we obtain the data needed for this project.
-
-Context is an internal tool that is processing USFM.  This is to be retired and incorporated into vessel.  Context is reading USFM.
-
-Vessel makes algorithmic decisions in order to break text into sentences and voice.  It recognizes the following:
-1. verse blocks
-2. sentences by period
-3. looks for other punctuation, like quote marks
-
-In this way they are parsing the text into script_segments, and algorithmically getting it 90% right.
-Then Vessel is used interactively to present issues to remote users for them to correct.
-
-The data is stored in CouchBase using JSON format.  CouchBase provides a distributed advantage that a remote worker can sync to a local device without an internet connection for a long time, and then it will sync to the central system when that is possible.
-
-The database stores the data in a hierarchy of book level, chapter level, paragraph level, script level (I don’t recall if he also said verse level)
-
-
-# Questions
-+ In order to generate a multilingual word encoding for a language, I need a lexicon that associates words in the language with words in the source language.  Can I obain such a file?
-+ Can the style code of a bit of non-verse text be used to determine whether the text is part of the canon of scripture or translator added explanation?
-+ I am creating a tensor that contains 1 word per record with one data item being the text word encoding, and another being the MFCC of the audio of that word.  Are there SIL tools that would make it possible to identify the source language word or words in order to put them in the record as well.
 
 
 

@@ -21,17 +21,17 @@ class DBAdapter:
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			book_id TEXT NOT NULL,
 			chapter_num INTEGER NOT NULL,
+			audio_file TEXT NOT NULL,
 			script_num INTEGER NOT NULL,
-			word_seq INTEGER NOT NULL,
-			verse_num INTEGER,
 			usfm_style TEXT,
 			person INTEGER,
 			actor INTEGER,
+			word_seq INTEGER NOT NULL,
+			verse_num INTEGER,
 			word TEXT NOT NULL,
 			punct TEXT,
 			src_language TEXT, /* will this be replaced by script_num */
 			src_word TEXT, /* will this be replaced by script_num */
-			audio_file TEXT NOT NULL,
 			word_begin_ts REAL,
 			word_end_ts REAL,
 			mfcc BLOB,
@@ -56,17 +56,16 @@ class DBAdapter:
 			self.sqlite = None
 
 
-
-	def addWord(self, book_id, chapter_num, script_num, word_seq, verse_num, 
-		usfm_style, person, actor, word, punct, src_language, src_word, audio_file):
-		self.insertRecs.append((book_id, chapter_num, script_num, word_seq, verse_num, 
-		usfm_style, person, actor, word, punct, src_language, src_word, audio_file))
+	def addWord(self, book_id, chapter_num, audio_file, script_num, usfm_style, person, actor, 
+		word_seq, verse_num, word, punct, src_language, src_word):
+		self.insertRecs.append((book_id, chapter_num, audio_file, script_num, usfm_style, person, actor, 
+		word_seq, verse_num, word, punct, src_language, src_word))
 
 
 	def insertWords(self):
-		sql = """INSERT INTO audio_words(book_id, chapter_num, script_num,
-			word_seq, verse_num, usfm_style, person, actor, word, punct,
-			src_language, src_word, audio_file) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)"""
+		sql = """INSERT INTO audio_words(book_id, chapter_num, audio_file, 
+			script_num, usfm_style, person, actor, 
+			word_seq, verse_num, word, punct, src_language, src_word) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)"""
 		self.sqlite.executeBatch(sql, self.insertRecs)
 		self.insertRecs = []		
 
@@ -82,9 +81,10 @@ class DBAdapter:
 		resultSet = self.sqlite.select(sql, [])
 		return resultSet
 
+
 	def selectScript(self):
-		sql = """SELECT id, book_id, chapter_num, script_num, word_seq, 
-			verse_num, usfm_style, person, word, punct FROM audio_words"""
+		sql = """SELECT id, book_id, chapter_num, script_num, usfm_style, 
+			person, word_seq, verse_num, word, punct FROM audio_words"""
 		resultSet = self.sqlite.select(sql)
 		return resultSet
 
@@ -108,7 +108,6 @@ class DBAdapter:
 
 
 	def addMFCC(self, id, mfcc):
-		#print("save type", type(mfcc.dtype), mfcc.shape)
 		dims = mfcc.shape
 		self.mfccRecs.append((mfcc.tobytes(), dims[0], dims[1], id))
 
@@ -162,7 +161,6 @@ class DBAdapter:
 		sql = "UPDATE audio_words SET src_word_enc = ? WHERE id = ?"
 		self.sqlite.executeBatch(sql, self.srcWordEncRec)
 		self.srcWordEncRec = []
-
 
 
 	def addMultiEncoding(self, id, word_multi_enc, src_word_multi_enc):

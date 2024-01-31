@@ -28,9 +28,8 @@ class FileAdapter:
 					script_num += 1
 					for (word_seq, word, punct) in self.parseLine(line):		
 						src_word = word
-						self.db.addWord(book_id, chapter_num, script_num, 
-							word_seq, verse_num, usfm_style, person, actor, 
-							word, punct, src_language, src_word, audio_file)
+						self.db.addWord(book_id, chapter_num, audio_file, script_num, usfm_style, 
+							person, actor, word_seq, verse_num, word, punct, src_language, src_word)
 				else:
 					verse_num +=1
 		self.db.insertWords()
@@ -53,9 +52,8 @@ class FileAdapter:
 			script_num = verse_num
 			#print(book_id, chapter_num, verse_num, text)
 			for (word_seq, word, punct) in self.parseLine(text):
-				self.db.addWord(book_id, chapter_num, script_num, 
-							word_seq, verse_num, usfm_style, person, actor, 
-							word, punct, src_language, src_word, audio_file)
+				self.db.addWord(book_id, chapter_num, audio_file, script_num, usfm_style, person, actor, 
+					word_seq, verse_num, word, punct, src_language, src_word)
 		self.db.insertWords()
 		srcDb.close()
 
@@ -74,7 +72,7 @@ class FileAdapter:
 				parts.append((word_seq, word, None))
 		return parts
 
-'''
+
 if __name__ == "__main__":
 	database = "ENG_2_WEB.db"
 	if os.path.exists(database):
@@ -83,10 +81,8 @@ if __name__ == "__main__":
 	file = FileAdapter(db)
 	srcPath = os.environ["HOME"] + "/ShortSands/DBL/5ready/WEB.db"
 	file.loadMyDB(srcPath)
-'''
 
-
-if __name__ == "__main__":
+#if __name__ == "__main__":
 	database = "ENG_1_Sonnet.db"
 	if os.path.exists(database):
 		os.remove(database)

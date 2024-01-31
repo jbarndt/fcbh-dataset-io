@@ -12,7 +12,6 @@ def genMFCC(db, audio_file):
 	print("sampleRate", sampleRate)
 	mfccs = librosa.feature.mfcc(y=audioData, sr=sampleRate, n_mfcc=13)
 	print("mfccs shape", mfccs.shape, "type", type(mfccs.dtype))
-	# Load your timestamps from the JSON file
 	hopLength = 512 # librosa default
 	frameRate = sampleRate / hopLength
 	resultSet = db.selectTimestamps(audio_file)
