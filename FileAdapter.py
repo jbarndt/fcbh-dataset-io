@@ -1,5 +1,6 @@
 import re
 import os
+import csv
 from DBAdapter import *
 from SqliteUtility import *
 
@@ -57,6 +58,26 @@ class FileAdapter:
 		self.db.insertWords()
 		srcDb.close()
 
+	def loadExcel(self, filename):
+		with open(filename, "r") as file:
+			reader = csv.reader(file, delimiter='\t', )
+			for line in reader:
+				if line[0] != '' and line[1] != '':
+					book_id = line[1]
+					chapter_num = line[2]
+					verse_num = line[3]
+					person_name = line[4]
+					actor_id = line[5]
+					actor_name = line[6]
+					script_id = line[7]
+					text = line[10]
+					print(line[0], "1:", line[1], "2:", line[2], "3:", line[3], 
+						"4:", line[4], "5:", line[5], "6:", line[6],
+						"7:", line[7], "8:", line[8], "9:", line[9], "10:", line[10])
+
+
+
+
 
 	# This method separates punctuation
 	def parseLine(self, line):
@@ -72,7 +93,7 @@ class FileAdapter:
 				parts.append((word_seq, word, None))
 		return parts
 
-
+'''
 if __name__ == "__main__":
 	database = "ENG_2_WEB.db"
 	if os.path.exists(database):
@@ -92,4 +113,13 @@ if __name__ == "__main__":
 	resultSet = db.sqlite.select("SELECT * FROM audio_words")
 	for row in resultSet:
 		print(row)
+'''
+if __name__ == "__main__":
+	database = "ENG_3_Excel.db"
+	if os.path.exists(database):
+		os.remove(database)
+	db = DBAdapter("ENG", 3, "Excel")
+	file = FileAdapter(db)
+	filename = os.environ["HOME"] + "/Desktop/Mark_Scott_1_1-31-2024/excel.tsv/Script-Table 1.tsv"
+	file.loadExcel(filename)
 
