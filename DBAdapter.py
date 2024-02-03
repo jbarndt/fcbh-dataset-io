@@ -29,6 +29,7 @@ class DBAdapter:
 			usfm_style TEXT,
 			person INTEGER,
 			actor INTEGER,
+			in_verse_num INTEGER,
 			script_text TEXT,
 			script_begin_ts REAL,
 			script_end_ts REAL,
@@ -75,17 +76,24 @@ class DBAdapter:
 	# audio_script table
 	#
 
+	# In FileAdapter
 	def addScript(self, book_id, chapter_num, audio_file, script_num, usfm_style, person, 
-			actor, script_text):
+			actor, in_verse_num, script_text):
 		self.scriptRecs.append((book_id, chapter_num, audio_file, script_num, usfm_style, person, 
-			actor, script_text))
+			actor, in_verse_num, script_text))
 
-
+	# In FileAdapter
 	def insertScripts(self):
 		sql = """INSERT INTO audio_scripts(book_id, chapter_num, audio_file, 
-			script_num, usfm_style, person, actor, script_text) VALUES (?,?,?,?,?,?,?,?)"""
+			script_num, usfm_style, person, actor, in_verse_num, script_text) VALUES (?,?,?,?,?,?,?,?,?)"""
 		self.sqlite.executeBatch(sql, self.scriptRecs)
 		self.scriptRecs = []
+
+	# In FileAdapter
+	def selectScripts(self):
+		sql = "SELECT script_id, usfm_style, in_verse_num, script_text FROM audio_scripts"
+		resultSet = self.sqlite.select(sql)
+		return resultSet
 
 
 	def selectScriptsByRef(self, book_id, chapter_num):
@@ -139,10 +147,11 @@ class DBAdapter:
 	# audio_word table
 	#
 
+	# In FileAdapter
 	def addWord(self, script_id, word_seq, verse_num, word, punct, src_language, src_word):
 		self.wordRecs.append((script_id, word_seq, verse_num, word, punct, src_language, src_word))
 
-
+	# In FileAdapter
 	def insertWords(self):
 		sql = """INSERT INTO audio_words(script_id, word_seq, verse_num, word, punct, src_language, 
 			src_word) VALUES (?,?,?,?,?,?,?)"""

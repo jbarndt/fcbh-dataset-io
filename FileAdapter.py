@@ -11,7 +11,7 @@ class FileAdapter:
 		self.db = db
 		self.pattern = re.compile(r"(\w+)(\W+)?$")
 
-
+	## Obsolete
 	def loadPoem(self, filename):
 		book_id = "SHK"
 		chapter_num = 1
@@ -35,7 +35,7 @@ class FileAdapter:
 					verse_num +=1
 		self.db.insertWords()
 
-
+	## Obsolete
 	def loadMyDB(self, databasePath):
 		script_num = 0
 		word_seq = 0
@@ -58,25 +58,47 @@ class FileAdapter:
 		self.db.insertWords()
 		srcDb.close()
 
-	def loadExcel(self, filename):
+
+	def loadExcelScripts(self, filename, audio_file_prefix):
 		with open(filename, "r") as file:
 			reader = csv.reader(file, delimiter='\t', )
 			for line in reader:
 				if line[0] != '' and line[1] != '':
 					book_id = line[1]
 					chapter_num = line[2]
-					verse_num = line[3]
-					person_name = line[4]
-					actor_id = line[5]
-					actor_name = line[6]
-					script_id = line[7]
-					text = line[10]
-					print(line[0], "1:", line[1], "2:", line[2], "3:", line[3], 
-						"4:", line[4], "5:", line[5], "6:", line[6],
-						"7:", line[7], "8:", line[8], "9:", line[9], "10:", line[10])
+					audio_file = audio_file_prefix + "_" + book_id + "_" + chapter_num + ".vox"
+					script_num = line[8]
+					usfm_style = None
+					person = line[4]
+					actor = line[5]
+					in_verse_num = line[3]
+					if in_verse_num == "<<":
+						in_verse_num = None
+					script_text = line[10]
+					#print("B", book_id, "C", chapter_num, "S", script_num, "P", person, "A", actor, "T", script_text)
+					self.db.addScript(book_id, chapter_num, audio_file, script_num, usfm_style, person, 
+					actor, in_verse_num, script_text)
+			self.db.insertScripts()
 
 
-
+	def loadWords(self):
+		for (script_id, usfm_style, verse_num, script_text) in self.db.selectScripts():
+			print(script_text)
+			word_seq = 0
+			for word in script_text.split():
+				if word[0] == '{' and word[len(word) -1] == '}':
+					verse_num = word[1:len(word) -1]
+				else:
+					word_seq += 1
+					punct = None
+					match = self.pattern.match(word)
+					if match and match.group(2):
+						print(word_seq, verse_num, match.group(1), match.group(2))
+						db.addWord(script_id, word_seq, verse_num, match.group(1), match.group(2), None, None)
+					else:
+						print(word_seq, verse_num, word)
+						db.addWord(script_id, word_seq, verse_num, word, None, None, None)
+			db.insertWords()
 
 
 	# This method separates punctuation
@@ -93,13 +115,14 @@ class FileAdapter:
 				parts.append((word_seq, word, None))
 		return parts
 
+
 '''
 if __name__ == "__main__":
 	database = "ENG_2_WEB.db"
-	if os.path.exists(database):
+	if os.path.exists(database):, 
 		os.remove(database)
 	db = DBAdapter("ENG", 2, "WEB")
-	file = FileAdapter(db)
+	file = FileAdapter(db) 
 	srcPath = os.environ["HOME"] + "/ShortSands/DBL/5ready/WEB.db"
 	file.loadMyDB(srcPath)
 
@@ -121,5 +144,6 @@ if __name__ == "__main__":
 	db = DBAdapter("ENG", 3, "Excel")
 	file = FileAdapter(db)
 	filename = os.environ["HOME"] + "/Desktop/Mark_Scott_1_1-31-2024/excel.tsv/Script-Table 1.tsv"
-	file.loadExcel(filename)
+	file.loadExcelScripts(filename, "N2_MZI_BSM_046")
+	file.loadWords()
 

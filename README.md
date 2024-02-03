@@ -15,7 +15,7 @@ The audio data is converted into Mel-Frequency Cepstral Coefficients (MFCCs) usi
 
 The text is prepared by using multilingual word embedding.  There are a few possible solutions to Facebook's MUSE, Google's mBERT, Google's Universal Sentence Encoder (USE), or Byte Pair Encoding (BPE) and Sentence Piece.
 
-FastText from Facebook research is used to create a word encoding of all of the available text in each language to be processed.  BERT and Word2Vect are two other tools that could also be used.  Using a lexicon that provides equivant meanings in each language, and other languages, these language encodings are uaed to create a single multilingual encoding that will be used for both languages.
+FastText from Facebook research is used to create a word encoding of all of the available text in each language to be processed.  BERT and Word2Vect are two other tools that could also be used.  Using a lexicon that provides equivalent meanings in each language, and other languages, these language encodings are used to create a single multilingual encoding that will be used for both languages.
 
 The MFCC data for each word, and the corresponding multilingual word encoding of both the language and the source language are used to create a tensor as a timeseries with the corresponding MFCC, target language encoding, and if possible, source language encoding in the same sample.
 
@@ -29,17 +29,15 @@ This design proposes loading an AI model with records of audio and text data one
 
 In order to produce an audio, the text is first parsed into sentence/voice segments, and then the audio of that text is recorded by an actor speaking.  These audio and text segments are later checked and rechecked by people to insure the correctness of the audio, and then repaired or rerecorded when necessary.  This appears to be the best source, although at this moment, it is unclear what data will be gotten from Context, and what data will be gotten from the Vessel system, or the older Excel spreadsheet.
 
-It is also essential that the input source includes usfm style codes, because these codes identify many different kinds of titles, section heading, and cross references which not part of the scripture canon, and are not be included in all language translations.  It is not possible to correctly align script segments from one language to the next without identifing these non-verse text segments.
+It is also essential that the input source includes usfm style codes, because these codes identify many different kinds of titles, section heading, and cross references which not part of the scripture canon, and are not be included in all language translations.  It is not possible to correctly align script segments from one language to the next without identifying these non-verse text segments.
 
 ## Data Structures
 
-At this time a single denormalized table is recommended to store the data.  If a normalized database design were employed, the time involved in reworking the database design as this experimental process evolved could be excessive.
+At this time I suggest having a single de-normalized table for script records that also contains the script data, but also contains all of the identifying information about language, book, and chapter.  The other table is a normalized table of word records.
 
-If I were to normalize the tables, they might be language, book, chapter, script, word, and encoding models.
+### Audio Script Record
 
-### Audio Word Record
-
-+ id
++ script_id
 + language_id
 + language_iso
 + language_name
@@ -51,6 +49,16 @@ If I were to normalize the tables, they might be language, book, chapter, script
 + usfm_style
 + person
 + actor
++ script_text
++ script_begin_ts
++ script_end_ts
+
+The logical primary key, which should be implemented as a unique index, consists of language_id, book_id, chapter_num, script_num.
+
+### Audio Word Record
+
++ word_id
++ script_id
 + word_seq
 + verse_num
 + word
@@ -70,13 +78,11 @@ Additional data is produced by a data preparation pipeline.
 + src_word_multi_enc
 
 
-The logical primary key, which should be implemented as a unique index, consists of language_id, book_id, chapter_num, script_num, word_seq.
+The logical primary key, which should be implemented as a unique index, consists of script_id, word_seq.
 
 ## Data Dictionary
 
 ### Language Attributes
-
-**id** - A surrogate primary key.  It is an integer that begins with 1 for the first record, and increments for each record inserted.  It is present primarily to make table updates efficient.
 
 **language_id** - The FCBH language id, which takes into account oral dialect
     - Context:
@@ -100,14 +106,14 @@ The logical primary key, which should be implemented as a unique index, consists
 **book_id** - The USFM 3 character book code.
     - Context:
     - Vessel: BookAbbreviation
-    - Excel: 
+    - Excel: Col B
 
 ### Chapter Attributes
 
 **chapter_num** - An integer that defines the chapter number.
     - Context:
     - Vessel: StartChapter [[also, EndChapter can I ignore it?]]
-    - Excel:
+    - Excel: Col C
 
 **audio_file** - The filename or full pathname audio containing the chapter.
     - Context:
@@ -116,34 +122,54 @@ The logical primary key, which should be implemented as a unique index, consists
 
 ### Script Attributes
 
-**script_num** - An integer that defines the script line that this word is part of when the chapter has been parsed into script segments.  The three fields (book_id, chapter_num, script_num) together uniquely identify a script in *any language*.
+**script_id** - A surrogate primary key.  It is an integer that begins with 1 for the first record, and increments for each record inserted.  It is present primarily to make table updates efficient.
 
-**usfm_style** - The USFM style code of the text. It is essential for identifying non-verse text, such as headings, titles, footnotes, cross references, and more.  Also, some AI researchers might consider the style information to be a useful source for their AI model.  Note: I think that the style codes being collected are solely the usfm paragraph codes, and not the usfm character codes, but this has not been verified.  Is it really certain there is only one of these for a script segment?
+**script_num** - An integer that defines the script line that this word is part of when the chapter has been parsed into script segments.  The three fields (book_id, chapter_num, script_num) together uniquely identify a script in *any language*.
     - Context:
     - Vessel:
-    - Excel: 
+    - Excel: 4 digit number that increments for an entire book, not for a chapter.
 
-**person** - This is the person or character who is speaking in a script segment. Narrator is the most frequent person.  This data item is an attribute of a script segment, and is the same for each language.  It is included here because some AI researchers might find this information useful for the analysis of text laanguage, since different people have different grammers and styles of speech.
+**usfm_style** - The USFM style code of the text. It is essential for identifying non-verse text, such as headings, titles, footnotes, cross references, and more.  Also, some AI researchers might consider the style information to be a useful source for their AI model.  Note: I think that the style codes being collected are solely the USFM paragraph codes, and not the USFM character codes, but this has not been verified.  Is it really certain there is only one of these for a script segment?
+    - Context:
+    - Vessel:
+    - Excel: only << to indicate non-verse heading
+
+**person** - This is the person or character who is speaking in a script segment. Narrator is the most frequent person.  This data item is an attribute of a script segment, and is the same for each language.  It is included here because some AI researchers might find this information useful for the analysis of text language, since different people have different grammars and styles of speech.
     - Context:
     - Vessel: CharacterId
-    - Excel: 
+    - Excel: Col E (names like, Jesus, John the Baptist, Religious Leaders, Narr 01)
 
-**actor** - This is a number that identifies the actor who is speaking this script segment.  Since the Bible has more persons speaking than the number of actors available to record a Bible, actors will need to play many parts.  This data item is included because some AI reasearchers might find this information useful for the analysis of audio data.
+**actor** - This is a number that identifies the actor who is speaking this script segment.  Since the Bible has more persons speaking than the number of actors available to record a Bible, actors will need to play many parts.  This data item is included because some AI researchers might find this information useful for the analysis of audio data.
     - Context:
     - Vessel:
-    - Excel: 
+    - Excel: Col F (2 digit number)
+
+**script_text** - This is the text of the script.  The keys book_id, chapter_num, script_num will address corresponding script text in any language.
+    - Context:
+    - Vessel:
+    - Excel: Col M
+
+**script_begin_ts** -  The timestamp that marks the beginning of the script in the audio chapter file.  This could be used to process Aeneas and librosa one script segment at a time, if that produces more accurate results.
+    - Context:
+    - Vessel:
+    - Excel: Verse Timing File
+
+**script_end_ts** - The timestamp that marks the end of the script in the audio chapter file.
+    - Context:
+    - Vessel:
+    - Excel: Verse Timing File
 
 ### Word Attributes
 
+**word_id** - A surrogate primary key.  It is an integer that begins with 1 for the first record, and increments for each record inserted.  It is present primarily to make table updates efficient, and make it easy to update word_seq.
+
 **word_seq** - An integer that defines the position of a word in the specific script line that it belongs to.  The columns (language_id, book_id, chapter_num, script_num, word_seq) are a unique index.
-    - Context:
-    - Vessel: implicit in JSON seq
-    - Excel:
+    - Source is implicit in script_text sequence
 
 **verse_num** - This is an integer. This column will be null when the the word is part of a heading, reference, note, or other non-verse text. When a script segment crosses a verse boundary, the Context system can provide information about which word marks the beginning of a new verse.  Vessel and Excel cannot.  This data item belongs is a Word Attribute only if when a script crosses a verse boundary, we are able to identify the word where the new verse starts.
     - Context: 
     - Vessel: StartVerse [[EndVerse, StartSubVerse hopefully ignore]]
-    - Excel: has verse numbers like 2b-3a, but does it define the word where a verse starts?
+    - Excel: verse numbers are embedded in script_text in curly braces, such as {2}.
 
 **word** - The word of an audio segment in UTF-8 format.  This could be more than one word if needed to correctly correspond to a word in the source language.
     - Context
@@ -155,9 +181,9 @@ The logical primary key, which should be implemented as a unique index, consists
     - Vessel: Text
     - Excel:
 
-**src_language** - The ISO 639-3 code of the source language that was translated.  This datum is placed here, because some passages might be translated from different languages, such as: Hebrew, Greek, Aramic, Latin, or English.  This data item is only needed if src_word is provided.
+**src_language** - The ISO 639-3 code of the source language that was translated.  This datum is placed here, because some passages might be translated from different languages, such as: Hebrew, Greek, Aramaic, Latin, or English.  This data item is only needed if src_word is provided.
 
-**src_word** - It is not clear that it will be possible to collect this data item.  But, if it is possible, this would be the word in Hebrew, Greek, Aramic, Latin, English, or some other language that was translated to the data item stored in *word*.  Both the word or the src_word could be multiple words if that was needed to correctly align their meaning.
+**src_word** - It is not clear that it will be possible to collect this data item.  But, if it is possible, this would be the word in Hebrew, Greek, Aramaic, Latin, English, or some other language that was translated to the data item stored in *word*.  Both the word or the src_word could be multiple words if that was needed to correctly align their meaning.
 
 **word_begin_ts** - The timestamp for the start of a word in an audio script segment.
     - Aeneas module
@@ -186,7 +212,10 @@ The logical primary key, which should be implemented as a unique index, consists
 
 While the data extracted from Context, Vessel or Excel spreadsheets, could be stored in simple records as described above.  When they are to be made externally available, they should be stored in DBP as a means to make it externally available to those outside FCBH who should be given access.  The following is an untested example of how it might fit into the FCBH bible, bible_fileset, bible_file database design.
 
+###
+
 ```
+
 CREATE TABLE audio_script (
     file_id INT NOT NULL
     script_num INT NOT NULL,
@@ -498,6 +527,50 @@ Tab - nested list item
 Text needing footnote [^1]
 [^1] footnote text
 
+
+## Open Questions
++ Can we get a glossary in any SIL language back to English, or an original language.  Will it be in a format that is convenient to be used for multi-lingual encoding
++ Are there interlinear tools that could be used to find related words in languages, that can associate words in the same language.
++ Are the Oral Bible Translation tools for doing a back translation?  See Jon email 1/31/2024
+
+
++ Is he interested in go.  Most of the utilities that I called could be executed as subprocesses, which could be done in go just as well.  Routines to store and retrieve floating point data would be required.  Librosa, which generates the MFCC data is the one thing that would require python.  There are go libraries, but I have no idea how to compare quality.
+
+```
+go get -u github.com/dudk/mfcc
+```
+```
+package main
+
+import (
+    "github.com/dudk/mfcc"
+)
+
+func main() {
+    // Example: Load or generate your audio data here
+    var signal []float64 // Your audio data
+
+    // Configuration: Set the MFCC parameters
+    cfg := mfcc.Config{
+        Samplerate:  16000,
+        NumCoeffs:   13,
+        NumFilters:  26,
+        FFTSize:     512,
+        LowFreq:     0,
+        HighFreq:    8000,
+    }
+
+    // Generating MFCCs
+    features := mfcc.MFCC(signal, cfg)
+
+    // 'features' now contains the MFCC data
+    // Process MFCC data as needed
+}
+```
+
+
+biblebrain.io
+fcbh.io
 
 
 
