@@ -9,7 +9,8 @@ class FileAdapter:
 
 	def __init__(self, db):
 		self.db = db
-		self.pattern = re.compile(r"(\w+)(\W+)?$")
+		self.wordPattern = re.compile(r"(\w+)(\W+)?$")
+		self.numPattern = re.compile(r"(\d+)(\D+)")
 
 	## Obsolete
 	def loadPoem(self, filename):
@@ -67,7 +68,15 @@ class FileAdapter:
 					book_id = line[1]
 					chapter_num = line[2]
 					audio_file = audio_file_prefix + "_" + book_id + "_" + chapter_num + ".vox"
-					script_num = line[8]
+					#script_num = line[8]
+					match = re.match(self.numPattern, line[8])
+					if match:
+						script_num = match.group(1)
+						script_sub = match.group(2)
+					else:
+						script_num = line[8]
+						script_sub = ''
+					print(line[8], script_num, script_sub, script_sub == '')
 					usfm_style = None
 					person = line[4]
 					actor = line[5]
@@ -76,7 +85,7 @@ class FileAdapter:
 						in_verse_num = None
 					script_text = line[10]
 					#print("B", book_id, "C", chapter_num, "S", script_num, "P", person, "A", actor, "T", script_text)
-					self.db.addScript(book_id, chapter_num, audio_file, script_num, usfm_style, person, 
+					self.db.addScript(book_id, chapter_num, audio_file, script_num, script_sub, usfm_style, person, 
 					actor, in_verse_num, script_text)
 			self.db.insertScripts()
 
@@ -91,7 +100,7 @@ class FileAdapter:
 				else:
 					word_seq += 1
 					punct = None
-					match = self.pattern.match(word)
+					match = self.wordPattern.match(word)
 					if match and match.group(2):
 						print(word_seq, verse_num, match.group(1), match.group(2))
 						db.addWord(script_id, word_seq, verse_num, match.group(1), match.group(2), None, None)
@@ -99,6 +108,15 @@ class FileAdapter:
 						print(word_seq, verse_num, word)
 						db.addWord(script_id, word_seq, verse_num, word, None, None, None)
 			db.insertWords()
+
+
+	def loadTimestamps(self, book_id, chapter_num, filename):
+		with open(filename, "r") as file:
+			for line in file:
+				(begin_ts, end_ts, script_num) = line.strip().split("\t")
+				print(begin_ts, end_ts, script_num)
+
+
 
 
 	# This method separates punctuation
@@ -146,4 +164,6 @@ if __name__ == "__main__":
 	filename = os.environ["HOME"] + "/Desktop/Mark_Scott_1_1-31-2024/excel.tsv/Script-Table 1.tsv"
 	file.loadExcelScripts(filename, "N2_MZI_BSM_046")
 	file.loadWords()
+	filename = os.environ["HOME"] + "/Desktop/Mark_Scott_1_1-31-2024/Verse Timing File - N2_MZI_BSM_046_LUK_002_VOX.txt"
+	file.loadTimestamps("LUK", 2, filename)
 
