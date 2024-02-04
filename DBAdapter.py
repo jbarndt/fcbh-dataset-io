@@ -28,7 +28,7 @@ class DBAdapter:
 			script_num INTEGER NOT NULL,
 			script_sub TEXT NOT NULL,
 			usfm_style TEXT,
-			person TEXT,  /* should this be text of integer? */
+			person TEXT,  /* should this be text or integer? */
 			actor TEXT,  /* this should be integer. */
 			in_verse_num INTEGER,
 			script_text TEXT,
@@ -94,20 +94,26 @@ class DBAdapter:
 	# In FileAdapter
 	def selectScripts(self):
 		sql = "SELECT script_id, usfm_style, in_verse_num, script_text FROM audio_scripts"
-		resultSet = self.sqlite.select(sql)
-		return resultSet
+		return self.sqlite.select(sql)
 
-
+	# In FileAdapter
+	def findChapterStart(self, book_id, chapter_num):
+		sql = """SELECT script_id FROM audio_scripts 
+				WHERE book_id = ? AND chapter_num = ?
+				ORDER BY script_id LIMIT 1"""
+		return self.sqlite.selectScalar(sql, [book_id, chapter_num])
+				
+				
 	def selectScriptsByRef(self, book_id, chapter_num):
 		sql = "SELECT script_id, script_num, script_text FROM audio_scripts WHERE book_id=? AND chapter_num=?"
 		resultSet = self.sqlite.select(sql, [book_id, chapter_num])
 		return resultSet
-
-
+				
+	# In FileAdapter	
 	def addScriptTimestamp(self, script_id, script_begin_ts, script_end_ts):
 		self.scriptTimestampRec.append((script_begin_ts, script_end_ts, script_id))
 
-
+	# In FileAdapter
 	def updateScriptTimestamps(self):
 		sql = """UPDATE audio_scripts SET script_begin_ts = ?, 
 			script_end_ts = ? WHERE script_id = ?"""		

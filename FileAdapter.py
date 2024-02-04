@@ -68,7 +68,6 @@ class FileAdapter:
 					book_id = line[1]
 					chapter_num = line[2]
 					audio_file = audio_file_prefix + "_" + book_id + "_" + chapter_num + ".vox"
-					#script_num = line[8]
 					match = re.match(self.numPattern, line[8])
 					if match:
 						script_num = match.group(1)
@@ -76,7 +75,7 @@ class FileAdapter:
 					else:
 						script_num = line[8]
 						script_sub = ''
-					print(line[8], script_num, script_sub, script_sub == '')
+					#print(line[8], script_num, script_sub, script_sub == '')
 					usfm_style = None
 					person = line[4]
 					actor = line[5]
@@ -92,7 +91,7 @@ class FileAdapter:
 
 	def loadWords(self):
 		for (script_id, usfm_style, verse_num, script_text) in self.db.selectScripts():
-			print(script_text)
+			#print(script_text)
 			word_seq = 0
 			for word in script_text.split():
 				if word[0] == '{' and word[len(word) -1] == '}':
@@ -102,20 +101,23 @@ class FileAdapter:
 					punct = None
 					match = self.wordPattern.match(word)
 					if match and match.group(2):
-						print(word_seq, verse_num, match.group(1), match.group(2))
+						#print(word_seq, verse_num, match.group(1), match.group(2))
 						db.addWord(script_id, word_seq, verse_num, match.group(1), match.group(2), None, None)
 					else:
-						print(word_seq, verse_num, word)
+						#print(word_seq, verse_num, word)
 						db.addWord(script_id, word_seq, verse_num, word, None, None, None)
 			db.insertWords()
 
 
 	def loadTimestamps(self, book_id, chapter_num, filename):
+		first_script_id = self.db.findChapterStart(book_id, chapter_num)
 		with open(filename, "r") as file:
 			for line in file:
-				(begin_ts, end_ts, script_num) = line.strip().split("\t")
-				print(begin_ts, end_ts, script_num)
-
+				(begin_ts, end_ts, line_num) = line.strip().split("\t")
+				script_id = first_script_id + int(line_num) - 2
+				#print(begin_ts, end_ts, line_num, script_id)
+				db.addScriptTimestamp(script_id, begin_ts, end_ts)
+			db.updateScriptTimestamps()
 
 
 

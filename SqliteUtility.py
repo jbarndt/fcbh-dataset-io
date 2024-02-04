@@ -67,16 +67,16 @@ class SqliteUtility:
 			self.error(cursor, statement, err)
 
 
-#	def selectScalar(self, statement, values):
-#		#print("SQL:", statement, values)
-#		cursor = self.conn.cursor()
-#		try:
-#			cursor.execute(statement, values)
-#			result = cursor.fetchone()
-#			cursor.close()
-#			return result[0] if result != None else None
-#		except Exception as err:
-#			self.error(cursor, statement, err)
+	def selectScalar(self, statement, values):
+		#print("SQL:", statement, values)
+		cursor = self.conn.cursor()
+		try:
+			cursor.execute(statement, values)
+			result = cursor.fetchone()
+			cursor.close()
+			return result[0] if result != None else None
+		except Exception as err:
+			self.error(cursor, statement, err)
 
 
 #	def selectRow(self, statement, values):
