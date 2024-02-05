@@ -25,8 +25,8 @@ class DBAdapter:
 			book_id TEXT NOT NULL,
 			chapter_num INTEGER NOT NULL,
 			audio_file TEXT NOT NULL,
-			script_num INTEGER NOT NULL,
-			script_sub TEXT NOT NULL,
+			script_num TEXT NOT NULL,
+			-- script_sub TEXT NOT NULL,
 			usfm_style TEXT,
 			person TEXT,  /* should this be text or integer? */
 			actor TEXT,  /* this should be integer. */
@@ -39,7 +39,7 @@ class DBAdapter:
 			mfcc_cols INTEGER) STRICT"""
 		self.sqlite.execute(sql)
 		sql = """CREATE UNIQUE INDEX IF NOT EXISTS audio_scripts_idx
-			ON audio_scripts (book_id, chapter_num, script_num, script_sub)"""
+			ON audio_scripts (book_id, chapter_num, script_num)"""
 		self.sqlite.execute(sql)
 		sql = """CREATE TABLE IF NOT EXISTS audio_words (
 			word_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -78,16 +78,16 @@ class DBAdapter:
 	#
 
 	# In FileAdapter
-	def addScript(self, book_id, chapter_num, audio_file, script_num, script_sub, usfm_style, 
+	def addScript(self, book_id, chapter_num, audio_file, script_num, usfm_style, 
 			person, actor, in_verse_num, script_text):
-		self.scriptRecs.append((book_id, chapter_num, audio_file, script_num, script_sub, usfm_style, 
+		self.scriptRecs.append((book_id, chapter_num, audio_file, script_num, usfm_style, 
 			person, actor, in_verse_num, script_text))
 
 	# In FileAdapter
 	def insertScripts(self):
 		sql = """INSERT INTO audio_scripts(book_id, chapter_num, audio_file, 
-			script_num, script_sub, usfm_style, person, actor, in_verse_num, script_text) 
-			VALUES (?,?,?,?,?,?,?,?,?,?)"""
+			script_num, usfm_style, person, actor, in_verse_num, script_text) 
+			VALUES (?,?,?,?,?,?,?,?,?)"""
 		self.sqlite.executeBatch(sql, self.scriptRecs)
 		self.scriptRecs = []
 

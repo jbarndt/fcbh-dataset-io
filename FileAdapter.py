@@ -10,7 +10,6 @@ class FileAdapter:
 	def __init__(self, db):
 		self.db = db
 		self.wordPattern = re.compile(r"(\w+)(\W+)?$")
-		self.numPattern = re.compile(r"(\d+)(\D+)")
 
 	## Obsolete
 	def loadPoem(self, filename):
@@ -68,14 +67,7 @@ class FileAdapter:
 					book_id = line[1]
 					chapter_num = line[2]
 					audio_file = audio_file_prefix + "_" + book_id + "_" + chapter_num + ".vox"
-					match = re.match(self.numPattern, line[8])
-					if match:
-						script_num = match.group(1)
-						script_sub = match.group(2)
-					else:
-						script_num = line[8]
-						script_sub = ''
-					#print(line[8], script_num, script_sub, script_sub == '')
+					script_num = line[8]
 					usfm_style = None
 					person = line[4]
 					actor = line[5]
@@ -84,7 +76,7 @@ class FileAdapter:
 						in_verse_num = None
 					script_text = line[10]
 					#print("B", book_id, "C", chapter_num, "S", script_num, "P", person, "A", actor, "T", script_text)
-					self.db.addScript(book_id, chapter_num, audio_file, script_num, script_sub, usfm_style, person, 
+					self.db.addScript(book_id, chapter_num, audio_file, script_num, usfm_style, person, 
 					actor, in_verse_num, script_text)
 			self.db.insertScripts()
 
@@ -111,10 +103,12 @@ class FileAdapter:
 
 	def loadTimestamps(self, book_id, chapter_num, filename):
 		first_script_id = self.db.findChapterStart(book_id, chapter_num)
+		print(first_script_id)
+
 		with open(filename, "r") as file:
 			for line in file:
 				(begin_ts, end_ts, line_num) = line.strip().split("\t")
-				script_id = first_script_id + int(line_num) - 2
+				script_id = first_script_id + int(line_num) - 1
 				#print(begin_ts, end_ts, line_num, script_id)
 				db.addScriptTimestamp(script_id, begin_ts, end_ts)
 			db.updateScriptTimestamps()
