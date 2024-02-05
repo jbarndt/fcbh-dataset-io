@@ -191,47 +191,48 @@ class DBAdapter:
 		self.sqlite.executeBatch(sql, self.wordTimestampRec)
 		self.wordTimestampRec = []
 
-
-	def selectWordTimestampsByRef(self, book_id, chapter_num):
+	# In MFCCExample
+	def selectWordTimestampsByFile(self, audio_file):
 		sql = """SELECT w.word_id, w.word, w.word_begin_ts, w.word_end_ts
 				FROM audio_words w JOIN audio_scripts s ON s.script_id = w.script_id
-				WHERE s.book_id = ? AND s.chapter_num = ?"""
-		resultSet = self.sqlite.select(sql, [book_id, chapter_num])
-		return resultSet
+				WHERE s.audio_file = ?"""
+		return self.sqlite.select(sql, [audio_file])
 
-
+	# In MFCCExample
 	def addWordMFCC(self, word_id, word_mfcc):
 		dims = word_mfcc.shape
+		print(dims)
 		self.wordMfccRecs.append((word_mfcc.tobytes(), dims[0], dims[1], word_id))
 
-
+	# In MFCCExample
 	def updateWordMFCCs(self):
 		sql = """UPDATE audio_words SET word_mfcc = ? , mfcc_rows = ?,
 			mfcc_cols = ? WHERE word_id = ?"""
 		self.sqlite.executeBatch(sql, self.wordMfccRecs)
 		self.wordMfccRecs = []
 
-
+	# In MFCCExample
 	def selectWordMFCCs(self):
-		sql = "SELECT word_id, word, word_mfcc, mfcc_rows, mfcc_cols FROM audio_words"
+		sql = "SELECT word_id, word_mfcc, mfcc_rows, mfcc_cols FROM audio_words"
 		resultSet = self.sqlite.select(sql, [])
 		finalSet = []
-		for (word_id, word, word_mfcc, mfcc_rows, mfcc_cols) in resultSet:
+		for (word_id, word_mfcc, mfcc_rows, mfcc_cols) in resultSet:
 			if word_mfcc != None:
 				mfcc_decoded = np.frombuffer(word_mfcc, dtype=np.float32)
 				mfcc_shaped = mfcc_decoded.reshape((mfcc_rows, mfcc_cols))
-				finalSet.append((word_id, word, mfcc_shaped))
+				finalSet.append((word_id, mfcc_shaped))
 		return finalSet
 
-
-	def addPadWordMFCC(self, id, mfcc):
+	# In MFCCExample
+	def addPadWordMFCC(self, word_id, mfcc):
 		dims = mfcc.shape
-		self.mfccPadRecs.append((mfcc.tobytes(), dims[0], dims[1], id))	
+		print(dims)
+		self.mfccPadRecs.append((mfcc.tobytes(), dims[0], dims[1], word_id))	
 
-
+	# In MFCCExample
 	def updatePadWordMFCCs(self):
 		sql = """UPDATE audio_words SET mfcc_norm = ?, mfcc_norm_rows = ?,
-			mfcc_norm_cols = ? WHERE id = ?"""
+			mfcc_norm_cols = ? WHERE word_id = ?"""
 		self.sqlite.executeBatch(sql, self.mfccPadRecs)
 		self.mfccPadRecs = []
 
