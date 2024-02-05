@@ -66,7 +66,7 @@ class FileAdapter:
 				if line[0] != '' and line[1] != '':
 					book_id = line[1]
 					chapter_num = line[2]
-					audio_file = audio_file_prefix + "_" + book_id + "_" + chapter_num + ".vox"
+					audio_file = audio_file_prefix + "_" + book_id + "_" + str(chapter_num).zfill(3) + "_VOX.wav"
 					script_num = line[8]
 					usfm_style = None
 					person = line[4]
@@ -112,7 +112,6 @@ class FileAdapter:
 				#print(begin_ts, end_ts, line_num, script_id)
 				db.addScriptTimestamp(script_id, begin_ts, end_ts)
 			db.updateScriptTimestamps()
-
 
 
 	# This method separates punctuation

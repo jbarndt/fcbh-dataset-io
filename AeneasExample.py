@@ -76,17 +76,16 @@ def storeAeneas(db, audioFile, outputFile):
 
 #Test3 - 
 dir = "../../Desktop/Mark_Scott_1_1-31-2024/Audio Files"
-audioFile = "N2_MZI_BSM_046_LUK_2_VOX.wav"
-audioFileDB = "N2_MZI_BSM_046_LUK_2.vox"
+audioFile = "N2_MZI_BSM_046_LUK_002_VOX.wav"
 audioPath = os.path.join(dir, audioFile)
 textOutFile = "./aeneas_input.txt"
 if os.path.exists(textOutFile):
     os.remove(textOutFile)
 db = DBAdapter("ENG", 3, "Excel")
-createWordsFile(db, audioFileDB, textOutFile)
+createWordsFile(db, audioFile, textOutFile)
 outFile = "excel.json"
 aeneas("eng", audioPath, textOutFile, outFile)
-storeAeneas(db, audioFileDB, outFile)
+storeAeneas(db, audioFile, outFile)
 
 
 
