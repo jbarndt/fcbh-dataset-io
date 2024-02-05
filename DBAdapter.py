@@ -174,9 +174,9 @@ class DBAdapter:
 			WHERE s.audio_file=? ORDER BY w.word_id"""
 		return self.sqlite.select(sql, [audio_file])
 
-
+	# In FastTextExample
 	def selectWords(self):
-		sql = "SELECT word_id, word, src_word FROM audio_words"
+		sql = "SELECT word_id, word, punct, src_word FROM audio_words"
 		resultSet = self.sqlite.select(sql)
 		return resultSet
 
@@ -236,13 +236,13 @@ class DBAdapter:
 		self.sqlite.executeBatch(sql, self.mfccPadRecs)
 		self.mfccPadRecs = []
 
+	# In FastText Example
+	def addWordEncoding(self, word_id, word_enc):
+		self.wordEncRec.append((word_enc.tobytes(), word_id))
 
-	def addWordEncoding(self, id, word_enc):
-		self.wordEncRec.append((word_enc.tobytes(), id))
-
-
+	# In FastText Example
 	def updateWordEncoding(self):
-		sql = "UPDATE audio_words SET word_enc = ? WHERE id = ?"
+		sql = "UPDATE audio_words SET word_enc = ? WHERE word_id = ?"
 		self.sqlite.executeBatch(sql, self.wordEncRec)
 		self.wordEncRec = []	
 
