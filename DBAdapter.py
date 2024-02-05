@@ -41,6 +41,8 @@ class DBAdapter:
 		sql = """CREATE UNIQUE INDEX IF NOT EXISTS audio_scripts_idx
 			ON audio_scripts (book_id, chapter_num, script_num)"""
 		self.sqlite.execute(sql)
+		sql = """CREATE INDEX IF NOT EXISTS audio_file_idx ON audio_scripts (audio_file)"""
+		self.sqlite.execute(sql)
 		sql = """CREATE TABLE IF NOT EXISTS audio_words (
 			word_id INTEGER PRIMARY KEY AUTOINCREMENT,
 			script_id INTEGER NOT NULL,
@@ -103,11 +105,10 @@ class DBAdapter:
 				ORDER BY script_id LIMIT 1"""
 		return self.sqlite.selectScalar(sql, [book_id, chapter_num])
 				
-				
-	def selectScriptsByRef(self, book_id, chapter_num):
-		sql = "SELECT script_id, script_num, script_text FROM audio_scripts WHERE book_id=? AND chapter_num=?"
-		resultSet = self.sqlite.select(sql, [book_id, chapter_num])
-		return resultSet
+	# Not needed by Aeneas, if timestamps are provided		
+	def selectScriptsByFile(self, audio_file):
+		sql = "SELECT script_id, script_text FROM audio_scripts WHERE audio_file=? ORDER BY script_id"
+		return self.sqlite.select(sql, [audio_file])
 				
 	# In FileAdapter	
 	def addScriptTimestamp(self, script_id, script_begin_ts, script_end_ts):
@@ -166,13 +167,12 @@ class DBAdapter:
 		self.sqlite.executeBatch(sql, self.wordRecs)
 		self.wordRecs = []		
 
-
-	def selectWordsByRef(self, book_id, chapter_num):
-		sql = """SELECT w.script_id, w.word_id, w.word_seq, w.verse_num, w.word, w.punct, w.src_word 
+	# In AeneasExample
+	def selectWordsByFile(self, audio_file):
+		sql = """SELECT w.word_id, w.word, w.punct
 			FROM audio_words w JOIN audio_scripts s ON w.script_id = s.script_id
-			WHERE s.book_id=? AND s.chapter_num=?"""
-		resultSet = self.sqlite.select(sql, [book_id, chapter_num])
-		return resultSet
+			WHERE s.audio_file=? ORDER BY w.word_id"""
+		return self.sqlite.select(sql, [audio_file])
 
 
 	def selectWords(self):
@@ -180,18 +180,11 @@ class DBAdapter:
 		resultSet = self.sqlite.select(sql)
 		return resultSet
 
-
-#	def selectScript(self):
-##		sql = """SELECT word_id, book_id, chapter_num, script_num, usfm_style, 
-#			person, word_seq, verse_num, word, punct FROM audio_words"""
-#		resultSet = self.sqlite.select(sql)
-#		return resultSet
-
-
+	# In Aeneas Example
 	def addWordTimestamp(self, word_id, word_begin_ts, word_end_ts):
 		self.wordTimestampRec.append((word_begin_ts, word_end_ts, word_id))
 
-
+	# In Aeneas Example
 	def updateWordTimestamps(self):
 		sql = """UPDATE audio_words SET word_begin_ts = ?, 
 			word_end_ts = ? WHERE word_id = ?"""		

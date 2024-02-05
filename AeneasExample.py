@@ -8,11 +8,12 @@ import json
 import subprocess
 from DBAdapter import *
 
+
 # Create a text file of the words using the parsed script in the Database
 def createWordsFile(db, audioFile, outputFile):
     with open(outputFile, 'w') as file:
-        resultSet = db.selectWordsForFile(audioFile)
-        for (id, word, src_word) in resultSet:
+        resultSet = db.selectWordsByFile(audioFile)
+        for (word_id, word, punct) in resultSet:
             file.write(word + '\n')
 
 # Use Aeneas to produce timestamps for the beginning and ending of each word
@@ -31,7 +32,7 @@ def aeneas(language, audioFile, textFile, outputFile):
 # Check that the generated output is consistent with the input,
 # and store timestamps.
 def storeAeneas(db, audioFile, outputFile):
-    resultSet = db.selectWordsForFile(audioFile)
+    resultSet = db.selectWordsByFile(audioFile)
     with open(outputFile, 'r') as file:
         timestamps = json.load(file)
         segments = timestamps['fragments']
@@ -39,21 +40,21 @@ def storeAeneas(db, audioFile, outputFile):
             print("ERROR: Num Text Words =", len(resultSet), 
                 "Num Audio Words =", len(segments))
         for index, seg in enumerate(segments):
-            (id, word, src_word) = resultSet[index]
+            (word_id, word, punct) = resultSet[index]
             if len(seg['children']) > 0:
                 print("Error in segments there are children", seg)
             if len(seg['lines']) != 1:
                 print("Error lines is not 1 word", seg)
             elif word != seg['lines'][0]:
                 print("Error parsed word and aeneas do not match")
-            db.addTimestamp(id, float(seg['begin']), float(seg['end']))
-    db.updateTimestamps()
+            db.addWordTimestamp(word_id, float(seg['begin']), float(seg['end']))
+    db.updateWordTimestamps()
     
 
 
 # Test1
-dir = "../Sandeep_sample1/"
-audioFile = os.path.join(dir, "audio.mp3")
+#dir = "../Sandeep_sample1/"
+#audioFile = os.path.join(dir, "audio.mp3")
 #textFile = os.path.join(dir, "mplain.txt")
 #outFile = os.path.join(dir, "poem_single.json")
 #aeneas("eng", audioFile, textFile, outFile)
@@ -64,15 +65,28 @@ audioFile = os.path.join(dir, "audio.mp3")
 #aeneas("eng", audioFile, textFile, outFile)
 
 #Test3 - 
-textOutFile = "../Sandeep_sample1/sonnet1.txt"
+#textOutFile = "../Sandeep_sample1/sonnet1.txt"
+#if os.path.exists(textOutFile):
+#    os.remove(textOutFile)
+#db = DBAdapter("ENG", 1, "Sonnet")
+#createWordsFile(db, audioFile, textOutFile)
+#outFile = os.path.join(dir, "sonnet1.json")
+#aeneas("eng", audioFile, textOutFile, outFile)
+#storeAeneas(db, audioFile, outFile)
+
+#Test3 - 
+dir = "../../Desktop/Mark_Scott_1_1-31-2024/Audio Files"
+audioFile = "N2_MZI_BSM_046_LUK_2_VOX.wav"
+audioFileDB = "N2_MZI_BSM_046_LUK_2.vox"
+audioPath = os.path.join(dir, audioFile)
+textOutFile = "./aeneas_input.txt"
 if os.path.exists(textOutFile):
     os.remove(textOutFile)
-db = DBAdapter("ENG", 1, "Sonnet")
-createWordsFile(db, audioFile, textOutFile)
-outFile = os.path.join(dir, "sonnet1.json")
-aeneas("eng", audioFile, textOutFile, outFile)
-storeAeneas(db, audioFile, outFile)
-
+db = DBAdapter("ENG", 3, "Excel")
+createWordsFile(db, audioFileDB, textOutFile)
+outFile = "excel.json"
+aeneas("eng", audioPath, textOutFile, outFile)
+storeAeneas(db, audioFileDB, outFile)
 
 
 
