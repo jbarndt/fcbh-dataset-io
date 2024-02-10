@@ -9,6 +9,13 @@ import subprocess
 from DBAdapter import *
 
 
+# Create a text file of the script in the database:
+def createScriptFile(db, audioFile, outputFile):
+    with open(outputFile, 'w') as file:
+        resultSet = db.selectScriptsByFile(audioFile)
+        for (script_id, script_text) in resultSet:
+            file.write(script_text)
+
 # Create a text file of the words using the parsed script in the Database
 def createWordsFile(db, audioFile, outputFile):
     with open(outputFile, 'w') as file:
@@ -65,15 +72,18 @@ def storeAeneas(db, audioFile, outputFile):
 #aeneas("eng", audioFile, textFile, outFile)
 
 #Test3 - 
-#textOutFile = "../Sandeep_sample1/sonnet1.txt"
-#if os.path.exists(textOutFile):
-#    os.remove(textOutFile)
-#db = DBAdapter("ENG", 1, "Sonnet")
-#createWordsFile(db, audioFile, textOutFile)
-#outFile = os.path.join(dir, "sonnet1.json")
-#aeneas("eng", audioFile, textOutFile, outFile)
+dir = "../Sandeep_sample1/"
+audioFile = os.path.join(dir, "audio.mp3")
+textOutFile = "sonnet1.txt"
+if os.path.exists(textOutFile):
+    os.remove(textOutFile)
+db = DBAdapter("ENG", 1, "SonnetOK")
+createScriptFile(db, audioFile, textOutFile)
+outFile = os.path.join(dir, "sonnetOK.json")
+aeneas("eng", audioFile, textOutFile, outFile)
 #storeAeneas(db, audioFile, outFile)
 
+'''
 #Test3 - 
 dir = "../../Desktop/Mark_Scott_1_1-31-2024/Audio Files"
 audioFile = "N2_MZI_BSM_046_LUK_002_VOX.wav"
@@ -86,6 +96,6 @@ createWordsFile(db, audioFile, textOutFile)
 outFile = "excel.json"
 aeneas("eng", audioPath, textOutFile, outFile)
 storeAeneas(db, audioFile, outFile)
-
+'''
 
 

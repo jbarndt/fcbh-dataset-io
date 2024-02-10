@@ -105,7 +105,7 @@ class DBAdapter:
 				ORDER BY script_id LIMIT 1"""
 		return self.sqlite.selectScalar(sql, [book_id, chapter_num])
 				
-	# Not needed by Aeneas, if timestamps are provided		
+	# In FileAdapter	
 	def selectScriptsByFile(self, audio_file):
 		sql = "SELECT script_id, script_text FROM audio_scripts WHERE audio_file=? ORDER BY script_id"
 		return self.sqlite.select(sql, [audio_file])

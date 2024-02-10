@@ -11,29 +11,26 @@ class FileAdapter:
 		self.db = db
 		self.wordPattern = re.compile(r"(\w+)(\W+)?$")
 
-	## Obsolete
+
 	def loadPoem(self, filename):
 		book_id = "SHK"
 		chapter_num = 1
 		script_num = 0
-		word_seq = 0
-		verse_num = 1
+		in_verse_num = 1
 		usfm_style = "q"
 		person = None
 		actor = None
-		src_language = "ENG"
 		audio_file = "../Sandeep_sample1/audio.mp3"
 		with open(filename) as file:
-			for line in file:
-				if len(line.strip()) > 0:
+			for script_text in file:
+				if len(script_text.strip()) > 0:
 					script_num += 1
-					for (word_seq, word, punct) in self.parseLine(line):		
-						src_word = word
-						self.db.addWord(book_id, chapter_num, audio_file, script_num, usfm_style, 
-							person, actor, word_seq, verse_num, word, punct, src_language, src_word)
+					self.db.addScript(book_id, chapter_num, audio_file, script_num, usfm_style, 
+							person, actor, in_verse_num, script_text)
 				else:
-					verse_num +=1
-		self.db.insertWords()
+					in_verse_num +=1
+		self.db.insertScripts()
+
 
 	## Obsolete
 	def loadMyDB(self, databasePath):
@@ -138,15 +135,15 @@ if __name__ == "__main__":
 	file = FileAdapter(db) 
 	srcPath = os.environ["HOME"] + "/ShortSands/DBL/5ready/WEB.db"
 	file.loadMyDB(srcPath)
-
-#if __name__ == "__main__":
+'''
+if __name__ == "__main__":
 	database = "ENG_1_Sonnet.db"
 	if os.path.exists(database):
 		os.remove(database)
 	db = DBAdapter("ENG", 1, "Sonnet")
 	file = FileAdapter(db)
 	file.loadPoem("../Sandeep_sample1/mplain.txt")
-	resultSet = db.sqlite.select("SELECT * FROM audio_words")
+	resultSet = db.sqlite.select("SELECT * FROM audio_scripts")
 	for row in resultSet:
 		print(row)
 '''
@@ -161,4 +158,4 @@ if __name__ == "__main__":
 	file.loadWords()
 	filename = os.environ["HOME"] + "/Desktop/Mark_Scott_1_1-31-2024/Verse Timing File - N2_MZI_BSM_046_LUK_002_VOX.txt"
 	file.loadTimestamps("LUK", 2, filename)
-
+'''
