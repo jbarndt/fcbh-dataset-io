@@ -91,11 +91,11 @@ class FileAdapter:
 					match = self.wordPattern.match(word)
 					if match and match.group(2):
 						#print(word_seq, verse_num, match.group(1), match.group(2))
-						db.addWord(script_id, word_seq, verse_num, match.group(1), match.group(2), None, None)
+						self.db.addWord(script_id, word_seq, verse_num, match.group(1), match.group(2), None, None)
 					else:
 						#print(word_seq, verse_num, word)
-						db.addWord(script_id, word_seq, verse_num, word, None, None, None)
-			db.insertWords()
+						self.db.addWord(script_id, word_seq, verse_num, word, None, None, None)
+			self.db.insertWords()
 
 
 	def loadTimestamps(self, book_id, chapter_num, filename):
@@ -107,8 +107,8 @@ class FileAdapter:
 				(begin_ts, end_ts, line_num) = line.strip().split("\t")
 				script_id = first_script_id + int(line_num) - 1
 				#print(begin_ts, end_ts, line_num, script_id)
-				db.addScriptTimestamp(script_id, begin_ts, end_ts)
-			db.updateScriptTimestamps()
+				self.db.addScriptTimestamp(script_id, begin_ts, end_ts)
+			self.db.updateScriptTimestamps()
 
 
 	# This method separates punctuation
