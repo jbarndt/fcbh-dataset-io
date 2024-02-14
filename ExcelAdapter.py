@@ -7,16 +7,6 @@ from openpyxl import load_workbook
 from DBAdapter import *
 from FileAdapter import *
 
-# /bibles/filesets/{fileset_id}/{book}/{chapter}
-# "/download/list"
-# /bibles/{id}
-# curl  "https://4.dbt.io/bibles/ENGWEB?v=4&key=b4715786-9b8e-4fbe-a9b9-ff448449b81b"
-# curl  "https://4.dbt.io/download/list?v=4&key=b4715786-9b8e-4fbe-a9b9-ff448449b81b"
-# curl "https://4.dbt.io/api/bibles?v=4&key=b4715786-9b8e-4fbe-a9b9-ff448449b81b&page=50"
-# curl "https://4.dbt.io/api/bibles?language_code=ENG&v=4&key=b4715786-9b8e-4fbe-a9b9-ff448449b81b"
-# curl "https://4.dbt.io/api/bibles/filesets/ENGWEBN2DA/LUK/2?v=4&key=b4715786-9b8e-4fbe-a9b9-ff448449b81b"
-
-
 
 
 class ExcelAdapter:
