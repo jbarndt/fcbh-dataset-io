@@ -130,7 +130,6 @@ class DBP_Adapter:
 					sys.exit(1)	
 	
 
-
 	def jsonRequest(self, fileset_id, url):
 		try:
 			with urllib.request.urlopen(url) as response:
