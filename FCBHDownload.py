@@ -4,7 +4,6 @@ import urllib.request
 import json
 
 HOST = "https://4.dbt.io/api/"
-#CONFIG = os.path.join(os.environ["HOME"], "FCBHDownload.cfg")
 
 class FCBHDownload:
 
@@ -21,14 +20,11 @@ class FCBHDownload:
 				fileset_id = filesetContent['id']
 				url = HOST + "download/" + fileset_id + "?v=4&limit=100000"
 				content = self.httpRequest(fileset_id, url)
-				#dirPath = os.path.join(directory, bible)
-				#os.path.makedirs(dirpath)
 				self.saveFile(directory, bible, fileset_id + ".json", content)
 			else:
 				cloudContent = self.downloadLocation(filesetContent['id'])
 				if cloudContent != None:
 					self.downloadFiles(directory, cloudContent)
-				#print(cloudContent)
 
 
 	def getLanguage(self):
@@ -63,19 +59,15 @@ class FCBHDownload:
 
 	def displayLanguage(self, isoContent):
 		first = isoContent[0]
-		#iso = first.get('iso')
-		#language = first.get('language')
 		print()
 		print("{: <4}  {: <40}".format(first.get('iso'), first.get('language')))
 		print()
 		for index, row in enumerate(isoContent):
-			#print(row)
 			iso = row['iso'] if row['iso'] != None else ''
 			language = row['language'] if row['language'] != None else ''
 			abbr = row['abbr'] if row['abbr'] != None else ''
 			name = row['name'] if row['name'] != None else ''
 			print("{: <5} {: <10} {: <40}".format(index + 1, abbr, name))
-		#transIndex = input("Enter number of translation:")
 		print()
 		if len(isoContent) == 1:
 			return isoContent[0]
@@ -84,7 +76,6 @@ class FCBHDownload:
 			while transIndex < 1 or transIndex > len(isoContent):
 				answer = input("Enter number of translation: ")
 				transIndex = int(answer) if answer.isdigit() else 0
-			#return transIndex - 1
 			return isoContent[transIndex - 1]
 
 
@@ -110,13 +101,6 @@ class FCBHDownload:
 		return filesets[fileIndex - 1]
 
 
-#	def prepareDirectory(self, directory):
-#		directory = input("Enter directory to store fileset: ")
-#		if not os.path.exists(directory):
-#			os.mkdir(directory)
-#		return directory
-
-
 	def downloadLocation(self, filesetId):
 		#print(filesetContent)
 		url = HOST + "download/" + filesetId + "?v=4"
@@ -138,7 +122,6 @@ class FCBHDownload:
 			dirpath = os.path.dirname(filepath)
 			filename = os.path.basename(filepath)
 			print("Downloading", filepath)
-			#content = self.httpRequest(filepath, url)
 			try:
 				with urllib.request.urlopen(url) as response:
 					content = response.read()
@@ -164,12 +147,6 @@ class FCBHDownload:
 		except urllib.error.URLError as e:
 			print("Error downloading the file:", param, e)
 			sys.exit(1)	
-
-
-#	def readISOFile(self):
-#		with open("FCBHDownload.cfg", "r") as file:
-#			content = file.read()
-#			return content
 
 
 	def parseJson(self, content):
