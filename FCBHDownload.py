@@ -33,7 +33,7 @@ class FCBHDownload:
 			directory = sys.argv[2]
 			url = HOST + "bibles?language_code=" + isoCode + "&page=1&limit=100&v=4"
 			content = self.httpRequest(isoCode, url)	
-			isoContent = self.parseJson(content)
+			(isoContent, metaContent) = self.parseJson(content)
 		else:
 			print("Usage: python3 FCBHDownload.py  iosCode  directory")
 			print("Requires environment variable: FCBH_DBP_KEY")
@@ -108,7 +108,7 @@ class FCBHDownload:
 		if content == None:
 			return None
 		else:
-			json = self.parseJson(content)
+			(json, meta) = self.parseJson(content)
 			return json
 
 
@@ -153,7 +153,7 @@ class FCBHDownload:
 		try:
 			content = json.loads(content.decode('utf-8'))
 			#print("META:", content.get('meta'))
-			return content['data']
+			return (content['data'], content['meta'])
 		except json.JSONDecodeError:
 			print("The file is not json", param)
 			sys.exit(1)	
