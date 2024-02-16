@@ -1,165 +1,195 @@
-
 import os
 import sys
 import urllib.request
 import json
 
 HOST = "https://4.dbt.io/api/"
-CONFIG = os.path.join(os.environ["HOME"], "FCBHDownload.cfg")
+#CONFIG = os.path.join(os.environ["HOME"], "FCBHDownload.cfg")
 
 class FCBHDownload:
 
 
-
-#curl "https://4.dbt.io/api/bibles?language_code=tha&page=1&limit=100&v=4&key=b4715786-9b8e-4fbe-a9b9-ff448449b81b"
-
-	#def __init__(self):
-		#self.isoContent = None
-
 	def process(self):
-		isoContent = self.getLanguage()
-		isoContent = self.pruneIsoContent(isoContent)
-		transIndex = self.displayLanguage(isoContent)
-		filesetIndex = self.displayFilesets(transIndex, isoContent)
+		(isoCode, directory, isoContent) = self.getLanguage()
+		cleanContent = self.pruneIsoContent(isoContent)
+		if len(cleanContent) > 0:
+			transContent = self.displayLanguage(cleanContent)
+			bible = transContent['abbr']
+			filesetContent = self.displayFilesets(transContent)
+			ftype = filesetContent.get('type')
+			if ftype == 'text_plain':
+				fileset_id = filesetContent['id']
+				url = HOST + "download/" + fileset_id + "?v=4&limit=100000"
+				content = self.httpRequest(fileset_id, url)
+				#dirPath = os.path.join(directory, bible)
+				#os.path.makedirs(dirpath)
+				self.saveFile(directory, bible, fileset_id + ".json", content)
+			else:
+				cloudContent = self.downloadLocation(filesetContent['id'])
+				if cloudContent != None:
+					self.downloadFiles(directory, cloudContent)
+				#print(cloudContent)
 
 
 	def getLanguage(self):
-		print(sys.argv)
-		if len(sys.argv) > 1:
+		if len(sys.argv) > 2:
 			isoCode = sys.argv[1]
-			url = HOST + "bibles?language_code=" + isoCode + "&page=1&limit=100&v=4&key=" + os.environ["FCBH_DBP_KEY"]
-			content = self.jsonRequest(isoCode, url)	
-		elif os.path.exists(CONFIG):
-			content = self.readISOFile(CONFIG)
+			directory = sys.argv[2]
+			url = HOST + "bibles?language_code=" + isoCode + "&page=1&limit=100&v=4"
+			content = self.httpRequest(isoCode, url)	
+			isoContent = self.parseJson(content)
 		else:
-			print("Usage: python3 FCBHDownload.py  iosCode")
+			print("Usage: python3 FCBHDownload.py  iosCode  directory")
 			print("Requires environment variable: FCBH_DBP_KEY")
 			sys.exit(1)
-		isoContent = self.parseJson(content)
-		return isoContent
+		return (isoCode, directory, isoContent)
 
 
 	def pruneIsoContent(self, isoContent):
 		results = []
 		for trans in isoContent:
 			filesets = trans['filesets'].get('dbp-prod')
-			##if filesets != None and len(filesets) > 0:
 			if filesets != None:
 				newFilesets = []
 				for fileset in filesets:
-					if fileset.get('type') != 'audio_drama_stream':
+					ftype = fileset.get('type')
+					if ftype != 'audio_drama_stream' and ftype != 'audio_stream':
 						newFilesets.append(fileset)
 				if len(newFilesets) > 0:
-					trans['filesets'].get('dbp-prod') = newFilesets
+					trans['filesets']['dbp-prod'] = newFilesets
 					results.append(trans)
 		return results
 
 
 	def displayLanguage(self, isoContent):
+		first = isoContent[0]
+		#iso = first.get('iso')
+		#language = first.get('language')
+		print()
+		print("{: <4}  {: <40}".format(first.get('iso'), first.get('language')))
+		print()
 		for index, row in enumerate(isoContent):
 			#print(row)
 			iso = row['iso'] if row['iso'] != None else ''
 			language = row['language'] if row['language'] != None else ''
 			abbr = row['abbr'] if row['abbr'] != None else ''
 			name = row['name'] if row['name'] != None else ''
-			print("{: <4} {: <4} {: <10} {: <10} {: <40}".format(index + 1, iso, language, abbr, name))
+			print("{: <5} {: <10} {: <40}".format(index + 1, abbr, name))
 		#transIndex = input("Enter number of translation:")
-		transIndex = 0
-		while transIndex < 1 or transIndex > len(isoContent):
-			answer = input("Enter number of translation: ")
-			transIndex = int(answer) if answer.isdigit() else 0
-		return transIndex - 1
+		print()
+		if len(isoContent) == 1:
+			return isoContent[0]
+		else:
+			transIndex = 0
+			while transIndex < 1 or transIndex > len(isoContent):
+				answer = input("Enter number of translation: ")
+				transIndex = int(answer) if answer.isdigit() else 0
+			#return transIndex - 1
+			return isoContent[transIndex - 1]
 
 
-	def displayFilesets(self, transIndex, isoContent):
-		filesets = isoContent[transIndex]['filesets']['dbp-prod']
+	def displayFilesets(self, transContent):
+		filesets = transContent['filesets']['dbp-prod']
 		for index, row in enumerate(filesets):
 			filesetId = row['id']
 			typ = row['type'] if row['type'] != None else ''
 			size = row['size'] if row['size'] != None else ''
 			bitrate = row.get('bitrate') if row.get('bitrate') != None else ''
-			container = row.get('container') if row.get('container') != None else ''
-			print("{: <4} {: <20} {: <5} {: <15} {: <10} {: <10}".format(index + 1, 
-				filesetId, size, typ, container, bitrate))
+			ftype = row.get('container') if row.get('container') != None else ''
+			if typ == 'text_usx':
+				ftype = 'usx'
+			elif typ == 'text_json':
+				ftype = 'json'
+			print("{: <5} {: <20} {: <5} {: <15} {: <10} {: <10}".format(index + 1, 
+				filesetId, size, typ, ftype, bitrate))
+		print()
 		fileIndex = 0
 		while fileIndex < 1 or fileIndex > len(filesets):
 			answer = input("Enter number of fileset: ")
 			fileIndex = int(answer) if answer.isdigit() else 0
-		return fileIndex - 1
+		return filesets[fileIndex - 1]
 
 
-	def findType(self, fileset_id):
-		parts = fileset_id.split("-")
-		if len(parts) > 1:
-			if parts[1] == "usx":
-				return("usx", True)
-			elif parts[1] == "opus16":
-				return("opus", True)
-			elif parts[1] == "json":
-				return("json", True)
-			elif parts[1] == "mp3":
-				return("mp3", True)
-			else:
-				print("fileset_id has an unknown type", fileset_id)
-				sys.exit(1)
+#	def prepareDirectory(self, directory):
+#		directory = input("Enter directory to store fileset: ")
+#		if not os.path.exists(directory):
+#			os.mkdir(directory)
+#		return directory
+
+
+	def downloadLocation(self, filesetId):
+		#print(filesetContent)
+		url = HOST + "download/" + filesetId + "?v=4"
+		content = self.httpRequest(filesetId, url)
+		if content == None:
+			return None
 		else:
-			filesetType = fileset_id[-2:]
-			if filesetType == "DA":
-				return("mp3", True)
-			elif filesetType == "ET":
-				return("json", False)
-			elif filesetType == "SA":
-				print("Unable to process fileset of type SA")
-				sys.exit(1)
-			else:
-				print("fileset_id has an unknown type", fileset_id)
-				sys.exit(1)
+			json = self.parseJson(content)
+			return json
 
 
-	def downloadFile(self, directory, fileType, fileset_id, book_id, chapter_num):
-		url = "https://4.dbt.io/api/download/" + fileset_id + "?v=4&key=b4715786-9b8e-4fbe-a9b9-ff448449b81b"
-		content = self.jsonRequest(fileset_id, url)
-		## need to look at content['meta'] for pagination
-		items = content['data']
-		for item in items:
-			if item['book_id'] == book_id and item['chapter_start'] == chapter_num:
-				try:
-					with urllib.request.urlopen(item['path']) as response:
-						data = response.read()
-						filePath = os.path.join(directory, fileset_id + "." + fileType)
-						with open(filePath, "wb") as file:
-							file.write(data)
-				except urllib.error.URLError as e:
-					print("Error downloading the file:", fileset_id, e)
-					sys.exit(1)	
-	
+	def downloadFiles(self, directory, cloudContent):
+		for file in cloudContent:
+			url = file.get('path')
+			size = file.get('filesize_in_bytes')
+			parsedURL = urllib.parse.urlparse(url)
+			parts = parsedURL.path.split('/')
+			filepath = os.sep.join(parts[2:])
+			dirpath = os.path.dirname(filepath)
+			filename = os.path.basename(filepath)
+			print("Downloading", filepath)
+			#content = self.httpRequest(filepath, url)
+			try:
+				with urllib.request.urlopen(url) as response:
+					content = response.read()
+			except urllib.error.HTTPError as e:
+				print("HTTP Error downloading", e.code, e.reason)
+			except urllib.error.URLError as e:
+				print("Error downloading the file:", param, e)
+				sys.exit(1)	
+			if content != None:
+				if len(content) != size:
+					print("Warning for", filepath, "has an expected size of", size, "but, actual size is", len(content))
+				self.saveFile(directory, dirpath, filename, content)
 
-	def jsonRequest(self, param, url):
+
+	def httpRequest(self, param, url):
+		url += "&key=" + os.environ["FCBH_DBP_KEY"]
 		try:
 			with urllib.request.urlopen(url) as response:
 				data = response.read()
 				return data
+		except urllib.error.HTTPError as e:
+			print("HTTP Error downloading", e.code, e.reason)
 		except urllib.error.URLError as e:
 			print("Error downloading the file:", param, e)
 			sys.exit(1)	
 
 
-	def readISOFile(self):
-		with open("FCBHDownload.cfg", "r") as file:
-			content = file.read()
-			return content
+#	def readISOFile(self):
+#		with open("FCBHDownload.cfg", "r") as file:
+#			content = file.read()
+#			return content
 
 
 	def parseJson(self, content):
 		try:
 			content = json.loads(content.decode('utf-8'))
+			#print("META:", content.get('meta'))
 			return content['data']
 		except json.JSONDecodeError:
 			print("The file is not json", param)
-			sys.exit(1)			
+			sys.exit(1)	
 
 
-
+	def saveFile(self, directory, dirPath, filename, content):
+		if content != None:
+			fullDir = os.path.join(directory, dirPath)
+			if not os.path.exists(fullDir):
+				os.makedirs(fullDir)
+			filepath = os.path.join(fullDir, filename)
+			with open(filepath, "wb") as file:
+				file.write(content)		
 
 
 if __name__ == "__main__":
