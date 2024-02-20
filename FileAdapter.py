@@ -136,6 +136,7 @@ if __name__ == "__main__":
 	srcPath = os.environ["HOME"] + "/ShortSands/DBL/5ready/WEB.db"
 	file.loadMyDB(srcPath)
 '''
+'''
 if __name__ == "__main__":
 	database = "ENG_1_Sonnet.db"
 	if os.path.exists(database):
@@ -146,6 +147,7 @@ if __name__ == "__main__":
 	resultSet = db.sqlite.select("SELECT * FROM audio_scripts")
 	for row in resultSet:
 		print(row)
+'''
 '''
 if __name__ == "__main__":
 	database = "ENG_3_Excel.db"
@@ -159,3 +161,8 @@ if __name__ == "__main__":
 	filename = os.environ["HOME"] + "/Desktop/Mark_Scott_1_1-31-2024/Verse Timing File - N2_MZI_BSM_046_LUK_002_VOX.txt"
 	file.loadTimestamps("LUK", 2, filename)
 '''
+if __name__ == "__main__":
+	db = DBAdapter("ENGWEB_USX")
+	file = FileAdapter(db)
+	file.loadWords()
+

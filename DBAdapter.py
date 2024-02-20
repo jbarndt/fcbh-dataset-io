@@ -9,7 +9,7 @@ class DBAdapter:
 
 	def __init__(self, database, language_id=None, language_name=None):
 		#name = language_iso + "_" + str(language_id) + "_" + language_name + ".db"
-		name = database + ".db"
+		name = os.path.join(os.environ['HOME'], 'FCBH2024', database) + ".db"
 		self.sqlite = SqliteUtility(name)
 		self.scriptRecs = []
 		self.scriptTimestampRec = []
