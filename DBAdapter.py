@@ -7,8 +7,9 @@ from SqliteUtility import *
 
 class DBAdapter:
 
-	def __init__(self, language_iso, language_id, language_name):
-		name = language_iso + "_" + str(language_id) + "_" + language_name + ".db"
+	def __init__(self, database, language_id=None, language_name=None):
+		#name = language_iso + "_" + str(language_id) + "_" + language_name + ".db"
+		name = database + ".db"
 		self.sqlite = SqliteUtility(name)
 		self.scriptRecs = []
 		self.scriptTimestampRec = []
@@ -286,16 +287,16 @@ if __name__ == "__main__":
 	database = "ENG_103_English.db"
 	if os.path.exists(database):
 		os.remove(database)
-	db = DBAdapter("ENG", 103, "English")
+	db = DBAdapter("ENG_103_English", 103, "English")
 
 	print("* Expect 3 lines of script records")
-	db.addScript("GEN", 1, "ENG_GEN_1.mp3", 1, "p", 1, 1, "In the beginning darkness")
-	db.addScript("GEN", 1, "ENG_GEN_1.mp3", 2, "p", 1, 1, "Let there be light")
-	db.addScript("GEN", 1, "ENG_GEN_1.mp3", 3, "p", 1, 1, "And there was light")
+	db.addScript("GEN", 1, "ENG_GEN_1.mp3", 1, "p", 1, 1, 1, "In the beginning darkness")
+	db.addScript("GEN", 1, "ENG_GEN_1.mp3", 2, "p", 1, 1, 1, "Let there be light")
+	db.addScript("GEN", 1, "ENG_GEN_1.mp3", 3, "p", 1, 1, 2, "And there was light")
 	db.insertScripts()
-	resultSet = db.selectScriptsByRef("GEN", 1)
-	for (script_id, script_num, script_text) in resultSet:
-		print(script_id, script_num, script_text)
+	resultSet = db.selectScriptsByFile("ENG_GEN_1.mp3")
+	for (script_id, script_text) in resultSet:
+		print(script_id, script_text)
 
 	print("* Expect 3 lines of timestamps")
 	db.addScriptTimestamp(1, 0.0, 123.45)
@@ -319,16 +320,16 @@ if __name__ == "__main__":
 	db.addWord(1, 2, 1, "the", None, "ENG", "the")
 	db.addWord(1, 3, 1, "beginning", None, "ENG", "beginning")
 	db.insertWords()
-	resultSet = db.selectWordsByRef("GEN", 1)
-	for (script_id, word_id, word_seq, verse_num, word, punct, src_word) in resultSet:
-		print(script_id, word_id, word_seq, verse_num, word, punct, src_word)
+	resultSet = db.selectWordsByFile("ENG_GEN_1.mp3")
+	for (word_id, word, punct) in resultSet:
+		print(word_id, word, punct)
 
 	print("* Expect 3 lines of word timestamps")
 	db.addWordTimestamp(1, 0, 123.45)
 	db.addWordTimestamp(2, 123.45, 124.56)
 	db.addWordTimestamp(3, 456.78, 456.98)
 	db.updateWordTimestamps()
-	resultSet = db.selectWordTimestampsByRef("GEN", 1)
+	resultSet = db.selectWordTimestampsByFile("ENG_GEN_1.mp3")
 	for row in resultSet:
 		print(row)
 
