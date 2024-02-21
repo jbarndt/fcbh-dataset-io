@@ -71,7 +71,7 @@ class FileAdapter:
 					in_verse_num = line[3]
 					if in_verse_num == "<<":
 						in_verse_num = None
-					script_text = line[10]
+					script_text = line[9]
 					#print("B", book_id, "C", chapter_num, "S", script_num, "P", person, "A", actor, "T", script_text)
 					self.db.addScript(book_id, chapter_num, audio_file, script_num, usfm_style, person, 
 					actor, in_verse_num, script_text)
@@ -148,21 +148,22 @@ if __name__ == "__main__":
 	for row in resultSet:
 		print(row)
 '''
-'''
+
 if __name__ == "__main__":
-	database = "ENG_3_Excel.db"
+	database = os.environ['HOME'] + "/FCBH2024/ENG_3_Excel.db"
 	if os.path.exists(database):
 		os.remove(database)
-	db = DBAdapter("ENG", 3, "Excel")
+	db = DBAdapter("ENG_3_Excel")
 	file = FileAdapter(db)
-	filename = os.environ["HOME"] + "/Desktop/Mark_Scott_1_1-31-2024/excel.tsv/Script-Table 1.tsv"
+	filename = "../Mark_Scott_1_1-31-2024/excel.tsv/Script-Table 1.tsv"
 	file.loadExcelScripts(filename, "N2_MZI_BSM_046")
 	file.loadWords()
-	filename = os.environ["HOME"] + "/Desktop/Mark_Scott_1_1-31-2024/Verse Timing File - N2_MZI_BSM_046_LUK_002_VOX.txt"
+	filename = "../Mark_Scott_1_1-31-2024/Verse Timing File - N2_MZI_BSM_046_LUK_002_VOX.txt"
 	file.loadTimestamps("LUK", 2, filename)
 '''
 if __name__ == "__main__":
 	db = DBAdapter("ENGWEB_USX")
 	file = FileAdapter(db)
 	file.loadWords()
+'''
 
