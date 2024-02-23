@@ -20,12 +20,23 @@ class ExportAdapter:
 		self.genericWriter(database, resultSet)
 		db.close()
 
+	def genericBooksExport(self, database, books):
+		db = DBAdapter(database)
+		sql = """SELECT s.book_id, s.chapter_num, w.verse_num, w.word 
+				FROM audio_scripts s JOIN audio_words w ON s.script_id = w.script_id
+				WHERE s.book_id IN ('""" + "','".join(books) + "') ORDER BY w.word_id"
+		print(sql)
+		resultSet = db.sqlite.select(sql)
+		self.genericWriter(database, resultSet)
+		db.close()
+
 
 	def usxExport(self, database):
 		db = DBAdapter(database)
 		sql = """SELECT s.book_id, s.chapter_num, w.verse_num, w.word 
 			FROM audio_scripts s JOIN audio_words w ON s.script_id = w.script_id
-			WHERE s.usfm_style NOT IN ('id', 'ide', 'mt1', 'mt2', 'mt3', 'mt4', 'f', 'x')
+			WHERE s.usfm_style NOT IN ('f', 'id', 'ide', 'ip', 'is', 'mt1', 'mt2', 'mt3', 'mt4', 'toc1', 'toc2', 'toc3', 'toc4', 
+				'x')
 			ORDER BY w.word_id
 		"""
 		resultSet = db.sqlite.select(sql)
@@ -58,14 +69,20 @@ class ExportAdapter:
 
 if __name__ == "__main__":
 	exp = ExportAdapter()
-	exp.usxExport('ENGWEB_USX')
-	exp.genericExport('WEB_1_MarkWright')
-	exp.genericExport('ENG_3_Excel')
+	exp.usxExport('ZAKWYI_USX')
+	exp.genericBooksExport('ZAK_MWRIGHT', ['JAS'])
+	#exp.genericExport('ZAK_MWRIGHT')
+	#exp.genericExport('ENG_3_Excel')
 
 '''
 SELECT s.book_id, s.chapter_num, w.verse_num, s.usfm_style, w.word 
 FROM audio_scripts s JOIN audio_words w ON s.script_id = w.script_id
-WHERE s.book_id='MAT' AND chapter_num =2
+WHERE s.book_id='MAT' AND chapter_num < 3
+ORDER BY w.word_id
+
+SELECT s.book_id, s.chapter_num, w.verse_num, w.word 
+FROM audio_scripts s JOIN audio_words w ON s.script_id = w.script_id
+-- WHERE s.book_id IN ('JAS') 
 ORDER BY w.word_id
 '''
 

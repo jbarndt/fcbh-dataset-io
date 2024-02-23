@@ -56,6 +56,7 @@ class FileAdapter:
 		srcDb.close()
 
 
+	## for loading CSV files
 	def loadExcelScripts(self, filename, audio_file_prefix):
 		with open(filename, "r") as file:
 			reader = csv.reader(file, delimiter='\t', )
@@ -85,6 +86,11 @@ class FileAdapter:
 			for word in script_text.split():
 				if word[0] == '{' and word[len(word) -1] == '}':
 					verse_num = word[1:len(word) -1]
+					if not verse_num.isdigit(): ## A bad hack that is loosing data
+						versePattern = re.compile(r"(\d+)")
+						match = versePattern.match(verse_num)
+						verse_num = match.group(1)
+						print("Text verse num", script_id, verse_num, script_text)
 				else:
 					word_seq += 1
 					punct = None

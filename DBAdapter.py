@@ -7,6 +7,13 @@ from SqliteUtility import *
 
 class DBAdapter:
 
+	# This is not a method on a class instance
+	def destroyDatabase(database): 
+		name = os.path.join(os.environ['HOME'], 'FCBH2024', database) + ".db"
+		if os.path.exists(name):
+			os.remove(name)
+
+
 	def __init__(self, database, language_id=None, language_name=None):
 		#name = language_iso + "_" + str(language_id) + "_" + language_name + ".db"
 		name = os.path.join(os.environ['HOME'], 'FCBH2024', database) + ".db"
