@@ -18,11 +18,7 @@ class FCBHDownload:
 			filesetContent = self.displayFilesets(transContent)
 			ftype = filesetContent.get('type')
 			if ftype == 'text_plain':
-				fileset_id = filesetContent['id']
-				url = HOST + "download/" + fileset_id + "?v=4&limit=100000"
-				content = self.httpRequest(fileset_id, url)
-				#sortedContent = sorted(content, key=lambda x: (bookSeqMap[x['book_id']], x['chapter'], x['verse_start']))
-				self.saveFile(directory, bible, fileset_id + ".json", content)
+				self.downloadPlainText(directory, bible, filesetContent)
 			else:
 				cloudContent = self.downloadLocation(filesetContent['id'])
 				if cloudContent != None:
@@ -107,6 +103,23 @@ class FCBHDownload:
 		return filesets[fileIndex - 1]
 
 
+	def downloadPlainText(self, directory, bible, filesetContent):
+		fileset_id = filesetContent['id']
+		filename = fileset_id + ".json"
+		url = HOST + "download/" + fileset_id + "?v=4&limit=100000"
+		print("Downloading", os.path.join(bible, filename))
+		content = self.httpRequest(fileset_id, url)
+		try:
+			if content != None:
+				jsonContent = json.loads(content.decode('utf-8'))
+				#print("META:", jsonContent.get('meta'))
+				data = jsonContent['data']
+				content = sorted(data, key=lambda x: (bookSeqMap[x['book_id']], x['chapter'], x['verse_start']))
+		except json.JSONDecodeError:
+			a = b # No op
+		self.saveFile(directory, bible, filename, content)	
+
+
 	def downloadLocation(self, filesetId):
 		#print(filesetContent)
 		url = HOST + "download/" + filesetId + "?v=4"
@@ -172,8 +185,12 @@ class FCBHDownload:
 			if not os.path.exists(fullDir):
 				os.makedirs(fullDir)
 			filepath = os.path.join(fullDir, filename)
-			with open(filepath, "wb") as file:
-				file.write(content)	
+			if (type(content) is bytes):
+				with open(filepath, "wb") as file:
+					file.write(content)
+			else:
+				with open(filepath, "w") as file:
+					json.dump(content, file)
 
 
 bookSeqMap = {'GEN': 1,
