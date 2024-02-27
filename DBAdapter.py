@@ -28,13 +28,22 @@ class DBAdapter:
 		self.wordEncRec = []
 		self.srcWordEncRec = []
 		self.multiEncRec = []
+		sql = """CREATE TABLE IF NOT EXISTS audio_ident (
+			bible_id TEXT NOT NULL PRIMARY KEY,
+			language_iso TEXT NOT NULL,
+			version_code TEXT NOT NULL,
+			source_code TEXT NOT NULL,
+			languge_id INT,
+			rolv_id INT,
+			alphabet TEXT,
+			language_name TEXT,
+			version_name TEXT) STRICT"""
 		sql = """CREATE TABLE IF NOT EXISTS audio_scripts (
 			script_id INTEGER PRIMARY KEY AUTOINCREMENT,
 			book_id TEXT NOT NULL,
 			chapter_num INTEGER NOT NULL,
 			audio_file TEXT NOT NULL,
 			script_num TEXT NOT NULL,
-			-- script_sub TEXT NOT NULL,
 			usfm_style TEXT,
 			person TEXT,  /* should this be text or integer? */
 			actor TEXT,  /* this should be integer. */
@@ -83,8 +92,20 @@ class DBAdapter:
 			self.sqlite.close()
 			self.sqlite = None
 
+
 	#
-	# audio_script table
+	# audio_ident table
+	#
+
+	def insertIdent(self, bible_id, language_iso, version_code, source_code, languge_id, rolv_id, 
+		alphabet, language_name, version_name):
+		sql = """INSERT INTO audio_ident(bible_id, language_iso, version_code, source_code, languge_id, rolv_id, 
+			alphabet, language_name, version_name) VALUES (?,?,?,?,?,?,?,?,?)"""
+		self.sqlite.execute(sql, [bible_id, language_iso, version_code, source_code, languge_id, rolv_id, 
+			alphabet, language_name, version_name])
+
+	#
+	# audio_scripts table
 	#
 
 	# In FileAdapter
@@ -161,7 +182,7 @@ class DBAdapter:
 		return finalSet
 
 	#
-	# audio_word table
+	# audio_words table
 	#
 
 	# In FileAdapter
