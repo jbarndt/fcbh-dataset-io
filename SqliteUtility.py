@@ -11,8 +11,22 @@ import sqlite3
 
 class SqliteUtility:
 
+	def getDBPath(database):
+		directory = os.environ.get('FCBH_DATASET_DB')
+		if directory == None:
+			return database
+		else:
+			return os.path.join(directory, database)
 
-	def __init__(self, databasePath):
+
+	def destroyDatabase(database):
+		databasePath = SqliteUtility.getDBPath(database)
+		if os.path.exists(databasePath):
+			os.remove(databasePath)
+
+
+	def __init__(self, database):
+		databasePath = SqliteUtility.getDBPath(database)
 		self.conn = sqlite3.connect(databasePath)
 		self.execute("PRAGMA foreign_keys = ON", ())
 
@@ -127,8 +141,7 @@ class SqliteUtility:
 
 if __name__ == "__main__":
 	database = "TestSqliteUtility.db"
-	if os.path.exists(database):
-		os.remove(database)
+	SqliteUtility.destroyDatabase(database)
 	sql = SqliteUtility(database)
 	sql.execute("CREATE TABLE abc (a int, b real, c text)", [])
 	sql.execute("INSERT INTO abc (a, b, c) VALUES (1, 1.0, '1')", [])

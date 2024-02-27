@@ -9,15 +9,11 @@ class DBAdapter:
 
 	# This is not a method on a class instance
 	def destroyDatabase(database): 
-		name = os.path.join(os.environ['HOME'], 'FCBH2024', database) + ".db"
-		if os.path.exists(name):
-			os.remove(name)
+		SqliteUtility.destroyDatabase(database)
 
 
-	def __init__(self, database, language_id=None, language_name=None):
-		#name = language_iso + "_" + str(language_id) + "_" + language_name + ".db"
-		name = os.path.join(os.environ['HOME'], 'FCBH2024', database) + ".db"
-		self.sqlite = SqliteUtility(name)
+	def __init__(self, database):
+		self.sqlite = SqliteUtility(database)
 		self.scriptRecs = []
 		self.scriptTimestampRec = []
 		self.scriptMfccRecs = []
@@ -312,10 +308,9 @@ class DBAdapter:
 
 
 if __name__ == "__main__":
-	database = "ENG_103_English.db"
-	if os.path.exists(database):
-		os.remove(database)
-	db = DBAdapter("ENG_103_English", 103, "English")
+	database = "TestDBAdapter.db"
+	DBAdapter.destroyDatabase(database)
+	db = DBAdapter(database)
 
 	print("* Expect 3 lines of script records")
 	db.addScript("GEN", 1, "ENG_GEN_1.mp3", 1, "p", 1, 1, 1, "In the beginning darkness")
