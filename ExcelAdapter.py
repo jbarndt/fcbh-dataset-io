@@ -45,14 +45,15 @@ class ExcelAdapter:
 		self.db.insertScripts()
 
 
-
+'''
 if __name__ == "__main__":
 	database = "ZAK_MWRIGHT"
 	DBAdapter.destroyDatabase(database)
 	db = DBAdapter(database)
 	exc = ExcelAdapter(db)
-	filename = os.path.join(os.environ["HOME"], "FCBH2024", "Mark_Wright_Feb_2024", "Context ZAK.xlsx")
+	filename = os.path.join(os.environ["FCBH_DATASET_DB"], "Mark_Wright_Feb_2024", "Context ZAK.xlsx")
 	print("Read:", filename)
 	exc.load(filename)
 	file = FileAdapter(db)
 	file.loadWords()
+'''

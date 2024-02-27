@@ -27,8 +27,8 @@ def encodeWords(db, modelName):
 
 
 
-db = DBAdapter("ENG", 3, "Excel")
-encodeWords(db, "ENG_3_Excel.model")
+db = DBAdapter("ENGWEB_USX.db")
+encodeWords(db, "ENGWEB_USX.model")
 
 
 

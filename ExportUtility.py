@@ -6,7 +6,6 @@ from DBAdapter import *
 from SqliteUtility import *
 
 
-
 class ExportAdapter:
 
 
@@ -20,12 +19,12 @@ class ExportAdapter:
 		self.genericWriter(database, resultSet)
 		db.close()
 
+
 	def genericBooksExport(self, database, books):
 		db = DBAdapter(database)
 		sql = """SELECT s.book_id, s.chapter_num, w.verse_num, w.word 
 				FROM audio_scripts s JOIN audio_words w ON s.script_id = w.script_id
 				WHERE s.book_id IN ('""" + "','".join(books) + "') ORDER BY w.word_id"
-		print(sql)
 		resultSet = db.sqlite.select(sql)
 		self.genericWriter(database, resultSet)
 		db.close()
@@ -45,7 +44,8 @@ class ExportAdapter:
 
 
 	def genericWriter(self, database, resultSet):
-		name = os.path.join(os.environ['HOME'], 'FCBH2024', database) + ".txt"
+		name = os.path.join(os.environ.get('FCBH_DATASET_DB'), database)
+		name = name.replace(".db", ".txt")
 		with open(name, "w") as file:
 			for row in resultSet:
 				word = row[3]
@@ -62,15 +62,10 @@ class ExportAdapter:
 				file.write(line)
 
 
-
-
-
-
-
 if __name__ == "__main__":
 	exp = ExportAdapter()
-	exp.usxExport('ZAKWYI_USX')
-	exp.genericBooksExport('ZAK_MWRIGHT', ['JAS'])
+	exp.usxExport('ZAKWYI_USX.db')
+	exp.genericBooksExport('ZAK_MWRIGHT.db', ['JAS'])
 	#exp.genericExport('ZAK_MWRIGHT')
 	#exp.genericExport('ENG_3_Excel')
 

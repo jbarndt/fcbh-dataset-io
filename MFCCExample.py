@@ -48,33 +48,7 @@ def normPadMFCC(db, normalize):
 	db.updatePadWordMFCCs()
 
 
-# Example usage:
-# Assuming mfcc_arrays is your list of 2D numpy arrays
-# mfcc_arrays = [np.array(...), np.array(...), ...],
-# padded_mfcc_arrays = pad_mfcc_arrays(mfcc_arrays)
-
-#def normalize_mfcc(mfccs):
-#	mfccs = librosa.util.normalize(mfccs)
-#	return mfccs
-
-#def plot_mfcc(mfccs):
-#	import matplotlib.pyplot as plt
-#	plt.figure(figsize=(10, 4))
-#	librosa.display.specshow(mfccs, x_axis='time')
-#	plt.colorbar()
-#	plt.title('MFCC')
-#	plt.tight_layout()
-#	plt.show()
-#
-
-#gen_segments(1, "../Sandeep_sample1/words_single.json")
-#exit(0)
-
-# Test1
-#db = DBAdapter("ENG", 1, "Sonnet")
-#mfccs = genMFCC(db, "../Sandeep_sample1/audio.mp3")
-#prepareMFCC(db, True)
-
+'''
 # Test2
 db = DBAdapter("ENG", 3, "Excel")
 dir = "../../Desktop/Mark_Scott_1_1-31-2024/Audio Files"
@@ -82,5 +56,5 @@ audioFile = "N2_MZI_BSM_046_LUK_002_VOX.wav"
 #audioPath = os.path.join(dir, audioFile)
 genMFCC(db, dir, audioFile)
 normPadMFCC(db, True)
-
+'''
 
