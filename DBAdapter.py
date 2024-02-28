@@ -34,6 +34,7 @@ class DBAdapter:
 			alphabet TEXT,
 			language_name TEXT,
 			version_name TEXT) STRICT"""
+		self.sqlite.execute(sql)
 		sql = """CREATE TABLE IF NOT EXISTS audio_scripts (
 			script_id INTEGER PRIMARY KEY AUTOINCREMENT,
 			book_id TEXT NOT NULL,

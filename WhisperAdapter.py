@@ -60,12 +60,26 @@ if __name__ == "__main__":
 	bibleId = sys.argv[1]
 	db = DBAdapter(bibleId + "_WHISPER.db")
 	whisp = WhisperAdapter(db)
+	whisp.insertIdent(bibleId)
 	filesetId = bibleId + "N2DA"
 	directory = os.path.join(os.environ['FCBH_DATASET_FILES'], bibleId, filesetId)
 	whisp.processDirectory(directory)
 	file = FileAdapter(db)
 	file.loadWords()
 	db.close()
+
+'''
+pip3 install git+https://github.com/openai/whisper.git 
+
+WARNING: The script isympy is installed in '/Users/gary/Library/Python/3.9/bin' which is not on PATH.
+Consider adding this directory to PATH or, if you prefer to suppress this warning, use --no-warn-script-location.
+
+WARNING: The scripts convert-caffe2-to-onnx, convert-onnx-to-caffe2 and torchrun are installed in '/Users/gary/Library/Python/3.9/bin' which is not on PATH.
+Consider adding this directory to PATH or, if you prefer to suppress this warning, use --no-warn-script-location.
+
+WARNING: The script whisper is installed in '/Users/gary/Library/Python/3.9/bin' which is not on PATH.
+Consider adding this directory to PATH or, if you prefer to suppress this warning, use --no-warn-script-location.
+'''
 
 
 
