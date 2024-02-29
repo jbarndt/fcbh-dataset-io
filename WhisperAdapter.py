@@ -31,7 +31,6 @@ class WhisperAdapter:
 			if not file.startswith("."):
 				print(file)
 				resultSet = self.db.selectScriptsByFile(file)
-				print("result")
 				if len(resultSet) == 0:
 					if file.startswith("B17"):
 						self.processFile(directory, file)
