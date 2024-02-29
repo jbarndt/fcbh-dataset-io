@@ -35,6 +35,7 @@ class FileAdapter:
 			self.db.insertScripts()
 
 
+	## deprecated: USE WordHandler.py parseWords
 	def loadWords(self):
 		for (script_id, usfm_style, verse_num, script_text) in self.db.selectScripts():
 			#print(script_text)
