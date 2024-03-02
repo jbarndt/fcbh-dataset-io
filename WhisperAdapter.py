@@ -2,7 +2,7 @@ import os
 import sys
 import whisper
 from DBAdapter import *
-from FileAdapter import *
+from WordParser import *
 from Booknames import *
 
 #https://github.com/openai/whisper
@@ -16,7 +16,7 @@ class WhisperAdapter:
 
 	def __init__(self, db):
 		self.db = db
-		self.model = whisper.load_model("base") # "small" "medium" "large" are options
+		self.model = whisper.load_model("medium") # "small" "base" "medium" "large" are options
 		self.books = Booknames()
 
 
@@ -32,7 +32,7 @@ class WhisperAdapter:
 				print(file)
 				resultSet = self.db.selectScriptsByFile(file)
 				if len(resultSet) == 0:
-					if file.startswith("B17"):
+					if file.startswith("B17"): ## TITUS
 						self.processFile(directory, file)
 
 
@@ -63,8 +63,8 @@ if __name__ == "__main__":
 	filesetId = bibleId + "N2DA"
 	directory = os.path.join(os.environ['FCBH_DATASET_FILES'], bibleId, filesetId)
 	whisp.processDirectory(directory)
-	file = FileAdapter(db)
-	file.loadWords()
+	file = WordParser(db)
+	file.parse()
 	db.close()
 
 '''

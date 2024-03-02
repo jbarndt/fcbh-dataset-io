@@ -24,7 +24,8 @@ class ExportAdapter:
 		db = DBAdapter(database)
 		sql = """SELECT s.book_id, s.chapter_num, w.verse_num, w.word 
 				FROM audio_scripts s JOIN audio_words w ON s.script_id = w.script_id
-				WHERE s.book_id IN ('""" + "','".join(books) + "') ORDER BY w.word_id"
+				WHERE w.ttype = 'W'
+				AND s.book_id IN ('""" + "','".join(books) + "') ORDER BY w.word_id"
 		resultSet = db.sqlite.select(sql)
 		print("results", len(resultSet))
 		#self.genericWriter(database, resultSet)
@@ -82,6 +83,15 @@ class ExportAdapter:
 				#file.write('\n')
 				file.write(line)
 				#file.write(word.encode('utf-8'))
+
+#>>> print("DEC HEX ASC")
+#... for b in bytearray(b'ABCD'):
+#...     print(b, hex(b), chr(b))
+#DEC HEX ASC
+#65 0x41 A
+#66 0x42 B
+#67 0x43 C
+#68 0x44 D
 
 
 if __name__ == "__main__":

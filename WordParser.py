@@ -21,6 +21,7 @@ class WordParser:
 		self.db = db
 		self.word_seq = 0
 		self.lastScriptId = None
+		self.db.deleteWords()
 
 
 	def parse(self):
@@ -35,6 +36,8 @@ class WordParser:
 		label = ["", "BEGIN", "SPACE", "WORD", "WORDPUNCT", "VERSENUM", "INVERSENUM", "ENDVERSENUM", 
 			"NEXTVERSENUM"] 
 		for (script_id, usfm_style, verse_num, script_text) in self.db.selectScripts():
+			if not script_text.endswith("\n"):
+				script_text += "\n"
 			print(script_text)
 			term = None
 			punct = None
@@ -181,7 +184,6 @@ class WordParser:
 
 if __name__ == "__main__":
 	db = DBAdapter("ZAK_MWRIGHT.db")
-	db.deleteWords()
 	word = WordParser(db)
 	word.parse()
 	word.format("ZAK_MWRIGHT_WORDS.txt")

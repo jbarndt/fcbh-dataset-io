@@ -94,7 +94,7 @@ class DBAdapter:
 
 	def insertIdent(self, bible_id, language_iso, version_code, source_code, languge_id, rolv_id, 
 		alphabet, language_name, version_name):
-		sql = """INSERT INTO audio_ident(bible_id, language_iso, version_code, source_code, languge_id, rolv_id, 
+		sql = """REPLACE INTO audio_ident(bible_id, language_iso, version_code, source_code, languge_id, rolv_id, 
 			alphabet, language_name, version_name) VALUES (?,?,?,?,?,?,?,?,?)"""
 		self.sqlite.execute(sql, [bible_id, language_iso, version_code, source_code, languge_id, rolv_id, 
 			alphabet, language_name, version_name])
