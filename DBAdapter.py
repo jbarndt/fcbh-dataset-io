@@ -62,10 +62,8 @@ class DBAdapter:
 			script_id INTEGER NOT NULL,
 			word_seq INTEGER NOT NULL,
 			verse_num INTEGER,
+			ttype TEXT NOT NULL,
 			word TEXT NOT NULL,
-			punct TEXT,
-			src_language TEXT, /* will this be replaced by script_num */
-			src_word TEXT, /* will this be replaced by script_num */
 			word_begin_ts REAL,
 			word_end_ts REAL,
 			word_mfcc BLOB,
@@ -182,20 +180,22 @@ class DBAdapter:
 	# audio_words table
 	#
 
+	def deleteWords(self):
+		self.sqlite.execute("DELETE FROM audio_words")		
+
 	# In FileAdapter
-	def addWord(self, script_id, word_seq, verse_num, word, punct, src_language, src_word):
-		self.wordRecs.append((script_id, word_seq, verse_num, word, punct, src_language, src_word))
+	def addWord(self, script_id, word_seq, verse_num, ttype, word):
+		self.wordRecs.append((script_id, word_seq, verse_num, ttype, word))
 
 	# In FileAdapter
 	def insertWords(self):
-		sql = """INSERT INTO audio_words(script_id, word_seq, verse_num, word, punct, src_language, 
-			src_word) VALUES (?,?,?,?,?,?,?)"""
+		sql = """INSERT INTO audio_words(script_id, word_seq, verse_num, ttype, word) VALUES (?,?,?,?,?)"""
 		self.sqlite.executeBatch(sql, self.wordRecs)
 		self.wordRecs = []		
 
 	# In AeneasExample
 	def selectWordsByFile(self, audio_file):
-		sql = """SELECT w.word_id, w.word, w.punct
+		sql = """SELECT w.word_id, w.ttype, w.word
 			FROM audio_words w JOIN audio_scripts s ON w.script_id = s.script_id
 			WHERE s.audio_file=? ORDER BY w.word_id"""
 		return self.sqlite.select(sql, [audio_file])
@@ -340,13 +340,13 @@ if __name__ == "__main__":
 		print(script_id, mfcc)
 
 	print("* Expect 3 lines of word records")
-	db.addWord(1, 1, 1, "In", None, "ENG", "In")
-	db.addWord(1, 2, 1, "the", None, "ENG", "the")
-	db.addWord(1, 3, 1, "beginning", None, "ENG", "beginning")
+	db.addWord(1, 1, 1, 'W', "In")
+	db.addWord(1, 2, 1, 'W', "the")
+	db.addWord(1, 3, 1, 'W', "beginning")
 	db.insertWords()
 	resultSet = db.selectWordsByFile("ENG_GEN_1.mp3")
-	for (word_id, word, punct) in resultSet:
-		print(word_id, word, punct)
+	for (word_id, ttype, word) in resultSet:
+		print(word_id, ttype, word)
 
 	print("* Expect 3 lines of word timestamps")
 	db.addWordTimestamp(1, 0, 123.45)
