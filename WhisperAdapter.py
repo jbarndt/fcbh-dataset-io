@@ -32,7 +32,8 @@ class WhisperAdapter:
 				print(file)
 				resultSet = self.db.selectScriptsByFile(file)
 				if len(resultSet) == 0:
-					if file.startswith("B17"): ## TITUS
+					#if file.startswith("B17"): ## TITUS
+					if file.startswith("B"): ## New Testament
 						self.processFile(directory, file)
 
 
