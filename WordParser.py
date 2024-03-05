@@ -183,6 +183,16 @@ class WordParser:
 
 
 if __name__ == "__main__":
+	if len(sys.argv) < 2:
+		print("Usage: python3 WordParser.py  database")
+		sys.exit(1)
+	db = DBAdapter(sys.argv[1])
+	word = WordParser(db)
+	word.parse()	
+
+
+'''
+if __name__ == "__main__":
 	db = DBAdapter("ZAK_MWRIGHT.db")
 	word = WordParser(db)
 	word.parse()
@@ -191,7 +201,7 @@ if __name__ == "__main__":
 		sql = "SELECT book_id, chapter_num, in_verse_num, script_text FROM audio_scripts ORDER BY script_id"
 		for (book_id, chapter_num, in_verse_num, script_text) in db.sqlite.select(sql):
 			file.write(script_text)
-
+'''
 
 
 
