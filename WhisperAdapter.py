@@ -16,7 +16,7 @@ class WhisperAdapter:
 
 	def __init__(self, db):
 		self.db = db
-		self.model = whisper.load_model("medium") # "small" "base" "medium" "large" are options
+		self.model = whisper.load_model("medium.en") # "small" "base" "medium" "large" are options
 		self.books = Booknames()
 
 
@@ -54,14 +54,14 @@ class WhisperAdapter:
 
 
 if __name__ == "__main__":
-	if len(sys.argv) < 2:
-		print("Usage: WhisperAdapter  bibleId")
+	if len(sys.argv) < 3:
+		print("Usage: WhisperAdapter  bibleId  audio_filesetId")
 		sys.exit(1)
 	bibleId = sys.argv[1]
+	filesetId = sys.argv[2]
 	db = DBAdapter(bibleId + "_WHISPER.db")
 	whisp = WhisperAdapter(db)
 	whisp.insertIdent(bibleId)
-	filesetId = bibleId + "N2DA"
 	directory = os.path.join(os.environ['FCBH_DATASET_FILES'], bibleId, filesetId)
 	whisp.processDirectory(directory)
 	file = WordParser(db)
