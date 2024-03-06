@@ -4,7 +4,13 @@
 
 This project is currently in development, and at a very experimental stage.  The files of python code mostly run as individual programs to perform a specific task, which is not the final intent of this project.  Almost all of these programs use Sqlite3 as a datastore, and will create a database file in your current directory, or expect one.  In order to locate database files elsewhere, set the environment variable FCBH_DATASET_DB to that location.
 
-The file FCBHDownload.py is a ready to use program for downloading audio and text fileset from the Faith Comes by Hearing “Bible Brain” repository.
++ FCBHDownload.py - A program for downloading audio and text fileset from the Faith Comes by Hearing “Bible Brain” repository.
+
++ WhisperAdapter.py - Whisper is an OpenAI speech to text tool.  This program uses Whisper to process an audio fileset, and loads the text into a database.
+
++ WordParser.py - This program reads the audio_script table, breaks scripts into words, punctuation, and whitespace, and stores the result in the audio_words table
+
++ There are many more python scripts that will be added to this list when they are given a CLI interface.
 
 ## Introduction
 
