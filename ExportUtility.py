@@ -142,15 +142,15 @@ class ExportAdapter:
 
 if __name__ == "__main__":
 	exp = ExportAdapter()
+	db1 = "ENGWWH_USXEDIT.db"
+	db2 = "ENGWWH_WHISPER.db"
 	#exp.usxExport('ZAKWYI_USX.db')
-	print("export ENGWEB_USXEDIT")
-	#dbpResult = exp.genericNTExport("ENGWEB_DBPTEXT.db")
-	dbpResult = exp.genericNTExport("ENGWEB_USXEDIT.db")
-	#exp.noVerseWriter("ENGWEB_DBPTEXT.db", dbpResult)
-	exp.noVerseWriter("ENGWEB_USXEDIT.db", dbpResult)
-	print("export ENGWEB_WHISPER")
-	STTResult = exp.genericNTExport('ENGWEB_WHISPER.db')
-	exp.noVerseWriter('ENGWEB_WHISPER.db', STTResult)
+	print("export ", db1)
+	dbpResult = exp.genericNTExport(db1)
+	exp.noVerseWriter(db1, dbpResult)
+	print("export ", db2)
+	STTResult = exp.genericNTExport(db2)
+	exp.noVerseWriter(db2, STTResult)
 	#exp.genericExport('ZAK_MWRIGHT')
 	#exp.genericExport('ENG_3_Excel')
 

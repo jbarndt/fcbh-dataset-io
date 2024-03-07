@@ -11,6 +11,23 @@ from Booknames import *
 #result = model.transcribe("audio.mp3")
 #print(result["text"])
 
+'''
+1. Retry Whisper with a non-drama version of the audio.
+2. Pi recommends preprocessing in audacity
+3. Do not get text, but get segments, and iterate over it.
+4. Capture start, end timestamps
+5. Capture text
+6. Capture tokens, if I have a place for it
+7. Capture avg_logprob
+8. Capture no_speech_prob
+9. Capture compression ratio
+
+'segments': [{'id': 0, 'seek': 0, 'start': 0.0, 'end': 3.24, 'text': ' Chapter 3', 'tokens': [50363, 7006, 513, 50525],
+'temperature': 0.0, 'avg_logprob': -0.2316610102067914, 'compression_ratio': 1.46, 'no_speech_prob': 
+0.2119932472705841}, 
+
+'''
+
 class WhisperAdapter:
 
 
