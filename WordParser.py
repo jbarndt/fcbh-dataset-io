@@ -188,7 +188,8 @@ if __name__ == "__main__":
 		sys.exit(1)
 	db = DBAdapter(sys.argv[1])
 	word = WordParser(db)
-	word.parse()	
+	word.parse()
+	db.close()
 
 
 '''

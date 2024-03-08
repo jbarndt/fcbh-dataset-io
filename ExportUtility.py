@@ -7,7 +7,7 @@ from DBAdapter import *
 from SqliteUtility import *
 
 
-class ExportAdapter:
+class ExportUtility:
 
 
 	def genericExport(self, database):
@@ -29,7 +29,7 @@ class ExportAdapter:
 				WHERE w.ttype = 'W'
 				AND s.book_id IN ('MAT','MRK','LUK','JHN','ACT','ROM','1CO','2CO','GAL','EPH','PHP','COL',
 					'1TH','2TH','1TI','2TI','TIT','PHM','HEB','JAS','1PE','2PE','1JN','2JN','3JN','JUD','REV')
-				ORDER BY s.book_id, s.chapter_num, w.word_id
+				ORDER BY s.script_id, w.word_id
 		"""
 		resultSet = db.sqlite.select(sql)
 		#self.genericWriter(database, resultSet)
@@ -141,18 +141,14 @@ class ExportAdapter:
 
 
 if __name__ == "__main__":
-	exp = ExportAdapter()
-	db1 = "ENGWWH_USXEDIT.db"
-	db2 = "ENGWWH_WHISPER.db"
-	#exp.usxExport('ZAKWYI_USX.db')
-	print("export ", db1)
-	dbpResult = exp.genericNTExport(db1)
-	exp.noVerseWriter(db1, dbpResult)
-	print("export ", db2)
-	STTResult = exp.genericNTExport(db2)
-	exp.noVerseWriter(db2, STTResult)
-	#exp.genericExport('ZAK_MWRIGHT')
-	#exp.genericExport('ENG_3_Excel')
+	if len(sys.argv) < 2:
+		print("Usage: python3 ExportUtility.py database")
+		sys.exit(1)
+	database = sys.argv[1]
+	exp = ExportUtility()
+	print("export ", database)
+	dbpResult = exp.genericNTExport(database)
+	exp.noVerseWriter(database, dbpResult)
 
 '''
 SELECT s.book_id, s.chapter_num, w.verse_num, s.usfm_style, w.word 

@@ -6,6 +6,8 @@ This project is currently in development, and at a very experimental stage.  The
 
 + FCBHDownload.py - A program for downloading audio and text fileset from the Faith Comes by Hearing “Bible Brain” repository.
 
++ ScriptAdapter.py - This program reads excel files that contain the text in audio script form, and loads the text into a database.
+
 + WhisperAdapter.py - Whisper is an OpenAI speech to text tool.  This program uses Whisper to process an audio fileset, and loads the text into a database.
 
 + WordParser.py - This program reads the audio_script table, breaks scripts into words, punctuation, and whitespace, and stores the result in the audio_words table
