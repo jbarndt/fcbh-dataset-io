@@ -35,6 +35,18 @@ class WordParser:
 		NEXTVERSENUM = 8
 		label = ["", "BEGIN", "SPACE", "WORD", "WORDPUNCT", "VERSENUM", "INVERSENUM", "ENDVERSENUM", 
 			"NEXTVERSENUM"] 
+		isHyphen = {'\u002D', 	# hyphen-minus
+				'\u2010',   	# hypen
+				'\u2011',		# non-breaking hyphen
+				'\u2012',		# figure dash
+				'\u2013',		# en dash
+				'\u2014',		# em dash
+				'\u2015',		# horizontal bar
+				'\uFE58',		# small em dash
+				'\uFE62',		# small en dash
+				'\uFE63',		# small hyphen minus
+				'\uFF0D'		# fullwidth hypen-minus
+				}
 		for (script_id, usfm_style, verse_num, script_text) in self.db.selectScripts():
 			if not script_text.endswith("\n"):
 				script_text += "\n"
@@ -45,7 +57,7 @@ class WordParser:
 			state = BEGIN
 			for token in re.split(r"([\W])", script_text):
 				if len(token) > 0:
-					print(label[state], "now token: ", token)
+					#print(label[state], "now token: ", token)
 					if state == BEGIN:
 						if token.isspace():
 							term = token
@@ -87,6 +99,11 @@ class WordParser:
 							self.addWord(script_id, verse_num, 'W', term)
 							term = token
 							state = VERSENUM
+						elif token in isHyphen:
+							self.addWord(script_id, verse_num, 'W', term)
+							self.addWord(script_id, verse_num, 'P', token)
+							term = None
+							state = BEGIN
 						else: # token.ispunct()
 							punct = token 
 							state = WORDPUNCT
@@ -137,7 +154,7 @@ class WordParser:
 							term = token 
 							state = WORD 
 						else: # token.ispunct()
-							print("output verse", term)
+							#print("output verse", term)
 							self.addWord(script_id, verse_num, 'V', term)
 							self.addWord(script_id, verse_num, 'P', token)
 							term = None 
@@ -165,7 +182,7 @@ class WordParser:
 		if ttype == None or text == None:# or verse_num == None:
 			print(script_id, verse_num, ttype, text)
 			sys.exit(0)
-		print("seq: ", self.word_seq, " versee: ", verse_num, " type: ", ttype, " text: ", text)
+		#print("seq: ", self.word_seq, " versee: ", verse_num, " type: ", ttype, " text: ", text)
 		self.db.addWord(script_id, self.word_seq, verse_num, ttype, text)
 
 
