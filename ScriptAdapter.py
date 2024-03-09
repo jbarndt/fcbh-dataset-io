@@ -22,7 +22,7 @@ class ScriptAdapter:
 		for file in os.listdir(directory):
 			if file.endswith(".xlsx"):
 				return os.path.join(directory, file)
-		print("Could not find .xlsm file in", directory)
+		print("Could not find .xlsx file in", directory)
 		sys.exit(1)
 
 
@@ -31,7 +31,6 @@ class ScriptAdapter:
 		workbook = load_workbook(filename=filename)
 		sheet_names = workbook.sheetnames
 		wb = workbook[sheet_names[0]]
-		script_num = 0
 		for row in wb.iter_rows(min_row=2, max_row=wb.max_row, min_col=1, max_col=wb.max_column):
 			#print("max col", wb.max_column)
 			book_id = row[1].value
@@ -46,20 +45,14 @@ class ScriptAdapter:
 			in_verse_num = row[3].value
 			if in_verse_num == "<<":
 				in_verse_num = None
-			#if not isinstance(chapter_num, int):
-			#	print("chapter", type(chapter_num), chapter_num)
-			#if not isinstance(in_verse_num, int):
-			#	print("verse", type(in_verse_num), in_verse_num)
 			usfm_style = None
 			person = row[4].value
-			actor = row[5].value
+			#actor = row[5].value
+			script_num = str(row[5].value)
 			script_text = row[8].value
 			actor = None
-			#print("6", row[6].value)
-			#print("7", row[7].value)
-			#print("8", row[8].value)
-			script_num += 1
-			self.db.addScript(book_id, chapter_num, audio_file, script_num, usfm_style, 
+			if script_num[-1].isdigit():
+				self.db.addScript(book_id, chapter_num, audio_file, script_num, usfm_style, 
 							person, actor, in_verse_num, script_text)
 		self.db.insertScripts()
 
