@@ -28,6 +28,7 @@ class ScriptAdapter:
 
 	def load(self, filename):
 		print("reading", filename)
+		#tmpFile = open("temp.txt", "w")
 		workbook = load_workbook(filename=filename)
 		sheet_names = workbook.sheetnames
 		wb = workbook[sheet_names[0]]
@@ -51,10 +52,13 @@ class ScriptAdapter:
 			script_num = str(row[5].value)
 			script_text = row[8].value
 			actor = None
-			if script_num[-1].isdigit():
+			#if script_num[-1].isdigit():
+			if not script_num[-1] == 'r':
+				#tmpFile.write("script_num: " + script_num + "\n")
 				self.db.addScript(book_id, chapter_num, audio_file, script_num, usfm_style, 
 							person, actor, in_verse_num, script_text)
 		self.db.insertScripts()
+		#tmpFile.close()
 
 
 if __name__ == "__main__":
