@@ -3,6 +3,7 @@ import os
 import sys
 import sqlite3
 import fuzzy
+import unicodedata
 from DBAdapter import *
 from SqliteUtility import *
 
@@ -90,20 +91,21 @@ class ExportUtility:
 			for row in resultSet:
 				word = row[3]
 				word = word.lower()
-				word = word.replace('\u00E9', 'e') # remove accent on e
-				word = word.replace('\u00E1', 'a') # remove accent on a
-				word = word.replace('\u2019', '') # remove single right quote
-				word = word.replace('\u2018', '') # single left quote
+				word = unicodedata.normalize('NFD', word)
+				result = []
+				for ch in word: # remove combining diacritical marks
+					if ord(ch) < 768: # x0300
+						result.append(ch)
+					elif ord(ch) > 879: #x036F
+						result.append(ch)
+				word = "".join(result)
 				word = word.replace("'", '') # remove apostrophe
-				hyphens = ['-', '\u00AD', '\u2011', '\u2012', '\u2013', '\u2014', '\u2015', '\u2043', '\u2212']
-				for hyphen in hyphens:
-					word = word.replace(hyphen, '') # remove hyphen
-					#parts = word.split(hyphen)
-					#word = parts[0]
-					#if len(parts) > 1:
-					#	line = row[0] + ' ' + str(row[1]) +  ' ' + parts[1] + ' '  + '\n'
-					#	file.write(line)
-				line = row[0] + ' ' + str(row[1]) +  ' ' + word + ' '  + '\n'
+				word = word.replace('\uA78C', '') # remove apostrophe
+				result = []
+				for ch in word:
+					result.append(hex(ord(ch)))
+					details = " ".join(result)
+				line = row[0] + ' ' + str(row[1]) +  ' ' + word + ' '  + details + '\n'
 				file.write(line)
 
 

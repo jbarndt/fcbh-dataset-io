@@ -49,12 +49,10 @@ class ScriptAdapter:
 			usfm_style = None
 			person = row[4].value
 			#actor = row[5].value
+			actor = None
 			script_num = str(row[5].value)
 			script_text = row[8].value.replace('_x000D_','') # remove excel CR
-			actor = None
-			#if script_num[-1].isdigit():
 			if not script_num[-1] == 'r':
-				#tmpFile.write("script_num: " + script_num + "\n")
 				self.db.addScript(book_id, chapter_num, audio_file, script_num, usfm_style, 
 							person, actor, in_verse_num, script_text)
 		self.db.insertScripts()
