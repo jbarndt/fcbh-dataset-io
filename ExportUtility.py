@@ -51,6 +51,7 @@ class ExportUtility:
 		return resultSet
 
 
+	## obsolete
 	def usxExport(self, database):
 		db = DBAdapter(database)
 		sql = """SELECT s.book_id, s.chapter_num, w.verse_num, w.word 
@@ -60,11 +61,11 @@ class ExportUtility:
 			ORDER BY w.word_id
 		"""
 		resultSet = db.sqlite.select(sql)
-		#self.genericWriter(database, resultSet)
 		db.close()
 		return resultSet
 
 
+	## obsolete
 	def genericWriter(self, database, resultSet):
 		name = os.path.join(os.environ.get('FCBH_DATASET_DB'), database)
 		name = name.replace(".db", ".txt")
@@ -85,6 +86,18 @@ class ExportUtility:
 
 
 	def noVerseWriter(self, database, resultSet):
+		isHyphen = {'\u002D', 	# hyphen-minus
+				'\u2010',   	# hypen
+				'\u2011',		# non-breaking hyphen
+				'\u2012',		# figure dash
+				'\u2013',		# en dash
+				'\u2014',		# em dash
+				'\u2015',		# horizontal bar
+				'\uFE58',		# small em dash
+				'\uFE62',		# small en dash
+				'\uFE63',		# small hyphen minus
+				'\uFF0D'		# fullwidth hypen-minus
+				}
 		name = os.path.join(os.environ.get('FCBH_DATASET_DB'), database)
 		name = name.replace(".db", ".txt")
 		with open(name, "w") as file:
@@ -92,6 +105,8 @@ class ExportUtility:
 				word = row[3]
 				word = word.lower()
 				word = unicodedata.normalize('NFD', word)
+				for hyphen in isHyphen:
+					word = word.replace(hyphen, '')
 				result = []
 				for ch in word: # remove combining diacritical marks
 					if ord(ch) < 768: # x0300
@@ -109,6 +124,7 @@ class ExportUtility:
 				file.write(line)
 
 
+	## obsolete
 	def noVerseFuzzyWriter(self, database, resultSet):
 		meta = fuzzy.DMetaphone()
 		name = os.path.join(os.environ.get('FCBH_DATASET_DB'), database)
@@ -131,15 +147,6 @@ class ExportUtility:
 					print("Did not fuzzy", word)
 				file.write(line)
 
-
-#>>> print("DEC HEX ASC")
-#... for b in bytearray(b'ABCD'):
-#...     print(b, hex(b), chr(b))
-#DEC HEX ASC
-#65 0x41 A
-#66 0x42 B
-#67 0x43 C
-#68 0x44 D
 
 
 if __name__ == "__main__":

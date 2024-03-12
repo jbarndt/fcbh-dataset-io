@@ -35,18 +35,6 @@ class WordParser:
 		NEXTVERSENUM = 8
 		label = ["", "BEGIN", "SPACE", "WORD", "WORDPUNCT", "VERSENUM", "INVERSENUM", "ENDVERSENUM", 
 			"NEXTVERSENUM"] 
-		isHyphen = {'\u002D', 	# hyphen-minus
-				'\u2010',   	# hypen
-				'\u2011',		# non-breaking hyphen
-				'\u2012',		# figure dash
-				'\u2013',		# en dash
-				'\u2014',		# em dash
-				'\u2015',		# horizontal bar
-				'\uFE58',		# small em dash
-				'\uFE62',		# small en dash
-				'\uFE63',		# small hyphen minus
-				'\uFF0D'		# fullwidth hypen-minus
-				}
 		for (script_id, usfm_style, verse_num, script_text) in self.db.selectScripts():
 			if not script_text.endswith("\n"):
 				script_text += "\n"
@@ -99,11 +87,6 @@ class WordParser:
 							self.addWord(script_id, verse_num, 'W', term)
 							term = token
 							state = VERSENUM
-						elif token in isHyphen:
-							self.addWord(script_id, verse_num, 'W', term)
-							self.addWord(script_id, verse_num, 'P', token)
-							term = None
-							state = BEGIN
 						else: # token.ispunct()
 							punct = token 
 							state = WORDPUNCT
@@ -211,17 +194,6 @@ if __name__ == "__main__":
 	db.close()
 
 
-'''
-if __name__ == "__main__":
-	db = DBAdapter("ZAK_MWRIGHT.db")
-	word = WordParser(db)
-	word.parse()
-	word.format("ZAK_MWRIGHT_WORDS.txt")
-	with open("ZAK_MWRIGHT_SCRIPT.txt", "w") as file:
-		sql = "SELECT book_id, chapter_num, in_verse_num, script_text FROM audio_scripts ORDER BY script_id"
-		for (book_id, chapter_num, in_verse_num, script_text) in db.sqlite.select(sql):
-			file.write(script_text)
-'''
 
 
 
