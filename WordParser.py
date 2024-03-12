@@ -53,7 +53,7 @@ class WordParser:
 			print(script_text)
 			term = None
 			punct = None
-			verseeStr = None
+			verseStr = None
 			state = BEGIN
 			for token in re.split(r"([\W])", script_text):
 				if len(token) > 0:
@@ -165,6 +165,8 @@ class WordParser:
 							state = INVERSENUM
 						else:
 							self.logError("{", token)
+					else:
+						self.logError("unknown state", state)
 
 			if term != None and len(term) > 0:
 				if term.isspace():
