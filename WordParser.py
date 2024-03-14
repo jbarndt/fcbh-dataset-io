@@ -38,7 +38,7 @@ class WordParser:
 		for (script_id, usfm_style, verse_num, script_text) in self.db.selectScripts():
 			if not script_text.endswith("\n"):
 				script_text += "\n"
-			print(script_text)
+			#print(script_text)
 			term = None
 			punct = None
 			verseStr = None
