@@ -64,7 +64,7 @@ var numericPattern = regexp.MustCompile(`^\d+`)
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Println("Usage:  $HOME/Documents/go2/bin/usx  bibleId")
+		fmt.Println("Usage:  $HOME/Documents/go2/bin/usx_parser  bibleId")
 		os.Exit(1)
 	}
 	var bibleId = os.Args[1]
@@ -87,9 +87,11 @@ func main() {
 				filename := filepath.Join(subDir, file.Name())
 				fmt.Println(filename)
 				records := decode(filename)
-				records2 := filterByUSFM(records)
-				records3 := addChapterHeading(records2)
-				loadDatabase(db, records3)
+				records = filterByUSFM(records)
+				titleDesc := extractTitles(records)
+				records = addChapterHeading(records, titleDesc)
+				records = correctScriptNum(records)
+				loadDatabase(db, records)
 			}
 		}
 	}
@@ -130,14 +132,10 @@ func decode(filename string) []ScriptRec {
 			} else if tagName == `verse` {
 				inVerseNum = findIntAttr(se, `number`)
 			}
-			//if tagName != `char` && tagName != `chapter` && tagName != `verse` {
 			if hasStyle[tagName] {
 				stack = stack.Push(usfmStyle)
 				usfmStyle = findAttr(se, `style`)
 			}
-			// for version 3.0 add the following
-			// find chapter eid to unset chapter number
-			// find verse eid to unset verse number
 		case xml.CharData:
 			text := string(se)
 			if len(strings.TrimSpace(text)) > 0 {
@@ -155,13 +153,12 @@ func decode(filename string) []ScriptRec {
 				stack, usfmStyle = stack.Pop()
 			}
 		}
-		if bookId != rec.bookId || chapterNum != rec.chapterNum || inVerseNum != rec.inVerseNum ||
-			usfmStyle != rec.usfmStyle {
-			if rec.bookId != `` && len(rec.scriptText) > 0 {
+		if chapterNum != rec.chapterNum || inVerseNum != rec.inVerseNum || usfmStyle != rec.usfmStyle {
+			if len(rec.scriptText) > 0 {
 				records = append(records, rec)
 			}
 			scriptNum := rec.scriptNum + 1
-			if bookId != rec.bookId || chapterNum != rec.chapterNum {
+			if chapterNum != rec.chapterNum {
 				scriptNum = 1
 			}
 			rec = ScriptRec{bookId: bookId, chapterNum: chapterNum, scriptNum: scriptNum,
@@ -187,58 +184,57 @@ func filterByUSFM(records []ScriptRec) []ScriptRec {
 	return results
 }
 
-func addChapterHeading(records []ScriptRec) []ScriptRec {
-	const (
-		begin = iota + 1
-		newBook
-		mtUSFM
-	)
-	var results = make([]ScriptRec, 0, len(records))
-	var shortTitle string
-	var lastBookId = ``
-	var lastChapter = 0
-	var scriptNum = 0
-	var state = begin
+type titleDesc struct {
+	heading string
+	title   []ScriptRec
+	areDiff bool
+}
+
+func extractTitles(records []ScriptRec) titleDesc {
+	var results titleDesc
 	for _, rec := range records {
 		if rec.usfmStyle == `h` {
-			shortTitle = strings.Join(rec.scriptText, ``)
+			results.heading = strings.Join(rec.scriptText, ``)
+		} else if strings.HasPrefix(rec.usfmStyle, `mt`) {
+			results.title = append(results.title, rec)
 		}
-		if state == begin {
-			if rec.bookId != lastBookId {
-				scriptNum = 1
-				state = newBook
-			} else if rec.chapterNum != lastChapter {
-				var rec2 = rec
-				scriptNum = 1
-				rec2.scriptNum = scriptNum
-				rec2.inVerseNum = 0
-				rec2.scriptText = []string{shortTitle + " " + strconv.Itoa(rec.chapterNum)}
-				results = append(results, rec2)
-			}
-			lastBookId = rec.bookId
+	}
+	return results
+}
+
+func addChapterHeading(records []ScriptRec, titles titleDesc) []ScriptRec {
+	var results = make([]ScriptRec, 0, len(records))
+	for _, rec := range titles.title {
+		results = append(results, rec)
+	}
+	var lastChapter = -1
+	for _, rec := range records {
+		if rec.chapterNum != lastChapter {
 			lastChapter = rec.chapterNum
-		} else if state == newBook {
-			if strings.HasPrefix(rec.usfmStyle, `mt`) {
-				state = mtUSFM
-			} else {
-				fmt.Println("Error: after book_id change, mt expected, but,", rec)
-			}
-		} else if state == mtUSFM {
-			if !strings.HasPrefix(rec.usfmStyle, `mt`) {
-				var rec2 = rec
-				scriptNum += 1
-				rec2.scriptNum = scriptNum
-				rec2.inVerseNum = 0
-				rec2.scriptText = []string{shortTitle + " " + strconv.Itoa(rec.chapterNum)}
-				results = append(results, rec2)
-				state = begin
-			}
+			var rec2 = rec
+			rec2.inVerseNum = 0
+			rec2.scriptText = []string{titles.heading + " " + strconv.Itoa(rec.chapterNum)}
+			results = append(results, rec2)
 		}
-		if rec.usfmStyle != `h` {
-			scriptNum += 1
-			rec.scriptNum = scriptNum
+		if rec.usfmStyle != `h` && !strings.HasPrefix(rec.usfmStyle, `mt`) {
 			results = append(results, rec)
 		}
+	}
+	return results
+}
+
+func correctScriptNum(records []ScriptRec) []ScriptRec {
+	var results = make([]ScriptRec, 0, len(records))
+	var scriptNum = 0
+	var lastChapter = 0
+	for _, rec := range records {
+		if rec.chapterNum != lastChapter {
+			lastChapter = rec.chapterNum
+			scriptNum = 0
+		}
+		scriptNum += 1
+		rec.scriptNum = scriptNum
+		results = append(results, rec)
 	}
 	return results
 }
