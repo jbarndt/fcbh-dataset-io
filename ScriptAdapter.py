@@ -43,9 +43,13 @@ class ScriptAdapter:
 					sys.exit(1)
 			chapter_num = row[2].value
 			audio_file = "xxxxxxxDA_" + book_id + "_" + str(chapter_num) + ".mp3"
+			verse_str = row[3].value
+			if verse_str == "<<":
+				verse_str = ""
 			in_verse_num = row[3].value
 			if in_verse_num == "<<":
-				in_verse_num = None
+				#in_verse_num = None
+				in_verse_num = 0
 			usfm_style = None
 			person = row[4].value
 			#actor = row[5].value
@@ -54,14 +58,14 @@ class ScriptAdapter:
 			script_text = row[8].value.replace('_x000D_','') # remove excel CR
 			if not script_num[-1] == 'r':
 				self.db.addScript(book_id, chapter_num, audio_file, script_num, usfm_style, 
-							person, actor, in_verse_num, script_text)
+							person, actor, in_verse_num, verse_str, script_text)
 		self.db.insertScripts()
 		workbook.close()
 
 
 if __name__ == "__main__":
 	if len(sys.argv) < 2:
-		print("Usage: python3 ExcelAdapter.py  bibleId")
+		print("Usage: python3 ScriptAdapter.py  bibleId")
 		sys.exit(1)
 	bibleId = sys.argv[1]
 	database = bibleId + "_SCRIPT.db"

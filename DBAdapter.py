@@ -44,8 +44,9 @@ class DBAdapter:
 			usfm_style TEXT,
 			person TEXT,  /* should this be text or integer? */
 			actor TEXT,  /* this should be integer. */
-			in_verse_num INTEGER,
-			script_text TEXT,
+			in_verse_num INTEGER NOT NULL,
+			verse_str TEXT NOT NULL, /* e.g. 6-10 7,8 6a */
+			script_text TEXT NOT NULL,
 			script_begin_ts REAL,
 			script_end_ts REAL,
 			script_mfcc BLOB,
@@ -105,15 +106,15 @@ class DBAdapter:
 
 	# In FileAdapter
 	def addScript(self, book_id, chapter_num, audio_file, script_num, usfm_style, 
-			person, actor, in_verse_num, script_text):
+			person, actor, in_verse_num, verse_str, script_text):
 		self.scriptRecs.append((book_id, chapter_num, audio_file, script_num, usfm_style, 
-			person, actor, in_verse_num, script_text))
+			person, actor, in_verse_num, verse_str, script_text))
 
 	# In FileAdapter
 	def insertScripts(self):
 		sql = """INSERT INTO audio_scripts(book_id, chapter_num, audio_file, 
-			script_num, usfm_style, person, actor, in_verse_num, script_text) 
-			VALUES (?,?,?,?,?,?,?,?,?)"""
+			script_num, usfm_style, person, actor, in_verse_num, verse_str, script_text) 
+			VALUES (?,?,?,?,?,?,?,?,?,?)"""
 		self.sqlite.executeBatch(sql, self.scriptRecs)
 		self.scriptRecs = []
 
@@ -314,9 +315,9 @@ if __name__ == "__main__":
 	db = DBAdapter(database)
 
 	print("* Expect 3 lines of script records")
-	db.addScript("GEN", 1, "ENG_GEN_1.mp3", 1, "p", 1, 1, 1, "In the beginning darkness")
-	db.addScript("GEN", 1, "ENG_GEN_1.mp3", 2, "p", 1, 1, 1, "Let there be light")
-	db.addScript("GEN", 1, "ENG_GEN_1.mp3", 3, "p", 1, 1, 2, "And there was light")
+	db.addScript("GEN", 1, "ENG_GEN_1.mp3", 1, "p", 1, 1, 1, "1a", "In the beginning darkness")
+	db.addScript("GEN", 1, "ENG_GEN_1.mp3", 2, "p", 1, 1, 1, "1b", "Let there be light")
+	db.addScript("GEN", 1, "ENG_GEN_1.mp3", 3, "p", 1, 1, 2, "2a", "And there was light")
 	db.insertScripts()
 	resultSet = db.selectScriptsByFile("ENG_GEN_1.mp3")
 	for (script_id, script_text) in resultSet:
