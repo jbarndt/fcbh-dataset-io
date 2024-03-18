@@ -20,7 +20,7 @@ class FCBHDownload:
 			if ftype == 'text_plain':
 				self.downloadPlainText(directory, bible, filesetContent)
 			else:
-				cloudContent = self.downloadLocation(filesetContent['id'])
+				cloudContent = self.downloadLocation(filesetContent['id'], ftype)
 				if cloudContent != None:
 					self.downloadFiles(directory, cloudContent)
 
@@ -120,9 +120,11 @@ class FCBHDownload:
 		self.saveFile(directory, bible, filename, content)	
 
 
-	def downloadLocation(self, filesetId):
-		#print(filesetContent)
-		url = HOST + "download/" + filesetId + "?v=4"
+	def downloadLocation(self, filesetId, ftype):
+		if ftype == "text_usx":
+			url = HOST + "bibles/filesets/" + filesetId + "/ALL/1?v=4&limit=100000"
+		else:
+			url = HOST + "download/" + filesetId + "?v=4"
 		content = self.httpRequest(filesetId, url)
 		if content == None:
 			return None
@@ -173,7 +175,7 @@ class FCBHDownload:
 		try:
 			content = json.loads(content.decode('utf-8'))
 			#print("META:", content.get('meta'))
-			return (content['data'], content['meta'])
+			return (content['data'], content.get('meta'))
 		except json.JSONDecodeError:
 			print("The file is not json", param)
 			sys.exit(1)	
