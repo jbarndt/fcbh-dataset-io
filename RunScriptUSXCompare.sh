@@ -12,7 +12,7 @@ python3 ScriptAdapter.py $bibleId
 database1=$bibleId"_SCRIPT.db"
 python3 ExportUtility.py $database1
 
-$HOME/Documents/go2/bin/usx_parser $bibleId
+$HOME/Documents/go2/bin/usx $bibleId
 database2=$bibleId"_USXEDIT.db"
 python3 WordParser.py $database2
 python3 ExportUtility.py $database2

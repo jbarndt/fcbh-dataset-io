@@ -107,6 +107,7 @@ class FCBHDownload:
 		fileset_id = filesetContent['id']
 		filename = fileset_id + ".json"
 		url = HOST + "download/" + fileset_id + "?v=4&limit=100000"
+		#url = HOST + "bibles/filesets/" + fileset_id + "/ALL/1?v=4&limit=100000"
 		print("Downloading", os.path.join(bible, filename))
 		content = self.httpRequest(fileset_id, url)
 		try:

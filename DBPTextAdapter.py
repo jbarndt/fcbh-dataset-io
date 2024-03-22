@@ -4,7 +4,7 @@ import sys
 import urllib.request
 import json
 from DBAdapter import *
-from FileAdapter import *
+from WordParser import *
 
 # This program loads a plain text fileset into a sqlite database
 # it loads it from the downloads directory.
@@ -45,10 +45,17 @@ class DBPTextAdapter:
 					if lastBookId != bookId:
 						print(bookId)
 						lastBookId = bookId
+						scriptNum = 1
 					chapter = vs['chapter']
 					verseNum = vs['verse_start']
+					if vs['verse_start'] == vs['verse_end']:
+						verseStr = vs['verse_start']
+					else:
+						verseStr = str(vs['verse_start']) + "-" + str(vs['verse_end'])
 					text = vs['verse_text']
-					self.db.addScript(bookId, chapter, filename, scriptNum, None, None, None, verseNum, text)
+					text = text.replace("&lt", "<")
+					text = text.replace("&gt", ">")
+					self.db.addScript(bookId, chapter, filename, scriptNum, None, None, None, verseNum, verseStr, text)
 		except Exception as e:
 			print("Error", e)
 		self.db.insertScripts()
@@ -65,8 +72,8 @@ if __name__ == "__main__":
 	text = DBPTextAdapter(db)
 	text.insertIdent(bibleId)
 	text.processDirectory(bibleId)
-	file = FileAdapter(db)
-	file.loadWords()
+	words = WordParser(db)
+	words.parse()
 	db.close()
 
 

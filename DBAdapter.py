@@ -44,7 +44,7 @@ class DBAdapter:
 			usfm_style TEXT,
 			person TEXT,  /* should this be text or integer? */
 			actor TEXT,  /* this should be integer. */
-			in_verse_num INTEGER NOT NULL,
+			verse_num INTEGER NOT NULL,
 			verse_str TEXT NOT NULL, /* e.g. 6-10 7,8 6a */
 			script_text TEXT NOT NULL,
 			script_begin_ts REAL,
@@ -106,21 +106,21 @@ class DBAdapter:
 
 	# In FileAdapter
 	def addScript(self, book_id, chapter_num, audio_file, script_num, usfm_style, 
-			person, actor, in_verse_num, verse_str, script_text):
+			person, actor, verse_num, verse_str, script_text):
 		self.scriptRecs.append((book_id, chapter_num, audio_file, script_num, usfm_style, 
-			person, actor, in_verse_num, verse_str, script_text))
+			person, actor, verse_num, verse_str, script_text))
 
 	# In FileAdapter
 	def insertScripts(self):
 		sql = """INSERT INTO audio_scripts(book_id, chapter_num, audio_file, 
-			script_num, usfm_style, person, actor, in_verse_num, verse_str, script_text) 
+			script_num, usfm_style, person, actor, verse_num, verse_str, script_text) 
 			VALUES (?,?,?,?,?,?,?,?,?,?)"""
 		self.sqlite.executeBatch(sql, self.scriptRecs)
 		self.scriptRecs = []
 
 	# In FileAdapter
 	def selectScripts(self):
-		sql = "SELECT script_id, usfm_style, in_verse_num, script_text FROM audio_scripts"
+		sql = "SELECT script_id, usfm_style, verse_num, script_text FROM audio_scripts"
 		return self.sqlite.select(sql)
 
 	# In FileAdapter
