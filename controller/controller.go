@@ -3,6 +3,7 @@ package controller
 import (
 	"dataset_io"
 	"dataset_io/fetch"
+	"dataset_io/utility"
 	"fmt"
 )
 
@@ -17,11 +18,13 @@ func NewController(request dataset_io.RequestType) *Controller {
 }
 
 func (c *Controller) Process() {
+	textSource := string(c.request.TextSource)
+	var databaseName = c.request.BibleId + "_" + textSource + ".db"
+	var database = utility.NewDBAdapter(databaseName)
 	var info = c.fetchMetaData()
 	fmt.Println("INFO", info)
-	// store in audio ident table
-	// create DBAdapter
-
+	database.InsertIdent(info.BibleId, info.LanguageISO, info.VersionCode, textSource,
+		info.LanguageId, info.RolvId, info.Alphabet.Alphabet, info.LanguageName, info.VersionName)
 }
 
 func (c *Controller) fetchMetaData() fetch.BibleInfoType {
