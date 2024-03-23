@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/sergi/go-diff/diffmatchpatch"
+	"golang.org/x/text/unicode/norm"
 	"log"
 	_ "modernc.org/sqlite"
 	"os"
@@ -11,6 +12,8 @@ import (
 	"strconv"
 	"strings"
 )
+
+var globalDiffCount = 0
 
 func main() {
 	database1, database2 := getCommandLine()
@@ -32,6 +35,7 @@ func main() {
 	}
 	db1.Close()
 	db2.Close()
+	fmt.Println("Num Diff", globalDiffCount)
 	//displayTest(lines1)
 	//displayTest(lines2)
 }
@@ -94,6 +98,8 @@ func process(db *sql.DB, database string, bookId string, chapterNum int) []Verse
 	} else if strings.Contains(database, "USX") {
 		lines = consolidateUSX(lines)
 	}
+	cfg := getConfig()
+	lines = cleanUp(lines, cfg)
 	return lines
 }
 
@@ -105,13 +111,7 @@ type Verse struct {
 }
 
 func readDatabase(db *sql.DB, bookId string, chapterNum int) []Verse {
-	type tmpVerse struct {
-		bookId  string
-		chapter int
-		num     sql.NullInt32
-		text    sql.NullString
-	}
-	sqlStmt := `SELECT book_id, chapter_num, in_verse_num, script_text FROM audio_scripts 
+	sqlStmt := `SELECT book_id, chapter_num, verse_str, script_text FROM audio_scripts 
 			WHERE book_id=? AND chapter_num=?
 			ORDER BY script_id`
 	stmt, err := db.Prepare(sqlStmt)
@@ -125,16 +125,12 @@ func readDatabase(db *sql.DB, bookId string, chapterNum int) []Verse {
 	}
 	var results []Verse
 	for rows.Next() {
-		var tmp tmpVerse
-		err := rows.Scan(&tmp.bookId, &tmp.chapter, &tmp.num, &tmp.text)
+		var vs Verse
+		err := rows.Scan(&vs.bookId, &vs.chapter, &vs.num, &vs.text)
 		if err != nil {
 			log.Fatal(err)
 		}
-		if tmp.text.Valid {
-			var verse = Verse{bookId: tmp.bookId, chapter: tmp.chapter,
-				num: strconv.Itoa(int(tmp.num.Int32)), text: tmp.text.String}
-			results = append(results, verse)
-		}
+		results = append(results, vs)
 	}
 	err = rows.Err()
 	if err != nil {
@@ -153,7 +149,6 @@ func consolidateScript(verses []Verse) []Verse {
 	var results = make([]Verse, 0, len(verses))
 	var sumInput = 0
 	var sumOutput = 0
-	// Somehow do this one chapter at a time.
 	var bookId = verses[0].bookId
 	var chapter = verses[0].chapter
 	var parts = make([]string, 0, 100)
@@ -162,13 +157,11 @@ func consolidateScript(verses []Verse) []Verse {
 		sumInput += len(rec.text)
 	}
 	text := strings.Join(parts, ``)
-	//fmt.Println(text, "\n")
-	var verseNum = `0`
+	var verseNum = ``
 	var tmpNum []byte
 	var index = 0
 	var state = begin
 	for index < len(text) {
-		//fmt.Println(`state:`, labels[state], `index:`, index, `char:`, string(text[index]))
 		switch state {
 		case begin:
 			var part string
@@ -185,26 +178,29 @@ func consolidateScript(verses []Verse) []Verse {
 			}
 			verse := Verse{bookId: bookId, chapter: chapter, num: verseNum, text: part}
 			results = append(results, verse)
-			//fmt.Println(part)
 			index += len(part) + 1
 		case inNum:
 			char := text[index]
-			//fmt.Println("inNum", string(char))
 			if char >= '0' && char <= '9' {
 				tmpNum = append(tmpNum, char)
+				index++
+				sumOutput += 1
 			} else if char == '}' {
 				verseNum = string(tmpNum)
 				state = endNum
+				index++
+				sumOutput += 1
 			} else {
-				logError(bookId, chapter, verseNum, `Invalid char in {nn, expect n or }`,
-					string(char))
+				start := max(0, index-50)
+				end := min(len(text)-1, index+50)
+				fmt.Println("WARNING:", bookId, chapter, verseNum, `Invalid char in {nn, expect n or } found `,
+					string(char), ` in `, text[start:end])
+				verseNum = string(tmpNum)
+				state = begin
 			}
-			index++
-			sumOutput += 1
 		case endNum:
 			char := text[index]
 			peek := text[index+1]
-			//fmt.Println("endNum", string(char), string(peek))
 			if (char == '_' || char == '-') && peek == '{' {
 				state = inNum
 				tmpNum = []byte(verseNum + "-")
@@ -221,10 +217,10 @@ func consolidateScript(verses []Verse) []Verse {
 	return results
 }
 
-func logError(bookId string, chapter int, verseNum string, message string, found string) {
-	fmt.Println("Error:", bookId, chapter, verseNum, message, found)
-	os.Exit(1)
-}
+//func logError(bookId string, chapter int, verseNum string, message string, found string) {
+//	fmt.Println("Error:", bookId, chapter, verseNum, message, found)
+//	os.Exit(1)
+//}
 
 func consolidateUSX(verses []Verse) []Verse {
 	var sumInput = 0
@@ -278,6 +274,133 @@ func displayTest(verses []Verse) {
 	fmt.Println("========")
 }
 
+func cleanUp(verses []Verse, cfg config) []Verse {
+	if cfg.lowerCase {
+		for i, vs := range verses {
+			verses[i].text = strings.ToLower(vs.text)
+		}
+	}
+	var replace []string
+	if cfg.removePromptChars {
+		replace = append(replace, "<<", "")
+		replace = append(replace, ">>", "")
+		replace = append(replace, "((", "")
+		replace = append(replace, "†", "") // KDLTBL
+		replace = append(replace, "[", "") // KDLTBL
+		replace = append(replace, "]", "") // KDLTBL
+		replace = append(replace, "<", "") // AAAMLT
+		replace = append(replace, ">", "") // AAAMLT
+	}
+	if cfg.removePunctuation {
+		replace = append(replace, ",", "")
+		replace = append(replace, ";", "")
+		replace = append(replace, ":", "")
+		replace = append(replace, ".", "")
+		replace = append(replace, "!", "")
+		replace = append(replace, "?", "")
+		replace = append(replace, "~", "")
+	}
+	if cfg.doubleQuotes == normalize {
+		//replace = append(replace, "\u201C", "\u0022") // left quote
+		//replace = append(replace, "\u201D", "\u0022") // right quote
+		//replace = append(replace, "\u2033", "\u0022") // minutes or seconds
+		replace = append(replace, "\u00AB", "\u0022") // <<
+		//replace = append(replace, "\u00BB", "\u0022") // >>
+		//replace = append(replace, "\u201E", "\u0022") // low 9 quote
+	} else if cfg.doubleQuotes == remove {
+		replace = append(replace, "\u0022", "") // ascii
+		replace = append(replace, "\u201C", "") // left quote
+		replace = append(replace, "\u201D", "") // right quote
+		//replace = append(replace, "\u2033", "") // minutes or seconds
+		replace = append(replace, "\u00AB", "") // <<
+		replace = append(replace, "\u00BB", "") // >>
+		//replace = append(replace, "\u201E", "") // low 9 quote
+	}
+	if cfg.apostrophe == normalize {
+		replace = append(replace, "\uA78C", "'") // ? found in script text
+		replace = append(replace, "\u2018", "'") // left
+		replace = append(replace, "\u2019", "'") // right
+		replace = append(replace, "\u02BC", "'") // modifier letter apos
+		replace = append(replace, "\u2032", "'") // prime
+		replace = append(replace, "\u00B4", "'") // acute accent (not really apos)
+	} else if cfg.apostrophe == remove {
+		replace = append(replace, "'", "")
+		replace = append(replace, "\uA78C", "") // ? found in script text
+		replace = append(replace, "\u2018", "") // left
+		replace = append(replace, "\u2019", "") // right
+		//replace = append(replace, "\u02BC", "") // modifier letter apos
+		//replace = append(replace, "\u2032", "") // prime
+		//replace = append(replace, "\u00B4", "") // acute accent (not really apos)
+	}
+	if cfg.hyphen == normalize {
+		replace = append(replace, "\u2010", "\u002D") // hypen
+		replace = append(replace, "\u2011", "\u002D") // non-breaking hyphen
+		replace = append(replace, "\u2012", "\u002D") // figure dash
+		replace = append(replace, "\u2013", "\u002D") // en dash
+		replace = append(replace, "\u2014", "\u002D") // em dash
+		replace = append(replace, "\u2015", "\u002D") // horizontal bar
+		replace = append(replace, "\uFE58", "\u002D") // small em dash
+		replace = append(replace, "\uFE62", "\u002D") // small en dash
+		replace = append(replace, "\uFE63", "\u002D") // small hyphen minus
+		replace = append(replace, "\uFF0D", "\u002D") // fullwidth hypen-minus
+	} else if cfg.hyphen == remove {
+		replace = append(replace, "\u002D", "") // hypen
+		replace = append(replace, "\u2010", "") // hypen
+		replace = append(replace, "\u2011", "") // non-breaking hyphen
+		replace = append(replace, "\u2012", "") // figure dash
+		replace = append(replace, "\u2013", "") // en dash
+		replace = append(replace, "\u2014", "") // em dash
+		replace = append(replace, "\u2015", "") // horizontal bar
+		replace = append(replace, "\uFE58", "") // small em dash
+		replace = append(replace, "\uFE62", "") // small en dash
+		replace = append(replace, "\uFE63", "") // small hyphen minus
+		replace = append(replace, "\uFF0D", "") // fullwidth hypen-minus
+	}
+	if len(replace) > 0 {
+		replacer := strings.NewReplacer(replace...)
+		for i, vs := range verses {
+			verses[i].text = replacer.Replace(vs.text)
+		}
+	}
+	// https://unicode.org/reports/tr15/  Normalization Doc
+	if cfg.diacritical == normalize {
+		if cfg.normalizeType == norm.NFC {
+			for i, vs := range verses {
+				verses[i].text = norm.NFC.String(vs.text)
+			}
+		} else if cfg.normalizeType == norm.NFD {
+			for i, vs := range verses {
+				verses[i].text = norm.NFD.String(vs.text)
+			}
+		} else if cfg.normalizeType == norm.NFKC {
+			for i, vs := range verses {
+				verses[i].text = norm.NFKC.String(vs.text)
+			}
+		} else if cfg.normalizeType == norm.NFKD {
+			for i, vs := range verses {
+				verses[i].text = norm.NFKD.String(vs.text)
+			}
+		}
+	} else if cfg.diacritical == remove {
+		if cfg.normalizeType != norm.NFD && cfg.normalizeType != norm.NFKD {
+			for i, vs := range verses {
+				verses[i].text = norm.NFKD.String(vs.text)
+			}
+		}
+		var filtered = make([]rune, 0, 300)
+		for i, vs := range verses {
+			filtered = []rune{}
+			for _, ch := range vs.text {
+				if ch < '\u0300' || ch > '\u036F' {
+					filtered = append(filtered, ch)
+				}
+			}
+			verses[i].text = string(filtered)
+		}
+	}
+	return verses
+}
+
 /* This diff method assumes one chapter at a time */
 func diff(verses1 []Verse, verses2 []Verse) {
 	type pair struct {
@@ -320,6 +443,7 @@ func diff(verses1 []Verse, verses2 []Verse) {
 				ref := pair.bookId + " " + strconv.Itoa(pair.chapter) + ":" + pair.num
 				fmt.Println(ref, diffMatch.DiffPrettyText(diffs))
 				fmt.Println("=============")
+				globalDiffCount++
 			}
 		}
 	}

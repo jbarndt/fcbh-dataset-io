@@ -45,7 +45,7 @@ type BibleInfoType struct {
 	DbpProd      DbpProdType  `json:"filesets"`
 }
 type BibleInfoRespType struct {
-	Data BibleInfoType `json:"data""`
+	Data BibleInfoType `json:"data"`
 }
 
 func (d *DbpApiClient) BibleInfo() BibleInfoType {
