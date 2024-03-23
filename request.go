@@ -27,7 +27,7 @@ type TextSourceType string
 
 const (
 	SCRIPT                TextSourceType = "SCRIPT"
-	TEXT                  TextSourceType = "TEXT"
+	DBPTEXT               TextSourceType = "DBPTEXT"
 	TEXTEDIT              TextSourceType = "TEXTEDIT"
 	USXEDIT               TextSourceType = "USXEDIT"
 	DefaultTextSourceType                = USXEDIT

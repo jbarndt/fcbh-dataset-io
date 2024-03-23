@@ -54,6 +54,9 @@ func (c *Controller) readText(database db.DBAdapter) {
 	switch c.request.TextSource {
 	case dataset_io.USXEDIT:
 		read.ReadUSXEdit(database, c.request.BibleId, c.request.Testament)
+	case dataset_io.DBPTEXT:
+		reader := read.NewDBPTextAdapter(database)
+		reader.ProcessDirectory(c.request.BibleId, c.request.Testament)
 	default:
 		log.Println("Error: Could not process ", c.request.TextSource)
 	}
