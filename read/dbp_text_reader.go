@@ -68,7 +68,7 @@ func (d *DBPTextReader) processFile(directory, filename string) {
 			scriptNum = 1
 		}
 		var rec db.ScriptRec
-		rec.ScriptNum = scriptNum
+		rec.ScriptNum = strconv.Itoa(scriptNum)
 		rec.BookId = vs.BookId
 		rec.ChapterNum = vs.ChapterNum
 		rec.VerseNum = vs.VerseStart

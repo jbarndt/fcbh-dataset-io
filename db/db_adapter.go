@@ -139,7 +139,7 @@ type ScriptRec struct {
 	BookId     string
 	ChapterNum int
 	AudioFile  string
-	ScriptNum  int
+	ScriptNum  string
 	UsfmStyle  string
 	Person     string
 	Actor      string
@@ -155,6 +155,7 @@ func (d *DBAdapter) InsertScripts(records []ScriptRec) {
 	tx, stmt := d.prepareDML(sql)
 	defer stmt.Close()
 	for _, rec := range records {
+		rec.ScriptNum = zeroFill(rec.ScriptNum, 5)
 		text := strings.Join(rec.ScriptText, ``)
 		_, err := stmt.Exec(rec.BookId, rec.ChapterNum, rec.AudioFile, rec.ScriptNum,
 			rec.UsfmStyle, rec.Person, rec.Actor, rec.VerseNum, rec.VerseStr, text)
@@ -163,6 +164,21 @@ func (d *DBAdapter) InsertScripts(records []ScriptRec) {
 		}
 	}
 	d.commitDML(tx, sql)
+}
+
+func zeroFill(a string, size int) string {
+	num := countDigits(a)
+	b := "0000000"[:size-num] + a
+	return b
+}
+
+func countDigits(a string) int {
+	for i, ch := range a {
+		if ch < '0' || ch > '9' {
+			return i
+		}
+	}
+	return len(a)
 }
 
 func (d *DBAdapter) prepareDML(sql string) (*sql.Tx, *sql.Stmt) {

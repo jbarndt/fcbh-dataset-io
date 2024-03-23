@@ -57,6 +57,10 @@ func (c *Controller) readText(database db.DBAdapter) {
 	case dataset_io.DBPTEXT:
 		reader := read.NewDBPTextAdapter(database)
 		reader.ProcessDirectory(c.request.BibleId, c.request.Testament)
+	case dataset_io.SCRIPT:
+		reader := read.NewScriptReader(database)
+		file := reader.FindFile(c.request.BibleId)
+		reader.Read(file)
 	default:
 		log.Println("Error: Could not process ", c.request.TextSource)
 	}
