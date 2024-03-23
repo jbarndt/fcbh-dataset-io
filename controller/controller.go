@@ -53,7 +53,7 @@ func (c *Controller) readAudio() {
 func (c *Controller) readText(database db.DBAdapter) {
 	switch c.request.TextSource {
 	case dataset_io.USXEDIT:
-		read.ReadUSXEdit(database, c.request.BibleId)
+		read.ReadUSXEdit(database, c.request.BibleId, c.request.Testament)
 	default:
 		log.Println("Error: Could not process ", c.request.TextSource)
 	}

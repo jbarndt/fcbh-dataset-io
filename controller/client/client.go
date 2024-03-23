@@ -9,6 +9,7 @@ func main() {
 	var req dataset_io.RequestType
 	req.BibleId = "ATIWBT"
 	req.TextSource = dataset_io.USXEDIT
+	req.Testament = dataset_io.NT
 	var control = controller.NewController(req)
 	control.Process()
 }

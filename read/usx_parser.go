@@ -1,6 +1,7 @@
 package read
 
 import (
+	"dataset_io"
 	"dataset_io/db"
 	"encoding/xml"
 	"fmt"
@@ -32,15 +33,25 @@ var numericPattern = regexp.MustCompile(`^\d+`)
 //		dbPath := os.Getenv(`FCBH_DATASET_DB`)
 //		var db = openDatabase(dbPath, bibleId+"_USXEDIT.db")
 //		directory := filepath.Join(dbPath, `download`, bibleId)
-func ReadUSXEdit(database db.DBAdapter, bibleId string) {
+func ReadUSXEdit(database db.DBAdapter, bibleId string, testament dataset_io.TestamentType) {
 	directory := filepath.Join(os.Getenv(`FCBH_DATASET_FILES`), bibleId)
 	dirs, err := os.ReadDir(directory)
 	if err != nil {
 		log.Fatal(err)
 	}
+	var suffix string
+	switch testament {
+	case dataset_io.NT:
+		suffix = `N_ET-usx`
+	case dataset_io.OT:
+		suffix = `O_ET-usx`
+	case dataset_io.ONT:
+		suffix = `-usx`
+	default:
+		log.Fatal("Error: Unknown testament type", testament, "in ReadUSXEdit")
+	}
 	for _, dir := range dirs {
-		if strings.HasSuffix(dir.Name(), `N_ET-usx`) { // New Testament only
-			//if strings.HasSuffix(dir.Name(), `_ET-usx`) {
+		if strings.HasSuffix(dir.Name(), suffix) {
 			subDir := filepath.Join(directory, dir.Name())
 			files, err := os.ReadDir(subDir)
 			if err != nil {
