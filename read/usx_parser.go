@@ -139,11 +139,15 @@ func decode(filename string) []db.ScriptRec {
 			if bookId != `` && len(rec.ScriptText) > 0 {
 				records = append(records, rec)
 			}
-			scriptNum := rec.ScriptNum + 1
+			scriptNum, err := strconv.Atoi(rec.ScriptNum)
+			if err != nil {
+				log.Fatalln(err)
+			}
+			scriptNum++
 			if chapterNum != rec.ChapterNum {
 				scriptNum = 1
 			}
-			rec = db.ScriptRec{BookId: bookId, ChapterNum: chapterNum, ScriptNum: scriptNum,
+			rec = db.ScriptRec{BookId: bookId, ChapterNum: chapterNum, ScriptNum: strconv.Itoa(scriptNum),
 				VerseNum: verseNum, VerseStr: verseStr, UsfmStyle: usfmStyle}
 		}
 	}
@@ -204,7 +208,7 @@ func correctScriptNum(records []db.ScriptRec) []db.ScriptRec {
 			scriptNum = 0
 		}
 		scriptNum += 1
-		rec.ScriptNum = scriptNum
+		rec.ScriptNum = strconv.Itoa(scriptNum)
 		results = append(results, rec)
 	}
 	return results
