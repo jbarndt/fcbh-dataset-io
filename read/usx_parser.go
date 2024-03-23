@@ -1,8 +1,7 @@
-// package usx
-package main
+package read
 
 import (
-	"database/sql"
+	"dataset_io/db"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -15,19 +14,6 @@ import (
 	"strings"
 )
 
-type ScriptRec struct {
-	bookId     string
-	chapterNum int
-	audioFile  string
-	scriptNum  int
-	usfmStyle  string
-	person     string
-	actor      string
-	verseNum   int
-	verseStr   string
-	scriptText []string
-}
-
 type Stack []string
 
 var hasStyle = map[string]bool{
@@ -35,15 +21,19 @@ var hasStyle = map[string]bool{
 
 var numericPattern = regexp.MustCompile(`^\d+`)
 
-func main() {
-	if len(os.Args) < 2 {
-		fmt.Println("Usage:  $HOME/Documents/go2/bin/usx_parser  bibleId")
-		os.Exit(1)
-	}
-	var bibleId = os.Args[1]
-	dbPath := os.Getenv(`FCBH_DATASET_DB`)
-	var db = openDatabase(dbPath, bibleId+"_USXEDIT.db")
-	directory := filepath.Join(dbPath, `download`, bibleId)
+// MOVE TO TEST FILE
+//
+//	func main() {
+//		if len(os.Args) < 2 {
+//			fmt.Println("Usage:  $HOME/Documents/go2/bin/usx_parser  bibleId")
+//			os.Exit(1)
+//		}
+//		var bibleId = os.Args[1]
+//		dbPath := os.Getenv(`FCBH_DATASET_DB`)
+//		var db = openDatabase(dbPath, bibleId+"_USXEDIT.db")
+//		directory := filepath.Join(dbPath, `download`, bibleId)
+func ReadUSXEdit(database db.DBAdapter, bibleId string) {
+	directory := filepath.Join(os.Getenv(`FCBH_DATASET_FILES`), bibleId)
 	dirs, err := os.ReadDir(directory)
 	if err != nil {
 		log.Fatal(err)
@@ -63,23 +53,23 @@ func main() {
 				titleDesc := extractTitles(records)
 				records = addChapterHeading(records, titleDesc)
 				records = correctScriptNum(records)
-				loadDatabase(db, records)
+				database.InsertScripts(records)
 			}
 		}
 	}
-	countRecords(db)
-	db.Close()
+	count := database.SelectScalarInt(`SELECT count(*) FROM scripts`)
+	fmt.Println("Total Records", count)
 }
 
-func decode(filename string) []ScriptRec {
+func decode(filename string) []db.ScriptRec {
 	xmlFile, err := os.Open(filename)
 	if err != nil {
 		panic(err)
 	}
 	defer xmlFile.Close()
 	var stack Stack
-	var rec ScriptRec
-	var records []ScriptRec
+	var rec db.ScriptRec
+	var records []db.ScriptRec
 	var tagName string
 	var bookId string
 	var chapterNum = 1
@@ -127,23 +117,23 @@ func decode(filename string) []ScriptRec {
 					text = strings.Replace(text, `{`, `(`, -1)
 					text = strings.Replace(text, `}`, `)`, -1)
 				}
-				rec.scriptText = append(rec.scriptText, text)
+				rec.ScriptText = append(rec.ScriptText, text)
 			}
 		case xml.EndElement:
 			if hasStyle[se.Name.Local] {
 				stack, usfmStyle = stack.Pop()
 			}
 		}
-		if chapterNum != rec.chapterNum || verseNum != rec.verseNum || usfmStyle != rec.usfmStyle {
-			if bookId != `` && len(rec.scriptText) > 0 {
+		if chapterNum != rec.ChapterNum || verseNum != rec.VerseNum || usfmStyle != rec.UsfmStyle {
+			if bookId != `` && len(rec.ScriptText) > 0 {
 				records = append(records, rec)
 			}
-			scriptNum := rec.scriptNum + 1
-			if chapterNum != rec.chapterNum {
+			scriptNum := rec.ScriptNum + 1
+			if chapterNum != rec.ChapterNum {
 				scriptNum = 1
 			}
-			rec = ScriptRec{bookId: bookId, chapterNum: chapterNum, scriptNum: scriptNum,
-				verseNum: verseNum, verseStr: verseStr, usfmStyle: usfmStyle}
+			rec = db.ScriptRec{BookId: bookId, ChapterNum: chapterNum, ScriptNum: scriptNum,
+				VerseNum: verseNum, VerseStr: verseStr, UsfmStyle: usfmStyle}
 		}
 	}
 	fmt.Println("num records", len(records))
@@ -152,58 +142,58 @@ func decode(filename string) []ScriptRec {
 
 type titleDesc struct {
 	heading string
-	title   []ScriptRec
+	title   []db.ScriptRec
 	areDiff bool
 }
 
-func extractTitles(records []ScriptRec) titleDesc {
+func extractTitles(records []db.ScriptRec) titleDesc {
 	var results titleDesc
 	for _, rec := range records {
-		if rec.usfmStyle == `para.h` {
-			results.heading = strings.Join(rec.scriptText, ``)
-		} else if strings.HasPrefix(rec.usfmStyle, `para.mt`) {
+		if rec.UsfmStyle == `para.h` {
+			results.heading = strings.Join(rec.ScriptText, ``)
+		} else if strings.HasPrefix(rec.UsfmStyle, `para.mt`) {
 			results.title = append(results.title, rec)
 		}
 	}
 	if results.heading == `` && len(results.title) > 0 {
-		results.heading = strings.Join(results.title[len(results.title)-1].scriptText, ``)
+		results.heading = strings.Join(results.title[len(results.title)-1].ScriptText, ``)
 	}
 	return results
 }
 
-func addChapterHeading(records []ScriptRec, titles titleDesc) []ScriptRec {
-	var results = make([]ScriptRec, 0, len(records))
+func addChapterHeading(records []db.ScriptRec, titles titleDesc) []db.ScriptRec {
+	var results = make([]db.ScriptRec, 0, len(records))
 	for _, rec := range titles.title {
 		results = append(results, rec)
 	}
 	var lastChapter = -1
 	for _, rec := range records {
-		if rec.chapterNum != lastChapter {
-			lastChapter = rec.chapterNum
+		if rec.ChapterNum != lastChapter {
+			lastChapter = rec.ChapterNum
 			var rec2 = rec
-			rec2.verseNum = 0
-			rec2.verseStr = ``
-			rec2.scriptText = []string{titles.heading + " " + strconv.Itoa(rec.chapterNum)}
+			rec2.VerseNum = 0
+			rec2.VerseStr = ``
+			rec2.ScriptText = []string{titles.heading + " " + strconv.Itoa(rec.ChapterNum)}
 			results = append(results, rec2)
 		}
-		if rec.usfmStyle != `para.h` && !strings.HasPrefix(rec.usfmStyle, `para.mt`) {
+		if rec.UsfmStyle != `para.h` && !strings.HasPrefix(rec.UsfmStyle, `para.mt`) {
 			results = append(results, rec)
 		}
 	}
 	return results
 }
 
-func correctScriptNum(records []ScriptRec) []ScriptRec {
-	var results = make([]ScriptRec, 0, len(records))
+func correctScriptNum(records []db.ScriptRec) []db.ScriptRec {
+	var results = make([]db.ScriptRec, 0, len(records))
 	var scriptNum = 0
 	var lastChapter = 0
 	for _, rec := range records {
-		if rec.chapterNum != lastChapter {
-			lastChapter = rec.chapterNum
+		if rec.ChapterNum != lastChapter {
+			lastChapter = rec.ChapterNum
 			scriptNum = 0
 		}
 		scriptNum += 1
-		rec.scriptNum = scriptNum
+		rec.ScriptNum = scriptNum
 		results = append(results, rec)
 	}
 	return results
@@ -242,83 +232,4 @@ func (s Stack) Pop() (Stack, string) {
 		panic("You tried to pop an empty stack.")
 	}
 	return s[:l-1], s[l-1]
-}
-
-func openDatabase(path, name string) *sql.DB {
-	database := filepath.Join(path, name)
-	os.Remove(database)
-	db, err := sql.Open("sqlite", database)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return db
-}
-
-func loadDatabase(db *sql.DB, records []ScriptRec) {
-	sqlStmt := `CREATE TABLE IF NOT EXISTS audio_scripts (
-			script_id INTEGER PRIMARY KEY AUTOINCREMENT,
-			book_id TEXT NOT NULL,
-			chapter_num INTEGER NOT NULL,
-			audio_file TEXT NOT NULL,
-			script_num TEXT NOT NULL,
-			usfm_style TEXT,
-			person TEXT,  
-			actor TEXT,  
-			verse_num INTEGER NOT NULL,
-			verse_str TEXT NOT NULL,
-			script_text TEXT NOT NULL,
-			script_begin_ts REAL,
-			script_end_ts REAL,
-			script_mfcc BLOB,
-			mfcc_rows INTEGER,
-			mfcc_cols INTEGER) STRICT`
-	_, err := db.Exec(sqlStmt)
-	if err != nil {
-		log.Fatal("%q: %s\n", err, sqlStmt)
-		return
-	}
-	tx, err := db.Begin()
-	if err != nil {
-		log.Fatal(err)
-	}
-	sqlStmt = `INSERT INTO audio_scripts(book_id, chapter_num, audio_file, 
-			script_num, usfm_style, person, actor, verse_num, verse_str, script_text) 
-			VALUES (?,?,?,?,?,?,?,?,?,?)`
-	stmt, err := tx.Prepare(sqlStmt)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer stmt.Close()
-	for _, rec := range records {
-		text := strings.Join(rec.scriptText, ``)
-		_, err = stmt.Exec(rec.bookId, rec.chapterNum, rec.audioFile, rec.scriptNum,
-			rec.usfmStyle, rec.person, rec.actor, rec.verseNum, rec.verseStr, text)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-	err = tx.Commit()
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
-func countRecords(db *sql.DB) {
-	rows, err := db.Query(`select count(*) from audio_scripts`)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var count int
-		err = rows.Scan(&count)
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println("Total Records", count)
-	}
-	err = rows.Err()
-	if err != nil {
-		log.Fatal(err)
-	}
 }

@@ -1,4 +1,4 @@
-package utility
+package db
 
 import (
 	"database/sql"
@@ -6,6 +6,7 @@ import (
 	_ "modernc.org/sqlite"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func GetDBPath(database string) string {
@@ -20,7 +21,7 @@ func GetDBPath(database string) string {
 func DestroyDatabase(database string) {
 	var databasePath = GetDBPath(database)
 	_, err := os.Stat(databasePath)
-	if os.IsNotExist(err) {
+	if !os.IsNotExist(err) {
 		os.Remove(databasePath)
 	}
 }
@@ -134,24 +135,76 @@ func (d *DBAdapter) InsertIdent(bible_id string, language_iso string, version_co
 	}
 }
 
-//
-// scripts table
-//
+type ScriptRec struct {
+	BookId     string
+	ChapterNum int
+	AudioFile  string
+	ScriptNum  int
+	UsfmStyle  string
+	Person     string
+	Actor      string
+	VerseNum   int
+	VerseStr   string
+	ScriptText []string
+}
+
+func (d *DBAdapter) InsertScripts(records []ScriptRec) {
+	sql := `INSERT INTO scripts(book_id, chapter_num, audio_file, 
+			script_num, usfm_style, person, actor, verse_num, verse_str, script_text) 
+			VALUES (?,?,?,?,?,?,?,?,?,?)`
+	tx, stmt := d.prepareDML(sql)
+	defer stmt.Close()
+	for _, rec := range records {
+		text := strings.Join(rec.ScriptText, ``)
+		_, err := stmt.Exec(rec.BookId, rec.ChapterNum, rec.AudioFile, rec.ScriptNum,
+			rec.UsfmStyle, rec.Person, rec.Actor, rec.VerseNum, rec.VerseStr, text)
+		if err != nil {
+			log.Fatal(err, sql)
+		}
+	}
+	d.commitDML(tx, sql)
+}
+
+func (d *DBAdapter) prepareDML(sql string) (*sql.Tx, *sql.Stmt) {
+	tx, err := d.db.Begin()
+	if err != nil {
+		log.Fatal(err)
+	}
+	stmt, err := tx.Prepare(sql)
+	if err != nil {
+		log.Fatal(err, sql)
+	}
+	return tx, stmt
+}
+
+func (d *DBAdapter) commitDML(tx *sql.Tx, sql string) {
+	err := tx.Commit()
+	if err != nil {
+		log.Fatal(err, sql)
+	}
+}
+
+func (d *DBAdapter) SelectScalarInt(sql string) int {
+	rows, err := d.db.Query(sql)
+	if err != nil {
+		log.Fatal(err, sql)
+	}
+	defer rows.Close()
+	var count int
+	for rows.Next() {
+		err = rows.Scan(&count)
+		if err != nil {
+			log.Fatal(err, sql)
+		}
+	}
+	err = rows.Err()
+	if err != nil {
+		log.Fatal(err, sql)
+	}
+	return count
+}
+
 /*
-// In FileAdapter
-func addScript(self, book_id, chapter_num, audio_file, script_num, usfm_style,
-person, actor, verse_num, verse_str, script_text):
-self.scriptRecs.append((book_id, chapter_num, audio_file, script_num, usfm_style,
-person, actor, verse_num, verse_str, script_text))
-
-// In FileAdapter
-f insertScripts(self):
-sql = `INSERT INTO audio_scripts(book_id, chapter_num, audio_file,
-script_num, usfm_style, person, actor, verse_num, verse_str, script_text)
-VALUES (?,?,?,?,?,?,?,?,?,?)`
-self.sqlite.executeBatch(sql, self.scriptRecs)
-self.scriptRecs = []
-
 # In FileAdapter
 def selectScripts(self):
 sql = `SELECT script_id, usfm_style, verse_num, script_text FROM audio_scripts`
