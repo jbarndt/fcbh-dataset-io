@@ -23,42 +23,15 @@ type ScriptRec struct {
 	usfmStyle  string
 	person     string
 	actor      string
-	inVerseNum int
+	verseNum   int
+	verseStr   string
 	scriptText []string
 }
 
 type Stack []string
 
 var hasStyle = map[string]bool{
-	`book`: true, `para`: true, `cell`: true, `ms`: true, `note`: true, `sidebar`: true, `figure`: true}
-
-var okUSFM = []string{`p`, // normal paragraph
-	`m`,                       // margin paragraph
-	`po`,                      // opening of an epistle
-	`pr`,                      // right aligned
-	`cls`,                     // closure
-	`pmo`,                     // embedded text
-	`pm`,                      // embedded text paragraph
-	`pmc`,                     // embedded text closing
-	`pmr`,                     // embedded text refrain
-	`pi`, `pi1`, `pi2`, `pi3`, // indented paragraph
-	`mi`,                      // indented flush left
-	`nb`,                      // no break
-	`pb`,                      // explicit page break
-	`pc`,                      // centered paragraph
-	`ph`, `ph1`, `ph2`, `ph3`, // indented with hanging indent
-	`q`, `q1`, `q2`, `q3`, // poetry
-	`qr`,                      // right aligned poetry
-	`qc`,                      // centered poetry
-	`qm`, `qm1`, `qm2`, `qm3`, // embedded text poetic line
-	`b`,                       // blank line
-	`lh`,                      // list header
-	`li`, `li1`, `li2`, `li3`, // list entry
-	`lf`,                          // list footer
-	`lim`, `lim1`, `lim2`, `lim3`, // embedded list entry
-	`mt`, `mt1`, `mt2`, `mt3`, // book title
-	`h`, // short book title
-}
+	`book`: true, `para`: true, `char`: true, `cell`: true, `ms`: true, `note`: true, `sidebar`: true, `figure`: true}
 
 var numericPattern = regexp.MustCompile(`^\d+`)
 
@@ -86,8 +59,7 @@ func main() {
 			for _, file := range files {
 				filename := filepath.Join(subDir, file.Name())
 				fmt.Println(filename)
-				records := decode(filename)
-				records = filterByUSFM(records)
+				records := decode(filename) // Also edits out non-script elements
 				titleDesc := extractTitles(records)
 				records = addChapterHeading(records, titleDesc)
 				records = correctScriptNum(records)
@@ -95,6 +67,7 @@ func main() {
 			}
 		}
 	}
+	countRecords(db)
 	db.Close()
 }
 
@@ -110,7 +83,8 @@ func decode(filename string) []ScriptRec {
 	var tagName string
 	var bookId string
 	var chapterNum = 1
-	var inVerseNum int
+	var verseNum int
+	var verseStr string
 	var usfmStyle string
 	decoder := xml.NewDecoder(xmlFile)
 	for {
@@ -130,11 +104,19 @@ func decode(filename string) []ScriptRec {
 			} else if tagName == `chapter` {
 				chapterNum = findIntAttr(se, `number`)
 			} else if tagName == `verse` {
-				inVerseNum = findIntAttr(se, `number`)
+				verseNum = findIntAttr(se, `number`)
+				verseStr = findAttr(se, `number`)
 			}
 			if hasStyle[tagName] {
-				stack = stack.Push(usfmStyle)
-				usfmStyle = findAttr(se, `style`)
+				usfmStyle = tagName + `.` + findAttr(se, `style`)
+				if include(usfmStyle) { // This if fileters out the non-script code
+					stack = stack.Push(usfmStyle)
+				} else {
+					err := decoder.Skip()
+					if err != nil {
+						log.Fatal(err)
+					}
+				}
 			}
 		case xml.CharData:
 			text := string(se)
@@ -147,14 +129,13 @@ func decode(filename string) []ScriptRec {
 				}
 				rec.scriptText = append(rec.scriptText, text)
 			}
-			rec.audioFile = tagName
 		case xml.EndElement:
 			if hasStyle[se.Name.Local] {
 				stack, usfmStyle = stack.Pop()
 			}
 		}
-		if chapterNum != rec.chapterNum || inVerseNum != rec.inVerseNum || usfmStyle != rec.usfmStyle {
-			if len(rec.scriptText) > 0 {
+		if chapterNum != rec.chapterNum || verseNum != rec.verseNum || usfmStyle != rec.usfmStyle {
+			if bookId != `` && len(rec.scriptText) > 0 {
 				records = append(records, rec)
 			}
 			scriptNum := rec.scriptNum + 1
@@ -162,26 +143,11 @@ func decode(filename string) []ScriptRec {
 				scriptNum = 1
 			}
 			rec = ScriptRec{bookId: bookId, chapterNum: chapterNum, scriptNum: scriptNum,
-				inVerseNum: inVerseNum, usfmStyle: usfmStyle}
+				verseNum: verseNum, verseStr: verseStr, usfmStyle: usfmStyle}
 		}
 	}
 	fmt.Println("num records", len(records))
 	return records
-}
-
-func filterByUSFM(records []ScriptRec) []ScriptRec {
-	var usfmMap = make(map[string]bool)
-	for _, usfm := range okUSFM {
-		usfmMap[usfm] = true
-	}
-	var results = make([]ScriptRec, 0, len(records))
-	for _, rec := range records {
-		_, ok := usfmMap[rec.usfmStyle]
-		if ok {
-			results = append(results, rec)
-		}
-	}
-	return results
 }
 
 type titleDesc struct {
@@ -193,11 +159,14 @@ type titleDesc struct {
 func extractTitles(records []ScriptRec) titleDesc {
 	var results titleDesc
 	for _, rec := range records {
-		if rec.usfmStyle == `h` {
+		if rec.usfmStyle == `para.h` {
 			results.heading = strings.Join(rec.scriptText, ``)
-		} else if strings.HasPrefix(rec.usfmStyle, `mt`) {
+		} else if strings.HasPrefix(rec.usfmStyle, `para.mt`) {
 			results.title = append(results.title, rec)
 		}
+	}
+	if results.heading == `` && len(results.title) > 0 {
+		results.heading = strings.Join(results.title[len(results.title)-1].scriptText, ``)
 	}
 	return results
 }
@@ -212,11 +181,12 @@ func addChapterHeading(records []ScriptRec, titles titleDesc) []ScriptRec {
 		if rec.chapterNum != lastChapter {
 			lastChapter = rec.chapterNum
 			var rec2 = rec
-			rec2.inVerseNum = 0
+			rec2.verseNum = 0
+			rec2.verseStr = ``
 			rec2.scriptText = []string{titles.heading + " " + strconv.Itoa(rec.chapterNum)}
 			results = append(results, rec2)
 		}
-		if rec.usfmStyle != `h` && !strings.HasPrefix(rec.usfmStyle, `mt`) {
+		if rec.usfmStyle != `para.h` && !strings.HasPrefix(rec.usfmStyle, `para.mt`) {
 			results = append(results, rec)
 		}
 	}
@@ -294,27 +264,26 @@ func loadDatabase(db *sql.DB, records []ScriptRec) {
 			usfm_style TEXT,
 			person TEXT,  
 			actor TEXT,  
-			in_verse_num INTEGER,
-			script_text TEXT,
+			verse_num INTEGER NOT NULL,
+			verse_str TEXT NOT NULL,
+			script_text TEXT NOT NULL,
 			script_begin_ts REAL,
 			script_end_ts REAL,
 			script_mfcc BLOB,
 			mfcc_rows INTEGER,
 			mfcc_cols INTEGER) STRICT`
 	_, err := db.Exec(sqlStmt)
-	//fmt.Println("result", result)
 	if err != nil {
 		log.Fatal("%q: %s\n", err, sqlStmt)
 		return
 	}
-
 	tx, err := db.Begin()
 	if err != nil {
 		log.Fatal(err)
 	}
 	sqlStmt = `INSERT INTO audio_scripts(book_id, chapter_num, audio_file, 
-			script_num, usfm_style, person, actor, in_verse_num, script_text) 
-			VALUES (?,?,?,?,?,?,?,?,?)`
+			script_num, usfm_style, person, actor, verse_num, verse_str, script_text) 
+			VALUES (?,?,?,?,?,?,?,?,?,?)`
 	stmt, err := tx.Prepare(sqlStmt)
 	if err != nil {
 		log.Fatal(err)
@@ -323,7 +292,7 @@ func loadDatabase(db *sql.DB, records []ScriptRec) {
 	for _, rec := range records {
 		text := strings.Join(rec.scriptText, ``)
 		_, err = stmt.Exec(rec.bookId, rec.chapterNum, rec.audioFile, rec.scriptNum,
-			rec.usfmStyle, rec.person, rec.actor, rec.inVerseNum, text)
+			rec.usfmStyle, rec.person, rec.actor, rec.verseNum, rec.verseStr, text)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -332,7 +301,9 @@ func loadDatabase(db *sql.DB, records []ScriptRec) {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
 
+func countRecords(db *sql.DB) {
 	rows, err := db.Query(`select count(*) from audio_scripts`)
 	if err != nil {
 		log.Fatal(err)
@@ -344,7 +315,7 @@ func loadDatabase(db *sql.DB, records []ScriptRec) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Println(count)
+		fmt.Println("Total Records", count)
 	}
 	err = rows.Err()
 	if err != nil {
