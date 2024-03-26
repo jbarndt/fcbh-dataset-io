@@ -64,6 +64,10 @@ func (c *Controller) readText(database db.DBAdapter) {
 	default:
 		log.Println("Error: Could not process ", c.request.TextSource)
 	}
+	if c.request.TextDetail == dataset_io.WORDS || c.request.TextDetail == dataset_io.BOTH {
+		words := read.NewWordParser(database)
+		words.Parse()
+	}
 }
 
 func (c *Controller) encodeAudio() {

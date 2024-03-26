@@ -23,6 +23,15 @@ const (
 	DefaultAudioSourceType                 = MP3
 )
 
+type TextDetailType string
+
+const (
+	LINES                 TextDetailType = "LINES"
+	WORDS                 TextDetailType = "WORDS"
+	BOTH                  TextDetailType = "BOTH"
+	DefaultTextDetailType                = BOTH
+)
+
 type TextSourceType string
 
 const (
@@ -63,6 +72,7 @@ type RequestType struct {
 	Source        SourceType
 	Testament     TestamentType
 	AudioSource   AudioSourceType
+	TextDetail    TextDetailType
 	TextSource    TextSourceType
 	AudioEncoding AudioEncodingType
 	TextEncoding  TextEncodingType
