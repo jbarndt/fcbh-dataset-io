@@ -22,17 +22,6 @@ var hasStyle = map[string]bool{
 
 var numericPattern = regexp.MustCompile(`^\d+`)
 
-// MOVE TO TEST FILE
-//
-//	func main() {
-//		if len(os.Args) < 2 {
-//			fmt.Println("Usage:  $HOME/Documents/go2/bin/usx_parser  bibleId")
-//			os.Exit(1)
-//		}
-//		var bibleId = os.Args[1]
-//		dbPath := os.Getenv(`FCBH_DATASET_DB`)
-//		var db = openDatabase(dbPath, bibleId+"_USXEDIT.db")
-//		directory := filepath.Join(dbPath, `download`, bibleId)
 func ReadUSXEdit(database db.DBAdapter, bibleId string, testament dataset_io.TestamentType) {
 	directory := filepath.Join(os.Getenv(`FCBH_DATASET_FILES`), bibleId)
 	dirs, err := os.ReadDir(directory)
@@ -84,6 +73,7 @@ func decode(filename string) []db.InsertScriptRec {
 	var tagName string
 	var bookId string
 	var chapterNum = 1
+	var scriptNum = 0
 	var verseNum int
 	var verseStr string
 	var usfmStyle string
@@ -138,10 +128,6 @@ func decode(filename string) []db.InsertScriptRec {
 		if chapterNum != rec.ChapterNum || verseNum != rec.VerseNum || usfmStyle != rec.UsfmStyle {
 			if bookId != `` && len(rec.ScriptText) > 0 {
 				records = append(records, rec)
-			}
-			scriptNum, err := strconv.Atoi(rec.ScriptNum)
-			if err != nil {
-				log.Fatalln(err)
 			}
 			scriptNum++
 			if chapterNum != rec.ChapterNum {

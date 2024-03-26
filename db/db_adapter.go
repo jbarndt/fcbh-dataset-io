@@ -141,9 +141,9 @@ type InsertScriptRec struct {
 }
 
 func (d *DBAdapter) InsertScripts(records []InsertScriptRec) {
-	sql := `INSERT INTO scripts(book_id, chapter_num, script_num, usfm_style, 
+	sql := `INSERT INTO scripts(book_id, chapter_num, audio_file, script_num, usfm_style, 
 			person, actor, verse_num, verse_str, script_text) 
-			VALUES (?,?,?,?,?,?,?,?,?)`
+			VALUES (?,?,'',?,?,?,?,?,?,?)`
 	tx, stmt := d.prepareDML(sql)
 	defer stmt.Close()
 	for _, rec := range records {
