@@ -53,12 +53,12 @@ func (r ScriptReader) Read(filePath string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	var records []db.ScriptRec
+	var records []db.InsertScriptRec
 	for i, row := range rows {
 		if i == 0 {
 			continue // skip headings
 		}
-		var rec db.ScriptRec
+		var rec db.InsertScriptRec
 		switch row[1] {
 		case `JMS`:
 			rec.BookId = `JAS`

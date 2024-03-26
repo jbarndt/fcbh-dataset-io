@@ -59,7 +59,7 @@ func (d *DBPTextReader) processFile(directory, filename string) {
 		return
 	}
 	fmt.Println("num verses", len(verses))
-	var records = make([]db.ScriptRec, 0, 1000)
+	var records = make([]db.InsertScriptRec, 0, 1000)
 	for _, vs := range verses {
 		scriptNum++
 		if vs.BookId != lastBookId {
@@ -67,7 +67,7 @@ func (d *DBPTextReader) processFile(directory, filename string) {
 			lastBookId = vs.BookId
 			scriptNum = 1
 		}
-		var rec db.ScriptRec
+		var rec db.InsertScriptRec
 		rec.ScriptNum = strconv.Itoa(scriptNum)
 		rec.BookId = vs.BookId
 		rec.ChapterNum = vs.ChapterNum

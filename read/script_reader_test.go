@@ -9,9 +9,9 @@ func TestScriptReader(t *testing.T) {
 	bibleId := `ATIWBT`
 	database := bibleId + "_SCRIPT.db"
 	db.DestroyDatabase(database)
-	db := db.NewDBAdapter(database)
-	script := NewScriptReader(db)
+	conn := db.NewDBAdapter(database)
+	script := NewScriptReader(conn)
 	filename := script.FindFile(bibleId)
 	script.Read(filename)
-	db.Close()
+	conn.Close()
 }

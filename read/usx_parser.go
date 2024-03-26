@@ -72,15 +72,15 @@ func ReadUSXEdit(database db.DBAdapter, bibleId string, testament dataset_io.Tes
 	fmt.Println("Total Records", count)
 }
 
-func decode(filename string) []db.ScriptRec {
+func decode(filename string) []db.InsertScriptRec {
 	xmlFile, err := os.Open(filename)
 	if err != nil {
 		panic(err)
 	}
 	defer xmlFile.Close()
 	var stack Stack
-	var rec db.ScriptRec
-	var records []db.ScriptRec
+	var rec db.InsertScriptRec
+	var records []db.InsertScriptRec
 	var tagName string
 	var bookId string
 	var chapterNum = 1
@@ -147,7 +147,7 @@ func decode(filename string) []db.ScriptRec {
 			if chapterNum != rec.ChapterNum {
 				scriptNum = 1
 			}
-			rec = db.ScriptRec{BookId: bookId, ChapterNum: chapterNum, ScriptNum: strconv.Itoa(scriptNum),
+			rec = db.InsertScriptRec{BookId: bookId, ChapterNum: chapterNum, ScriptNum: strconv.Itoa(scriptNum),
 				VerseNum: verseNum, VerseStr: verseStr, UsfmStyle: usfmStyle}
 		}
 	}
@@ -157,11 +157,11 @@ func decode(filename string) []db.ScriptRec {
 
 type titleDesc struct {
 	heading string
-	title   []db.ScriptRec
+	title   []db.InsertScriptRec
 	areDiff bool
 }
 
-func extractTitles(records []db.ScriptRec) titleDesc {
+func extractTitles(records []db.InsertScriptRec) titleDesc {
 	var results titleDesc
 	for _, rec := range records {
 		if rec.UsfmStyle == `para.h` {
@@ -176,8 +176,8 @@ func extractTitles(records []db.ScriptRec) titleDesc {
 	return results
 }
 
-func addChapterHeading(records []db.ScriptRec, titles titleDesc) []db.ScriptRec {
-	var results = make([]db.ScriptRec, 0, len(records))
+func addChapterHeading(records []db.InsertScriptRec, titles titleDesc) []db.InsertScriptRec {
+	var results = make([]db.InsertScriptRec, 0, len(records))
 	for _, rec := range titles.title {
 		results = append(results, rec)
 	}
@@ -198,8 +198,8 @@ func addChapterHeading(records []db.ScriptRec, titles titleDesc) []db.ScriptRec 
 	return results
 }
 
-func correctScriptNum(records []db.ScriptRec) []db.ScriptRec {
-	var results = make([]db.ScriptRec, 0, len(records))
+func correctScriptNum(records []db.InsertScriptRec) []db.InsertScriptRec {
+	var results = make([]db.InsertScriptRec, 0, len(records))
 	var scriptNum = 0
 	var lastChapter = 0
 	for _, rec := range records {

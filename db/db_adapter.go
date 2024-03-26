@@ -27,7 +27,7 @@ func DestroyDatabase(database string) {
 }
 
 type DBAdapter struct {
-	db *sql.DB
+	DB *sql.DB
 }
 
 func NewDBAdapter(database string) DBAdapter {
@@ -94,19 +94,12 @@ func NewDBAdapter(database string) DBAdapter {
 		ON words (script_id, word_seq)`
 	execDDL(db, sql)
 	var result DBAdapter
-	result.db = db
+	result.DB = db
 	return result
 }
 
-func execDDL(db *sql.DB, sql string) {
-	_, err := db.Exec(sql)
-	if err != nil {
-		log.Fatal(err, sql)
-	}
-}
-
 func (d DBAdapter) Close() {
-	err := d.db.Close()
+	err := d.DB.Close()
 	if err != nil {
 		log.Println(err)
 	}
@@ -119,26 +112,25 @@ func (d DBAdapter) Close() {
 func (d *DBAdapter) InsertIdent(bible_id string, language_iso string, version_code string,
 	source_code string, languge_id int, rolv_id int, alphabet string, language_name string,
 	version_name string) {
-	sql := `REPLACE INTO ident(bible_id, language_iso, version_code, 
+	sql1 := `REPLACE INTO ident(bible_id, language_iso, version_code, 
 		source_code, languge_id, rolv_id, alphabet, language_name, 
 		version_name) VALUES (?,?,?,?,?,?,?,?,?)`
-	stmt, err := d.db.Prepare(sql)
+	stmt, err := d.DB.Prepare(sql1)
 	if err != nil {
-		log.Fatal(err, sql)
+		log.Fatal(err, sql1)
 	}
 	defer stmt.Close()
 	_, err = stmt.Exec(bible_id, language_iso, version_code,
 		source_code, languge_id, rolv_id, alphabet, language_name,
 		version_name)
 	if err != nil {
-		log.Fatal(err, sql)
+		log.Fatal(err, sql1)
 	}
 }
 
-type ScriptRec struct {
+type InsertScriptRec struct {
 	BookId     string
 	ChapterNum int
-	AudioFile  string
 	ScriptNum  string
 	UsfmStyle  string
 	Person     string
@@ -148,16 +140,16 @@ type ScriptRec struct {
 	ScriptText []string
 }
 
-func (d *DBAdapter) InsertScripts(records []ScriptRec) {
-	sql := `INSERT INTO scripts(book_id, chapter_num, audio_file, 
-			script_num, usfm_style, person, actor, verse_num, verse_str, script_text) 
-			VALUES (?,?,?,?,?,?,?,?,?,?)`
+func (d *DBAdapter) InsertScripts(records []InsertScriptRec) {
+	sql := `INSERT INTO scripts(book_id, chapter_num, script_num, usfm_style, 
+			person, actor, verse_num, verse_str, script_text) 
+			VALUES (?,?,?,?,?,?,?,?,?)`
 	tx, stmt := d.prepareDML(sql)
 	defer stmt.Close()
 	for _, rec := range records {
 		rec.ScriptNum = zeroFill(rec.ScriptNum, 5)
 		text := strings.Join(rec.ScriptText, ``)
-		_, err := stmt.Exec(rec.BookId, rec.ChapterNum, rec.AudioFile, rec.ScriptNum,
+		_, err := stmt.Exec(rec.BookId, rec.ChapterNum, rec.ScriptNum,
 			rec.UsfmStyle, rec.Person, rec.Actor, rec.VerseNum, rec.VerseStr, text)
 		if err != nil {
 			log.Fatal(err, sql)
@@ -166,42 +158,8 @@ func (d *DBAdapter) InsertScripts(records []ScriptRec) {
 	d.commitDML(tx, sql)
 }
 
-func zeroFill(a string, size int) string {
-	num := countDigits(a)
-	b := "0000000"[:size-num] + a
-	return b
-}
-
-func countDigits(a string) int {
-	for i, ch := range a {
-		if ch < '0' || ch > '9' {
-			return i
-		}
-	}
-	return len(a)
-}
-
-func (d *DBAdapter) prepareDML(sql string) (*sql.Tx, *sql.Stmt) {
-	tx, err := d.db.Begin()
-	if err != nil {
-		log.Fatal(err)
-	}
-	stmt, err := tx.Prepare(sql)
-	if err != nil {
-		log.Fatal(err, sql)
-	}
-	return tx, stmt
-}
-
-func (d *DBAdapter) commitDML(tx *sql.Tx, sql string) {
-	err := tx.Commit()
-	if err != nil {
-		log.Fatal(err, sql)
-	}
-}
-
 func (d *DBAdapter) SelectScalarInt(sql string) int {
-	rows, err := d.db.Query(sql)
+	rows, err := d.DB.Query(sql)
 	if err != nil {
 		log.Fatal(err, sql)
 	}
@@ -220,12 +178,42 @@ func (d *DBAdapter) SelectScalarInt(sql string) int {
 	return count
 }
 
-/*
-# In FileAdapter
-def selectScripts(self):
-sql = `SELECT script_id, usfm_style, verse_num, script_text FROM audio_scripts`
-return self.sqlite.select(sql)
+type SelectScriptsRec struct {
+	ScriptId   int
+	BookId     string
+	ChapterNum int
+	VerseNum   int
+	VerseStr   string
+	ScriptText string
+}
 
+// WordParser
+func (d *DBAdapter) SelectScripts() []SelectScriptsRec {
+	sql1 := `SELECT script_id, book_id, chapter_num, verse_num, verse_str, script_text 
+		FROM scripts ORDER BY script_id`
+	rows, err := d.DB.Query(sql1)
+	if err != nil {
+		log.Fatalln(err, sql1)
+	}
+	defer rows.Close()
+	var result []SelectScriptsRec
+	for rows.Next() {
+		var rec SelectScriptsRec
+		err := rows.Scan(&rec.ScriptId, &rec.BookId, &rec.ChapterNum, &rec.VerseNum,
+			&rec.VerseStr, &rec.ScriptText)
+		if err != nil {
+			log.Fatalln(err, sql1)
+		}
+		result = append(result, rec)
+	}
+	err = rows.Err()
+	if err != nil {
+		log.Fatalln(err, sql1)
+	}
+	return result
+}
+
+/*
 # In FileAdapter
 def findChapterStart(self, book_id, chapter_num):
 sql = `SELECT script_id FROM audio_scripts
@@ -279,24 +267,37 @@ mfcc_decoded = np.frombuffer(script_mfcc, dtype=np.float32)
 mfcc_shaped = mfcc_decoded.reshape((mfcc_rows, mfcc_cols))
 finalSet.append((script_id, mfcc_shaped))
 return finalSet
+*/
+//
+// words table
+//
 
-#
-# audio_words table
-#
+func (d DBAdapter) DeleteWords() {
+	execDDL(d.DB, `DELETE FROM words`)
+}
 
-def deleteWords(self):
-self.sqlite.execute(`DELETE FROM audio_words`)
+type InsertWordRec struct {
+	ScriptId int
+	WordSeq  int
+	VerseNum int
+	TType    string
+	Word     string
+}
 
-# In FileAdapter
-def addWord(self, script_id, word_seq, verse_num, ttype, word):
-self.wordRecs.append((script_id, word_seq, verse_num, ttype, word))
+func (d *DBAdapter) InsertWords(records []InsertWordRec) {
+	sql1 := `INSERT INTO words(script_id, word_seq, verse_num, ttype, word) VALUES (?,?,?,?,?)`
+	tx, stmt := d.prepareDML(sql1)
+	defer stmt.Close()
+	for _, rec := range records {
+		_, err := stmt.Exec(rec.ScriptId, rec.WordSeq, rec.VerseNum, rec.TType, rec.Word)
+		if err != nil {
+			log.Fatal(err, sql1)
+		}
+	}
+	d.commitDML(tx, sql1)
+}
 
-# In FileAdapter
-def insertWords(self):
-sql = `INSERT INTO audio_words(script_id, word_seq, verse_num, ttype, word) VALUES (?,?,?,?,?)`
-self.sqlite.executeBatch(sql, self.wordRecs)
-self.wordRecs = []
-
+/*
 # In AeneasExample
 def selectWordsByFile(self, audio_file):
 sql = `SELECT w.word_id, w.ttype, w.word
@@ -412,3 +413,44 @@ func selectTensor() {
 	return finalSet
 }
 */
+
+func execDDL(db *sql.DB, sql string) {
+	_, err := db.Exec(sql)
+	if err != nil {
+		log.Fatal(err, sql)
+	}
+}
+
+func zeroFill(a string, size int) string {
+	num := countDigits(a)
+	b := "0000000"[:size-num] + a
+	return b
+}
+
+func countDigits(a string) int {
+	for i, ch := range a {
+		if ch < '0' || ch > '9' {
+			return i
+		}
+	}
+	return len(a)
+}
+
+func (d *DBAdapter) prepareDML(sql string) (*sql.Tx, *sql.Stmt) {
+	tx, err := d.DB.Begin()
+	if err != nil {
+		log.Fatal(err)
+	}
+	stmt, err := tx.Prepare(sql)
+	if err != nil {
+		log.Fatal(err, sql)
+	}
+	return tx, stmt
+}
+
+func (d *DBAdapter) commitDML(tx *sql.Tx, sql string) {
+	err := tx.Commit()
+	if err != nil {
+		log.Fatal(err, sql)
+	}
+}
