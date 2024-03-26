@@ -131,6 +131,7 @@ func (d *DBAdapter) InsertIdent(bible_id string, language_iso string, version_co
 type InsertScriptRec struct {
 	BookId     string
 	ChapterNum int
+	AudioFile  string
 	ScriptNum  string
 	UsfmStyle  string
 	Person     string
@@ -143,13 +144,13 @@ type InsertScriptRec struct {
 func (d *DBAdapter) InsertScripts(records []InsertScriptRec) {
 	sql := `INSERT INTO scripts(book_id, chapter_num, audio_file, script_num, usfm_style, 
 			person, actor, verse_num, verse_str, script_text) 
-			VALUES (?,?,'',?,?,?,?,?,?,?)`
+			VALUES (?,?,?,?,?,?,?,?,?,?)`
 	tx, stmt := d.prepareDML(sql)
 	defer stmt.Close()
 	for _, rec := range records {
 		rec.ScriptNum = zeroFill(rec.ScriptNum, 5)
 		text := strings.Join(rec.ScriptText, ``)
-		_, err := stmt.Exec(rec.BookId, rec.ChapterNum, rec.ScriptNum,
+		_, err := stmt.Exec(rec.BookId, rec.ChapterNum, rec.AudioFile, rec.ScriptNum,
 			rec.UsfmStyle, rec.Person, rec.Actor, rec.VerseNum, rec.VerseStr, text)
 		if err != nil {
 			log.Fatal(err, sql)
