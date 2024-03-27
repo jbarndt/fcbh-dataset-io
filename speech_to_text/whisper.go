@@ -22,42 +22,31 @@ pip3 install git+https://github.com/openai/whisper.git
 Whisper is an open source Speech to Text program developed by OpenAI.
 Executable:
 /Users/gary/Library/Python/3.9/bin/whisper
-
-1. Retry Whisper with a non-drama version of the audio.
-2. Pi recommends preprocessing in audacity
-3. Do not get text, but get segments, and iterate over it.
-4. Capture start, end timestamps
-5. Capture text
-6. Capture tokens, if I have a place for it
-7. Capture avg_logprob
-8. Capture no_speech_prob
-9. Capture compression ratio
-
-'segments': [{'id': 0, 'seek': 0, 'start': 0.0, 'end': 3.24, 'text': ' Chapter 3', 'tokens': [50363, 7006, 513, 50525],
-'temperature': 0.0, 'avg_logprob': -0.2316610102067914, 'compression_ratio': 1.46, 'no_speech_prob':
-0.2119932472705841},
-
 */
 
 type Whisper struct {
-	conn    db.DBAdapter
-	records []db.InsertScriptRec
+	bibleId   string
+	conn      db.DBAdapter
+	outputDir string
+	records   []db.InsertScriptRec
 }
 
-func NewWhisper(conn db.DBAdapter) Whisper {
+func NewWhisper(bibleId string, conn db.DBAdapter) Whisper {
 	var w Whisper
+	w.bibleId = bibleId
 	w.conn = conn
 	w.records = make([]db.InsertScriptRec, 0, 100000)
 	return w
 }
 
-func (w *Whisper) ProcessDirectory(bibleId string, filesetId string, testament dataset_io.TestamentType) {
-	directory := filepath.Join(os.Getenv(`FCBH_DATASET_FILES`), bibleId, filesetId)
+func (w *Whisper) ProcessDirectory(filesetId string, testament dataset_io.TestamentType) {
+	directory := filepath.Join(os.Getenv(`FCBH_DATASET_FILES`), w.bibleId, filesetId)
+	w.outputDir = directory + `_whisper`
 	files, err := os.ReadDir(directory)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	for _, file := range files { // in python sorted(os.listdir(directory))
+	for _, file := range files {
 		filename := file.Name()
 		if !strings.HasPrefix(filename, `.`) {
 			fmt.Println(filename)
@@ -69,6 +58,7 @@ func (w *Whisper) ProcessDirectory(bibleId string, filesetId string, testament d
 			}
 		}
 	}
+	w.loadWhisperOutput(w.outputDir)
 }
 
 func (w *Whisper) processFile(directory string, filename string) {
@@ -77,47 +67,15 @@ func (w *Whisper) processFile(directory string, filename string) {
 		var path = filepath.Join(directory, filename)
 		w.runWhisper(path)
 	}
-
-	//result = self.model.transcribe(path)
-	//scriptText := result["text"]
-	//var rec db.InsertScriptRec
-	//bookId, chapter := w.parseFilename(filename)
-	//rec.BookId = bookId
-	//rec.ChapterNum = chapter
-	//if err != nil {
-	//	log.Fatalln(err)
-	//}
-	//rec.AudioFile = filename
-	//rec.VerseNum = 1 // ????
-	//rec.VerseStr = `1`
-	//rec.ScriptText = scriptText
-	//w.records = append(w.records, rec)
 }
 
-func (w *Whisper) parseFilename(filename string) (string, int) {
-	chapter, err := strconv.Atoi(filename[6:8])
-	if err != nil {
-		log.Fatal(err)
-	}
-	bookName := strings.Replace(filename[9:21], `_`, ``, -1)
-	bookId := db.USFMBookId(bookName)
-	return bookId, chapter
-}
-
-/*
-/Users/gary/Library/Python/3.9/bin/whisper
---model medium //large small
---model_dir Pathname defaults to .
---output_dir  default .
---output_format txt,vtt,tsv,json,all all is default
---task transcript || translate
---language
-*/
 func (w *Whisper) runWhisper(audioFilePath string) {
-	whisperPath := `/Users/gary/Library/Python/3.9/bin/whisper`
-	//model := `--model ` + `tiny`
-	//format := `--output_format json`
-	cmd := exec.Command(whisperPath, audioFilePath, `--model`, `tiny`, `--output_format`, `json`)
+	whisperPath := os.Getenv(`WHISPER_EXE`)
+	cmd := exec.Command(whisperPath, audioFilePath,
+		`--model`, `tiny`,
+		`--output_format`, `json`,
+		`--output_dir`, w.outputDir)
+	// --language is another option
 	fmt.Println(cmd.String())
 	var stdoutBuf, stderrBuf bytes.Buffer
 	cmd.Stdout = &stdoutBuf
@@ -130,17 +88,14 @@ func (w *Whisper) runWhisper(audioFilePath string) {
 	if stderrStr != `` {
 		fmt.Printf("Stderr: \n%s\n", stderrStr)
 	}
-	fmt.Println("\n\nSTDOUT:", stdoutBuf.String())
-	//if stdoutStr != "" {
-	//	fmt.Printf("Stdout: \n%s\n", stdoutStr)
-	//}
-	os.Exit(0)
+}
 
+func (w *Whisper) loadWhisperOutput(directory string) {
 	type WhisperSegmentType struct {
 		Id     int     `json:"id"`
-		Seek   float32 `json:"seek"`
-		Start  float32 `json:"start"`
-		End    float32 `json:"end"`
+		Seek   float64 `json:"seek"`
+		Start  float64 `json:"start"`
+		End    float64 `json:"end"`
 		Text   string  `json:"text"`
 		Tokens []int   `json:"tokens"`
 		// "tokens": [50660, 293, 281, 12076, 11, 281, 312, 42541, 11, 281, 312, 1919, 337, 633, 665, 589, 11, 281, 1710, 6724, 295, 51004],
@@ -153,12 +108,44 @@ func (w *Whisper) runWhisper(audioFilePath string) {
 		Segments []WhisperSegmentType `json:"segments"`
 		Language string               `json:"language"`
 	}
-	var response WhisperOutputType
-	err = json.Unmarshal(stdoutBuf.Bytes(), &response)
+	jsonFiles, err := os.ReadDir(directory)
 	if err != nil {
-		log.Fatalln("Error decoding Whisper JSON:", err)
+		log.Fatalln(err)
 	}
-	for _, seg := range response.Segments {
-		fmt.Println(seg)
+	for _, jsonFile := range jsonFiles {
+		filePath := filepath.Join(directory, jsonFile.Name())
+		content, err := os.ReadFile(filePath)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		var response WhisperOutputType
+		err = json.Unmarshal(content, &response)
+		if err != nil {
+			log.Fatalln("Error decoding Whisper JSON:", err)
+		}
+		for i, seg := range response.Segments {
+			//fmt.Println(seg)
+			var rec db.InsertScriptRec
+			rec.BookId, rec.ChapterNum = w.parseFilename(jsonFile.Name())
+			rec.AudioFile = jsonFile.Name()
+			rec.ScriptNum = strconv.Itoa(i + 1) // Works because it process 1 chapter per file.
+			rec.VerseNum = 0
+			rec.VerseStr = `0`
+			rec.ScriptText = []string{seg.Text}
+			rec.ScriptBeginTs = seg.Start
+			rec.ScriptEndTs = seg.End
+			w.records = append(w.records, rec)
+		}
 	}
+	w.conn.InsertScripts(w.records)
+}
+
+func (w *Whisper) parseFilename(filename string) (string, int) {
+	chapter, err := strconv.Atoi(filename[6:8])
+	if err != nil {
+		log.Fatal(err)
+	}
+	bookName := strings.Replace(filename[9:21], `_`, ``, -1)
+	bookId := db.USFMBookId(bookName)
+	return bookId, chapter
 }
