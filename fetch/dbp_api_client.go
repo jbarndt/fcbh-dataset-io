@@ -8,13 +8,13 @@ import (
 	"os"
 )
 
-type DbpApiClient struct {
+type DBPAPIClient struct {
 	bibleId string
 	//audioSource dataset_io.AudioSourceType
 }
 
-func NewDbpApiClient(bibleId string) *DbpApiClient {
-	var d DbpApiClient
+func NewDBPAPIClient(bibleId string) *DBPAPIClient {
+	var d DBPAPIClient
 	d.bibleId = bibleId
 	return &d
 }
@@ -48,7 +48,7 @@ type BibleInfoRespType struct {
 	Data BibleInfoType `json:"data"`
 }
 
-func (d *DbpApiClient) BibleInfo() BibleInfoType {
+func (d *DBPAPIClient) BibleInfo() BibleInfoType {
 	var url = `https://4.dbt.io/api/bibles/ATIWBT?`
 	var response BibleInfoRespType
 	body := d.query(url)
@@ -64,7 +64,7 @@ func (d *DbpApiClient) BibleInfo() BibleInfoType {
 	return result
 }
 
-func (d *DbpApiClient) query(url string) []byte {
+func (d *DBPAPIClient) query(url string) []byte {
 	url += `v=4&limit=100000&key=` + os.Getenv(`FCBH_DBP_KEY`)
 	resp, err := http.Get(url)
 	if err != nil {

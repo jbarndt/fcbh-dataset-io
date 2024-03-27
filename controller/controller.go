@@ -33,7 +33,7 @@ func (c *Controller) Process() {
 
 func (c *Controller) fetchMetaData() fetch.BibleInfoType {
 	req := c.request
-	client := fetch.NewDbpApiClient(req.BibleId)
+	client := fetch.NewDBPAPIClient(req.BibleId)
 	var info = client.BibleInfo()
 	return info
 }
@@ -54,8 +54,11 @@ func (c *Controller) readText(database db.DBAdapter) {
 	switch c.request.TextSource {
 	case dataset_io.USXEDIT:
 		read.ReadUSXEdit(database, c.request.BibleId, c.request.Testament)
+	case dataset_io.TEXTEDIT:
+		reader := read.NewDBPTextEditReader(c.request.BibleId, database)
+		reader.Process(c.request.Testament)
 	case dataset_io.DBPTEXT:
-		reader := read.NewDBPTextAdapter(database)
+		reader := read.NewDBPTextReader(database)
 		reader.ProcessDirectory(c.request.BibleId, c.request.Testament)
 	case dataset_io.SCRIPT:
 		reader := read.NewScriptReader(database)

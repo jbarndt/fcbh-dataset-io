@@ -18,6 +18,12 @@ func GetDBPath(database string) string {
 	}
 }
 
+func Exists(database string) bool {
+	var databasePath = GetDBPath(database)
+	_, err := os.Stat(databasePath)
+	return !os.IsNotExist(err)
+}
+
 func DestroyDatabase(database string) {
 	var databasePath = GetDBPath(database)
 	_, err := os.Stat(databasePath)
@@ -195,11 +201,11 @@ type SelectScriptsRec struct {
 
 // WordParser
 func (d *DBAdapter) SelectScripts() []SelectScriptsRec {
-	sql1 := `SELECT script_id, book_id, chapter_num, verse_num, verse_str, script_text 
+	query := `SELECT script_id, book_id, chapter_num, verse_num, verse_str, script_text 
 		FROM scripts ORDER BY script_id`
-	rows, err := d.DB.Query(sql1)
+	rows, err := d.DB.Query(query)
 	if err != nil {
-		log.Fatalln(err, sql1)
+		log.Fatalln(err, query)
 	}
 	defer rows.Close()
 	var result []SelectScriptsRec
@@ -208,13 +214,50 @@ func (d *DBAdapter) SelectScripts() []SelectScriptsRec {
 		err := rows.Scan(&rec.ScriptId, &rec.BookId, &rec.ChapterNum, &rec.VerseNum,
 			&rec.VerseStr, &rec.ScriptText)
 		if err != nil {
-			log.Fatalln(err, sql1)
+			log.Fatalln(err, query)
 		}
 		result = append(result, rec)
 	}
 	err = rows.Err()
 	if err != nil {
-		log.Fatalln(err, sql1)
+		log.Fatalln(err, query)
+	}
+	return result
+}
+
+type SelectScriptHeadingRec struct {
+	ScriptId   int
+	BookId     string
+	ChapterNum int
+	UsfmStyle  string
+	VerseNum   int
+	VerseStr   string
+	ScriptText string
+}
+
+func (d *DBAdapter) SelectScriptHeadings() []SelectScriptHeadingRec {
+	query := `SELECT script_id, book_id, chapter_num, usfm_style, verse_num, verse_str, script_text 
+		FROM scripts
+		WHERE usfm_style IN ('para.h', 'para.mt', 'para.mt1', 'para.mt2', 'para.mt3')
+		ORDER BY script_id`
+	rows, err := d.DB.Query(query)
+	if err != nil {
+		log.Fatalln(err, query)
+	}
+	defer rows.Close()
+	var result []SelectScriptHeadingRec
+	for rows.Next() {
+		var rec SelectScriptHeadingRec
+		err := rows.Scan(&rec.ScriptId, &rec.BookId, &rec.ChapterNum, &rec.UsfmStyle, &rec.VerseNum,
+			&rec.VerseStr, &rec.ScriptText)
+		if err != nil {
+			log.Fatalln(err, query)
+		}
+		result = append(result, rec)
+	}
+	err = rows.Err()
+	if err != nil {
+		log.Fatalln(err, query)
 	}
 	return result
 }

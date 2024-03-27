@@ -11,6 +11,6 @@ func TestDBPTextReader(t *testing.T) {
 	var database = bibleId + `_DBPTEXT.db`
 	db.DestroyDatabase(database)
 	var db1 = db.NewDBAdapter(database)
-	textAdapter := NewDBPTextAdapter(db1)
+	textAdapter := NewDBPTextReader(db1)
 	textAdapter.ProcessDirectory(bibleId, dataset_io.NT)
 }

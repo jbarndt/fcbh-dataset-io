@@ -13,11 +13,11 @@ import (
 )
 
 type DBPTextReader struct {
-	db db.DBAdapter
+	conn db.DBAdapter
 }
 
-func NewDBPTextAdapter(db db.DBAdapter) *DBPTextReader {
-	return &DBPTextReader{db: db}
+func NewDBPTextReader(conn db.DBAdapter) *DBPTextReader {
+	return &DBPTextReader{conn: conn}
 }
 
 func (d *DBPTextReader) ProcessDirectory(bibleId string, testament dataset_io.TestamentType) {
@@ -82,5 +82,5 @@ func (d *DBPTextReader) processFile(directory, filename string) {
 		rec.ScriptText = append(rec.ScriptText, text)
 		records = append(records, rec)
 	}
-	d.db.InsertScripts(records)
+	d.conn.InsertScripts(records)
 }

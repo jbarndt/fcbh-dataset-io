@@ -11,7 +11,8 @@ func main() {
 	//req.TextSource = dataset_io.USXEDIT
 	//req.TextSource = dataset_io.DBPTEXT
 	req.TextDetail = dataset_io.BOTH
-	req.TextSource = dataset_io.SCRIPT
+	//req.TextSource = dataset_io.SCRIPT
+	req.TextSource = dataset_io.TEXTEDIT
 	req.Testament = dataset_io.NT
 	var control = controller.NewController(req)
 	control.Process()
