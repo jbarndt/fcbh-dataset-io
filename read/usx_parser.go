@@ -173,6 +173,7 @@ func addChapterHeading(records []db.InsertScriptRec, titles titleDesc) []db.Inse
 			lastChapter = rec.ChapterNum
 			var rec2 = rec
 			rec2.VerseNum = 0
+			rec2.UsfmStyle = `para.h`
 			rec2.VerseStr = ``
 			rec2.ScriptText = []string{titles.heading + " " + strconv.Itoa(rec.ChapterNum)}
 			results = append(results, rec2)
