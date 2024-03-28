@@ -1,8 +1,8 @@
 package speech_to_text
 
 import (
-	"dataset_io"
-	"dataset_io/db"
+	"dataset"
+	"dataset/db"
 	"testing"
 )
 
@@ -13,6 +13,6 @@ func TestWhisper(t *testing.T) {
 	db.DestroyDatabase(database)
 	conn := db.NewDBAdapter(database)
 	var whisp = NewWhisper(bibleId, conn)
-	whisp.ProcessDirectory(filesetId, dataset_io.NT)
+	whisp.ProcessDirectory(filesetId, dataset.NT)
 	conn.Close()
 }

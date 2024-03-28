@@ -2,8 +2,8 @@ package speech_to_text
 
 import (
 	"bytes"
-	"dataset_io"
-	"dataset_io/db"
+	"dataset"
+	"dataset/db"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -39,7 +39,7 @@ func NewWhisper(bibleId string, conn db.DBAdapter) Whisper {
 	return w
 }
 
-func (w *Whisper) ProcessDirectory(filesetId string, testament dataset_io.TestamentType) {
+func (w *Whisper) ProcessDirectory(filesetId string, testament dataset.TestamentType) {
 	directory := filepath.Join(os.Getenv(`FCBH_DATASET_FILES`), w.bibleId, filesetId)
 	w.outputDir = directory + `_whisper`
 	files, err := os.ReadDir(directory)
@@ -51,9 +51,9 @@ func (w *Whisper) ProcessDirectory(filesetId string, testament dataset_io.Testam
 		if !strings.HasPrefix(filename, `.`) {
 			fmt.Println(filename)
 			fileType := filename[:1]
-			if fileType == `A` && (testament == dataset_io.OT || testament == dataset_io.ONT) {
+			if fileType == `A` && (testament == dataset.OT || testament == dataset.ONT) {
 				w.processFile(directory, filename)
-			} else if fileType == `B` && (testament == dataset_io.NT || testament == dataset_io.ONT) {
+			} else if fileType == `B` && (testament == dataset.NT || testament == dataset.ONT) {
 				w.processFile(directory, filename)
 			}
 		}

@@ -11,5 +11,5 @@ func TestUSXParser(t *testing.T) {
 	var database = bibleId + `_USXEDIT.db`
 	db.DestroyDatabase(database)
 	var conn = db.NewDBAdapter(database)
-	ReadUSXEdit(conn, bibleId, dataset_io.NT)
+	ReadUSXEdit(conn, bibleId, dataset.NT)
 }
