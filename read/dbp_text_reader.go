@@ -1,8 +1,8 @@
 package read
 
 import (
-	"dataset_io"
-	"dataset_io/db"
+	"dataset"
+	"dataset/db"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -20,14 +20,14 @@ func NewDBPTextReader(conn db.DBAdapter) *DBPTextReader {
 	return &DBPTextReader{conn: conn}
 }
 
-func (d *DBPTextReader) ProcessDirectory(bibleId string, testament dataset_io.TestamentType) {
+func (d *DBPTextReader) ProcessDirectory(bibleId string, testament dataset.TestamentType) {
 	directory := filepath.Join(os.Getenv("FCBH_DATASET_FILES"), bibleId)
 	switch testament {
-	case dataset_io.NT:
+	case dataset.NT:
 		d.processFile(directory, bibleId+"N_ET.json")
-	case dataset_io.OT:
+	case dataset.OT:
 		d.processFile(directory, bibleId+"O_ET.json")
-	case dataset_io.ONT:
+	case dataset.ONT:
 		d.processFile(directory, bibleId+"O_ET.json")
 		d.processFile(directory, bibleId+"N_ET.json")
 	default:

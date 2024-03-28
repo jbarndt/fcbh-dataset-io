@@ -1,19 +1,19 @@
 package controller
 
 import (
-	"dataset_io"
-	"dataset_io/db"
-	"dataset_io/fetch"
-	"dataset_io/read"
+	"dataset"
+	"dataset/db"
+	"dataset/fetch"
+	"dataset/read"
 	"fmt"
 	"log"
 )
 
 type Controller struct {
-	request dataset_io.RequestType
+	request dataset.RequestType
 }
 
-func NewController(request dataset_io.RequestType) *Controller {
+func NewController(request dataset.RequestType) *Controller {
 	var c Controller
 	c.request = request
 	return &c
@@ -52,22 +52,22 @@ func (c *Controller) readAudio() {
 
 func (c *Controller) readText(database db.DBAdapter) {
 	switch c.request.TextSource {
-	case dataset_io.USXEDIT:
+	case dataset.USXEDIT:
 		read.ReadUSXEdit(database, c.request.BibleId, c.request.Testament)
-	case dataset_io.TEXTEDIT:
+	case dataset.TEXTEDIT:
 		reader := read.NewDBPTextEditReader(c.request.BibleId, database)
 		reader.Process(c.request.Testament)
-	case dataset_io.DBPTEXT:
+	case dataset.DBPTEXT:
 		reader := read.NewDBPTextReader(database)
 		reader.ProcessDirectory(c.request.BibleId, c.request.Testament)
-	case dataset_io.SCRIPT:
+	case dataset.SCRIPT:
 		reader := read.NewScriptReader(database)
 		file := reader.FindFile(c.request.BibleId)
 		reader.Read(file)
 	default:
 		log.Println("Error: Could not process ", c.request.TextSource)
 	}
-	if c.request.TextDetail == dataset_io.WORDS || c.request.TextDetail == dataset_io.BOTH {
+	if c.request.TextDetail == dataset.WORDS || c.request.TextDetail == dataset.BOTH {
 		words := read.NewWordParser(database)
 		words.Parse()
 	}

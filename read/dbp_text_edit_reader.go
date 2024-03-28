@@ -1,8 +1,8 @@
 package read
 
 import (
-	"dataset_io"
-	"dataset_io/db"
+	"dataset"
+	"dataset/db"
 	"strconv"
 )
 
@@ -27,7 +27,7 @@ func NewDBPTextEditReader(bibleId string, conn db.DBAdapter) DBPTextEditReader {
 	return d
 }
 
-func (d *DBPTextEditReader) Process(testament dataset_io.TestamentType) {
+func (d *DBPTextEditReader) Process(testament dataset.TestamentType) {
 	d.ensureDBPText(testament)
 	d.ensureUSXEDITText(testament)
 	titleMap, chapMap := d.readUSXHeadings(testament)
@@ -35,7 +35,7 @@ func (d *DBPTextEditReader) Process(testament dataset_io.TestamentType) {
 	d.conn.InsertScripts(records)
 }
 
-func (d *DBPTextEditReader) ensureDBPText(testament dataset_io.TestamentType) {
+func (d *DBPTextEditReader) ensureDBPText(testament dataset.TestamentType) {
 	var sourceDB = d.bibleId + `_DBPTEXT.db`
 	if !db.Exists(sourceDB) {
 		var conn2 = db.NewDBAdapter(sourceDB)
@@ -45,7 +45,7 @@ func (d *DBPTextEditReader) ensureDBPText(testament dataset_io.TestamentType) {
 	}
 }
 
-func (d *DBPTextEditReader) ensureUSXEDITText(testament dataset_io.TestamentType) {
+func (d *DBPTextEditReader) ensureUSXEDITText(testament dataset.TestamentType) {
 	var sourceDB = d.bibleId + `_USXEDIT.db`
 	if !db.Exists(sourceDB) {
 		var conn3 = db.NewDBAdapter(sourceDB)
@@ -54,7 +54,7 @@ func (d *DBPTextEditReader) ensureUSXEDITText(testament dataset_io.TestamentType
 	}
 }
 
-func (d *DBPTextEditReader) readUSXHeadings(testament dataset_io.TestamentType) (map[string][]db.SelectScriptHeadingRec, map[string]db.SelectScriptHeadingRec) {
+func (d *DBPTextEditReader) readUSXHeadings(testament dataset.TestamentType) (map[string][]db.SelectScriptHeadingRec, map[string]db.SelectScriptHeadingRec) {
 	var sourceDB = d.bibleId + `_USXEDIT.db`
 	var conn4 = db.NewDBAdapter(sourceDB)
 	records := conn4.SelectScriptHeadings()

@@ -49,8 +49,8 @@ func NewDBAdapter(database string) DBAdapter {
 		text_source TEXT NOT NULL,
 		language_iso TEXT NOT NULL,
 		version_code TEXT NOT NULL,
-		languge_id INT,
-		rolv_id INT,
+		languge_id INTEGER,
+		rolv_id INTEGER,
 		alphabet TEXT,
 		language_name TEXT,
 		version_name TEXT) STRICT`

@@ -1,4 +1,4 @@
-package dataset_io
+package dataset
 
 type SourceType string
 

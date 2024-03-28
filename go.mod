@@ -1,4 +1,4 @@
-module dataset_io
+module dataset
 
 go 1.21
 
