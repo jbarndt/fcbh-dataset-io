@@ -1,8 +1,8 @@
 package read
 
 import (
-	"dataset_io"
-	"dataset_io/db"
+	"dataset"
+	"dataset/db"
 	"testing"
 )
 
