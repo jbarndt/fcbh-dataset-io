@@ -1,6 +1,7 @@
 package fetch
 
 import (
+	"dataset"
 	"encoding/json"
 	"io"
 	"log"
@@ -49,6 +50,7 @@ type BibleInfoRespType struct {
 }
 
 func (d *DBPAPIClient) BibleInfo() BibleInfoType {
+	var result BibleInfoType
 	var url = `https://4.dbt.io/api/bibles/ATIWBT?`
 	var response BibleInfoRespType
 	body := d.query(url)
@@ -58,10 +60,18 @@ func (d *DBPAPIClient) BibleInfo() BibleInfoType {
 			log.Println("Error decoding DBP API JSON:", err)
 			return BibleInfoType{}
 		}
+		result = response.Data
 	}
-	var result = response.Data
 	result.VersionCode = d.bibleId[3:]
 	return result
+}
+
+func (d *DBPAPIClient) FindFileset(info BibleInfoType, audio dataset.AudioSourceType) {
+
+}
+
+func (d *DBPAPIClient) DownloadText() {
+
 }
 
 func (d *DBPAPIClient) query(url string) []byte {
