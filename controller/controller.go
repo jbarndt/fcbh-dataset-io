@@ -26,7 +26,7 @@ func (c *Controller) Process() {
 	var database = db.NewDBAdapter(databaseName)
 	var info = c.fetchMetaData()
 	fmt.Println("INFO", info)
-	database.InsertIdent(info.BibleId, info.LanguageISO, info.VersionCode, textSource,
+	database.InsertIdent(info.BibleId, ``, ``, info.LanguageISO, info.VersionCode, textSource,
 		info.LanguageId, info.RolvId, info.Alphabet.Alphabet, info.LanguageName, info.VersionName)
 	c.readText(database)
 }

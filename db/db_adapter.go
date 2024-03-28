@@ -44,11 +44,11 @@ func NewDBAdapter(database string) DBAdapter {
 	}
 	var sql = `CREATE TABLE IF NOT EXISTS ident (
 		bible_id TEXT NOT NULL PRIMARY KEY,
-		-- audio_fileset_id TEXT, NULL,
-		-- text_fileset_id TEXT, NULL,
+		audio_fileset_id TEXT NOT NULL,
+		text_fileset_id TEXT NOT NULL,
+		text_source TEXT NOT NULL,
 		language_iso TEXT NOT NULL,
 		version_code TEXT NOT NULL,
-		source_code TEXT NOT NULL,
 		languge_id INT,
 		rolv_id INT,
 		alphabet TEXT,
@@ -117,20 +117,21 @@ func (d DBAdapter) Close() {
 // ident table
 //
 
-func (d *DBAdapter) InsertIdent(bible_id string, language_iso string, version_code string,
-	source_code string, languge_id int, rolv_id int, alphabet string, language_name string,
+func (d *DBAdapter) InsertIdent(bible_id string, audio_fileset_id string, text_fileset_id string,
+	text_source string, language_iso string, version_code string,
+	languge_id int, rolv_id int, alphabet string, language_name string,
 	version_name string) {
-	sql1 := `REPLACE INTO ident(bible_id, language_iso, version_code, 
-		source_code, languge_id, rolv_id, alphabet, language_name, 
-		version_name) VALUES (?,?,?,?,?,?,?,?,?)`
+	sql1 := `REPLACE INTO ident(bible_id, audio_fileset_id, text_fileset_id,
+		text_source, language_iso, version_code, 
+		languge_id, rolv_id, alphabet, language_name, 
+		version_name) VALUES (?,?,?,?,?,?,?,?,?,?,?)`
 	stmt, err := d.DB.Prepare(sql1)
 	if err != nil {
 		log.Fatal(err, sql1)
 	}
 	defer stmt.Close()
-	_, err = stmt.Exec(bible_id, language_iso, version_code,
-		source_code, languge_id, rolv_id, alphabet, language_name,
-		version_name)
+	_, err = stmt.Exec(bible_id, audio_fileset_id, text_fileset_id, text_source, language_iso, version_code,
+		languge_id, rolv_id, alphabet, language_name, version_name)
 	if err != nil {
 		log.Fatal(err, sql1)
 	}

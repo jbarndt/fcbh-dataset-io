@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var globalDiffCount = 0
@@ -23,21 +24,25 @@ func main() {
 	var numChapters = readNumChapters(db1)
 	var nt = []string{`MAT`, `MRK`, `LUK`, `JHN`, `ACT`, `ROM`, `1CO`, `2CO`, `GAL`, `EPH`, `PHP`, `COL`,
 		`1TH`, `2TH`, `1TI`, `2TI`, `TIT`, `PHM`, `HEB`, `JAS`, `1PE`, `2PE`, `1JN`, `2JN`, `3JN`, `JUD`, `REV`}
+	var output = openOutput(database1, database2)
 	for _, bookId := range nt {
 		var chapInBook, _ = numChapters[bookId]
 		var chapter = 1
 		for chapter <= chapInBook {
 			lines1 := process(db1, database1, bookId, chapter)
 			lines2 := process(db2, database2, bookId, chapter)
-			diff(lines1, lines2)
+			diff(output, lines1, lines2)
 			chapter++
 		}
 	}
 	db1.Close()
 	db2.Close()
 	fmt.Println("Num Diff", globalDiffCount)
-	//displayTest(lines1)
-	//displayTest(lines2)
+	output.WriteString(`<p>`)
+	output.WriteString("TOTAL Difference Count: ")
+	output.WriteString(strconv.Itoa(globalDiffCount))
+	output.WriteString("</p>\n")
+	closeOutput(output)
 }
 
 func getCommandLine() (string, string) {
@@ -60,7 +65,7 @@ func openDatabase(name string) *sql.DB {
 
 func readNumChapters(db *sql.DB) map[string]int {
 	var results = make(map[string]int)
-	sqlStmt := `SELECT book_id, max(chapter_num) FROM audio_scripts 
+	sqlStmt := `SELECT book_id, max(chapter_num) FROM scripts 
 			GROUP BY book_id`
 	stmt, err := db.Prepare(sqlStmt)
 	if err != nil {
@@ -90,6 +95,47 @@ func readNumChapters(db *sql.DB) map[string]int {
 	return results
 }
 
+func openOutput(database1 string, database2 string) *os.File {
+	bibleId := database1[:6]
+	outPath := filepath.Join(os.Getenv("FCBH_DATASET_FILES"), bibleId, "diff.html")
+	output, err := os.Create(outPath)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	head := `<DOCTYPE html>
+<html>
+ <head>
+  <meta charset="utf-8">
+  <title>File Difference</title>
+  <style>
+p { margin: 20px 40px; }
+  </style>
+ </head>
+ <body>`
+	output.WriteString(head)
+	output.WriteString(`<h2 style="text-align:center">Compare `)
+	output.WriteString(database1)
+	output.WriteString(` to `)
+	output.WriteString(database2)
+	output.WriteString("</h2>\n")
+	output.WriteString(`<h3 style="text-align:center">`)
+	output.WriteString(time.Now().Format(`Mon Jan 2 2006 03:04:05 pm MST`))
+	output.WriteString("</h3>\n")
+	output.WriteString(`<h3 style="text-align:center">RED characters are those in `)
+	output.WriteString(database1[7:])
+	output.WriteString(` only, while GREEN characters are in `)
+	output.WriteString(database2[7:])
+	output.WriteString(" only</h3>\n")
+	return output
+}
+
+func closeOutput(output *os.File) {
+	end := ` </body>
+</html>`
+	output.WriteString(end)
+	output.Close()
+}
+
 func process(db *sql.DB, database string, bookId string, chapterNum int) []Verse {
 	lines := readDatabase(db, bookId, chapterNum)
 	//lines = groupBySentence(lines)
@@ -111,7 +157,7 @@ type Verse struct {
 }
 
 func readDatabase(db *sql.DB, bookId string, chapterNum int) []Verse {
-	sqlStmt := `SELECT book_id, chapter_num, verse_str, script_text FROM audio_scripts 
+	sqlStmt := `SELECT book_id, chapter_num, verse_str, script_text FROM scripts 
 			WHERE book_id=? AND chapter_num=?
 			ORDER BY script_id`
 	stmt, err := db.Prepare(sqlStmt)
@@ -216,11 +262,6 @@ func consolidateScript(verses []Verse) []Verse {
 	}
 	return results
 }
-
-//func logError(bookId string, chapter int, verseNum string, message string, found string) {
-//	fmt.Println("Error:", bookId, chapter, verseNum, message, found)
-//	os.Exit(1)
-//}
 
 func consolidateUSX(verses []Verse) []Verse {
 	var sumInput = 0
@@ -402,7 +443,7 @@ func cleanUp(verses []Verse, cfg config) []Verse {
 }
 
 /* This diff method assumes one chapter at a time */
-func diff(verses1 []Verse, verses2 []Verse) {
+func diff(output *os.File, verses1 []Verse, verses2 []Verse) {
 	type pair struct {
 		bookId  string
 		chapter int
@@ -440,9 +481,14 @@ func diff(verses1 []Verse, verses2 []Verse) {
 		if len(pair.text1) > 0 || len(pair.text2) > 0 {
 			diffs := diffMatch.DiffMain(pair.text1, pair.text2, false)
 			if !isMatch(diffs) {
-				ref := pair.bookId + " " + strconv.Itoa(pair.chapter) + ":" + pair.num
+				ref := pair.bookId + " " + strconv.Itoa(pair.chapter) + ":" + pair.num + ` `
 				fmt.Println(ref, diffMatch.DiffPrettyText(diffs))
 				fmt.Println("=============")
+				output.WriteString(`<p>`)
+				output.WriteString(ref)
+				output.WriteString(diffMatch.DiffPrettyHtml(diffs))
+				//output.WriteString("<br/><br>")
+				output.WriteString("</p>\n")
 				globalDiffCount++
 			}
 		}
