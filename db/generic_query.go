@@ -2,7 +2,6 @@ package db
 
 import (
 	"database/sql"
-	"fmt"
 	"os"
 	"strconv"
 )
@@ -10,13 +9,13 @@ import (
 // db is a global database connection.
 // Make sure to initialize it with sql.Open() before using executeQuery.
 
-type Select struct {
+type SelectType struct {
 	conn *sql.DB
 }
 
 // executeQuery executes a SQL query and returns the results as a slice of slice of interface{}.
 // This can then be processed according to the expected types.
-func (s *Select) Select(query string, args ...interface{}) ([][]interface{}, error) {
+func (s *SelectType) Select(query string, args ...interface{}) ([][]interface{}, error) {
 	rows, err := s.conn.Query(query, args...)
 	if err != nil {
 		return nil, err
@@ -31,20 +30,21 @@ func (s *Select) Select(query string, args ...interface{}) ([][]interface{}, err
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("TYPES", dtypes)
-	for _, dtype := range dtypes {
-		fmt.Println("TYPE", dtype)
-		fmt.Println("Nme", dtype.Name())
-		fmt.Print("Decimal size ")
-		fmt.Println(dtype.DecimalSize())
-		fmt.Println("Length ")
-		fmt.Println(dtype.Length())
-		fmt.Println("type name", dtype.DatabaseTypeName())
-		fmt.Print("Nullable")
-		fmt.Println(dtype.Nullable())
-		fmt.Println("scan type", dtype.ScanType())
-	}
-
+	//fmt.Println("TYPES", dtypes)
+	/*
+		for _, dtype := range dtypes {
+			fmt.Println("TYPE", dtype)
+			fmt.Println("Nme", dtype.Name())
+			fmt.Print("Decimal size ")
+			fmt.Println(dtype.DecimalSize())
+			fmt.Println("Length ")
+			fmt.Println(dtype.Length())
+			fmt.Println("type name", dtype.DatabaseTypeName())
+			fmt.Print("Nullable")
+			fmt.Println(dtype.Nullable())
+			fmt.Println("scan type", dtype.ScanType())
+		}
+	*/
 	// Prepare a slice of interfaces to hold each value.
 	rawResult := make([][]byte, len(cols))
 	//result := make([]interface{}, len(cols))
@@ -52,7 +52,8 @@ func (s *Select) Select(query string, args ...interface{}) ([][]interface{}, err
 	for i, _ := range rawResult {
 		result[i] = &rawResult[i] // Pointers to each slice cell
 	}
-	var results [][]any
+	//var results [][]any
+	var results = make([][]any, 0, 500000)
 	for rows.Next() {
 		err = rows.Scan(result...)
 		if err != nil {
@@ -63,7 +64,7 @@ func (s *Select) Select(query string, args ...interface{}) ([][]interface{}, err
 		//record := make([]interface{}, len(cols))
 		record := make([]any, len(cols))
 		for i, raw := range rawResult {
-			fmt.Println("RAW", len(raw), raw)
+			//fmt.Println("RAW", len(raw), raw)
 			if raw == nil {
 				record[i] = nil
 			} else {
