@@ -12,7 +12,7 @@ type TestamentType string
 const (
 	NT                   TestamentType = "NT"
 	OT                   TestamentType = "OT"
-	ONT                  TestamentType = "ONT"
+	C                    TestamentType = "C"
 	DefaultTestamentType               = NT
 )
 

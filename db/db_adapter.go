@@ -43,7 +43,8 @@ func NewDBAdapter(database string) DBAdapter {
 		log.Fatal(err)
 	}
 	var sql = `CREATE TABLE IF NOT EXISTS ident (
-		bible_id TEXT NOT NULL PRIMARY KEY,
+		dataset_id INTEGER PRIMARY KEY AUTOINCREMENT,
+		bible_id TEXT NOT NULL,
 		audio_fileset_id TEXT NOT NULL,
 		text_fileset_id TEXT NOT NULL,
 		text_source TEXT NOT NULL,
@@ -55,11 +56,14 @@ func NewDBAdapter(database string) DBAdapter {
 		language_name TEXT,
 		version_name TEXT) STRICT`
 	execDDL(db, sql)
+	sql = `CREATE INDEX IF NOT EXISTS ident_bible_idx ON ident (bible_id)`
+	execDDL(db, sql)
 	sql = `CREATE TABLE IF NOT EXISTS scripts (
 		script_id INTEGER PRIMARY KEY AUTOINCREMENT,
+		dataset_id INTEGER NOT NULL,
 		book_id TEXT NOT NULL,
 		chapter_num INTEGER NOT NULL,
-		audio_file TEXT NOT NULL,
+		audio_file TEXT NOT NULL, -- questionable now that audio filesetId is in ident
 		script_num TEXT NOT NULL,
 		usfm_style TEXT,
 		person TEXT,
@@ -71,7 +75,8 @@ func NewDBAdapter(database string) DBAdapter {
 		script_end_ts REAL,
 		script_mfcc BLOB,
 		mfcc_rows INTEGER,
-		mfcc_cols INTEGER) STRICT`
+		mfcc_cols INTEGER,
+		FOREIGN KEY(dataset_id) REFERENCES ident(dataset_id)) STRICT`
 	execDDL(db, sql)
 	sql = `CREATE UNIQUE INDEX IF NOT EXISTS scripts_idx
 		ON scripts (book_id, chapter_num, script_num)`
@@ -96,7 +101,8 @@ func NewDBAdapter(database string) DBAdapter {
 		word_enc BLOB,
 		src_word_enc BLOB,
 		word_multi_enc BLOB,
-		src_word_multi_enc BLOB) STRICT`
+		src_word_multi_enc BLOB,
+		FOREIGN KEY(script_id) REFERENCES scripts(script_id)) STRICT`
 	execDDL(db, sql)
 	sql = `CREATE UNIQUE INDEX IF NOT EXISTS words_idx
 		ON words (script_id, word_seq)`
@@ -138,6 +144,7 @@ func (d *DBAdapter) InsertIdent(bible_id string, audio_fileset_id string, text_f
 }
 
 type InsertScriptRec struct {
+	DatasetId     int
 	BookId        string
 	ChapterNum    int
 	AudioFile     string
@@ -153,9 +160,9 @@ type InsertScriptRec struct {
 }
 
 func (d *DBAdapter) InsertScripts(records []InsertScriptRec) {
-	sql := `INSERT INTO scripts(book_id, chapter_num, audio_file, script_num, usfm_style, 
+	sql := `INSERT INTO scripts(dataset_id, book_id, chapter_num, audio_file, script_num, usfm_style, 
 			person, actor, verse_num, verse_str, script_text, script_begin_ts, script_end_ts) 
-			VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`
+			VALUES (1,?,?,?,?,?,?,?,?,?,?,?,?)`
 	tx, stmt := d.prepareDML(sql)
 	defer stmt.Close()
 	for _, rec := range records {

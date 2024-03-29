@@ -27,7 +27,7 @@ func (d *DBPTextReader) ProcessDirectory(bibleId string, testament dataset.Testa
 		d.processFile(directory, bibleId+"N_ET.json")
 	case dataset.OT:
 		d.processFile(directory, bibleId+"O_ET.json")
-	case dataset.ONT:
+	case dataset.C:
 		d.processFile(directory, bibleId+"O_ET.json")
 		d.processFile(directory, bibleId+"N_ET.json")
 	default:

@@ -34,7 +34,7 @@ func ReadUSXEdit(database db.DBAdapter, bibleId string, testament dataset.Testam
 		suffix = `N_ET-usx`
 	case dataset.OT:
 		suffix = `O_ET-usx`
-	case dataset.ONT:
+	case dataset.C:
 		suffix = `-usx`
 	default:
 		log.Fatal("Error: Unknown testament type", testament, "in ReadUSXEdit")
