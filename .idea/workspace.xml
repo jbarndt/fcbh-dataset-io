@@ -4,17 +4,12 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="fad9cea2-71fc-4f14-9bf0-7f045724e2da" name="Changes" comment="Generic tested against standard query and found to be equal in performance.">
+    <list default="true" id="fad9cea2-71fc-4f14-9bf0-7f045724e2da" name="Changes" comment="Update to workspace ??">
       <change afterPath="$PROJECT_DIR$/fetch/dbp_api_client_test.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/controller/client/dataset.go" beforeDir="false" afterPath="$PROJECT_DIR$/controller/client/dataset.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/controller/controller.go" beforeDir="false" afterPath="$PROJECT_DIR$/controller/controller.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/db/db_adapter.go" beforeDir="false" afterPath="$PROJECT_DIR$/db/db_adapter.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/db/generic_query_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/db/generic_query_test.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/fetch/dbp_api_client.go" beforeDir="false" afterPath="$PROJECT_DIR$/fetch/dbp_api_client.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/read/dbp_text_reader.go" beforeDir="false" afterPath="$PROJECT_DIR$/read/dbp_text_reader.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/read/usx_parser.go" beforeDir="false" afterPath="$PROJECT_DIR$/read/usx_parser.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/request.go" beforeDir="false" afterPath="$PROJECT_DIR$/request.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -69,7 +64,7 @@
     "nodejs_package_manager_path": "npm"
   }
 }]]></component>
-  <component name="RunManager" selected="Go Test.TestGenericInterface in dataset/db">
+  <component name="RunManager" selected="Go Test.TestDBPAPIClient in dataset/fetch">
     <configuration name="go build dataset/controller/client" type="GoApplicationRunConfiguration" factoryName="Go Application" temporary="true" nameIsGenerated="true">
       <module name="dataset" />
       <working_directory value="$PROJECT_DIR$" />
@@ -117,10 +112,10 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Go Test.TestDBPAPIClient in dataset/fetch" />
         <item itemvalue="Go Test.TestGenericInterface in dataset/db" />
         <item itemvalue="Go Test.TestStandardInterface in dataset/db" />
         <item itemvalue="Go Build.go build dataset/controller/client" />
-        <item itemvalue="Go Test.TestDBPAPIClient in dataset/fetch" />
       </list>
     </recent_temporary>
   </component>
@@ -132,7 +127,9 @@
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
     <MESSAGE value="Project and route directory renamed dataset from dataset_io" />
     <MESSAGE value="Generic tested against standard query and found to be equal in performance." />
-    <option name="LAST_COMMIT_MESSAGE" value="Generic tested against standard query and found to be equal in performance." />
+    <MESSAGE value="Change schema to have a dataset_id and foreign keys." />
+    <MESSAGE value="Update to workspace ??" />
+    <option name="LAST_COMMIT_MESSAGE" value="Update to workspace ??" />
   </component>
   <component name="VgoProject">
     <settings-migrated>true</settings-migrated>
@@ -141,19 +138,9 @@
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
-          <url>file://$PROJECT_DIR$/fetch/dbp_api_client.go</url>
-          <line>141</line>
-          <option name="timeStamp" value="14" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/db/generic_query_test.go</url>
           <line>68</line>
           <option name="timeStamp" value="15" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
-          <url>file://$PROJECT_DIR$/fetch/dbp_api_client.go</url>
-          <line>238</line>
-          <option name="timeStamp" value="16" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

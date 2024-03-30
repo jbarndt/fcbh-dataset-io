@@ -7,6 +7,7 @@ import (
 	"dataset/read"
 	"fmt"
 	"log"
+	"os"
 )
 
 type Controller struct {
@@ -22,32 +23,33 @@ func NewController(request dataset.RequestType) *Controller {
 func (c *Controller) Process() {
 	textSource := string(c.request.TextSource)
 	var databaseName = c.request.BibleId + "_" + textSource + ".db"
+	var info, ok = c.fetchMetaDataAndFiles()
+	if !ok {
+		fmt.Println(`Requested Fileset is not available`)
+		for _, rec := range info.DbpProd.Filesets {
+			fmt.Println(rec)
+		}
+		os.Exit(0) // Not really, return where
+	}
+	fmt.Println("INFO", info)
 	db.DestroyDatabase(databaseName)
 	var database = db.NewDBAdapter(databaseName)
-	var info = c.fetchMetaData()
-	fmt.Println("INFO", info)
-	database.InsertIdent(info.BibleId, ``, ``, info.LanguageISO, info.VersionCode, textSource,
+	audioFSId := fetch.ConcatFilesetId(info.AudioFilesets)
+	textFSId := fetch.ConcatFilesetId(info.TextFilesets)
+	database.InsertIdent(info.BibleId, audioFSId, textFSId, info.LanguageISO, info.VersionCode, textSource,
 		info.LanguageId, info.RolvId, info.Alphabet.Alphabet, info.LanguageName, info.VersionName)
 	c.readText(database)
 }
 
-func (c *Controller) fetchMetaData() fetch.BibleInfoType {
+func (c *Controller) fetchMetaDataAndFiles() (fetch.BibleInfoType, bool) {
 	req := c.request
 	client := fetch.NewDBPAPIClient(req.BibleId)
 	var info = client.BibleInfo()
-	return info
-}
-
-func (c *Controller) fetchAudio() {
-
-}
-
-func (c *Controller) fetchText() {
-	// Wait on this until talking to Brad. OR should I put in API
-}
-
-func (c *Controller) readAudio() {
-
+	ok := client.FindFilesets(&info, req.AudioSource, req.TextSource, req.Testament)
+	if ok {
+		client.Download(info)
+	}
+	return info, ok
 }
 
 func (c *Controller) readText(database db.DBAdapter) {
