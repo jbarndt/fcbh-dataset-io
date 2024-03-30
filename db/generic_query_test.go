@@ -1,8 +1,11 @@
 package db
 
 import (
+	"database/sql"
 	"fmt"
+	_ "github.com/mattn/go-sqlite3"
 	"log"
+	"os"
 	"testing"
 	"time"
 )
@@ -66,7 +69,7 @@ type Test1Rec struct {
 func TestStandardInterface(t *testing.T) {
 	var start = time.Now()
 	var db = NewDBAdapter(`BGGWFW_SCRIPT.db`)
-	rows, err := db.DB.Query(test1)
+	rows, err := db.DB.Query(test2)
 	if err != nil {
 		log.Fatalln(err, test1)
 	}
@@ -75,14 +78,15 @@ func TestStandardInterface(t *testing.T) {
 	for rows.Next() {
 		var rec Test1Rec
 		err := rows.Scan(
-			&rec.DatasetId,
-			&rec.BibleId,
-			&rec.AudioFilesetId,
-			&rec.TextFilesetId,
-			&rec.TextSource,
-			&rec.LanguageIso,
-			&rec.VersionCode,
-			&rec.LanguageId,
+			/*
+				&rec.DatasetId,
+				&rec.BibleId,
+				&rec.AudioFilesetId,
+				&rec.TextFilesetId,
+				&rec.TextSource,
+				&rec.LanguageIso,
+				&rec.VersionCode,
+				&rec.LanguageId,*/
 			&rec.ScriptId,
 			&rec.BookId,
 			&rec.ChapterNum,
@@ -150,4 +154,111 @@ func TestGenericInterface(t *testing.T) {
 	}
 	fmt.Println("Count", len(results))
 	fmt.Println("Total Elapsed", time.Since(start))
+}
+
+type ScriptRec struct {
+	ScriptId   int
+	BookId     string
+	ChapterNum int
+	AudioFile  string
+	ScriptNum  string
+	UsfmStyle  string
+	Person     string
+	Actor      string
+	VerseStr   string
+	ScriptText string
+}
+type WordRec struct {
+	WordId   int
+	WordSeq  int
+	VerseNum int
+	Ttype    string
+	Word     string
+}
+
+func TestManyQuery(t *testing.T) {
+	//var db = NewDBAdapter(`BGGWFW_SCRIPT.db`)
+	database := os.Getenv(`FCBH_DATASET_DB`) + "/BGGWFW_SCRIPT.db"
+	db, err := sql.Open("sqlite3", database)
+	if err != nil {
+		log.Fatal(err)
+	}
+	scripts := scriptsQuery(db)
+	fmt.Println(len(scripts))
+	var count = 0
+	for _, script := range scripts {
+		words := wordsQuery(db, script.ScriptId)
+		count += len(words)
+		//fmt.Println("\t", len(words))
+	}
+	fmt.Println(count, "Words")
+	//for _, script := range scriptsQuery(db) {
+	//script.ScriptId
+	//fmt.Println(script)
+	//}
+
+}
+
+func scriptsQuery(db *sql.DB) []ScriptRec {
+	var test1 = `SELECT s.script_id, s.book_id, s.chapter_num, s.audio_file,
+s.script_num, s.usfm_style, s.person, s.actor, s.verse_str, s.script_text
+FROM scripts s ORDER BY s.script_id`
+	rows, err := db.Query(test1)
+	if err != nil {
+		log.Fatalln(err, test1)
+	}
+	defer rows.Close()
+	var results = make([]ScriptRec, 0, 10000)
+	for rows.Next() {
+		var rec ScriptRec
+		err := rows.Scan(
+			&rec.ScriptId,
+			&rec.BookId,
+			&rec.ChapterNum,
+			&rec.AudioFile,
+			&rec.ScriptNum,
+			&rec.UsfmStyle,
+			&rec.Person,
+			&rec.Actor,
+			&rec.VerseStr,
+			&rec.ScriptText)
+		if err != nil {
+			log.Fatalln(err, test1)
+		}
+		results = append(results, rec)
+	}
+	err = rows.Err()
+	if err != nil {
+		log.Fatalln(err, test1)
+	}
+	return results
+}
+
+func wordsQuery(db *sql.DB, scriptId int) []WordRec {
+	var test1 = `SELECT w.word_id, w.word_seq, w.verse_num, w.ttype, w.word
+FROM words w WHERE w.script_id = ? ORDER BY w.word_id`
+	rows, err := db.Query(test1, scriptId)
+	if err != nil {
+		log.Fatalln(err, test1)
+	}
+	defer rows.Close()
+	var results = make([]WordRec, 0, 100)
+	for rows.Next() {
+		var rec WordRec
+		err := rows.Scan(
+			&rec.WordId,
+			&rec.WordSeq,
+			&rec.VerseNum,
+			&rec.Ttype,
+			&rec.Word)
+		if err != nil {
+			log.Fatalln(err, test1)
+		}
+		results = append(results, rec)
+	}
+	err = rows.Err()
+	if err != nil {
+		log.Fatalln(err, test1)
+	}
+	return results
 }
