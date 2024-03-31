@@ -125,10 +125,7 @@ func (d DBAdapter) Close() {
 // ident table
 //
 
-func (d *DBAdapter) InsertIdent(bible_id string, audio_fileset_id string, text_fileset_id string,
-	text_source string, language_iso string, version_code string,
-	languge_id int, rolv_id int, alphabet string, language_name string,
-	version_name string) {
+func (d *DBAdapter) InsertIdent(id Ident) {
 	sql1 := `REPLACE INTO ident(bible_id, audio_fileset_id, text_fileset_id,
 		text_source, language_iso, version_code, 
 		languge_id, rolv_id, alphabet, language_name, 
@@ -138,30 +135,14 @@ func (d *DBAdapter) InsertIdent(bible_id string, audio_fileset_id string, text_f
 		log.Fatal(err, sql1)
 	}
 	defer stmt.Close()
-	_, err = stmt.Exec(bible_id, audio_fileset_id, text_fileset_id, text_source, language_iso, version_code,
-		languge_id, rolv_id, alphabet, language_name, version_name)
+	_, err = stmt.Exec(id.BibleId, id.AudioFilesetId, id.TextFilesetId, id.TextSource, id.LanguageISO,
+		id.VersionCode, id.LanguageId, id.RolvId, id.Alphabet, id.LanguageName, id.VersionName)
 	if err != nil {
 		log.Fatal(err, sql1)
 	}
 }
 
-type InsertScriptRec struct {
-	DatasetId     int
-	BookId        string
-	ChapterNum    int
-	AudioFile     string
-	ScriptNum     string
-	UsfmStyle     string
-	Person        string
-	Actor         string
-	VerseNum      int
-	VerseStr      string
-	ScriptText    []string
-	ScriptBeginTs float64
-	ScriptEndTs   float64
-}
-
-func (d *DBAdapter) InsertScripts(records []InsertScriptRec) {
+func (d *DBAdapter) InsertScripts(records []Script) {
 	sql := `INSERT INTO scripts(dataset_id, book_id, chapter_num, audio_file, script_num, usfm_style, 
 			person, actor, verse_num, verse_str, script_text, script_begin_ts, script_end_ts) 
 			VALUES (1,?,?,?,?,?,?,?,?,?,?,?,?)`
@@ -169,10 +150,10 @@ func (d *DBAdapter) InsertScripts(records []InsertScriptRec) {
 	defer stmt.Close()
 	for _, rec := range records {
 		rec.ScriptNum = zeroFill(rec.ScriptNum, 5)
-		text := strings.Join(rec.ScriptText, ``)
+		text := strings.Join(rec.ScriptTexts, ``)
 		_, err := stmt.Exec(rec.BookId, rec.ChapterNum, rec.AudioFile, rec.ScriptNum,
 			rec.UsfmStyle, rec.Person, rec.Actor, rec.VerseNum, rec.VerseStr, text,
-			rec.ScriptBeginTs, rec.ScriptEndTs)
+			rec.ScriptBeginTS, rec.ScriptEndTS)
 		if err != nil {
 			log.Fatal(err, sql)
 		}
@@ -200,17 +181,8 @@ func (d *DBAdapter) SelectScalarInt(sql string) int {
 	return count
 }
 
-type SelectScriptsRec struct {
-	ScriptId   int
-	BookId     string
-	ChapterNum int
-	VerseNum   int
-	VerseStr   string
-	ScriptText string
-}
-
 // WordParser
-func (d *DBAdapter) SelectScripts() []SelectScriptsRec {
+func (d *DBAdapter) SelectScripts() []Script {
 	query := `SELECT script_id, book_id, chapter_num, verse_num, verse_str, script_text 
 		FROM scripts ORDER BY script_id`
 	rows, err := d.DB.Query(query)
@@ -218,9 +190,9 @@ func (d *DBAdapter) SelectScripts() []SelectScriptsRec {
 		log.Fatalln(err, query)
 	}
 	defer rows.Close()
-	var result []SelectScriptsRec
+	var result []Script
 	for rows.Next() {
-		var rec SelectScriptsRec
+		var rec Script
 		err := rows.Scan(&rec.ScriptId, &rec.BookId, &rec.ChapterNum, &rec.VerseNum,
 			&rec.VerseStr, &rec.ScriptText)
 		if err != nil {
@@ -235,17 +207,7 @@ func (d *DBAdapter) SelectScripts() []SelectScriptsRec {
 	return result
 }
 
-type SelectScriptHeadingRec struct {
-	ScriptId   int
-	BookId     string
-	ChapterNum int
-	UsfmStyle  string
-	VerseNum   int
-	VerseStr   string
-	ScriptText string
-}
-
-func (d *DBAdapter) SelectScriptHeadings() []SelectScriptHeadingRec {
+func (d *DBAdapter) SelectScriptHeadings() []Script {
 	query := `SELECT script_id, book_id, chapter_num, usfm_style, verse_num, verse_str, script_text 
 		FROM scripts
 		WHERE usfm_style IN ('para.h', 'para.mt', 'para.mt1', 'para.mt2', 'para.mt3')
@@ -255,9 +217,9 @@ func (d *DBAdapter) SelectScriptHeadings() []SelectScriptHeadingRec {
 		log.Fatalln(err, query)
 	}
 	defer rows.Close()
-	var result []SelectScriptHeadingRec
+	var result []Script
 	for rows.Next() {
-		var rec SelectScriptHeadingRec
+		var rec Script
 		err := rows.Scan(&rec.ScriptId, &rec.BookId, &rec.ChapterNum, &rec.UsfmStyle, &rec.VerseNum,
 			&rec.VerseStr, &rec.ScriptText)
 		if err != nil {
@@ -335,15 +297,7 @@ func (d DBAdapter) DeleteWords() {
 	execDDL(d.DB, `DELETE FROM words`)
 }
 
-type InsertWordRec struct {
-	ScriptId int
-	WordSeq  int
-	VerseNum int
-	TType    string
-	Word     string
-}
-
-func (d *DBAdapter) InsertWords(records []InsertWordRec) {
+func (d *DBAdapter) InsertWords(records []Word) {
 	sql1 := `INSERT INTO words(script_id, word_seq, verse_num, ttype, word) VALUES (?,?,?,?,?)`
 	tx, stmt := d.prepareDML(sql1)
 	defer stmt.Close()
@@ -496,9 +450,6 @@ func countDigits(a string) int {
 }
 
 func (d *DBAdapter) prepareDML(query string) (*sql.Tx, *sql.Stmt) {
-	//options := sql.TxOptions{Isolation: sql.LevelSerializable}
-	//ctx := context.Background()
-	//tx, err := d.DB.BeginTx(ctx, &options)
 	tx, err := d.DB.Begin()
 	if err != nil {
 		log.Fatal(err)

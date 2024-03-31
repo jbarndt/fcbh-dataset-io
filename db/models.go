@@ -6,7 +6,7 @@ type Ident struct {
 	AudioFilesetId string
 	TextFilesetId  string
 	TextSource     string
-	LanguageIso    string
+	LanguageISO    string
 	VersionCode    string
 	LanguageId     int
 	RolvId         int
@@ -38,9 +38,10 @@ type Script struct {
 
 type Word struct {
 	WordId          int
+	ScriptId        int
 	WordSeq         int
 	VerseNum        int
-	Ttype           string
+	TType           string
 	Word            string
 	WordBeginTS     float64
 	WordEndTS       float64
