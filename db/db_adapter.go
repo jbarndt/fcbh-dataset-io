@@ -3,7 +3,8 @@ package db
 import (
 	"database/sql"
 	"log"
-	_ "modernc.org/sqlite"
+	//_ "modernc.org/sqlite"
+	_ "github.com/mattn/go-sqlite3"
 	"os"
 	"path/filepath"
 	"strings"
@@ -38,10 +39,11 @@ type DBAdapter struct {
 
 func NewDBAdapter(database string) DBAdapter {
 	var databasePath = GetDBPath(database)
-	db, err := sql.Open("sqlite", databasePath)
+	db, err := sql.Open("sqlite3", databasePath)
 	if err != nil {
 		log.Fatal(err)
 	}
+	execDDL(db, `PRAGMA temp_store = MEMORY;`)
 	var sql = `CREATE TABLE IF NOT EXISTS ident (
 		dataset_id INTEGER PRIMARY KEY AUTOINCREMENT,
 		bible_id TEXT NOT NULL,
@@ -493,14 +495,17 @@ func countDigits(a string) int {
 	return len(a)
 }
 
-func (d *DBAdapter) prepareDML(sql string) (*sql.Tx, *sql.Stmt) {
+func (d *DBAdapter) prepareDML(query string) (*sql.Tx, *sql.Stmt) {
+	//options := sql.TxOptions{Isolation: sql.LevelSerializable}
+	//ctx := context.Background()
+	//tx, err := d.DB.BeginTx(ctx, &options)
 	tx, err := d.DB.Begin()
 	if err != nil {
 		log.Fatal(err)
 	}
-	stmt, err := tx.Prepare(sql)
+	stmt, err := tx.Prepare(query)
 	if err != nil {
-		log.Fatal(err, sql)
+		log.Fatal(err, query)
 	}
 	return tx, stmt
 }

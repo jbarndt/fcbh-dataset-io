@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 )
 
 type Controller struct {
@@ -21,6 +22,7 @@ func NewController(request dataset.RequestType) *Controller {
 }
 
 func (c *Controller) Process() {
+	var start = time.Now()
 	textSource := string(c.request.TextSource)
 	var databaseName = c.request.BibleId + "_" + textSource + ".db"
 	var info, ok = c.fetchMetaDataAndFiles()
@@ -39,6 +41,7 @@ func (c *Controller) Process() {
 	database.InsertIdent(info.BibleId, audioFSId, textFSId, info.LanguageISO, info.VersionCode, textSource,
 		info.LanguageId, info.RolvId, info.Alphabet.Alphabet, info.LanguageName, info.VersionName)
 	c.readText(database)
+	fmt.Println("Duration", time.Since(start))
 }
 
 func (c *Controller) fetchMetaDataAndFiles() (fetch.BibleInfoType, bool) {

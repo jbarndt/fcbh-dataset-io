@@ -10,6 +10,7 @@ func main() {
 	req.BibleId = "BGGWFW"
 	req.TextSource = dataset.USXEDIT
 	//req.TextSource = dataset.DBPTEXT
+	//req.TextDetail = dataset.LINES
 	req.TextDetail = dataset.BOTH
 	//req.TextSource = dataset.SCRIPT
 	//req.TextSource = dataset_io.TEXTEDIT
