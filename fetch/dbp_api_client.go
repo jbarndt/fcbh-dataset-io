@@ -2,6 +2,7 @@ package fetch
 
 import (
 	"dataset"
+	"dataset/db"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -75,6 +76,21 @@ func (d *DBPAPIClient) BibleInfo() BibleInfoType {
 	}
 	result.VersionCode = d.bibleId[3:]
 	return result
+}
+
+func CreateIdent(info BibleInfoType) db.Ident {
+	var id db.Ident
+	id.BibleId = info.BibleId
+	id.AudioFilesetId = ConcatFilesetId(info.AudioFilesets)
+	id.TextFilesetId = ConcatFilesetId(info.TextFilesets)
+	id.LanguageISO = info.LanguageISO
+	id.VersionCode = info.VersionCode
+	id.LanguageId = info.LanguageId
+	id.RolvId = info.RolvId
+	id.Alphabet = info.Alphabet.Alphabet
+	id.LanguageName = info.LanguageName
+	id.VersionName = info.VersionName
+	return id
 }
 
 func (d *DBPAPIClient) FindFilesets(info *BibleInfoType, audio dataset.AudioSourceType,

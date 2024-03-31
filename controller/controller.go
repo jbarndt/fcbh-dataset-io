@@ -36,10 +36,9 @@ func (c *Controller) Process() {
 	fmt.Println("INFO", info)
 	db.DestroyDatabase(databaseName)
 	var database = db.NewDBAdapter(databaseName)
-	audioFSId := fetch.ConcatFilesetId(info.AudioFilesets)
-	textFSId := fetch.ConcatFilesetId(info.TextFilesets)
-	database.InsertIdent(info.BibleId, audioFSId, textFSId, info.LanguageISO, info.VersionCode, textSource,
-		info.LanguageId, info.RolvId, info.Alphabet.Alphabet, info.LanguageName, info.VersionName)
+	identRec := fetch.CreateIdent(info)
+	identRec.TextSource = textSource
+	database.InsertIdent(identRec)
 	c.readText(database)
 	fmt.Println("Duration", time.Since(start))
 }

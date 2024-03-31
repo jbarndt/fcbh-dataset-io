@@ -23,10 +23,9 @@ func TestDBPAPIClient(t *testing.T) {
 	//fmt.Println("INFO", info)
 	db.DestroyDatabase(databaseName)
 	var database = db.NewDBAdapter(databaseName)
-	audioFSId := ConcatFilesetId(info.AudioFilesets)
-	textFSId := ConcatFilesetId(info.TextFilesets)
-	database.InsertIdent(info.BibleId, audioFSId, textFSId, info.LanguageISO, info.VersionCode, textSource,
-		info.LanguageId, info.RolvId, info.Alphabet.Alphabet, info.LanguageName, info.VersionName)
+	identRec := CreateIdent(info)
+	identRec.TextSource = textSource
+	database.InsertIdent(identRec)
 }
 
 func fetchMetaDataAndFiles(bibleId string) (BibleInfoType, bool) {
