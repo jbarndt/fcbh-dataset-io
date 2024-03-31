@@ -53,12 +53,12 @@ func (r ScriptReader) Read(filePath string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	var records []db.InsertScriptRec
+	var records []db.Script
 	for i, row := range rows {
 		if i == 0 {
 			continue // skip headings
 		}
-		var rec db.InsertScriptRec
+		var rec db.Script
 		switch row[1] {
 		case `JMS`:
 			rec.BookId = `JAS`
@@ -88,7 +88,7 @@ func (r ScriptReader) Read(filePath string) {
 		rec.ScriptNum = row[5]
 		text := row[8]
 		//text = strings.Replace(text,'_x000D_','' ) // remove excel CR
-		rec.ScriptText = append(rec.ScriptText, text)
+		rec.ScriptTexts = append(rec.ScriptTexts, text)
 		if rec.ScriptNum[len(rec.ScriptNum)-1] != 'r' {
 			records = append(records, rec)
 		}

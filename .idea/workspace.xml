@@ -4,12 +4,17 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="fad9cea2-71fc-4f14-9bf0-7f045724e2da" name="Changes" comment="Update to workspace ??">
-      <change afterPath="$PROJECT_DIR$/fetch/dbp_api_client_test.go" afterDir="false" />
+    <list default="true" id="fad9cea2-71fc-4f14-9bf0-7f045724e2da" name="Changes" comment="Changed sqlite adapter to mattn">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/controller/client/dataset.go" beforeDir="false" afterPath="$PROJECT_DIR$/controller/client/dataset.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/controller/controller.go" beforeDir="false" afterPath="$PROJECT_DIR$/controller/controller.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/fetch/dbp_api_client.go" beforeDir="false" afterPath="$PROJECT_DIR$/fetch/dbp_api_client.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/db/db_adapter.go" beforeDir="false" afterPath="$PROJECT_DIR$/db/db_adapter.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/db/models.go" beforeDir="false" afterPath="$PROJECT_DIR$/db/models.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/read/dbp_text_edit_reader.go" beforeDir="false" afterPath="$PROJECT_DIR$/read/dbp_text_edit_reader.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/read/dbp_text_reader.go" beforeDir="false" afterPath="$PROJECT_DIR$/read/dbp_text_reader.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/read/script_reader.go" beforeDir="false" afterPath="$PROJECT_DIR$/read/script_reader.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/read/usx_parser.go" beforeDir="false" afterPath="$PROJECT_DIR$/read/usx_parser.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/read/word_parser.go" beforeDir="false" afterPath="$PROJECT_DIR$/read/word_parser.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -42,29 +47,31 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ASKED_ADD_EXTERNAL_FILES": "true",
-    "DefaultGoTemplateProperty": "Go File",
-    "Go Build.go build dataset/controller/client.executor": "Run",
-    "Go Test.TestDBPAPIClient in dataset/fetch.executor": "Run",
-    "Go Test.TestGenericInterface in dataset/db.executor": "Run",
-    "Go Test.TestStandardInterface in dataset/db.executor": "Run",
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.go.formatter.settings.were.checked": "true",
-    "RunOnceActivity.go.migrated.go.modules.settings": "true",
-    "RunOnceActivity.go.modules.automatic.dependencies.download": "true",
-    "RunOnceActivity.go.modules.go.list.on.any.changes.was.set": "true",
-    "go.import.settings.migrated": "true",
-    "go.sdk.automatically.set": "true",
-    "last_opened_file_path": "/Users/gary",
-    "node.js.detected.package.eslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
+    &quot;DefaultGoTemplateProperty&quot;: &quot;Go File&quot;,
+    &quot;Go Build.go build dataset/controller/client.executor&quot;: &quot;Run&quot;,
+    &quot;Go Test.TestDBPAPIClient in dataset/fetch.executor&quot;: &quot;Run&quot;,
+    &quot;Go Test.TestGenericInterface in dataset/db.executor&quot;: &quot;Run&quot;,
+    &quot;Go Test.TestManyAmallQuery in dataset/db.executor&quot;: &quot;Run&quot;,
+    &quot;Go Test.TestManyQuery in dataset/db.executor&quot;: &quot;Run&quot;,
+    &quot;Go Test.TestStandardInterface in dataset/db.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.go.formatter.settings.were.checked&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.go.migrated.go.modules.settings&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.go.modules.automatic.dependencies.download&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.go.modules.go.list.on.any.changes.was.set&quot;: &quot;true&quot;,
+    &quot;go.import.settings.migrated&quot;: &quot;true&quot;,
+    &quot;go.sdk.automatically.set&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/gary&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;
   }
-}]]></component>
-  <component name="RunManager" selected="Go Test.TestDBPAPIClient in dataset/fetch">
+}</component>
+  <component name="RunManager" selected="Go Build.go build dataset/controller/client">
     <configuration name="go build dataset/controller/client" type="GoApplicationRunConfiguration" factoryName="Go Application" temporary="true" nameIsGenerated="true">
       <module name="dataset" />
       <working_directory value="$PROJECT_DIR$" />
@@ -72,18 +79,6 @@
       <package value="dataset/controller/client" />
       <directory value="$PROJECT_DIR$" />
       <filePath value="$PROJECT_DIR$/controller/client/dataset.go" />
-      <method v="2" />
-    </configuration>
-    <configuration name="TestDBPAPIClient in dataset/fetch" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
-      <module name="dataset" />
-      <working_directory value="$PROJECT_DIR$/fetch" />
-      <root_directory value="$PROJECT_DIR$" />
-      <kind value="PACKAGE" />
-      <package value="dataset/fetch" />
-      <directory value="$PROJECT_DIR$" />
-      <filePath value="$PROJECT_DIR$" />
-      <framework value="gotest" />
-      <pattern value="^\QTestDBPAPIClient\E$" />
       <method v="2" />
     </configuration>
     <configuration name="TestGenericInterface in dataset/db" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
@@ -96,6 +91,30 @@
       <filePath value="$PROJECT_DIR$" />
       <framework value="gotest" />
       <pattern value="^\QTestGenericInterface\E$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="TestManyAmallQuery in dataset/db" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="dataset" />
+      <working_directory value="$PROJECT_DIR$/db" />
+      <root_directory value="$PROJECT_DIR$" />
+      <kind value="PACKAGE" />
+      <package value="dataset/db" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <framework value="gotest" />
+      <pattern value="^\QTestManyAmallQuery\E$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="TestManyQuery in dataset/db" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="dataset" />
+      <working_directory value="$PROJECT_DIR$/db" />
+      <root_directory value="$PROJECT_DIR$" />
+      <kind value="PACKAGE" />
+      <package value="dataset/db" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <framework value="gotest" />
+      <pattern value="^\QTestManyQuery\E$" />
       <method v="2" />
     </configuration>
     <configuration name="TestStandardInterface in dataset/db" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
@@ -112,10 +131,11 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Go Test.TestDBPAPIClient in dataset/fetch" />
-        <item itemvalue="Go Test.TestGenericInterface in dataset/db" />
-        <item itemvalue="Go Test.TestStandardInterface in dataset/db" />
         <item itemvalue="Go Build.go build dataset/controller/client" />
+        <item itemvalue="Go Test.TestStandardInterface in dataset/db" />
+        <item itemvalue="Go Test.TestGenericInterface in dataset/db" />
+        <item itemvalue="Go Test.TestManyQuery in dataset/db" />
+        <item itemvalue="Go Test.TestManyAmallQuery in dataset/db" />
       </list>
     </recent_temporary>
   </component>
@@ -129,7 +149,11 @@
     <MESSAGE value="Generic tested against standard query and found to be equal in performance." />
     <MESSAGE value="Change schema to have a dataset_id and foreign keys." />
     <MESSAGE value="Update to workspace ??" />
-    <option name="LAST_COMMIT_MESSAGE" value="Update to workspace ??" />
+    <MESSAGE value="DBPAPIClient is working well, but has lots of 403 errors." />
+    <MESSAGE value="Surprising test results of two table query" />
+    <MESSAGE value="Added models.go file" />
+    <MESSAGE value="Changed sqlite adapter to mattn" />
+    <option name="LAST_COMMIT_MESSAGE" value="Changed sqlite adapter to mattn" />
   </component>
   <component name="VgoProject">
     <settings-migrated>true</settings-migrated>
@@ -139,8 +163,23 @@
       <breakpoints>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/db/generic_query_test.go</url>
-          <line>68</line>
+          <line>71</line>
           <option name="timeStamp" value="15" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/read/usx_parser.go</url>
+          <line>51</line>
+          <option name="timeStamp" value="18" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/read/usx_parser.go</url>
+          <line>78</line>
+          <option name="timeStamp" value="19" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/read/usx_parser.go</url>
+          <line>129</line>
+          <option name="timeStamp" value="20" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

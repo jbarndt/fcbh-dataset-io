@@ -61,15 +61,15 @@ func ReadUSXEdit(database db.DBAdapter, bibleId string, testament dataset.Testam
 	fmt.Println("Total Records", count)
 }
 
-func decode(filename string) []db.InsertScriptRec {
+func decode(filename string) []db.Script {
 	xmlFile, err := os.Open(filename)
 	if err != nil {
 		panic(err)
 	}
 	defer xmlFile.Close()
 	var stack Stack
-	var rec db.InsertScriptRec
-	var records []db.InsertScriptRec
+	var rec db.Script
+	var records []db.Script
 	var tagName string
 	var bookId string
 	var chapterNum = 1
@@ -118,7 +118,7 @@ func decode(filename string) []db.InsertScriptRec {
 					text = strings.Replace(text, `{`, `(`, -1)
 					text = strings.Replace(text, `}`, `)`, -1)
 				}
-				rec.ScriptText = append(rec.ScriptText, text)
+				rec.ScriptTexts = append(rec.ScriptTexts, text)
 			}
 		case xml.EndElement:
 			if hasStyle[se.Name.Local] {
@@ -126,14 +126,14 @@ func decode(filename string) []db.InsertScriptRec {
 			}
 		}
 		if chapterNum != rec.ChapterNum || verseNum != rec.VerseNum || usfmStyle != rec.UsfmStyle {
-			if bookId != `` && len(rec.ScriptText) > 0 {
+			if bookId != `` && len(rec.ScriptTexts) > 0 {
 				records = append(records, rec)
 			}
 			scriptNum++
 			if chapterNum != rec.ChapterNum {
 				scriptNum = 1
 			}
-			rec = db.InsertScriptRec{BookId: bookId, ChapterNum: chapterNum, ScriptNum: strconv.Itoa(scriptNum),
+			rec = db.Script{BookId: bookId, ChapterNum: chapterNum, ScriptNum: strconv.Itoa(scriptNum),
 				VerseNum: verseNum, VerseStr: verseStr, UsfmStyle: usfmStyle}
 		}
 	}
@@ -143,27 +143,27 @@ func decode(filename string) []db.InsertScriptRec {
 
 type titleDesc struct {
 	heading string
-	title   []db.InsertScriptRec
+	title   []db.Script
 	areDiff bool
 }
 
-func extractTitles(records []db.InsertScriptRec) titleDesc {
+func extractTitles(records []db.Script) titleDesc {
 	var results titleDesc
 	for _, rec := range records {
 		if rec.UsfmStyle == `para.h` {
-			results.heading = strings.Join(rec.ScriptText, ``)
+			results.heading = strings.Join(rec.ScriptTexts, ``)
 		} else if strings.HasPrefix(rec.UsfmStyle, `para.mt`) {
 			results.title = append(results.title, rec)
 		}
 	}
 	if results.heading == `` && len(results.title) > 0 {
-		results.heading = strings.Join(results.title[len(results.title)-1].ScriptText, ``)
+		results.heading = strings.Join(results.title[len(results.title)-1].ScriptTexts, ``)
 	}
 	return results
 }
 
-func addChapterHeading(records []db.InsertScriptRec, titles titleDesc) []db.InsertScriptRec {
-	var results = make([]db.InsertScriptRec, 0, len(records))
+func addChapterHeading(records []db.Script, titles titleDesc) []db.Script {
+	var results = make([]db.Script, 0, len(records))
 	for _, rec := range titles.title {
 		results = append(results, rec)
 	}
@@ -175,7 +175,7 @@ func addChapterHeading(records []db.InsertScriptRec, titles titleDesc) []db.Inse
 			rec2.VerseNum = 0
 			rec2.UsfmStyle = `para.h`
 			rec2.VerseStr = ``
-			rec2.ScriptText = []string{titles.heading + " " + strconv.Itoa(rec.ChapterNum)}
+			rec2.ScriptTexts = []string{titles.heading + " " + strconv.Itoa(rec.ChapterNum)}
 			results = append(results, rec2)
 		}
 		if rec.UsfmStyle != `para.h` && !strings.HasPrefix(rec.UsfmStyle, `para.mt`) {
@@ -185,8 +185,8 @@ func addChapterHeading(records []db.InsertScriptRec, titles titleDesc) []db.Inse
 	return results
 }
 
-func correctScriptNum(records []db.InsertScriptRec) []db.InsertScriptRec {
-	var results = make([]db.InsertScriptRec, 0, len(records))
+func correctScriptNum(records []db.Script) []db.Script {
+	var results = make([]db.Script, 0, len(records))
 	var scriptNum = 0
 	var lastChapter = 0
 	for _, rec := range records {

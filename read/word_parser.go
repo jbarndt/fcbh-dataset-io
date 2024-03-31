@@ -26,7 +26,7 @@ type WordParser struct {
 	conn         db.DBAdapter
 	wordSeq      int
 	lastScriptId int
-	records      []db.InsertWordRec
+	records      []db.Word
 }
 
 func NewWordParser(conn db.DBAdapter) WordParser {
@@ -190,7 +190,7 @@ func (w *WordParser) Parse() {
 	}
 	w.conn.DeleteWords()
 	w.conn.InsertWords(w.records)
-	w.records = []db.InsertWordRec{}
+	w.records = []db.Word{}
 }
 
 func (w *WordParser) addWord(scriptId int, verseNum int, ttype string, text []rune) {
@@ -205,7 +205,7 @@ func (w *WordParser) addWord(scriptId int, verseNum int, ttype string, text []ru
 		os.Exit(0)
 	}
 	//fmt.Println("seq: ", w.wordSeq, " verse: ", verseNum, " type: ", ttype, " word: ", string(text))
-	var rec db.InsertWordRec
+	var rec db.Word
 	rec.ScriptId = scriptId
 	rec.WordSeq = w.wordSeq
 	rec.VerseNum = verseNum
