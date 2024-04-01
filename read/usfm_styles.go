@@ -1,6 +1,7 @@
 package read
 
 import (
+	"context"
 	"log"
 )
 
@@ -11,7 +12,7 @@ func include(style string) bool {
 	}
 	answer, ok := usfm[style]
 	if !ok {
-		log.Fatal("ERROR: USFM map does not have entry: ", style)
+		log.Fatal(context.Background(), "USFM map does not have entry: ", style)
 	}
 	return answer
 }

@@ -1,9 +1,10 @@
 package read
 
 import (
+	"context"
 	"dataset/db"
+	log "dataset/logger"
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 	"unicode"
@@ -23,6 +24,7 @@ is a word delimiter.
 */
 
 type WordParser struct {
+	ctx          context.Context
 	conn         db.DBAdapter
 	wordSeq      int
 	lastScriptId int
@@ -31,6 +33,7 @@ type WordParser struct {
 
 func NewWordParser(conn db.DBAdapter) WordParser {
 	var w WordParser
+	w.ctx = conn.Ctx
 	w.conn = conn
 	w.wordSeq = 0
 	w.lastScriptId = 0
@@ -171,7 +174,7 @@ func (w *WordParser) Parse() {
 					w.logError("{", tok)
 				}
 			default:
-				log.Fatalln("unknown state", label[state])
+				log.Error(w.ctx, "unknown state", label[state])
 			}
 		}
 		if len(term) > 0 && term[0] != -1 {
@@ -215,5 +218,5 @@ func (w *WordParser) addWord(scriptId int, verseNum int, ttype string, text []ru
 }
 
 func (w *WordParser) logError(expected string, actual rune) {
-	log.Fatalln("Expected: ", expected, ", but found: ", string(actual))
+	log.Error(w.ctx, "Expected: ", expected, ", but found: ", string(actual))
 }

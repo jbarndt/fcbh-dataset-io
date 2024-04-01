@@ -1,8 +1,11 @@
 package db
 
-import "log"
+import (
+	"context"
+	log "dataset/logger"
+)
 
-func USFMBookId(bookName string) string {
+func USFMBookId(ctx context.Context, bookName string) string {
 	var books = map[string]string{
 		`Genesis`:        `GEN`,
 		`Exodus`:         `EXO`,
@@ -373,7 +376,7 @@ func USFMBookId(bookName string) string {
 	}
 	result, ok := books[bookName]
 	if !ok {
-		log.Fatalln("Could not find book code for the name", bookName)
+		log.Warn(ctx, "Could not find book code for the name", bookName)
 	}
 	return result
 }

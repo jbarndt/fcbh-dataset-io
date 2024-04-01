@@ -2,11 +2,12 @@ package speech_to_text
 
 import (
 	"bytes"
+	"context"
 	"dataset"
 	"dataset/db"
+	log "dataset/logger"
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -25,17 +26,19 @@ Executable:
 */
 
 type Whisper struct {
+	ctx       context.Context
 	bibleId   string
 	conn      db.DBAdapter
 	outputDir string
-	records   []db.InsertScriptRec
+	records   []db.Script
 }
 
 func NewWhisper(bibleId string, conn db.DBAdapter) Whisper {
 	var w Whisper
+	w.ctx = conn.Ctx
 	w.bibleId = bibleId
 	w.conn = conn
-	w.records = make([]db.InsertScriptRec, 0, 100000)
+	w.records = make([]db.Script, 0, 100000)
 	return w
 }
 
@@ -44,16 +47,16 @@ func (w *Whisper) ProcessDirectory(filesetId string, testament dataset.Testament
 	w.outputDir = directory + `_whisper`
 	files, err := os.ReadDir(directory)
 	if err != nil {
-		log.Fatalln(err)
+		log.Error(w.ctx, err)
 	}
 	for _, file := range files {
 		filename := file.Name()
 		if !strings.HasPrefix(filename, `.`) {
 			fmt.Println(filename)
 			fileType := filename[:1]
-			if fileType == `A` && (testament == dataset.OT || testament == dataset.ONT) {
+			if fileType == `A` && (testament == dataset.OT || testament == dataset.C) {
 				w.processFile(directory, filename)
-			} else if fileType == `B` && (testament == dataset.NT || testament == dataset.ONT) {
+			} else if fileType == `B` && (testament == dataset.NT || testament == dataset.C) {
 				w.processFile(directory, filename)
 			}
 		}
@@ -110,30 +113,30 @@ func (w *Whisper) loadWhisperOutput(directory string) {
 	}
 	jsonFiles, err := os.ReadDir(directory)
 	if err != nil {
-		log.Fatalln(err)
+		log.Error(w.ctx, err)
 	}
 	for _, jsonFile := range jsonFiles {
 		filePath := filepath.Join(directory, jsonFile.Name())
 		content, err := os.ReadFile(filePath)
 		if err != nil {
-			log.Fatalln(err)
+			log.Error(w.ctx, err)
 		}
 		var response WhisperOutputType
 		err = json.Unmarshal(content, &response)
 		if err != nil {
-			log.Fatalln("Error decoding Whisper JSON:", err)
+			log.Error(w.ctx, "Error decoding Whisper JSON:", err)
 		}
 		for i, seg := range response.Segments {
 			//fmt.Println(seg)
-			var rec db.InsertScriptRec
+			var rec db.Script
 			rec.BookId, rec.ChapterNum = w.parseFilename(jsonFile.Name())
 			rec.AudioFile = jsonFile.Name()
 			rec.ScriptNum = strconv.Itoa(i + 1) // Works because it process 1 chapter per file.
 			rec.VerseNum = 0
 			rec.VerseStr = `0`
-			rec.ScriptText = []string{seg.Text}
-			rec.ScriptBeginTs = seg.Start
-			rec.ScriptEndTs = seg.End
+			rec.ScriptTexts = []string{seg.Text}
+			rec.ScriptBeginTS = seg.Start
+			rec.ScriptEndTS = seg.End
 			w.records = append(w.records, rec)
 		}
 	}
@@ -143,9 +146,9 @@ func (w *Whisper) loadWhisperOutput(directory string) {
 func (w *Whisper) parseFilename(filename string) (string, int) {
 	chapter, err := strconv.Atoi(filename[6:8])
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(w.ctx, err)
 	}
 	bookName := strings.Replace(filename[9:21], `_`, ``, -1)
-	bookId := db.USFMBookId(bookName)
+	bookId := db.USFMBookId(w.ctx, bookName)
 	return bookId, chapter
 }

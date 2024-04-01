@@ -1,30 +1,36 @@
 package controller
 
 import (
+	"context"
 	"dataset"
 	"dataset/db"
 	"dataset/fetch"
+	log "dataset/logger"
 	"dataset/read"
 	"fmt"
-	"log"
 	"os"
 	"time"
 )
 
 type Controller struct {
-	request dataset.RequestType
+	request  dataset.RequestType
+	dbName   string
+	ctx      context.Context
+	database db.DBAdapter
 }
 
 func NewController(request dataset.RequestType) *Controller {
 	var c Controller
 	c.request = request
+	c.dbName = request.BibleId + "_" + string(request.TextSource) + ".db"
+	db.DestroyDatabase(c.dbName)
+	c.ctx = context.WithValue(context.Background(), `request`, request)
+	c.database = db.NewDBAdapter(c.ctx, c.dbName)
 	return &c
 }
 
 func (c *Controller) Process() {
 	var start = time.Now()
-	textSource := string(c.request.TextSource)
-	var databaseName = c.request.BibleId + "_" + textSource + ".db"
 	var info, ok = c.fetchMetaDataAndFiles()
 	if !ok {
 		fmt.Println(`Requested Fileset is not available`)
@@ -34,18 +40,16 @@ func (c *Controller) Process() {
 		os.Exit(0) // Not really, return where
 	}
 	fmt.Println("INFO", info)
-	db.DestroyDatabase(databaseName)
-	var database = db.NewDBAdapter(databaseName)
 	identRec := fetch.CreateIdent(info)
-	identRec.TextSource = textSource
-	database.InsertIdent(identRec)
-	c.readText(database)
+	identRec.TextSource = string(c.request.TextSource)
+	c.database.InsertIdent(identRec)
+	c.readText(c.database)
 	fmt.Println("Duration", time.Since(start))
 }
 
 func (c *Controller) fetchMetaDataAndFiles() (fetch.BibleInfoType, bool) {
 	req := c.request
-	client := fetch.NewDBPAPIClient(req.BibleId)
+	client := fetch.NewDBPAPIClient(c.ctx, req.BibleId)
 	var info = client.BibleInfo()
 	ok := client.FindFilesets(&info, req.AudioSource, req.TextSource, req.Testament)
 	if ok {
@@ -69,7 +73,7 @@ func (c *Controller) readText(database db.DBAdapter) {
 		file := reader.FindFile(c.request.BibleId)
 		reader.Read(file)
 	default:
-		log.Println("Error: Could not process ", c.request.TextSource)
+		log.Warn(c.ctx, "Could not process ", c.request.TextSource)
 	}
 	if c.request.TextDetail == dataset.WORDS || c.request.TextDetail == dataset.BOTH {
 		words := read.NewWordParser(database)

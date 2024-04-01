@@ -1,10 +1,11 @@
 package read
 
 import (
+	"context"
 	"dataset/db"
+	log "dataset/logger"
 	"fmt"
 	"github.com/sergi/go-diff/diffmatchpatch"
-	"log"
 	"strconv"
 	"strings"
 	"testing"
@@ -18,7 +19,8 @@ func TestWordParser(t *testing.T) {
 }
 
 func testOneDatabase(database string, t *testing.T) {
-	conn := db.NewDBAdapter(database)
+	ctx := context.Background()
+	conn := db.NewDBAdapter(ctx, database)
 	word := NewWordParser(conn)
 	word.Parse()
 	conn.Close()
@@ -28,13 +30,14 @@ func testOneDatabase(database string, t *testing.T) {
 func compareScriptAndWords(database string, t *testing.T) {
 	var count = 0
 	diffMatch := diffmatchpatch.New()
-	conn := db.NewDBAdapter(database)
+	ctx := context.Background()
+	conn := db.NewDBAdapter(ctx, database)
 	var words = make([]string, 0, 100)
 	for _, rec := range conn.SelectScripts() {
 		sql1 := `SELECT word FROM words WHERE script_id=?`
 		rows, err := conn.DB.Query(sql1, rec.ScriptId)
 		if err != nil {
-			log.Fatalln(err, sql1)
+			log.Fatal(ctx, err, sql1)
 		}
 		defer rows.Close()
 		words = []string{}
@@ -42,13 +45,13 @@ func compareScriptAndWords(database string, t *testing.T) {
 			var word string
 			err := rows.Scan(&word)
 			if err != nil {
-				log.Fatalln(err, sql1)
+				log.Fatal(ctx, err, sql1)
 			}
 			words = append(words, word)
 		}
 		err = rows.Err()
 		if err != nil {
-			log.Fatalln(err, sql1)
+			log.Fatal(ctx, err, sql1)
 		}
 		var wordText = strings.Join(words, ``)
 		diffs := diffMatch.DiffMain(rec.ScriptText, wordText, false)

@@ -1,12 +1,13 @@
 package read
 
 import (
+	"context"
 	"dataset"
 	"dataset/db"
+	log "dataset/logger"
 	"encoding/xml"
 	"fmt"
 	"io"
-	"log"
 	_ "modernc.org/sqlite"
 	"os"
 	"path/filepath"
@@ -26,7 +27,7 @@ func ReadUSXEdit(database db.DBAdapter, bibleId string, testament dataset.Testam
 	directory := filepath.Join(os.Getenv(`FCBH_DATASET_FILES`), bibleId)
 	dirs, err := os.ReadDir(directory)
 	if err != nil {
-		log.Fatal(err)
+		log.Error(database.Ctx, err)
 	}
 	var suffix string
 	switch testament {
@@ -37,19 +38,19 @@ func ReadUSXEdit(database db.DBAdapter, bibleId string, testament dataset.Testam
 	case dataset.C:
 		suffix = `-usx`
 	default:
-		log.Fatal("Error: Unknown testament type", testament, "in ReadUSXEdit")
+		log.Error(database.Ctx, "Error: Unknown testament type", testament, "in ReadUSXEdit")
 	}
 	for _, dir := range dirs {
 		if strings.HasSuffix(dir.Name(), suffix) {
 			subDir := filepath.Join(directory, dir.Name())
 			files, err := os.ReadDir(subDir)
 			if err != nil {
-				log.Fatal(err)
+				log.Error(database.Ctx, err)
 			}
 			for _, file := range files {
 				filename := filepath.Join(subDir, file.Name())
 				fmt.Println(filename)
-				records := decode(filename) // Also edits out non-script elements
+				records := decode(database.Ctx, filename) // Also edits out non-script elements
 				titleDesc := extractTitles(records)
 				records = addChapterHeading(records, titleDesc)
 				records = correctScriptNum(records)
@@ -61,7 +62,7 @@ func ReadUSXEdit(database db.DBAdapter, bibleId string, testament dataset.Testam
 	fmt.Println("Total Records", count)
 }
 
-func decode(filename string) []db.Script {
+func decode(ctx context.Context, filename string) []db.Script {
 	xmlFile, err := os.Open(filename)
 	if err != nil {
 		panic(err)
@@ -105,7 +106,7 @@ func decode(filename string) []db.Script {
 				} else {
 					err := decoder.Skip()
 					if err != nil {
-						log.Fatal(err)
+						log.Error(ctx, err)
 					}
 				}
 			}

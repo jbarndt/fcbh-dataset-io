@@ -1,8 +1,9 @@
 package db
 
 import (
+	"context"
 	"database/sql"
-	"log"
+	log "dataset/logger"
 	//_ "modernc.org/sqlite"
 	_ "github.com/mattn/go-sqlite3"
 	"os"
@@ -34,14 +35,15 @@ func DestroyDatabase(database string) {
 }
 
 type DBAdapter struct {
-	DB *sql.DB
+	Ctx context.Context
+	DB  *sql.DB
 }
 
-func NewDBAdapter(database string) DBAdapter {
+func NewDBAdapter(ctx context.Context, database string) DBAdapter {
 	var databasePath = GetDBPath(database)
 	db, err := sql.Open("sqlite3", databasePath)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(ctx, err)
 	}
 	execDDL(db, `PRAGMA temp_store = MEMORY;`)
 	var sql = `CREATE TABLE IF NOT EXISTS ident (
@@ -110,6 +112,7 @@ func NewDBAdapter(database string) DBAdapter {
 		ON words (script_id, word_seq)`
 	execDDL(db, sql)
 	var result DBAdapter
+	result.Ctx = ctx
 	result.DB = db
 	return result
 }
@@ -117,7 +120,7 @@ func NewDBAdapter(database string) DBAdapter {
 func (d DBAdapter) Close() {
 	err := d.DB.Close()
 	if err != nil {
-		log.Println(err)
+		log.Info(d.Ctx, err)
 	}
 }
 
@@ -126,27 +129,27 @@ func (d DBAdapter) Close() {
 //
 
 func (d *DBAdapter) InsertIdent(id Ident) {
-	sql1 := `REPLACE INTO ident(bible_id, audio_fileset_id, text_fileset_id,
+	query := `REPLACE INTO ident(bible_id, audio_fileset_id, text_fileset_id,
 		text_source, language_iso, version_code, 
 		languge_id, rolv_id, alphabet, language_name, 
 		version_name) VALUES (?,?,?,?,?,?,?,?,?,?,?)`
-	stmt, err := d.DB.Prepare(sql1)
+	stmt, err := d.DB.Prepare(query)
 	if err != nil {
-		log.Fatal(err, sql1)
+		log.Error(d.Ctx, err, query)
 	}
 	defer stmt.Close()
 	_, err = stmt.Exec(id.BibleId, id.AudioFilesetId, id.TextFilesetId, id.TextSource, id.LanguageISO,
 		id.VersionCode, id.LanguageId, id.RolvId, id.Alphabet, id.LanguageName, id.VersionName)
 	if err != nil {
-		log.Fatal(err, sql1)
+		log.Warn(d.Ctx, err, query)
 	}
 }
 
 func (d *DBAdapter) InsertScripts(records []Script) {
-	sql := `INSERT INTO scripts(dataset_id, book_id, chapter_num, audio_file, script_num, usfm_style, 
+	query := `INSERT INTO scripts(dataset_id, book_id, chapter_num, audio_file, script_num, usfm_style, 
 			person, actor, verse_num, verse_str, script_text, script_begin_ts, script_end_ts) 
 			VALUES (1,?,?,?,?,?,?,?,?,?,?,?,?)`
-	tx, stmt := d.prepareDML(sql)
+	tx, stmt := d.prepareDML(query)
 	defer stmt.Close()
 	for _, rec := range records {
 		rec.ScriptNum = zeroFill(rec.ScriptNum, 5)
@@ -155,28 +158,28 @@ func (d *DBAdapter) InsertScripts(records []Script) {
 			rec.UsfmStyle, rec.Person, rec.Actor, rec.VerseNum, rec.VerseStr, text,
 			rec.ScriptBeginTS, rec.ScriptEndTS)
 		if err != nil {
-			log.Fatal(err, sql)
+			log.Error(d.Ctx, err, query)
 		}
 	}
-	d.commitDML(tx, sql)
+	d.commitDML(tx, query)
 }
 
 func (d *DBAdapter) SelectScalarInt(sql string) int {
 	rows, err := d.DB.Query(sql)
 	if err != nil {
-		log.Fatal(err, sql)
+		log.Error(d.Ctx, err, sql)
 	}
 	defer rows.Close()
 	var count int
 	for rows.Next() {
 		err = rows.Scan(&count)
 		if err != nil {
-			log.Fatal(err, sql)
+			log.Error(d.Ctx, err, sql)
 		}
 	}
 	err = rows.Err()
 	if err != nil {
-		log.Fatal(err, sql)
+		log.Fatal(d.Ctx, err, sql)
 	}
 	return count
 }
@@ -187,7 +190,7 @@ func (d *DBAdapter) SelectScripts() []Script {
 		FROM scripts ORDER BY script_id`
 	rows, err := d.DB.Query(query)
 	if err != nil {
-		log.Fatalln(err, query)
+		log.Error(d.Ctx, err, query)
 	}
 	defer rows.Close()
 	var result []Script
@@ -196,13 +199,13 @@ func (d *DBAdapter) SelectScripts() []Script {
 		err := rows.Scan(&rec.ScriptId, &rec.BookId, &rec.ChapterNum, &rec.VerseNum,
 			&rec.VerseStr, &rec.ScriptText)
 		if err != nil {
-			log.Fatalln(err, query)
+			log.Error(d.Ctx, err, query)
 		}
 		result = append(result, rec)
 	}
 	err = rows.Err()
 	if err != nil {
-		log.Fatalln(err, query)
+		log.Warn(d.Ctx, err, query)
 	}
 	return result
 }
@@ -214,7 +217,7 @@ func (d *DBAdapter) SelectScriptHeadings() []Script {
 		ORDER BY script_id`
 	rows, err := d.DB.Query(query)
 	if err != nil {
-		log.Fatalln(err, query)
+		log.Error(d.Ctx, query)
 	}
 	defer rows.Close()
 	var result []Script
@@ -223,13 +226,13 @@ func (d *DBAdapter) SelectScriptHeadings() []Script {
 		err := rows.Scan(&rec.ScriptId, &rec.BookId, &rec.ChapterNum, &rec.UsfmStyle, &rec.VerseNum,
 			&rec.VerseStr, &rec.ScriptText)
 		if err != nil {
-			log.Fatalln(err, query)
+			log.Error(d.Ctx, query)
 		}
 		result = append(result, rec)
 	}
 	err = rows.Err()
 	if err != nil {
-		log.Fatalln(err, query)
+		log.Warn(d.Ctx, err, query)
 	}
 	return result
 }
@@ -304,7 +307,7 @@ func (d *DBAdapter) InsertWords(records []Word) {
 	for _, rec := range records {
 		_, err := stmt.Exec(rec.ScriptId, rec.WordSeq, rec.VerseNum, rec.TType, rec.Word)
 		if err != nil {
-			log.Fatal(err, sql1)
+			log.Error(d.Ctx, err, sql1)
 		}
 	}
 	d.commitDML(tx, sql1)
@@ -430,7 +433,7 @@ func selectTensor() {
 func execDDL(db *sql.DB, sql string) {
 	_, err := db.Exec(sql)
 	if err != nil {
-		log.Fatal(err, sql)
+		log.Panic(context.Background(), err, sql)
 	}
 }
 
@@ -452,18 +455,18 @@ func countDigits(a string) int {
 func (d *DBAdapter) prepareDML(query string) (*sql.Tx, *sql.Stmt) {
 	tx, err := d.DB.Begin()
 	if err != nil {
-		log.Fatal(err)
+		log.Error(d.Ctx, err, query)
 	}
 	stmt, err := tx.Prepare(query)
 	if err != nil {
-		log.Fatal(err, query)
+		log.Error(d.Ctx, err, query)
 	}
 	return tx, stmt
 }
 
-func (d *DBAdapter) commitDML(tx *sql.Tx, sql string) {
+func (d *DBAdapter) commitDML(tx *sql.Tx, query string) {
 	err := tx.Commit()
 	if err != nil {
-		log.Fatal(err, sql)
+		log.Error(d.Ctx, err, query)
 	}
 }

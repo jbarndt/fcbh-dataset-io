@@ -2,6 +2,7 @@ package logger
 
 import (
 	"context"
+	"dataset"
 	"log"
 	"os"
 	"runtime"
@@ -11,10 +12,10 @@ import (
 
 /**
 logger has levels: Panic, Fatal, Error, Warn, Info, and Debug
-Panic will log a message and then panic.  Fatal will log a message and then exit.
-Error will Goexit() when a goroutine calls the logger, and os.Exit() when the
-main goroutine calls it.  It determines if a routine is main by checking for
-background context.
+Panic will log a message and then panic.  This is not to be used in production.
+Fatal will log a message and Goexit(), but osExit() if the caller is context.Background()
+Fatal should also be used in rare cases.
+Error will log a message an return, but it is expected that the transaction will fail.
 Warn, Info, and Debug log messages and continue.
 */
 
@@ -28,7 +29,8 @@ const (
 	LOGDEBUG
 )
 
-var logLevel LogLevel = LOGINFO
+var logLevel LogLevel = LOGDEBUG
+var dumpSkipLines = 3 // number of dump lines to skip
 
 var panicLog *log.Logger
 var fatalLog *log.Logger
@@ -71,21 +73,19 @@ func SetLevel(level LogLevel) {
 	logLevel = level
 }
 
+func SetDumpSkipLines(lines int) {
+	dumpSkipLines = lines
+}
+
 // Panic will log the message with Println and then call panic()
-func Panic(ctx context.Context, skip int, param ...any) {
-	panicLog.Panicln(fileLine(skip), param, requestInfo(ctx))
+func Panic(ctx context.Context, param ...any) {
+	panicLog.Panicln(param, requestInfo(ctx))
 }
 
-// Fatal will log the message with Println and then call os.Exit(1)
-func Fatal(ctx context.Context, skip int, param ...any) {
-	fatalLog.Fatalln(fileLine(skip), param, requestInfo(ctx))
-}
-
-// Error will log the message with Println and then call runtime.Goexit()
-func Error(ctx context.Context, skip int, param ...any) {
-	if logLevel >= LOGERROR {
-		errorLog.Println(fileLine(skip), param, requestInfo(ctx))
-	}
+// Fatal will log the message with Println and call os.Exit is in background
+func Fatal(ctx context.Context, param ...any) {
+	fatalLog.Println(param, requestInfo(ctx))
+	fatalLog.Println(dumpLines())
 	if ctx == context.Background() {
 		os.Exit(1)
 	} else {
@@ -93,22 +93,29 @@ func Error(ctx context.Context, skip int, param ...any) {
 	}
 }
 
+// Error will log the message with Println
+func Error(ctx context.Context, param ...any) {
+	errorLog.Println(param, requestInfo(ctx))
+	errorLog.Println(dumpLines())
+}
+
 // Warn will log the message with Println and then continue
-func Warn(ctx context.Context, skip int, param ...any) {
+func Warn(ctx context.Context, param ...any) {
 	if logLevel >= LOGWARN {
 		warnLog.Println(param, requestInfo(ctx))
+		warnLog.Println(dumpLines())
 	}
 }
 
 // Info will log the message with Println and then continue
-func Info(ctx context.Context, skip int, param ...any) {
+func Info(ctx context.Context, param ...any) {
 	if logLevel >= LOGINFO {
 		infoLog.Println(param, requestInfo(ctx))
 	}
 }
 
 // Debug will log the message with Println and then continue
-func Debug(ctx context.Context, skip int, param ...any) {
+func Debug(ctx context.Context, param ...any) {
 	if logLevel >= LOGDEBUG {
 		debugLog.Println(param, requestInfo(ctx))
 	}
@@ -118,19 +125,21 @@ func requestInfo(ctx context.Context) string {
 	if ctx != nil {
 		request := ctx.Value("request")
 		if request != nil {
-			return "Request:" + request.(string)
+			req := request.(dataset.RequestType)
+			result := `AudioSource=` + string(req.AudioSource) + ` TextSource=` + string(req.TextSource) +
+				` Testament=` + string(req.Testament)
+			return result
 		}
 	}
 	return ""
 }
 
-func fileLine(skip int) string {
-	start := 3 //skip + 2
+func dumpLines() string {
 	var results = make([]string, 0)
 	var pcs = make([]uintptr, 7, 7)
-	num := runtime.Callers(start, pcs)
+	num := runtime.Callers(dumpSkipLines, pcs)
 	for i := 0; i < num; i++ {
-		level := strconv.Itoa(start + i)
+		level := strconv.Itoa(dumpSkipLines + i)
 		fun := runtime.FuncForPC(pcs[i])
 		file, line := fun.FileLine(pcs[i])
 		start := strings.LastIndex(file, "/") + 1

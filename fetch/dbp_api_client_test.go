@@ -1,6 +1,7 @@
 package fetch
 
 import (
+	"context"
 	"dataset"
 	"dataset/db"
 	"fmt"
@@ -22,7 +23,8 @@ func TestDBPAPIClient(t *testing.T) {
 	}
 	//fmt.Println("INFO", info)
 	db.DestroyDatabase(databaseName)
-	var database = db.NewDBAdapter(databaseName)
+	ctx := context.Background()
+	var database = db.NewDBAdapter(ctx, databaseName)
 	identRec := CreateIdent(info)
 	identRec.TextSource = textSource
 	database.InsertIdent(identRec)
@@ -34,7 +36,8 @@ func fetchMetaDataAndFiles(bibleId string) (BibleInfoType, bool) {
 	req.AudioSource = dataset.MP3
 	req.TextSource = dataset.TEXTEDIT
 	req.Testament = dataset.NT
-	client := NewDBPAPIClient(req.BibleId)
+	ctx := context.Background()
+	client := NewDBPAPIClient(ctx, req.BibleId)
 	var info = client.BibleInfo()
 	ok := client.FindFilesets(&info, req.AudioSource, req.TextSource, req.Testament)
 	if ok {

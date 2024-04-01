@@ -1,6 +1,7 @@
 package read
 
 import (
+	"context"
 	"dataset"
 	"dataset/db"
 	"strconv"
@@ -16,12 +17,14 @@ And add this to the DBPText data, and stores the combined data.
 //Select from each source 1 book at a time, and one chapter at a time
 
 type DBPTextEditReader struct {
+	ctx     context.Context
 	bibleId string
 	conn    db.DBAdapter
 }
 
 func NewDBPTextEditReader(bibleId string, conn db.DBAdapter) DBPTextEditReader {
 	var d DBPTextEditReader
+	d.ctx = conn.Ctx
 	d.bibleId = bibleId
 	d.conn = conn
 	return d
@@ -38,7 +41,7 @@ func (d *DBPTextEditReader) Process(testament dataset.TestamentType) {
 func (d *DBPTextEditReader) ensureDBPText(testament dataset.TestamentType) {
 	var sourceDB = d.bibleId + `_DBPTEXT.db`
 	if !db.Exists(sourceDB) {
-		var conn2 = db.NewDBAdapter(sourceDB)
+		var conn2 = db.NewDBAdapter(d.ctx, sourceDB)
 		textAdapter := NewDBPTextReader(conn2)
 		textAdapter.ProcessDirectory(d.bibleId, testament)
 		conn2.Close()
@@ -48,7 +51,7 @@ func (d *DBPTextEditReader) ensureDBPText(testament dataset.TestamentType) {
 func (d *DBPTextEditReader) ensureUSXEDITText(testament dataset.TestamentType) {
 	var sourceDB = d.bibleId + `_USXEDIT.db`
 	if !db.Exists(sourceDB) {
-		var conn3 = db.NewDBAdapter(sourceDB)
+		var conn3 = db.NewDBAdapter(d.ctx, sourceDB)
 		ReadUSXEdit(conn3, d.bibleId, testament)
 		conn3.Close()
 	}
@@ -56,7 +59,7 @@ func (d *DBPTextEditReader) ensureUSXEDITText(testament dataset.TestamentType) {
 
 func (d *DBPTextEditReader) readUSXHeadings(testament dataset.TestamentType) (map[string][]db.Script, map[string]db.Script) {
 	var sourceDB = d.bibleId + `_USXEDIT.db`
-	var conn4 = db.NewDBAdapter(sourceDB)
+	var conn4 = db.NewDBAdapter(d.ctx, sourceDB)
 	records := conn4.SelectScriptHeadings()
 	conn4.Close()
 	var bookTitle = make(map[string][]db.Script)
@@ -78,7 +81,7 @@ func (d *DBPTextEditReader) combineHeadings(bookTitle map[string][]db.Script,
 	chapTitle map[string]db.Script) []db.Script {
 	var results = make([]db.Script, 0, 5000)
 	var database = d.bibleId + `_DBPTEXT.db`
-	var conn = db.NewDBAdapter(database)
+	var conn = db.NewDBAdapter(d.ctx, database)
 	var lastBookId = ``
 	var lastChapter = -1
 	var scriptNum = 0

@@ -1,11 +1,12 @@
 package read
 
 import (
+	"context"
 	"dataset"
 	"dataset/db"
+	log "dataset/logger"
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -13,11 +14,15 @@ import (
 )
 
 type DBPTextReader struct {
+	ctx  context.Context
 	conn db.DBAdapter
 }
 
-func NewDBPTextReader(conn db.DBAdapter) *DBPTextReader {
-	return &DBPTextReader{conn: conn}
+func NewDBPTextReader(conn db.DBAdapter) DBPTextReader {
+	var d DBPTextReader
+	d.ctx = conn.Ctx
+	d.conn = conn
+	return d
 }
 
 func (d *DBPTextReader) ProcessDirectory(bibleId string, testament dataset.TestamentType) {
@@ -31,7 +36,7 @@ func (d *DBPTextReader) ProcessDirectory(bibleId string, testament dataset.Testa
 		d.processFile(directory, bibleId+"O_ET.json")
 		d.processFile(directory, bibleId+"N_ET.json")
 	default:
-		log.Fatal("Error: unknown TestamentType", testament)
+		log.Error(d.ctx, "Error: unknown TestamentType", testament)
 	}
 }
 
@@ -41,7 +46,7 @@ func (d *DBPTextReader) processFile(directory, filename string) {
 	filePath := filepath.Join(directory, filename)
 	content, err := os.ReadFile(filePath)
 	if err != nil {
-		log.Println("Error reading file:", filePath, err)
+		log.Error(d.ctx, "Error reading file:", filePath, err)
 		return
 	}
 	fmt.Println("Read", filename, len(content), "bytes")
@@ -55,7 +60,7 @@ func (d *DBPTextReader) processFile(directory, filename string) {
 	var verses []TempRec
 	err = json.Unmarshal(content, &verses)
 	if err != nil {
-		fmt.Println("Error parsing JSON:", err)
+		log.Error(d.ctx, "Error parsing JSON:", err)
 		return
 	}
 	fmt.Println("num verses", len(verses))

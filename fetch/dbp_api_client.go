@@ -1,12 +1,13 @@
 package fetch
 
 import (
+	"context"
 	"dataset"
 	"dataset/db"
+	log "dataset/logger"
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -20,12 +21,14 @@ const (
 )
 
 type DBPAPIClient struct {
+	ctx     context.Context
 	bibleId string
 	//audioSource dataset_io.AudioSourceType
 }
 
-func NewDBPAPIClient(bibleId string) DBPAPIClient {
+func NewDBPAPIClient(ctx context.Context, bibleId string) DBPAPIClient {
 	var d DBPAPIClient
+	d.ctx = ctx
 	d.bibleId = bibleId
 	return d
 }
@@ -69,7 +72,7 @@ func (d *DBPAPIClient) BibleInfo() BibleInfoType {
 	if body != nil && len(body) > 0 {
 		err := json.Unmarshal(body, &response)
 		if err != nil {
-			log.Println("Error decoding DBP API JSON:", status, err)
+			log.Error(d.ctx, "Error decoding DBP API JSON:", status, err)
 			return BibleInfoType{}
 		}
 		result = response.Data
@@ -208,7 +211,7 @@ func (d *DBPAPIClient) downloadLocation(filesetId string) []LocationRec {
 	var response LocationDownloadRec
 	err := json.Unmarshal(content, &response)
 	if err != nil {
-		log.Fatalln("Error parsing json for", filesetId, status, err)
+		log.Error(d.ctx, "Error parsing json for", filesetId, status, err)
 	}
 	return response.Data
 }
@@ -217,7 +220,7 @@ func (d *DBPAPIClient) sortFileLocations(locations []LocationRec) []LocationRec 
 	for i, loc := range locations {
 		url, err := url.Parse(loc.URL)
 		if err != nil {
-			log.Fatalln("Could not parse URL", loc.URL, err)
+			log.Error(d.ctx, "Could not parse URL", loc.URL, err)
 		}
 		locations[i].Filename = filepath.Base(url.Path)
 	}
@@ -240,12 +243,12 @@ func (d *DBPAPIClient) downloadFiles(directory string, locations []LocationRec) 
 			fmt.Println("Downloading", loc.Filename)
 			content, status := d.httpGet(loc.URL, loc.Filename)
 			if len(content) != size {
-				log.Println("Warning for", loc.Filename, "has an expected size of", size, "but, actual size is", len(content))
+				log.Warn(d.ctx, "Warning for", loc.Filename, "has an expected size of", size, "but, actual size is", len(content))
 			}
 			if len(content) > 0 {
 				d.saveFile(filePath, content)
 			} else {
-				log.Println("Error HTTP status", status)
+				log.Warn(d.ctx, "Error HTTP status", status)
 			}
 		}
 	}
@@ -257,7 +260,7 @@ func (d *DBPAPIClient) httpGet(url string, desc string) ([]byte, string) {
 	url += `&limit=100000&key=` + os.Getenv(`FCBH_DBP_KEY`)
 	resp, err := http.Get(url)
 	if err != nil {
-		log.Println("Error in DBP API request for:", desc, err)
+		log.Error(d.ctx, "Error in DBP API request for:", desc, err)
 		return body, status
 	}
 	defer resp.Body.Close()
@@ -265,7 +268,7 @@ func (d *DBPAPIClient) httpGet(url string, desc string) ([]byte, string) {
 	if status[0] == '2' {
 		body, err = io.ReadAll(resp.Body)
 		if err != nil {
-			log.Println("Error reading DBP API response for:", desc, err)
+			log.Error(d.ctx, "Error reading DBP API response for:", desc, err)
 			return body, status
 		}
 	}
@@ -275,11 +278,11 @@ func (d *DBPAPIClient) httpGet(url string, desc string) ([]byte, string) {
 func (d *DBPAPIClient) saveFile(filePath string, content []byte) {
 	fp, err := os.Create(filePath)
 	if err != nil {
-		log.Fatalln("Error Creating file for download", err)
+		log.Error(d.ctx, "Error Creating file for download", err)
 	}
 	fp.Write(content)
 	err = fp.Close()
 	if err != nil {
-		log.Fatalln("Error closing file for download", err)
+		log.Error(d.ctx, "Error closing file for download", err)
 	}
 }

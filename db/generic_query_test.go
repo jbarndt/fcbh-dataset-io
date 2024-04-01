@@ -1,23 +1,25 @@
 package db
 
 import (
+	"context"
 	"database/sql"
+	log "dataset/logger"
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
-	"log"
 	"os"
 	"testing"
 	"time"
 )
 
 func TestGenericQuery(t *testing.T) {
+	ctx := context.Background()
 	var database = `ATIWBT_USXEDIT.db`
-	conn := NewDBAdapter(database)
+	conn := NewDBAdapter(ctx, database)
 	query := SelectType{conn.DB}
 	sql1 := `SELECT book_id, chapter_num, script_begin_ts FROM scripts WHERE chapter_num=?`
 	results, err := query.Select(sql1, 11)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(ctx, err)
 	}
 	for _, result := range results {
 		fmt.Println(result[0].(string), result[1].(int), result[2].(float64))
@@ -68,10 +70,11 @@ type Test1Rec struct {
 
 func TestStandardInterface(t *testing.T) {
 	var start = time.Now()
-	var db = NewDBAdapter(`BGGWFW_SCRIPT.db`)
+	ctx := context.Background()
+	var db = NewDBAdapter(ctx, `BGGWFW_SCRIPT.db`)
 	rows, err := db.DB.Query(test2)
 	if err != nil {
-		log.Fatalln(err, test1)
+		log.Fatal(ctx, err, test1)
 	}
 	defer rows.Close()
 	var result = make([]Test1Rec, 0, 500000)
@@ -103,13 +106,13 @@ func TestStandardInterface(t *testing.T) {
 			&rec.Ttype,
 			&rec.Word)
 		if err != nil {
-			log.Fatalln(err, test1)
+			log.Fatal(ctx, err, test1)
 		}
 		result = append(result, rec)
 	}
 	err = rows.Err()
 	if err != nil {
-		log.Fatalln(err, test1)
+		log.Fatal(ctx, err, test1)
 	}
 	fmt.Println("Count", len(result))
 	fmt.Println("Elapsed", time.Since(start))
@@ -117,11 +120,12 @@ func TestStandardInterface(t *testing.T) {
 
 func TestGenericInterface(t *testing.T) {
 	var start = time.Now()
-	var db = NewDBAdapter(`BGGWFW_SCRIPT.db`)
+	ctx := context.Background()
+	var db = NewDBAdapter(ctx, `BGGWFW_SCRIPT.db`)
 	var query = SelectType{db.DB}
 	records, err := query.Select(test1)
 	if err != nil {
-		log.Fatalln(err, test1)
+		log.Fatal(ctx, err, test1)
 	}
 	fmt.Println("Query Elapsed", time.Since(start))
 	var results = make([]Test1Rec, 0, 500000)
@@ -178,10 +182,11 @@ type WordRec struct {
 
 func TestManyQuery(t *testing.T) {
 	//var db = NewDBAdapter(`BGGWFW_SCRIPT.db`)
+	ctx := context.Background()
 	database := os.Getenv(`FCBH_DATASET_DB`) + "/BGGWFW_SCRIPT.db"
 	db, err := sql.Open("sqlite3", database)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(ctx, err)
 	}
 	scripts := scriptsQuery(db)
 	fmt.Println(len(scripts))
@@ -199,8 +204,9 @@ func scriptsQuery(db *sql.DB) []ScriptRec {
 s.script_num, s.usfm_style, s.person, s.actor, s.verse_str, s.script_text
 FROM scripts s ORDER BY s.script_id`
 	rows, err := db.Query(test1)
+	ctx := context.Background()
 	if err != nil {
-		log.Fatalln(err, test1)
+		log.Fatal(ctx, err, test1)
 	}
 	defer rows.Close()
 	var results = make([]ScriptRec, 0, 10000)
@@ -218,23 +224,24 @@ FROM scripts s ORDER BY s.script_id`
 			&rec.VerseStr,
 			&rec.ScriptText)
 		if err != nil {
-			log.Fatalln(err, test1)
+			log.Fatal(ctx, err, test1)
 		}
 		results = append(results, rec)
 	}
 	err = rows.Err()
 	if err != nil {
-		log.Fatalln(err, test1)
+		log.Fatal(ctx, err, test1)
 	}
 	return results
 }
 
 func wordsQuery(db *sql.DB, scriptId int) []WordRec {
+	ctx := context.Background()
 	var test1 = `SELECT w.word_id, w.word_seq, w.verse_num, w.ttype, w.word
 FROM words w WHERE w.script_id = ? ORDER BY w.word_id`
 	rows, err := db.Query(test1, scriptId)
 	if err != nil {
-		log.Fatalln(err, test1)
+		log.Fatal(ctx, err, test1)
 	}
 	defer rows.Close()
 	var results = make([]WordRec, 0, 100)
@@ -247,13 +254,13 @@ FROM words w WHERE w.script_id = ? ORDER BY w.word_id`
 			&rec.Ttype,
 			&rec.Word)
 		if err != nil {
-			log.Fatalln(err, test1)
+			log.Fatal(ctx, err, test1)
 		}
 		results = append(results, rec)
 	}
 	err = rows.Err()
 	if err != nil {
-		log.Fatalln(err, test1)
+		log.Fatal(ctx, err, test1)
 	}
 	return results
 }
@@ -279,11 +286,12 @@ type WordSmallRec struct {
 }
 
 func TestManyAmallQuery(t *testing.T) {
+	ctx := context.Background()
 	//var db = NewDBAdapter(`BGGWFW_SCRIPT.db`)
 	database := os.Getenv(`FCBH_DATASET_DB`) + "/BGGWFW_SCRIPT.db"
 	db, err := sql.Open("sqlite3", database)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(ctx, err)
 	}
 	scripts := smallScriptsQuery(db)
 	fmt.Println(len(scripts))
@@ -297,11 +305,12 @@ func TestManyAmallQuery(t *testing.T) {
 }
 
 func smallScriptsQuery(db *sql.DB) []ScriptSmallRec {
+	ctx := context.Background()
 	var test1 = `SELECT s.script_id, s.book_id, s.chapter_num, s.verse_str
 FROM scripts s ORDER BY s.script_id`
 	rows, err := db.Query(test1)
 	if err != nil {
-		log.Fatalln(err, test1)
+		log.Fatal(ctx, err, test1)
 	}
 	defer rows.Close()
 	var results = make([]ScriptSmallRec, 0, 10000)
@@ -319,23 +328,24 @@ FROM scripts s ORDER BY s.script_id`
 			&rec.VerseStr)
 		//&rec.ScriptText)
 		if err != nil {
-			log.Fatalln(err, test1)
+			log.Fatal(ctx, err, test1)
 		}
 		results = append(results, rec)
 	}
 	err = rows.Err()
 	if err != nil {
-		log.Fatalln(err, test1)
+		log.Fatal(ctx, err, test1)
 	}
 	return results
 }
 
 func smallWordsQuery(db *sql.DB, scriptId int) []WordSmallRec {
+	ctx := context.Background()
 	var test1 = `SELECT w.word_id, w.word
 FROM words w WHERE w.script_id = ? ORDER BY w.word_id`
 	rows, err := db.Query(test1, scriptId)
 	if err != nil {
-		log.Fatalln(err, test1)
+		log.Fatal(ctx, err, test1)
 	}
 	defer rows.Close()
 	var results = make([]WordSmallRec, 0, 100)
@@ -348,13 +358,13 @@ FROM words w WHERE w.script_id = ? ORDER BY w.word_id`
 			//&rec.Ttype,
 			&rec.Word)
 		if err != nil {
-			log.Fatalln(err, test1)
+			log.Fatal(ctx, err, test1)
 		}
 		results = append(results, rec)
 	}
 	err = rows.Err()
 	if err != nil {
-		log.Fatalln(err, test1)
+		log.Fatal(ctx, err, test1)
 	}
 	return results
 }
