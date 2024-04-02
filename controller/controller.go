@@ -57,12 +57,13 @@ func (c *Controller) fetchMetaDataAndFiles() (fetch.BibleInfoType, dataset.Statu
 	var status dataset.Status
 	var ok bool
 	req := c.request
-	client := fetch.NewDBPAPIClient(c.ctx, req.BibleId)
+	client := fetch.NewAPIDBPClient(c.ctx, req.BibleId)
 	info, status = client.BibleInfo()
 	if !status.IsErr {
 		ok = client.FindFilesets(&info, req.AudioSource, req.TextSource, req.Testament)
 		if ok {
-			status = client.Download(info)
+			download := fetch.NewAPIDownloadClient(c.ctx, req.BibleId)
+			status = download.Download(info)
 		}
 	}
 	return info, status, ok
