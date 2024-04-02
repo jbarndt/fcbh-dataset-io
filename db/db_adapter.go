@@ -47,7 +47,7 @@ func NewDBAdapter(ctx context.Context, database string) DBAdapter {
 		log.Fatal(ctx, err)
 	}
 	execDDL(db, `PRAGMA temp_store = MEMORY;`)
-	var sql = `CREATE TABLE IF NOT EXISTS ident (
+	var query = `CREATE TABLE IF NOT EXISTS ident (
 		dataset_id INTEGER PRIMARY KEY AUTOINCREMENT,
 		bible_id TEXT NOT NULL,
 		audio_fileset_id TEXT NOT NULL,
@@ -60,10 +60,10 @@ func NewDBAdapter(ctx context.Context, database string) DBAdapter {
 		alphabet TEXT,
 		language_name TEXT,
 		version_name TEXT) STRICT`
-	execDDL(db, sql)
-	sql = `CREATE INDEX IF NOT EXISTS ident_bible_idx ON ident (bible_id)`
-	execDDL(db, sql)
-	sql = `CREATE TABLE IF NOT EXISTS scripts (
+	execDDL(db, query)
+	query = `CREATE INDEX IF NOT EXISTS ident_bible_idx ON ident (bible_id)`
+	execDDL(db, query)
+	query = `CREATE TABLE IF NOT EXISTS scripts (
 		script_id INTEGER PRIMARY KEY AUTOINCREMENT,
 		dataset_id INTEGER NOT NULL,
 		book_id TEXT NOT NULL,
@@ -82,13 +82,13 @@ func NewDBAdapter(ctx context.Context, database string) DBAdapter {
 		mfcc_rows INTEGER,
 		mfcc_cols INTEGER,
 		FOREIGN KEY(dataset_id) REFERENCES ident(dataset_id)) STRICT`
-	execDDL(db, sql)
-	sql = `CREATE UNIQUE INDEX IF NOT EXISTS scripts_idx
+	execDDL(db, query)
+	query = `CREATE UNIQUE INDEX IF NOT EXISTS scripts_idx
 		ON scripts (book_id, chapter_num, script_num)`
-	execDDL(db, sql)
-	sql = `CREATE INDEX IF NOT EXISTS scripts_file_idx ON scripts (audio_file)`
-	execDDL(db, sql)
-	sql = `CREATE TABLE IF NOT EXISTS words (
+	execDDL(db, query)
+	query = `CREATE INDEX IF NOT EXISTS scripts_file_idx ON scripts (audio_file)`
+	execDDL(db, query)
+	query = `CREATE TABLE IF NOT EXISTS words (
 		word_id INTEGER PRIMARY KEY AUTOINCREMENT,
 		script_id INTEGER NOT NULL,
 		word_seq INTEGER NOT NULL,
@@ -108,10 +108,10 @@ func NewDBAdapter(ctx context.Context, database string) DBAdapter {
 		word_multi_enc BLOB,
 		src_word_multi_enc BLOB,
 		FOREIGN KEY(script_id) REFERENCES scripts(script_id)) STRICT`
-	execDDL(db, sql)
-	sql = `CREATE UNIQUE INDEX IF NOT EXISTS words_idx
+	execDDL(db, query)
+	query = `CREATE UNIQUE INDEX IF NOT EXISTS words_idx
 		ON words (script_id, word_seq)`
-	execDDL(db, sql)
+	execDDL(db, query)
 	var result DBAdapter
 	result.Ctx = ctx
 	result.DB = db
