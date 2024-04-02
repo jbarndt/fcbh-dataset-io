@@ -37,12 +37,13 @@ func fetchMetaDataAndFiles(bibleId string) (BibleInfoType, dataset.Status) {
 	req.TextSource = dataset.TEXTEDIT
 	req.Testament = dataset.NT
 	ctx := context.Background()
-	client := NewDBPAPIClient(ctx, req.BibleId)
+	client := NewAPIDBPClient(ctx, req.BibleId)
 	var info, status = client.BibleInfo()
 	if !status.IsErr {
 		ok := client.FindFilesets(&info, req.AudioSource, req.TextSource, req.Testament)
 		if ok {
-			status = client.Download(info)
+			download := NewAPIDownloadClient(ctx, bibleId)
+			status = download.Download(info)
 		}
 	}
 	return info, status
