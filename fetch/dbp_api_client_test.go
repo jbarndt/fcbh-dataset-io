@@ -13,8 +13,8 @@ func TestDBPAPIClient(t *testing.T) {
 	var bibleId = `ENGWEB`
 	var textSource = `DBPTEXT`
 	var databaseName = bibleId + `_` + textSource + `.db`
-	var info, ok = fetchMetaDataAndFiles(bibleId)
-	if !ok {
+	var info, status = fetchMetaDataAndFiles(bibleId)
+	if !status.IsErr {
 		fmt.Println(`Requested Fileset is not available`)
 		for _, rec := range info.DbpProd.Filesets {
 			fmt.Printf("%s\t%s\t%s\t%s\t%s\n", rec.Id, rec.Type, rec.Size, rec.Codec, rec.Bitrate)
@@ -30,7 +30,7 @@ func TestDBPAPIClient(t *testing.T) {
 	database.InsertIdent(identRec)
 }
 
-func fetchMetaDataAndFiles(bibleId string) (BibleInfoType, bool) {
+func fetchMetaDataAndFiles(bibleId string) (BibleInfoType, dataset.Status) {
 	var req dataset.RequestType
 	req.BibleId = bibleId
 	req.AudioSource = dataset.MP3
@@ -38,10 +38,12 @@ func fetchMetaDataAndFiles(bibleId string) (BibleInfoType, bool) {
 	req.Testament = dataset.NT
 	ctx := context.Background()
 	client := NewDBPAPIClient(ctx, req.BibleId)
-	var info = client.BibleInfo()
-	ok := client.FindFilesets(&info, req.AudioSource, req.TextSource, req.Testament)
-	if ok {
-		client.Download(info)
+	var info, status = client.BibleInfo()
+	if !status.IsErr {
+		ok := client.FindFilesets(&info, req.AudioSource, req.TextSource, req.Testament)
+		if ok {
+			status = client.Download(info)
+		}
 	}
-	return info, ok
+	return info, status
 }

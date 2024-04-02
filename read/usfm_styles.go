@@ -2,7 +2,7 @@ package read
 
 import (
 	"context"
-	"log"
+	log "dataset/logger"
 )
 
 func include(style string) bool {
@@ -12,7 +12,7 @@ func include(style string) bool {
 	}
 	answer, ok := usfm[style]
 	if !ok {
-		log.Fatal(context.Background(), "USFM map does not have entry: ", style)
+		log.Warn(context.Background(), "USFM map does not have entry: ", style)
 	}
 	return answer
 }

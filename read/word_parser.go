@@ -2,10 +2,9 @@ package read
 
 import (
 	"context"
+	"dataset"
 	"dataset/db"
 	log "dataset/logger"
-	"fmt"
-	"os"
 	"strconv"
 	"unicode"
 )
@@ -40,7 +39,7 @@ func NewWordParser(conn db.DBAdapter) WordParser {
 	return w
 }
 
-func (w *WordParser) Parse() {
+func (w *WordParser) Parse() dataset.Status {
 	const (
 		begin = iota + 1
 		space
@@ -53,7 +52,12 @@ func (w *WordParser) Parse() {
 	)
 	var label = []string{"", "BEGIN", "SPACE", "WORD", "WORDPUNCT", "VERSENUM", "INVERSENUM", "ENDVERSENUM",
 		"NEXTVERSENUM"}
-	for _, rec := range w.conn.SelectScripts() {
+	var records, status = w.conn.SelectScripts()
+	if status.IsErr {
+		return status
+	}
+	//for _, rec := range w.conn.SelectScripts() {
+	for _, rec := range records {
 		//fmt.Printf("%s %d:%s  %s\n", rec.BookId, rec.ChapterNum, rec.VerseStr, rec.ScriptText)
 		var term = make([]rune, 0, 100) // None
 		var punct rune                  // None
@@ -174,7 +178,7 @@ func (w *WordParser) Parse() {
 					w.logError("{", tok)
 				}
 			default:
-				log.Error(w.ctx, "unknown state", label[state])
+				return log.ErrorNoErr(w.ctx, 500, "unknown state", label[state])
 			}
 		}
 		if len(term) > 0 && term[0] != -1 {
@@ -192,20 +196,23 @@ func (w *WordParser) Parse() {
 		}
 	}
 	w.conn.DeleteWords()
-	w.conn.InsertWords(w.records)
+	status = w.conn.InsertWords(w.records)
 	w.records = []db.Word{}
+	return status
 }
 
-func (w *WordParser) addWord(scriptId int, verseNum int, ttype string, text []rune) {
+func (w *WordParser) addWord(scriptId int, verseNum int, ttype string, text []rune) dataset.Status {
+	var status dataset.Status
 	if w.lastScriptId != scriptId {
 		w.lastScriptId = scriptId
 		w.wordSeq = 0
 	}
 	w.wordSeq += 1
 	if ttype == `` || len(text) == 0 { // or rec.VerseNum == None:
-		word := string(text)
-		fmt.Println(scriptId, verseNum, ttype, word)
-		os.Exit(0)
+		return log.ErrorNoErr(w.ctx, 500, 0, `Aparant bug trying to addWord`)
+		//word := string(text)
+		//fmt.Println(scriptId, verseNum, ttype, word)
+		//os.Exit(0)
 	}
 	//fmt.Println("seq: ", w.wordSeq, " verse: ", verseNum, " type: ", ttype, " word: ", string(text))
 	var rec db.Word
@@ -215,8 +222,9 @@ func (w *WordParser) addWord(scriptId int, verseNum int, ttype string, text []ru
 	rec.TType = ttype
 	rec.Word = string(text)
 	w.records = append(w.records, rec)
+	return status
 }
 
-func (w *WordParser) logError(expected string, actual rune) {
-	log.Error(w.ctx, "Expected: ", expected, ", but found: ", string(actual))
+func (w *WordParser) logError(expected string, actual rune) dataset.Status {
+	return log.ErrorNoErr(w.ctx, 500, "Expected: ", expected, ", but found: ", string(actual))
 }

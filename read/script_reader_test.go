@@ -12,7 +12,9 @@ func TestScriptReader(t *testing.T) {
 	db.DestroyDatabase(database)
 	conn := db.NewDBAdapter(context.Background(), database)
 	script := NewScriptReader(conn)
-	filename := script.FindFile(bibleId)
-	script.Read(filename)
+	filename, status := script.FindFile(bibleId)
+	if !status.IsErr {
+		script.Read(filename)
+	}
 	conn.Close()
 }

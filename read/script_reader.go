@@ -2,6 +2,7 @@ package read
 
 import (
 	"context"
+	"dataset"
 	"dataset/db"
 	log "dataset/logger"
 	"fmt"
@@ -26,35 +27,38 @@ func NewScriptReader(db db.DBAdapter) ScriptReader {
 	return d
 }
 
-func (r ScriptReader) FindFile(bibleId string) string {
+func (r ScriptReader) FindFile(bibleId string) (string, dataset.Status) {
+	var result string
+	var status dataset.Status
 	directory := filepath.Join(os.Getenv("FCBH_DATASET_FILES"), bibleId)
 	files, err := os.ReadDir(directory)
 	if err != nil {
-		log.Error(r.ctx, "Could not read directory", err)
+		status = log.Error(r.ctx, 500, err, "Could not read directory", directory)
+		return result, status
 	}
 	for _, file := range files {
 		filename := file.Name()
 		if strings.HasSuffix(filename, ".xlsx") {
-			return filepath.Join(directory, filename)
+			return filepath.Join(directory, filename), status
 		}
 	}
-	log.Error(r.ctx, "Could not find .xlsx file in", directory)
-	return ``
+	status = log.Error(r.ctx, 500, err, "Could not find .xlsx file in", directory)
+	return result, status
 }
 
-func (r ScriptReader) Read(filePath string) {
+func (r ScriptReader) Read(filePath string) dataset.Status {
+	var status dataset.Status
 	fmt.Println("reading", filePath)
 	file, err := excelize.OpenFile(filePath)
 	if err != nil {
-		log.Error(r.ctx, "Error: could not open", filePath, err)
-		return
+		return log.Error(r.ctx, 500, err, "Error: could not open", filePath)
 	}
 	defer file.Close()
 	sheets := file.GetSheetList()
 	sheet := sheets[0]
 	rows, err := file.GetRows(sheet)
 	if err != nil {
-		log.Fatal(r.ctx, err)
+		return log.Error(r.ctx, 500, err, `Error reading excel file.`)
 	}
 	var records []db.Script
 	for i, row := range rows {
@@ -68,13 +72,13 @@ func (r ScriptReader) Read(filePath string) {
 		case `TTS`:
 			rec.BookId = `TIT`
 		case ``:
-			log.Error(r.ctx, `Error: Did not find book_id`)
+			return log.ErrorNoErr(r.ctx, 500, `Error: Did not find book_id`)
 		default:
 			rec.BookId = row[1]
 		}
 		rec.ChapterNum, err = strconv.Atoi(row[2])
 		if err != nil {
-			log.Error(r.ctx, "Error: chapter num is not numeric", row[2])
+			return log.Error(r.ctx, 500, err, "Error: chapter num is not numeric", row[2])
 		}
 		if row[3] == `<<` {
 			rec.VerseStr = ``
@@ -83,7 +87,7 @@ func (r ScriptReader) Read(filePath string) {
 			rec.VerseStr = row[3]
 			rec.VerseNum, err = strconv.Atoi(row[3])
 			if err != nil {
-				log.Error(r.ctx, `Error: verse num is not numeric`, row[3])
+				return log.Error(r.ctx, 500, err, `Error: verse num is not numeric`, row[3])
 			}
 		}
 		rec.Person = row[4]
@@ -96,5 +100,6 @@ func (r ScriptReader) Read(filePath string) {
 			records = append(records, rec)
 		}
 	}
-	r.db.InsertScripts(records)
+	status = r.db.InsertScripts(records)
+	return status
 }

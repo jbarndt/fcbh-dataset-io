@@ -20,6 +20,7 @@ type AudioSourceType string
 
 const (
 	MP3                    AudioSourceType = "MP3"
+	NOAUDIO                AudioSourceType = "NOAUDIO"
 	DefaultAudioSourceType                 = MP3
 )
 
@@ -39,6 +40,7 @@ const (
 	DBPTEXT               TextSourceType = "DBPTEXT"
 	TEXTEDIT              TextSourceType = "TEXTEDIT"
 	USXEDIT               TextSourceType = "USXEDIT"
+	NOTEXT                TextSourceType = "NOTEXT"
 	DefaultTextSourceType                = USXEDIT
 )
 

@@ -23,11 +23,12 @@ var hasStyle = map[string]bool{
 
 var numericPattern = regexp.MustCompile(`^\d+`)
 
-func ReadUSXEdit(database db.DBAdapter, bibleId string, testament dataset.TestamentType) {
+func ReadUSXEdit(database db.DBAdapter, bibleId string, testament dataset.TestamentType) dataset.Status {
+	var status dataset.Status
 	directory := filepath.Join(os.Getenv(`FCBH_DATASET_FILES`), bibleId)
 	dirs, err := os.ReadDir(directory)
 	if err != nil {
-		log.Error(database.Ctx, err)
+		return log.Error(database.Ctx, 500, err, "Error reading USX directory.")
 	}
 	var suffix string
 	switch testament {
@@ -38,31 +39,37 @@ func ReadUSXEdit(database db.DBAdapter, bibleId string, testament dataset.Testam
 	case dataset.C:
 		suffix = `-usx`
 	default:
-		log.Error(database.Ctx, "Error: Unknown testament type", testament, "in ReadUSXEdit")
+		return log.ErrorNoErr(database.Ctx, 500, "Error: Unknown testament type", testament, "in ReadUSXEdit")
 	}
 	for _, dir := range dirs {
 		if strings.HasSuffix(dir.Name(), suffix) {
 			subDir := filepath.Join(directory, dir.Name())
 			files, err := os.ReadDir(subDir)
 			if err != nil {
-				log.Error(database.Ctx, err)
+				return log.Error(database.Ctx, 500, err, `Error reading directory.`)
 			}
 			for _, file := range files {
 				filename := filepath.Join(subDir, file.Name())
 				fmt.Println(filename)
-				records := decode(database.Ctx, filename) // Also edits out non-script elements
-				titleDesc := extractTitles(records)
-				records = addChapterHeading(records, titleDesc)
-				records = correctScriptNum(records)
-				database.InsertScripts(records)
+				var records []db.Script
+				records, status = decode(database.Ctx, filename) // Also edits out non-script elements
+				if !status.IsErr {
+					titleDesc := extractTitles(records)
+					records = addChapterHeading(records, titleDesc)
+					records = correctScriptNum(records)
+					status = database.InsertScripts(records)
+				}
 			}
 		}
 	}
-	count := database.SelectScalarInt(`SELECT count(*) FROM scripts`)
+	count, status := database.SelectScalarInt(`SELECT count(*) FROM scripts`)
 	fmt.Println("Total Records", count)
+	return status
 }
 
-func decode(ctx context.Context, filename string) []db.Script {
+func decode(ctx context.Context, filename string) ([]db.Script, dataset.Status) {
+	var records []db.Script
+	var status dataset.Status
 	xmlFile, err := os.Open(filename)
 	if err != nil {
 		panic(err)
@@ -70,7 +77,6 @@ func decode(ctx context.Context, filename string) []db.Script {
 	defer xmlFile.Close()
 	var stack Stack
 	var rec db.Script
-	var records []db.Script
 	var tagName string
 	var bookId string
 	var chapterNum = 1
@@ -85,7 +91,8 @@ func decode(ctx context.Context, filename string) []db.Script {
 			break // End of file
 		}
 		if err != nil {
-			panic(err)
+			status = log.Error(ctx, 500, err, "Error parsing USX.")
+			return records, status
 		}
 		switch se := token.(type) {
 		//[StartElement], [EndElement], [CharData], [Comment], [ProcInst], [Directive].
@@ -106,7 +113,8 @@ func decode(ctx context.Context, filename string) []db.Script {
 				} else {
 					err := decoder.Skip()
 					if err != nil {
-						log.Error(ctx, err)
+						status = log.Error(ctx, 500, err, "Error in USX parser")
+						return records, status
 					}
 				}
 			}
@@ -139,7 +147,7 @@ func decode(ctx context.Context, filename string) []db.Script {
 		}
 	}
 	fmt.Println("num records", len(records))
-	return records
+	return records, status
 }
 
 type titleDesc struct {

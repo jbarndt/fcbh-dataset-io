@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"dataset"
 	log "dataset/logger"
 	//_ "modernc.org/sqlite"
 	_ "github.com/mattn/go-sqlite3"
@@ -128,24 +129,27 @@ func (d DBAdapter) Close() {
 // ident table
 //
 
-func (d *DBAdapter) InsertIdent(id Ident) {
+func (d *DBAdapter) InsertIdent(id Ident) dataset.Status {
+	var status dataset.Status
 	query := `REPLACE INTO ident(bible_id, audio_fileset_id, text_fileset_id,
 		text_source, language_iso, version_code, 
 		languge_id, rolv_id, alphabet, language_name, 
 		version_name) VALUES (?,?,?,?,?,?,?,?,?,?,?)`
 	stmt, err := d.DB.Prepare(query)
-	if err != nil {
-		log.Error(d.Ctx, err, query)
-	}
 	defer stmt.Close()
+	if err != nil {
+		return log.Error(d.Ctx, 500, err, `Error while preparing Ident stmt.`)
+	}
 	_, err = stmt.Exec(id.BibleId, id.AudioFilesetId, id.TextFilesetId, id.TextSource, id.LanguageISO,
 		id.VersionCode, id.LanguageId, id.RolvId, id.Alphabet, id.LanguageName, id.VersionName)
 	if err != nil {
-		log.Warn(d.Ctx, err, query)
+		return log.Error(d.Ctx, 500, err, `Error while inserting Ident.`)
 	}
+	return status
 }
 
-func (d *DBAdapter) InsertScripts(records []Script) {
+func (d *DBAdapter) InsertScripts(records []Script) dataset.Status {
+	var status dataset.Status
 	query := `INSERT INTO scripts(dataset_id, book_id, chapter_num, audio_file, script_num, usfm_style, 
 			person, actor, verse_num, verse_str, script_text, script_begin_ts, script_end_ts) 
 			VALUES (1,?,?,?,?,?,?,?,?,?,?,?,?)`
@@ -158,75 +162,85 @@ func (d *DBAdapter) InsertScripts(records []Script) {
 			rec.UsfmStyle, rec.Person, rec.Actor, rec.VerseNum, rec.VerseStr, text,
 			rec.ScriptBeginTS, rec.ScriptEndTS)
 		if err != nil {
-			log.Error(d.Ctx, err, query)
+			return log.Error(d.Ctx, 500, err, `Error while inserting Scripts.`)
 		}
 	}
-	d.commitDML(tx, query)
+	status = d.commitDML(tx, query)
+	return status
 }
 
-func (d *DBAdapter) SelectScalarInt(sql string) int {
+func (d *DBAdapter) SelectScalarInt(sql string) (int, dataset.Status) {
+	var count int
+	var status dataset.Status
 	rows, err := d.DB.Query(sql)
 	if err != nil {
-		log.Error(d.Ctx, err, sql)
+		status = log.Error(d.Ctx, 500, err, sql)
+		return count, status
 	}
 	defer rows.Close()
-	var count int
 	for rows.Next() {
 		err = rows.Scan(&count)
 		if err != nil {
-			log.Error(d.Ctx, err, sql)
+			status = log.Error(d.Ctx, 500, err, sql)
+			return count, status
 		}
 	}
 	err = rows.Err()
 	if err != nil {
-		log.Fatal(d.Ctx, err, sql)
+		log.Warn(d.Ctx, err, sql)
 	}
-	return count
+	return count, status
 }
 
 // WordParser
-func (d *DBAdapter) SelectScripts() []Script {
+func (d *DBAdapter) SelectScripts() ([]Script, dataset.Status) {
+	var results []Script
+	var status dataset.Status
 	query := `SELECT script_id, book_id, chapter_num, verse_num, verse_str, script_text 
 		FROM scripts ORDER BY script_id`
 	rows, err := d.DB.Query(query)
 	if err != nil {
-		log.Error(d.Ctx, err, query)
+		status = log.Error(d.Ctx, 500, err, "Error during select scripts")
+		return results, status
 	}
 	defer rows.Close()
-	var result []Script
 	for rows.Next() {
 		var rec Script
 		err := rows.Scan(&rec.ScriptId, &rec.BookId, &rec.ChapterNum, &rec.VerseNum,
 			&rec.VerseStr, &rec.ScriptText)
 		if err != nil {
-			log.Error(d.Ctx, err, query)
+			status = log.Error(d.Ctx, 500, err, "Error in SelectScripts.")
+			return results, status
 		}
-		result = append(result, rec)
+		results = append(results, rec)
 	}
 	err = rows.Err()
 	if err != nil {
 		log.Warn(d.Ctx, err, query)
 	}
-	return result
+	return results, status
 }
 
-func (d *DBAdapter) SelectScriptHeadings() []Script {
+func (d *DBAdapter) SelectScriptHeadings() ([]Script, dataset.Status) {
+	var result []Script
+	var status dataset.Status
 	query := `SELECT script_id, book_id, chapter_num, usfm_style, verse_num, verse_str, script_text 
 		FROM scripts
 		WHERE usfm_style IN ('para.h', 'para.mt', 'para.mt1', 'para.mt2', 'para.mt3')
 		ORDER BY script_id`
 	rows, err := d.DB.Query(query)
 	if err != nil {
-		log.Error(d.Ctx, query)
+		status = log.Error(d.Ctx, 500, err, "Error during Select Script Headings.")
+		return result, status
 	}
 	defer rows.Close()
-	var result []Script
 	for rows.Next() {
 		var rec Script
 		err := rows.Scan(&rec.ScriptId, &rec.BookId, &rec.ChapterNum, &rec.UsfmStyle, &rec.VerseNum,
 			&rec.VerseStr, &rec.ScriptText)
 		if err != nil {
-			log.Error(d.Ctx, query)
+			status = log.Error(d.Ctx, 500, err, "Error during Select Script Headings.")
+			return result, status
 		}
 		result = append(result, rec)
 	}
@@ -234,7 +248,7 @@ func (d *DBAdapter) SelectScriptHeadings() []Script {
 	if err != nil {
 		log.Warn(d.Ctx, err, query)
 	}
-	return result
+	return result, status
 }
 
 /*
@@ -300,17 +314,19 @@ func (d DBAdapter) DeleteWords() {
 	execDDL(d.DB, `DELETE FROM words`)
 }
 
-func (d *DBAdapter) InsertWords(records []Word) {
+func (d *DBAdapter) InsertWords(records []Word) dataset.Status {
+	var status dataset.Status
 	sql1 := `INSERT INTO words(script_id, word_seq, verse_num, ttype, word) VALUES (?,?,?,?,?)`
 	tx, stmt := d.prepareDML(sql1)
 	defer stmt.Close()
 	for _, rec := range records {
 		_, err := stmt.Exec(rec.ScriptId, rec.WordSeq, rec.VerseNum, rec.TType, rec.Word)
 		if err != nil {
-			log.Error(d.Ctx, err, sql1)
+			return log.Error(d.Ctx, 500, err, "Error while inserting Words.")
 		}
 	}
-	d.commitDML(tx, sql1)
+	status = d.commitDML(tx, sql1)
+	return status
 }
 
 /*
@@ -455,18 +471,20 @@ func countDigits(a string) int {
 func (d *DBAdapter) prepareDML(query string) (*sql.Tx, *sql.Stmt) {
 	tx, err := d.DB.Begin()
 	if err != nil {
-		log.Error(d.Ctx, err, query)
+		log.Fatal(d.Ctx, err, query)
 	}
 	stmt, err := tx.Prepare(query)
 	if err != nil {
-		log.Error(d.Ctx, err, query)
+		log.Fatal(d.Ctx, err, query)
 	}
 	return tx, stmt
 }
 
-func (d *DBAdapter) commitDML(tx *sql.Tx, query string) {
+func (d *DBAdapter) commitDML(tx *sql.Tx, query string) dataset.Status {
+	var status dataset.Status
 	err := tx.Commit()
 	if err != nil {
-		log.Error(d.Ctx, err, query)
+		status = log.Error(d.Ctx, 500, err, query)
 	}
+	return status
 }

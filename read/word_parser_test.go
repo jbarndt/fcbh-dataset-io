@@ -33,7 +33,11 @@ func compareScriptAndWords(database string, t *testing.T) {
 	ctx := context.Background()
 	conn := db.NewDBAdapter(ctx, database)
 	var words = make([]string, 0, 100)
-	for _, rec := range conn.SelectScripts() {
+	var records, status = conn.SelectScripts()
+	if status.IsErr {
+		t.Error(status)
+	}
+	for _, rec := range records {
 		sql1 := `SELECT word FROM words WHERE script_id=?`
 		rows, err := conn.DB.Query(sql1, rec.ScriptId)
 		if err != nil {

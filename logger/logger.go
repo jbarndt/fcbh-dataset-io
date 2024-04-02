@@ -3,6 +3,7 @@ package logger
 import (
 	"context"
 	"dataset"
+	"fmt"
 	"log"
 	"os"
 	"runtime"
@@ -93,10 +94,29 @@ func Fatal(ctx context.Context, param ...any) {
 	}
 }
 
-// Error will log the message with Println
-func Error(ctx context.Context, param ...any) {
-	errorLog.Println(param, requestInfo(ctx))
-	errorLog.Println(dumpLines())
+func Error(ctx context.Context, http int, err error, param ...any) dataset.Status {
+	return errorImpl(ctx, http, err.Error(), param...)
+}
+
+func ErrorNoErr(ctx context.Context, http int, param ...any) dataset.Status {
+	return errorImpl(ctx, http, ``, param...)
+}
+
+func errorImpl(ctx context.Context, http int, err string, param ...any) dataset.Status {
+	var result []byte
+	for _, p := range param {
+		result = fmt.Append(result, p)
+		result = fmt.Append(result, ` `)
+	}
+	var e dataset.Status
+	e.IsErr = true
+	e.Status = http
+	e.Err = err
+	e.Message = string(result)
+	e.Trace = dumpLines()
+	e.Request = requestInfo(ctx)
+	errorLog.Printf("%+v", e)
+	return e
 }
 
 // Warn will log the message with Println and then continue
@@ -135,20 +155,16 @@ func requestInfo(ctx context.Context) string {
 }
 
 func dumpLines() string {
-	var results = make([]string, 0)
-	var pcs = make([]uintptr, 7, 7)
-	num := runtime.Callers(dumpSkipLines, pcs)
-	for i := 0; i < num; i++ {
-		level := strconv.Itoa(dumpSkipLines + i)
-		fun := runtime.FuncForPC(pcs[i])
-		file, line := fun.FileLine(pcs[i])
-		start := strings.LastIndex(file, "/") + 1
-		base := file[start:]
-		fileLine := base + ":" + strconv.Itoa(line)
-		name := fun.Name()
-		start = strings.LastIndex(name, "/") + 1
-		fname := name[start:]
-		results = append(results, level+" "+fileLine+" "+fname)
+	var results []string
+	var file string
+	var line int
+	var ok = true
+	for i := 2; ok; i++ {
+		_, file, line, ok = runtime.Caller(i)
+		pos := strings.Index(file, `/dataset`)
+		if pos >= 0 {
+			results = append(results, file[pos:]+":"+strconv.Itoa(line))
+		}
 	}
 	return strings.Join(results, "\n")
 }

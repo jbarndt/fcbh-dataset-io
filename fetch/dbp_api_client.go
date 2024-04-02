@@ -23,7 +23,6 @@ const (
 type DBPAPIClient struct {
 	ctx     context.Context
 	bibleId string
-	//audioSource dataset_io.AudioSourceType
 }
 
 func NewDBPAPIClient(ctx context.Context, bibleId string) DBPAPIClient {
@@ -64,21 +63,23 @@ type BibleInfoRespType struct {
 	Data BibleInfoType `json:"data"`
 }
 
-func (d *DBPAPIClient) BibleInfo() BibleInfoType {
+func (d *DBPAPIClient) BibleInfo() (BibleInfoType, dataset.Status) {
 	var result BibleInfoType
-	var url = `https://4.dbt.io/api/bibles/` + d.bibleId + `?v=4`
+	var status dataset.Status
+	result.VersionCode = d.bibleId[3:]
+	var get = `https://4.dbt.io/api/bibles/` + d.bibleId + `?v=4`
 	var response BibleInfoRespType
-	body, status := d.httpGet(url, d.bibleId)
-	if body != nil && len(body) > 0 {
+	body, status := d.httpGet(get, d.bibleId)
+	if !status.IsErr {
+		//if body != nil && len(body) > 0 {
 		err := json.Unmarshal(body, &response)
 		if err != nil {
-			log.Error(d.ctx, "Error decoding DBP API JSON:", status, err)
-			return BibleInfoType{}
+			status := log.Error(d.ctx, 500, err, "Error decoding DBP API /bibles JSON")
+			return result, status
 		}
 		result = response.Data
 	}
-	result.VersionCode = d.bibleId[3:]
-	return result
+	return result, status
 }
 
 func CreateIdent(info BibleInfoType) db.Ident {
@@ -149,37 +150,59 @@ func ConcatFilesetId(filesets []FilesetType) string {
 	return strings.Join(result, `,`)
 }
 
-func (d *DBPAPIClient) Download(info BibleInfoType) {
+func (d *DBPAPIClient) Download(info BibleInfoType) dataset.Status {
+	var status dataset.Status
 	var directory = filepath.Join(os.Getenv(`FCBH_DATASET_FILES`), info.BibleId)
 	_, err := os.Stat(directory)
 	if os.IsNotExist(err) {
-		os.MkdirAll(directory, 0755)
+		err = os.MkdirAll(directory, 0755)
+		if err != nil {
+			return log.Error(d.ctx, 500, err, `Could not create directory to store downloaded files.`)
+		}
 	}
 	var download []FilesetType
 	download = append(download, info.TextFilesets...)
 	download = append(download, info.AudioFilesets...)
 	for _, rec := range download {
 		if rec.Type == `text_plain` {
-			d.downloadPlainText(directory, rec.Id)
+			status = d.downloadPlainText(directory, rec.Id)
+			if status.IsErr {
+				return status
+			}
 		} else {
-			locations := d.downloadLocation(rec.Id)
-			locations = d.sortFileLocations(locations)
+			locations, status := d.downloadLocation(rec.Id)
+			if status.IsErr {
+				return status
+			}
+			locations, status = d.sortFileLocations(locations)
+			if status.IsErr {
+				return status
+			}
 			directory = filepath.Join(directory, rec.Id)
-			d.downloadFiles(directory, locations)
+			status = d.downloadFiles(directory, locations)
+			if status.IsErr {
+				return status
+			}
 		}
 	}
+	return status
 }
 
-func (d *DBPAPIClient) downloadPlainText(directory string, filesetId string) {
+func (d *DBPAPIClient) downloadPlainText(directory string, filesetId string) dataset.Status {
+	var content []byte
+	var status dataset.Status
 	filename := filesetId + ".json"
 	filePath := filepath.Join(directory, filename)
 	_, err := os.Stat(filePath)
 	if os.IsNotExist(err) {
-		var url = HOST + "download/" + filesetId + "?v=4&limit=100000"
+		var get = HOST + "download/" + filesetId + "?v=4&limit=100000"
 		fmt.Println("Downloading to", filePath)
-		content, _ := d.httpGet(url, filesetId)
-		d.saveFile(filePath, content)
+		content, status = d.httpGet(get, filesetId)
+		if !status.IsErr {
+			d.saveFile(filePath, content)
+		}
 	}
+	return status
 }
 
 type LocationRec struct {
@@ -196,44 +219,56 @@ type LocationDownloadRec struct {
 	Meta any           `json:"meta"`
 }
 
-func (d *DBPAPIClient) downloadLocation(filesetId string) []LocationRec {
+func (d *DBPAPIClient) downloadLocation(filesetId string) ([]LocationRec, dataset.Status) {
 	var result []LocationRec
-	var url string
+	var status dataset.Status
+	var get string
 	if strings.Contains(filesetId, `usx`) {
-		url = HOST + "bibles/filesets/" + filesetId + "/ALL/1?v=4&limit=100000"
+		get = HOST + "bibles/filesets/" + filesetId + "/ALL/1?v=4&limit=100000"
 	} else {
-		url = HOST + "download/" + filesetId + "?v=4"
+		get = HOST + "download/" + filesetId + "?v=4"
 	}
-	content, status := d.httpGet(url, filesetId)
-	if len(content) == 0 {
-		return result
+	var content []byte
+	content, status = d.httpGet(get, filesetId)
+	//if len(content) == 0 {
+	if !status.IsErr {
+		var response LocationDownloadRec
+		err := json.Unmarshal(content, &response)
+		if err != nil {
+			status = log.Error(d.ctx, 500, err, "Error parsing json for", filesetId)
+		} else {
+			result = response.Data
+		}
 	}
-	var response LocationDownloadRec
-	err := json.Unmarshal(content, &response)
-	if err != nil {
-		log.Error(d.ctx, "Error parsing json for", filesetId, status, err)
-	}
-	return response.Data
+	return result, status
 }
 
-func (d *DBPAPIClient) sortFileLocations(locations []LocationRec) []LocationRec {
+func (d *DBPAPIClient) sortFileLocations(locations []LocationRec) ([]LocationRec, dataset.Status) {
+	var status dataset.Status
 	for i, loc := range locations {
-		url, err := url.Parse(loc.URL)
+		get, err := url.Parse(loc.URL)
 		if err != nil {
-			log.Error(d.ctx, "Could not parse URL", loc.URL, err)
+			status = log.Error(d.ctx, 500, err, "Could not parse URL", loc.URL)
+			if status.IsErr {
+				return locations, status
+			}
 		}
-		locations[i].Filename = filepath.Base(url.Path)
+		locations[i].Filename = filepath.Base(get.Path)
 	}
 	sort.Slice(locations, func(i int, j int) bool {
 		return locations[i].Filename < locations[j].Filename
 	})
-	return locations
+	return locations, status
 }
 
-func (d *DBPAPIClient) downloadFiles(directory string, locations []LocationRec) {
+func (d *DBPAPIClient) downloadFiles(directory string, locations []LocationRec) dataset.Status {
+	var status dataset.Status
 	_, err := os.Stat(directory)
 	if os.IsNotExist(err) {
-		os.MkdirAll(directory, 0755)
+		err = os.MkdirAll(directory, 0755)
+		if err != nil {
+			return log.Error(d.ctx, 500, err, "Could not create directory to store downloaded files.")
+		}
 	}
 	for _, loc := range locations {
 		size := loc.FileSize
@@ -241,48 +276,52 @@ func (d *DBPAPIClient) downloadFiles(directory string, locations []LocationRec) 
 		file, err := os.Stat(filePath)
 		if os.IsNotExist(err) || file.Size() != int64(size) {
 			fmt.Println("Downloading", loc.Filename)
-			content, status := d.httpGet(loc.URL, loc.Filename)
-			if len(content) != size {
-				log.Warn(d.ctx, "Warning for", loc.Filename, "has an expected size of", size, "but, actual size is", len(content))
-			}
-			if len(content) > 0 {
+			var content []byte
+			content, status = d.httpGet(loc.URL, loc.Filename)
+			if !status.IsErr {
+				if len(content) != size {
+					log.Warn(d.ctx, "Warning for", loc.Filename, "has an expected size of", size, "but, actual size is", len(content))
+				}
 				d.saveFile(filePath, content)
-			} else {
-				log.Warn(d.ctx, "Error HTTP status", status)
 			}
 		}
 	}
+	return status
 }
 
-func (d *DBPAPIClient) httpGet(url string, desc string) ([]byte, string) {
+func (d *DBPAPIClient) httpGet(url string, desc string) ([]byte, dataset.Status) {
 	var body []byte
-	var status string
+	var status dataset.Status
 	url += `&limit=100000&key=` + os.Getenv(`FCBH_DBP_KEY`)
 	resp, err := http.Get(url)
 	if err != nil {
-		log.Error(d.ctx, "Error in DBP API request for:", desc, err)
+		status = log.Error(d.ctx, resp.StatusCode, err, "Error in DBP API request for:", desc)
 		return body, status
 	}
 	defer resp.Body.Close()
-	status = resp.Status
-	if status[0] == '2' {
+	if resp.Status[0] == '2' {
 		body, err = io.ReadAll(resp.Body)
 		if err != nil {
-			log.Error(d.ctx, "Error reading DBP API response for:", desc, err)
+			status = log.Error(d.ctx, resp.StatusCode, err, "Error reading DBP API response for:", desc)
 			return body, status
 		}
 	}
 	return body, status
 }
 
-func (d *DBPAPIClient) saveFile(filePath string, content []byte) {
+func (d *DBPAPIClient) saveFile(filePath string, content []byte) dataset.Status {
+	var status dataset.Status
 	fp, err := os.Create(filePath)
 	if err != nil {
-		log.Error(d.ctx, "Error Creating file for download", err)
+		return log.Error(d.ctx, 500, err, "Error Creating file during download.")
 	}
-	fp.Write(content)
+	_, err = fp.Write(content)
+	if err != nil {
+		return log.Error(d.ctx, 500, err, "Error writing to file during download.")
+	}
 	err = fp.Close()
 	if err != nil {
-		log.Error(d.ctx, "Error closing file for download", err)
+		return log.Error(d.ctx, 500, err, "Error closing file during download.")
 	}
+	return status
 }

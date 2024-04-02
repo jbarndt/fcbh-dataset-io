@@ -25,7 +25,8 @@ func NewDBPTextReader(conn db.DBAdapter) DBPTextReader {
 	return d
 }
 
-func (d *DBPTextReader) ProcessDirectory(bibleId string, testament dataset.TestamentType) {
+func (d *DBPTextReader) ProcessDirectory(bibleId string, testament dataset.TestamentType) dataset.Status {
+	var status dataset.Status
 	directory := filepath.Join(os.Getenv("FCBH_DATASET_FILES"), bibleId)
 	switch testament {
 	case dataset.NT:
@@ -36,18 +37,19 @@ func (d *DBPTextReader) ProcessDirectory(bibleId string, testament dataset.Testa
 		d.processFile(directory, bibleId+"O_ET.json")
 		d.processFile(directory, bibleId+"N_ET.json")
 	default:
-		log.Error(d.ctx, "Error: unknown TestamentType", testament)
+		status = log.ErrorNoErr(d.ctx, 500, "Error: unknown TestamentType", testament)
 	}
+	return status
 }
 
-func (d *DBPTextReader) processFile(directory, filename string) {
+func (d *DBPTextReader) processFile(directory, filename string) dataset.Status {
+	var status dataset.Status
 	var scriptNum = 0
 	var lastBookId string
 	filePath := filepath.Join(directory, filename)
 	content, err := os.ReadFile(filePath)
 	if err != nil {
-		log.Error(d.ctx, "Error reading file:", filePath, err)
-		return
+		return log.Error(d.ctx, 500, err, "Error reading file:", filePath)
 	}
 	fmt.Println("Read", filename, len(content), "bytes")
 	type TempRec struct {
@@ -60,8 +62,7 @@ func (d *DBPTextReader) processFile(directory, filename string) {
 	var verses []TempRec
 	err = json.Unmarshal(content, &verses)
 	if err != nil {
-		log.Error(d.ctx, "Error parsing JSON:", err)
-		return
+		return log.Error(d.ctx, 500, err, "Error parsing JSON from plain_text")
 	}
 	fmt.Println("num verses", len(verses))
 	var records = make([]db.Script, 0, 1000)
@@ -87,5 +88,6 @@ func (d *DBPTextReader) processFile(directory, filename string) {
 		rec.ScriptTexts = append(rec.ScriptTexts, text)
 		records = append(records, rec)
 	}
-	d.conn.InsertScripts(records)
+	status = d.conn.InsertScripts(records)
+	return status
 }
