@@ -55,18 +55,17 @@ type BibleInfoRespType struct {
 func (d *APIDBPClient) BibleInfo() (BibleInfoType, dataset.Status) {
 	var result BibleInfoType
 	var status dataset.Status
-	result.VersionCode = d.bibleId[3:]
 	var get = `https://4.dbt.io/api/bibles/` + d.bibleId + `?v=4`
 	var response BibleInfoRespType
 	body, status := httpGet(d.ctx, get, d.bibleId)
 	if !status.IsErr {
-		//if body != nil && len(body) > 0 {
 		err := json.Unmarshal(body, &response)
 		if err != nil {
 			status := log.Error(d.ctx, 500, err, "Error decoding DBP API /bibles JSON")
 			return result, status
 		}
 		result = response.Data
+		result.VersionCode = d.bibleId[3:]
 	}
 	return result, status
 }
