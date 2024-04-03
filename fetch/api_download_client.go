@@ -146,16 +146,15 @@ func (d *APIDownloadClient) downloadFiles(directory string, locations []Location
 		}
 	}
 	for _, loc := range locations {
-		size := loc.FileSize
 		filePath := filepath.Join(directory, loc.Filename)
 		file, err := os.Stat(filePath)
-		if os.IsNotExist(err) || file.Size() != int64(size) {
+		if os.IsNotExist(err) || file.Size() != int64(loc.FileSize) {
 			fmt.Println("Downloading", loc.Filename)
 			var content []byte
 			content, status = httpGet(d.ctx, loc.URL, loc.Filename)
 			if !status.IsErr {
-				if len(content) != size {
-					log.Warn(d.ctx, "Warning for", loc.Filename, "has an expected size of", size, "but, actual size is", len(content))
+				if len(content) != loc.FileSize {
+					log.Warn(d.ctx, "Warning for", loc.Filename, "has an expected size of", loc.FileSize, "but, actual size is", len(content))
 				}
 				d.saveFile(filePath, content)
 			}

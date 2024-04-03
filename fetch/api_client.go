@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 )
 
 const (
@@ -16,7 +17,9 @@ const (
 func httpGet(ctx context.Context, url string, desc string) ([]byte, dataset.Status) {
 	var body []byte
 	var status dataset.Status
-	url += `&limit=100000&key=` + os.Getenv(`FCBH_DBP_KEY`)
+	if strings.Contains(url, HOST) {
+		url += `&limit=100000&key=` + os.Getenv(`FCBH_DBP_KEY`)
+	}
 	resp, err := http.Get(url)
 	if err != nil {
 		status = log.Error(ctx, resp.StatusCode, err, "Error in DBP API request for:", desc)
