@@ -44,7 +44,6 @@ func (c *Compare) Process() dataset.Status {
 	c.db1 = db.NewDBAdapter(c.ctx, c.database1)
 	c.db2 = db.NewDBAdapter(c.ctx, c.database2)
 	var numChapters, status = c.db1.ReadNumChapters()
-	fmt.Println("numChapters", numChapters)
 	if status.IsErr {
 		return status
 	}
@@ -254,28 +253,6 @@ func (c *Compare) consolidateUSX(verses []Verse) []Verse {
 		log.Warn(c.ctx, "Bug: Not all data processed by consolidateUSX input:", sumInput, " output:", sumOutput)
 	}
 	return results
-}
-
-func groupBySentence(verses []Verse) []Verse {
-	var results = make([]Verse, 0, len(verses))
-	var text []string
-	for _, verse := range verses {
-		text = append(text, verse.text)
-	}
-	chapter := strings.Join(text, ``)
-	parts := strings.Split(chapter, `.`)
-	for i, part := range parts {
-		verse := Verse{bookId: `MAT`, chapter: 2, num: strconv.Itoa(i), text: part + `.`}
-		results = append(results, verse)
-	}
-	return results
-}
-
-func displayTest(verses []Verse) {
-	for i, rec := range verses {
-		fmt.Println(i, rec.bookId, rec.chapter, rec.num, len(rec.text))
-	}
-	fmt.Println("========")
 }
 
 func (c *Compare) cleanUp(verses []Verse, cfg config) []Verse {
