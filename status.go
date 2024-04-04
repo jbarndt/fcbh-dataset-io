@@ -8,3 +8,8 @@ type Status struct {
 	Trace   string
 	Request string
 }
+
+// Status implements the Error interface
+func (e *Status) Error() string {
+	return e.Err
+}

@@ -1,4 +1,4 @@
-package db
+package experiments
 
 import (
 	"database/sql"

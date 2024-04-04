@@ -251,6 +251,77 @@ func (d *DBAdapter) SelectScriptHeadings() ([]Script, dataset.Status) {
 	return result, status
 }
 
+// ReadNumChapters is used by match.Compare
+func (d *DBAdapter) ReadNumChapters() (map[string]int, dataset.Status) {
+	var results = make(map[string]int)
+	var status dataset.Status
+	query := `SELECT book_id, max(chapter_num) FROM scripts GROUP BY book_id`
+	//	stmt, err := d.DB.Prepare(query)
+	//defer stmt.Close()
+	//	if err != nil {
+	//		status = log.Error(d.Ctx, 500, err, `Could not prepare ReadNumChapters query.`)
+	//		return results, status
+	//	}
+	//	rows, err := stmt.Query()
+	rows, err := d.DB.Query(query)
+	if err != nil {
+		status = log.Error(d.Ctx, 500, err, `Could not query ReadNumChapters query`)
+		return results, status
+	}
+	type rec struct {
+		bookId      string
+		numChapters int
+	}
+	for rows.Next() {
+		var tmp rec
+		err := rows.Scan(&tmp.bookId, &tmp.numChapters)
+		if err != nil {
+			status = log.Error(d.Ctx, 500, err, `Error reading rows in ReadNumChapters`)
+			return results, status
+		}
+		results[tmp.bookId] = tmp.numChapters
+	}
+	err = rows.Err()
+	if err != nil {
+		status = log.Error(d.Ctx, 500, err, `Error at end of reading rows in ReadNumChapters`)
+	}
+	return results, status
+}
+
+// ReadScriptsByChapter is used by Compare
+func (d *DBAdapter) ReadScriptsByChapter(bookId string, chapterNum int) ([]Script, dataset.Status) {
+	var results []Script
+	var status dataset.Status
+	sqlStmt := `SELECT book_id, chapter_num, verse_str, script_text FROM scripts 
+			WHERE book_id=? AND chapter_num=?
+			ORDER BY script_id`
+	stmt, err := d.DB.Prepare(sqlStmt)
+	defer stmt.Close()
+	if err != nil {
+		status = log.Error(d.Ctx, 500, err, `Error preparing ReadScriptByChapter`)
+		return results, status
+	}
+	rows, err := stmt.Query(bookId, chapterNum)
+	if err != nil {
+		status = log.Error(d.Ctx, 500, err, `Error reading rows in ReadScriptByChapter`)
+		return results, status
+	}
+	for rows.Next() {
+		var vs Script
+		err := rows.Scan(&vs.BookId, &vs.ChapterNum, &vs.VerseStr, &vs.ScriptText)
+		if err != nil {
+			status = log.Error(d.Ctx, 500, err, `Error scanning in ReadScriptByChapter`)
+			return results, status
+		}
+		results = append(results, vs)
+	}
+	err = rows.Err()
+	if err != nil {
+		status = log.Error(d.Ctx, 500, err, `Error at end of rows in ReadingScriptByChapter`)
+	}
+	return results, status
+}
+
 /*
 # In FileAdapter
 def findChapterStart(self, book_id, chapter_num):

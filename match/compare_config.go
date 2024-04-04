@@ -1,4 +1,4 @@
-package main
+package match
 
 import "golang.org/x/text/unicode/norm"
 

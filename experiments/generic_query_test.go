@@ -1,8 +1,9 @@
-package db
+package experiments
 
 import (
 	"context"
 	"database/sql"
+	"dataset/db"
 	log "dataset/logger"
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
@@ -14,7 +15,7 @@ import (
 func TestGenericQuery(t *testing.T) {
 	ctx := context.Background()
 	var database = `ATIWBT_USXEDIT.db`
-	conn := NewDBAdapter(ctx, database)
+	conn := db.NewDBAdapter(ctx, database)
 	query := SelectType{conn.DB}
 	sql1 := `SELECT book_id, chapter_num, script_begin_ts FROM scripts WHERE chapter_num=?`
 	results, err := query.Select(sql1, 11)
@@ -71,7 +72,7 @@ type Test1Rec struct {
 func TestStandardInterface(t *testing.T) {
 	var start = time.Now()
 	ctx := context.Background()
-	var db = NewDBAdapter(ctx, `BGGWFW_SCRIPT.db`)
+	var db = db.NewDBAdapter(ctx, `BGGWFW_SCRIPT.db`)
 	rows, err := db.DB.Query(test2)
 	if err != nil {
 		log.Fatal(ctx, err, test1)
@@ -121,7 +122,7 @@ func TestStandardInterface(t *testing.T) {
 func TestGenericInterface(t *testing.T) {
 	var start = time.Now()
 	ctx := context.Background()
-	var db = NewDBAdapter(ctx, `BGGWFW_SCRIPT.db`)
+	var db = db.NewDBAdapter(ctx, `BGGWFW_SCRIPT.db`)
 	var query = SelectType{db.DB}
 	records, err := query.Select(test1)
 	if err != nil {
