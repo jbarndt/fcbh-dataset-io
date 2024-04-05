@@ -425,9 +425,9 @@ func (d *DBAdapter) InsertWords(records []Word) dataset.Status {
 func (d *DBAdapter) SelectWordsByBookChapter(bookId string, chapter int) ([]Word, dataset.Status) {
 	var results []Word
 	var status dataset.Status
-	var query = `SELECT w.word_id, w.ttype, w.word
+	var query = `SELECT w.word_id, w.word
 		FROM words w JOIN scripts s ON w.script_id = s.script_id
-		WHERE s.book_idc = ? AND s.chapter_num = ? ORDER BY w.word_id`
+		WHERE w.ttype = 'W' AND s.book_id = ? AND s.chapter_num = ? ORDER BY w.word_id`
 	rows, err := d.DB.Query(query, bookId, chapter)
 	defer rows.Close()
 	if err != nil {
@@ -436,7 +436,7 @@ func (d *DBAdapter) SelectWordsByBookChapter(bookId string, chapter int) ([]Word
 	}
 	for rows.Next() {
 		var rec Word
-		err := rows.Scan(&rec.WordId, &rec.TType, &rec.Word)
+		err := rows.Scan(&rec.WordId, &rec.Word)
 		if err != nil {
 			status = log.Error(d.Ctx, 500, err, "Error during Select Words By Book Chapter.")
 			return results, status

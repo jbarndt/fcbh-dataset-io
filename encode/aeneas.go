@@ -33,50 +33,104 @@ func NewAeneas(ctx context.Context, conn db.DBAdapter, bibleId string, audioFSId
 }
 
 func (a *Aeneas) Process(language string, detail dataset.TextDetailType) dataset.Status {
-	var audioFiles, status = ReadDirectory(a.ctx, a.bibleId, a.audioFSId)
+	var status dataset.Status
+	audioFiles, status := ReadDirectory(a.ctx, a.bibleId, a.audioFSId)
 	if status.IsErr {
 		return status
 	}
+	if detail == dataset.LINES || detail == dataset.BOTH {
+		status = a.processScripts(language, audioFiles)
+	} else if detail == dataset.WORDS || detail == dataset.BOTH {
+		status = a.processWords(language, audioFiles)
+	}
+	return status
+}
+
+func (a *Aeneas) processScripts(language string, audioFiles []string) dataset.Status {
+	var status dataset.Status
 	for _, audioFile := range audioFiles {
 		bookId, chapterNum, status := ParseFilename(a.ctx, audioFile)
 		if status.IsErr {
 			return status
 		}
-		fmt.Println(audioFile, bookId, chapterNum)
-		if detail == dataset.LINES || detail == dataset.BOTH {
-			scripts, status := a.conn.SelectScriptsByBookChapter(bookId, chapterNum)
-			if status.IsErr {
-				return status
-			}
-			textFile, status := a.createScriptsFile(bookId, chapterNum, scripts)
-			fmt.Println(textFile, status)
-			outputFile, status := a.executeAeneas(language, audioFile, textFile)
-			if status.IsErr {
-				return status
-			}
-			fmt.Println("Output", outputFile)
-			fragments, status := a.parseResponse(outputFile)
-			for _, frag := range fragments {
-				fmt.Println(frag)
-			}
-			scripts, status = a.mergeTimestamps(audioFile, scripts, fragments)
-			status = a.conn.UpdateScriptTimestamps(scripts)
-			if status.IsErr {
-				return status
-			}
-			scripts = nil
-		} else if detail == dataset.WORDS || detail == dataset.BOTH {
-			//filename, status := a.createWordsFile(bookId, chapterNum)
-
-			// build a file of words
-			// Process Aneas
-			// Store results
+		scripts, status := a.conn.SelectScriptsByBookChapter(bookId, chapterNum)
+		if status.IsErr {
+			return status
 		}
+		var scriptText = make([]string, 0, len(scripts))
+		for _, script := range scripts {
+			scriptText = append(scriptText, script.ScriptText)
+		}
+		textFile, status := a.createFile(bookId, chapterNum, scriptText)
+		if status.IsErr {
+			return status
+		}
+		fmt.Println(textFile, status)
+		outputFile, status := a.executeAeneas(language, audioFile, textFile)
+		if status.IsErr {
+			return status
+		}
+		fmt.Println("Output", outputFile)
+		fragments, status := a.parseResponse(outputFile)
+		for _, frag := range fragments {
+			fmt.Println(frag)
+		}
+		scripts, status = a.mergeScriptTimestamps(audioFile, scripts, fragments)
+		if status.IsErr {
+			return status
+		}
+		status = a.conn.UpdateScriptTimestamps(scripts)
+		if status.IsErr {
+			return status
+		}
+		scripts = nil
 	}
 	return status
 }
 
-func (a *Aeneas) createScriptsFile(bookId string, chapter int, scripts []db.Script) (string, dataset.Status) {
+func (a *Aeneas) processWords(language string, audioFiles []string) dataset.Status {
+	var status dataset.Status
+	for _, audioFile := range audioFiles {
+		bookId, chapterNum, status := ParseFilename(a.ctx, audioFile)
+		if status.IsErr {
+			return status
+		}
+		words, status := a.conn.SelectWordsByBookChapter(bookId, chapterNum)
+		if status.IsErr {
+			return status
+		}
+		var wordText = make([]string, 0, len(words))
+		for _, word := range words {
+			wordText = append(wordText, word.Word)
+		}
+		textFile, status := a.createFile(bookId, chapterNum, wordText)
+		if status.IsErr {
+			return status
+		}
+		fmt.Println(textFile, status)
+		outputFile, status := a.executeAeneas(language, audioFile, textFile)
+		if status.IsErr {
+			return status
+		}
+		fmt.Println("Output", outputFile)
+		fragments, status := a.parseResponse(outputFile)
+		for _, frag := range fragments {
+			fmt.Println(frag)
+		}
+		words, status = a.mergeWordTimestamps(audioFile, words, fragments)
+		if status.IsErr {
+			return status
+		}
+		status = a.conn.UpdateWordTimestamps(words)
+		if status.IsErr {
+			return status
+		}
+		words = nil
+	}
+	return status
+}
+
+func (a *Aeneas) createFile(bookId string, chapter int, scripts []string) (string, dataset.Status) {
 	var filename string
 	var status dataset.Status
 	var fp, err = os.CreateTemp(os.Getenv(`FCBH_DATASET_TMP`), a.audioFSId+bookId+strconv.Itoa(chapter)+`_`)
@@ -86,17 +140,13 @@ func (a *Aeneas) createScriptsFile(bookId string, chapter int, scripts []db.Scri
 		return filename, status
 	}
 	for _, script := range scripts {
-		text := strings.Replace(script.ScriptText, "\n", ` `, -1)
+		text := strings.Replace(script, "\n", ` `, -1)
 		text = strings.TrimSpace(text)
 		fp.WriteString(text)
 		fp.WriteString("\n")
 	}
 	fp.Close()
 	return fp.Name(), status
-}
-
-func (a *Aeneas) createWordsFile(bookId string, chapterNum int) {
-	//a.conn.SelectWordsByBookChapter(a.ctx, bookId, chapterNum)
 }
 
 func (a *Aeneas) executeAeneas(language string, audioFile string, textFile string) (string, dataset.Status) {
@@ -165,7 +215,7 @@ func (a *Aeneas) parseResponse(filename string) ([]AeneasRec, dataset.Status) {
 	return response.Fragments, status
 }
 
-func (a *Aeneas) mergeTimestamps(audioFile string, scripts []db.Script, fragments []AeneasRec) ([]db.Script, dataset.Status) {
+func (a *Aeneas) mergeScriptTimestamps(audioFile string, scripts []db.Script, fragments []AeneasRec) ([]db.Script, dataset.Status) {
 	var status dataset.Status
 	if len(scripts) != len(fragments) {
 		status = log.ErrorNoErr(a.ctx, 500, `Scripts len`, len(scripts), `Aeneas len`, len(fragments))
@@ -188,4 +238,28 @@ func (a *Aeneas) mergeTimestamps(audioFile string, scripts []db.Script, fragment
 		scripts[i] = scp
 	}
 	return scripts, status
+}
+
+func (a *Aeneas) mergeWordTimestamps(audioFile string, words []db.Word, fragments []AeneasRec) ([]db.Word, dataset.Status) {
+	var status dataset.Status
+	if len(words) != len(fragments) {
+		status = log.ErrorNoErr(a.ctx, 500, `Scripts len`, len(words), `Aeneas len`, len(fragments))
+		return words, status
+	}
+	var err error
+	for i, word := range words {
+		frag := fragments[i]
+		word.WordBeginTS, err = strconv.ParseFloat(frag.Begin, 64)
+		if err != nil {
+			status = log.Error(a.ctx, 500, err, `Could not parse begin TS from Aeneas`)
+			return words, status
+		}
+		word.WordEndTS, err = strconv.ParseFloat(frag.End, 64)
+		if err != nil {
+			status = log.Error(a.ctx, 500, err, `Could not parse end TS from Aeneas`)
+			return words, status
+		}
+		words[i] = word
+	}
+	return words, status
 }
