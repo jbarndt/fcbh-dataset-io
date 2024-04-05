@@ -117,7 +117,7 @@ func (a *Aeneas) processWords(language string, audioFiles []string) dataset.Stat
 		for _, frag := range fragments {
 			fmt.Println(frag)
 		}
-		words, status = a.mergeWordTimestamps(audioFile, words, fragments)
+		words, status = a.mergeWordTimestamps(words, fragments)
 		if status.IsErr {
 			return status
 		}
@@ -240,7 +240,7 @@ func (a *Aeneas) mergeScriptTimestamps(audioFile string, scripts []db.Script, fr
 	return scripts, status
 }
 
-func (a *Aeneas) mergeWordTimestamps(audioFile string, words []db.Word, fragments []AeneasRec) ([]db.Word, dataset.Status) {
+func (a *Aeneas) mergeWordTimestamps(words []db.Word, fragments []AeneasRec) ([]db.Word, dataset.Status) {
 	var status dataset.Status
 	if len(words) != len(fragments) {
 		status = log.ErrorNoErr(a.ctx, 500, `Scripts len`, len(words), `Aeneas len`, len(fragments))
