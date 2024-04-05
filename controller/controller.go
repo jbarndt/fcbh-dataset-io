@@ -99,6 +99,10 @@ func (c *Controller) readText(database db.DBAdapter) dataset.Status {
 	return status
 }
 
+func (c *Controller) matchText() {
+
+}
+
 func (c *Controller) encodeAudio() {
 
 }

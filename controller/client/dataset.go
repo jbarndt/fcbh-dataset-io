@@ -8,12 +8,13 @@ import (
 func main() {
 	var req dataset.RequestType
 	//req.BibleId = "BGGWFW"
-	req.BibleId = "ATIWBT"
+	//req.BibleId = "ATIWBT"
+	req.BibleId = "ENGWEB"
 	//req.TextSource = dataset.USXEDIT
-	//req.TextSource = dataset.DBPTEXT
+	req.TextSource = dataset.DBPTEXT
 	req.TextDetail = dataset.LINES
 	//req.TextDetail = dataset.BOTH
-	req.TextSource = dataset.SCRIPT
+	//req.TextSource = dataset.SCRIPT
 	//req.TextSource = dataset.TEXTEDIT
 	//req.AudioSource = dataset.MP3
 	req.AudioSource = dataset.NOAUDIO

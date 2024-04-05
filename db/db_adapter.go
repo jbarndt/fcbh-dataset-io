@@ -256,13 +256,6 @@ func (d *DBAdapter) ReadNumChapters() (map[string]int, dataset.Status) {
 	var results = make(map[string]int)
 	var status dataset.Status
 	query := `SELECT book_id, max(chapter_num) FROM scripts GROUP BY book_id`
-	//	stmt, err := d.DB.Prepare(query)
-	//defer stmt.Close()
-	//	if err != nil {
-	//		status = log.Error(d.Ctx, 500, err, `Could not prepare ReadNumChapters query.`)
-	//		return results, status
-	//	}
-	//	rows, err := stmt.Query()
 	rows, err := d.DB.Query(query)
 	if err != nil {
 		status = log.Error(d.Ctx, 500, err, `Could not query ReadNumChapters query`)
@@ -329,24 +322,52 @@ sql = `SELECT script_id FROM audio_scripts
 WHERE book_id = ? AND chapter_num = ?
 ORDER BY script_id LIMIT 1`
 return self.sqlite.selectScalar(sql, [book_id, chapter_num])
+*/
+// SelectScriptsByBookChapter
+func (d *DBAdapter) SelectScriptsByBookChapter(bookId string, chapter int) ([]Script, dataset.Status) {
+	var results []Script
+	var status dataset.Status
+	var query = `SELECT script_id, script_text FROM scripts 
+		WHERE book_id = ? AND chapter_num = ? ORDER BY script_id`
+	rows, err := d.DB.Query(query, bookId, chapter)
+	defer rows.Close()
+	if err != nil {
+		status = log.Error(d.Ctx, 500, err, "Error during Select Script By Book Chapter.")
+		return results, status
+	}
+	for rows.Next() {
+		var rec = Script{BookId: bookId, ChapterNum: chapter}
+		err := rows.Scan(&rec.ScriptId, &rec.ScriptText)
+		if err != nil {
+			status = log.Error(d.Ctx, 500, err, "Error during Select Script By Book Chapter.")
+			return results, status
+		}
+		results = append(results, rec)
+	}
+	err = rows.Err()
+	if err != nil {
+		log.Warn(d.Ctx, err, query)
+	}
+	return results, status
+}
 
-# In FileAdapter
-def selectScriptsByFile(self, audio_file):
-sql = `SELECT script_id, script_text FROM audio_scripts WHERE audio_file=? ORDER BY script_id`
-return self.sqlite.select(sql, [audio_file])
+func (d *DBAdapter) UpdateScriptTimestamps(scripts []Script) dataset.Status {
+	var status dataset.Status
+	query := `UPDATE scripts SET audio_file = ?, script_begin_ts = ?,
+		script_end_ts = ? WHERE script_id = ?`
+	tx, stmt := d.prepareDML(query)
+	defer stmt.Close()
+	for _, rec := range scripts {
+		_, err := stmt.Exec(rec.AudioFile, rec.ScriptBeginTS, rec.ScriptEndTS, rec.ScriptId)
+		if err != nil {
+			return log.Error(d.Ctx, 500, err, `Error while updating script timestamps.`)
+		}
+	}
+	status = d.commitDML(tx, query)
+	return status
+}
 
-# In FileAdapter
-def addScriptTimestamp(self, script_id, script_begin_ts, script_end_ts):
-self.scriptTimestampRec.append((script_begin_ts, script_end_ts, script_id))
-
-# In FileAdapter
-def updateScriptTimestamps(self):
-sql = `UPDATE audio_scripts SET script_begin_ts = ?,
-script_end_ts = ? WHERE script_id = ?`
-self.sqlite.executeBatch(sql, self.scriptTimestampRec)
-self.scriptTimestampRec = []
-
-
+/*
 def selectScriptTimestamps(self, book_id, chapter_num):
 sql = `SELECT script_id, script_begin_ts, script_end_ts
 FROM audio_scripts WHERE book_id = ? AND chapter_num = ?`
@@ -400,31 +421,58 @@ func (d *DBAdapter) InsertWords(records []Word) dataset.Status {
 	return status
 }
 
-/*
-# In AeneasExample
-def selectWordsByFile(self, audio_file):
-sql = `SELECT w.word_id, w.ttype, w.word
-FROM audio_words w JOIN audio_scripts s ON w.script_id = s.script_id
-WHERE s.audio_file=? ORDER BY w.word_id`
-return self.sqlite.select(sql, [audio_file])
+// SelectWordsByBookChapter is used by Aeneas
+func (d *DBAdapter) SelectWordsByBookChapter(bookId string, chapter int) ([]Word, dataset.Status) {
+	var results []Word
+	var status dataset.Status
+	var query = `SELECT w.word_id, w.ttype, w.word
+		FROM words w JOIN scripts s ON w.script_id = s.script_id
+		WHERE s.book_idc = ? AND s.chapter_num = ? ORDER BY w.word_id`
+	rows, err := d.DB.Query(query, bookId, chapter)
+	defer rows.Close()
+	if err != nil {
+		status = log.Error(d.Ctx, 500, err, "Error during Select Words By Book Chapter.")
+		return results, status
+	}
+	for rows.Next() {
+		var rec Word
+		err := rows.Scan(&rec.WordId, &rec.TType, &rec.Word)
+		if err != nil {
+			status = log.Error(d.Ctx, 500, err, "Error during Select Words By Book Chapter.")
+			return results, status
+		}
+		results = append(results, rec)
+	}
+	err = rows.Err()
+	if err != nil {
+		log.Warn(d.Ctx, err, query)
+	}
+	return results, status
+}
 
+/*
 # In FastTextExample
 def selectWords(self):
 sql = `SELECT word_id, word, punct, src_word FROM audio_words`
 resultSet = self.sqlite.select(sql)
 return resultSet
+*/
+func (d *DBAdapter) UpdateWordTimestamps(words []Word) dataset.Status {
+	var status dataset.Status
+	query := `UPDATE words SET word_begin_ts = ?, word_end_ts = ? WHERE word_id = ?`
+	tx, stmt := d.prepareDML(query)
+	defer stmt.Close()
+	for _, rec := range words {
+		_, err := stmt.Exec(rec.WordBeginTS, rec.WordEndTS, rec.WordId)
+		if err != nil {
+			return log.Error(d.Ctx, 500, err, `Error while updating word timestamps.`)
+		}
+	}
+	status = d.commitDML(tx, query)
+	return status
+}
 
-# In Aeneas Example
-def addWordTimestamp(self, word_id, word_begin_ts, word_end_ts):
-self.wordTimestampRec.append((word_begin_ts, word_end_ts, word_id))
-
-# In Aeneas Example
-def updateWordTimestamps(self):
-sql = `UPDATE audio_words SET word_begin_ts = ?,
-word_end_ts = ? WHERE word_id = ?`
-self.sqlite.executeBatch(sql, self.wordTimestampRec)
-self.wordTimestampRec = []
-
+/*
 # In MFCCExample
 def selectWordTimestampsByFile(self, audio_file):
 sql = `SELECT w.word_id, w.word, w.word_begin_ts, w.word_end_ts
