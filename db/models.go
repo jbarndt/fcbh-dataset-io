@@ -56,3 +56,11 @@ type Word struct {
 	WordMultiEnc    []byte
 	SrcWordMultiEnc []byte
 }
+
+type Timestamp struct {
+	AudioFile string
+	Id        int
+	Text      string
+	BeginTS   float64
+	EndTS     float64
+}

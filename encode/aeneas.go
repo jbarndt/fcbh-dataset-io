@@ -57,11 +57,12 @@ func (a *Aeneas) processScripts(language string, audioFiles []string) dataset.St
 		if status.IsErr {
 			return status
 		}
-		var scriptText = make([]string, 0, len(scripts))
+		var aeneasInp = make([]db.Timestamp, 0, len(scripts))
 		for _, script := range scripts {
-			scriptText = append(scriptText, script.ScriptText)
+			var inp = db.Timestamp{Id: script.ScriptId, Text: script.ScriptText}
+			aeneasInp = append(aeneasInp, inp)
 		}
-		textFile, status := a.createFile(bookId, chapterNum, scriptText)
+		textFile, status := a.createFile(bookId, chapterNum, aeneasInp)
 		if status.IsErr {
 			return status
 		}
@@ -71,15 +72,11 @@ func (a *Aeneas) processScripts(language string, audioFiles []string) dataset.St
 			return status
 		}
 		fmt.Println("Output", outputFile)
-		fragments, status := a.parseResponse(outputFile)
-		for _, frag := range fragments {
-			fmt.Println(frag)
-		}
-		scripts, status = a.mergeScriptTimestamps(audioFile, scripts, fragments)
+		fragments, status := a.parseResponse(outputFile, audioFile)
 		if status.IsErr {
 			return status
 		}
-		status = a.conn.UpdateScriptTimestamps(scripts)
+		status = a.conn.UpdateScriptTimestamps(fragments)
 		if status.IsErr {
 			return status
 		}
@@ -99,11 +96,12 @@ func (a *Aeneas) processWords(language string, audioFiles []string) dataset.Stat
 		if status.IsErr {
 			return status
 		}
-		var wordText = make([]string, 0, len(words))
+		var aeneasInp = make([]db.Timestamp, 0, len(words))
 		for _, word := range words {
-			wordText = append(wordText, word.Word)
+			var inp = db.Timestamp{Id: word.WordId, Text: word.Word}
+			aeneasInp = append(aeneasInp, inp)
 		}
-		textFile, status := a.createFile(bookId, chapterNum, wordText)
+		textFile, status := a.createFile(bookId, chapterNum, aeneasInp)
 		if status.IsErr {
 			return status
 		}
@@ -113,15 +111,11 @@ func (a *Aeneas) processWords(language string, audioFiles []string) dataset.Stat
 			return status
 		}
 		fmt.Println("Output", outputFile)
-		fragments, status := a.parseResponse(outputFile)
-		for _, frag := range fragments {
-			fmt.Println(frag)
-		}
-		words, status = a.mergeWordTimestamps(words, fragments)
+		fragments, status := a.parseResponse(outputFile, audioFile)
 		if status.IsErr {
 			return status
 		}
-		status = a.conn.UpdateWordTimestamps(words)
+		status = a.conn.UpdateWordTimestamps(fragments)
 		if status.IsErr {
 			return status
 		}
@@ -130,7 +124,7 @@ func (a *Aeneas) processWords(language string, audioFiles []string) dataset.Stat
 	return status
 }
 
-func (a *Aeneas) createFile(bookId string, chapter int, scripts []string) (string, dataset.Status) {
+func (a *Aeneas) createFile(bookId string, chapter int, texts []db.Timestamp) (string, dataset.Status) {
 	var filename string
 	var status dataset.Status
 	var fp, err = os.CreateTemp(os.Getenv(`FCBH_DATASET_TMP`), a.audioFSId+bookId+strconv.Itoa(chapter)+`_`)
@@ -139,11 +133,13 @@ func (a *Aeneas) createFile(bookId string, chapter int, scripts []string) (strin
 		status = log.Error(a.ctx, 500, err, `Unable to open temp file for scripts`)
 		return filename, status
 	}
-	for _, script := range scripts {
-		text := strings.Replace(script, "\n", ` `, -1)
-		text = strings.TrimSpace(text)
-		fp.WriteString(text)
-		fp.WriteString("\n")
+	for _, text := range texts {
+		fp.WriteString(strconv.Itoa(text.Id))
+		fp.WriteString("|")
+		fp.WriteString(text.Text)
+		if !strings.HasSuffix(text.Text, "\n") {
+			fp.WriteString("\n")
+		}
 	}
 	fp.Close()
 	return fp.Name(), status
@@ -164,10 +160,10 @@ func (a *Aeneas) executeAeneas(language string, audioFile string, textFile strin
 	cmd := exec.Command(pythonPath, `-m`, `aeneas.tools.execute_task`,
 		audioFile,
 		textFile,
-		`task_language=`+language+`|os_task_file_format=json|is_text_type=plain`,
+		`task_language=`+language+`|os_task_file_format=json|is_text_type=parsed`,
 		output.Name(),
 		`-example-words --presets-word`)
-	fmt.Println(cmd.String())
+	//fmt.Println(cmd.String())
 	var stdoutBuf, stderrBuf bytes.Buffer
 	cmd.Stdout = &stdoutBuf
 	cmd.Stderr = &stderrBuf
@@ -198,8 +194,8 @@ type AeneasResp struct {
 	Fragments []AeneasRec `json:"fragments"`
 }
 
-func (a *Aeneas) parseResponse(filename string) ([]AeneasRec, dataset.Status) {
-	var results []AeneasRec
+func (a *Aeneas) parseResponse(filename string, audioFile string) ([]db.Timestamp, dataset.Status) {
+	var results []db.Timestamp
 	var status dataset.Status
 	var content, err = os.ReadFile(filename)
 	if err != nil {
@@ -212,54 +208,25 @@ func (a *Aeneas) parseResponse(filename string) ([]AeneasRec, dataset.Status) {
 		status = log.Error(a.ctx, 500, err, `Error parsing Aeneas output json`)
 		return results, status
 	}
-	return response.Fragments, status
-}
-
-func (a *Aeneas) mergeScriptTimestamps(audioFile string, scripts []db.Script, fragments []AeneasRec) ([]db.Script, dataset.Status) {
-	var status dataset.Status
-	if len(scripts) != len(fragments) {
-		status = log.ErrorNoErr(a.ctx, 500, `Scripts len`, len(scripts), `Aeneas len`, len(fragments))
-		return scripts, status
-	}
-	var err error
-	for i, scp := range scripts {
-		frag := fragments[i]
-		scp.AudioFile = filepath.Base(audioFile)
-		scp.ScriptBeginTS, err = strconv.ParseFloat(frag.Begin, 64)
+	for _, rec := range response.Fragments {
+		var ts db.Timestamp
+		ts.AudioFile = filepath.Base(audioFile)
+		ts.Id, err = strconv.Atoi(rec.Id)
+		if err != nil {
+			status = log.Error(a.ctx, 500, err, `Could not parse ScriptId or WordId`)
+			return results, status
+		}
+		ts.BeginTS, err = strconv.ParseFloat(rec.Begin, 64)
 		if err != nil {
 			status = log.Error(a.ctx, 500, err, `Could not parse begin TS from Aeneas`)
-			return scripts, status
+			return results, status
 		}
-		scp.ScriptEndTS, err = strconv.ParseFloat(frag.End, 64)
+		ts.EndTS, err = strconv.ParseFloat(rec.End, 64)
 		if err != nil {
 			status = log.Error(a.ctx, 500, err, `Could not parse end TS from Aeneas`)
-			return scripts, status
+			return results, status
 		}
-		scripts[i] = scp
+		results = append(results, ts)
 	}
-	return scripts, status
-}
-
-func (a *Aeneas) mergeWordTimestamps(words []db.Word, fragments []AeneasRec) ([]db.Word, dataset.Status) {
-	var status dataset.Status
-	if len(words) != len(fragments) {
-		status = log.ErrorNoErr(a.ctx, 500, `Scripts len`, len(words), `Aeneas len`, len(fragments))
-		return words, status
-	}
-	var err error
-	for i, word := range words {
-		frag := fragments[i]
-		word.WordBeginTS, err = strconv.ParseFloat(frag.Begin, 64)
-		if err != nil {
-			status = log.Error(a.ctx, 500, err, `Could not parse begin TS from Aeneas`)
-			return words, status
-		}
-		word.WordEndTS, err = strconv.ParseFloat(frag.End, 64)
-		if err != nil {
-			status = log.Error(a.ctx, 500, err, `Could not parse end TS from Aeneas`)
-			return words, status
-		}
-		words[i] = word
-	}
-	return words, status
+	return results, status
 }

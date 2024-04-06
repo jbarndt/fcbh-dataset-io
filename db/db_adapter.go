@@ -351,14 +351,14 @@ func (d *DBAdapter) SelectScriptsByBookChapter(bookId string, chapter int) ([]Sc
 	return results, status
 }
 
-func (d *DBAdapter) UpdateScriptTimestamps(scripts []Script) dataset.Status {
+func (d *DBAdapter) UpdateScriptTimestamps(scripts []Timestamp) dataset.Status {
 	var status dataset.Status
 	query := `UPDATE scripts SET audio_file = ?, script_begin_ts = ?,
 		script_end_ts = ? WHERE script_id = ?`
 	tx, stmt := d.prepareDML(query)
 	defer stmt.Close()
 	for _, rec := range scripts {
-		_, err := stmt.Exec(rec.AudioFile, rec.ScriptBeginTS, rec.ScriptEndTS, rec.ScriptId)
+		_, err := stmt.Exec(rec.AudioFile, rec.BeginTS, rec.EndTS, rec.Id)
 		if err != nil {
 			return log.Error(d.Ctx, 500, err, `Error while updating script timestamps.`)
 		}
@@ -457,13 +457,13 @@ sql = `SELECT word_id, word, punct, src_word FROM audio_words`
 resultSet = self.sqlite.select(sql)
 return resultSet
 */
-func (d *DBAdapter) UpdateWordTimestamps(words []Word) dataset.Status {
+func (d *DBAdapter) UpdateWordTimestamps(words []Timestamp) dataset.Status {
 	var status dataset.Status
 	query := `UPDATE words SET word_begin_ts = ?, word_end_ts = ? WHERE word_id = ?`
 	tx, stmt := d.prepareDML(query)
 	defer stmt.Close()
 	for _, rec := range words {
-		_, err := stmt.Exec(rec.WordBeginTS, rec.WordEndTS, rec.WordId)
+		_, err := stmt.Exec(rec.BeginTS, rec.EndTS, rec.Id)
 		if err != nil {
 			return log.Error(d.Ctx, 500, err, `Error while updating word timestamps.`)
 		}
