@@ -58,9 +58,16 @@ type Word struct {
 }
 
 type Timestamp struct {
-	AudioFile string
 	Id        int
+	AudioFile string
 	Text      string
 	BeginTS   float64
 	EndTS     float64
+}
+
+type MFCC struct {
+	Id   int
+	Rows int
+	Cols int
+	MFCC [][]float32
 }

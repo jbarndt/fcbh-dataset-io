@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"dataset"
 	log "dataset/logger"
+	"encoding/json"
+
 	//_ "modernc.org/sqlite"
 	_ "github.com/mattn/go-sqlite3"
 	"os"
@@ -78,9 +80,9 @@ func NewDBAdapter(ctx context.Context, database string) DBAdapter {
 		script_text TEXT NOT NULL,
 		script_begin_ts REAL,
 		script_end_ts REAL,
-		script_mfcc BLOB,
-		mfcc_rows INTEGER,
-		mfcc_cols INTEGER,
+		-- script_mfcc BLOB,
+		-- mfcc_rows INTEGER,
+		-- mfcc_cols INTEGER,
 		FOREIGN KEY(dataset_id) REFERENCES ident(dataset_id)) STRICT`
 	execDDL(db, query)
 	query = `CREATE UNIQUE INDEX IF NOT EXISTS scripts_idx
@@ -97,12 +99,12 @@ func NewDBAdapter(ctx context.Context, database string) DBAdapter {
 		word TEXT NOT NULL,
 		word_begin_ts REAL,
 		word_end_ts REAL,
-		word_mfcc BLOB,
-		mfcc_rows INTEGER,
-		mfcc_cols INTEGER,
-		mfcc_norm BLOB,
-		mfcc_norm_rows INTEGER,
-		mfcc_norm_cols INTEGER,
+		-- word_mfcc BLOB,
+		-- mfcc_rows INTEGER,
+		-- mfcc_cols INTEGER,
+		-- mfcc_norm BLOB,
+		-- mfcc_norm_rows INTEGER,
+		-- mfcc_norm_cols INTEGER,
 		word_enc BLOB,
 		src_word_enc BLOB,
 		word_multi_enc BLOB,
@@ -112,13 +114,27 @@ func NewDBAdapter(ctx context.Context, database string) DBAdapter {
 	query = `CREATE UNIQUE INDEX IF NOT EXISTS words_idx
 		ON words (script_id, word_seq)`
 	execDDL(db, query)
+	query = `CREATE TABLE IF NOT EXISTS script_mfcc (
+		script_id INTEGER PRIMARY KEY,
+		rows INTEGER NOT NULL,
+		cols INTEGER NOT NULL,
+		mfcc_json TEXT NOT NULL,
+		FOREIGN KEY (script_id) REFERENCES scripts(script_id)) STRICT`
+	execDDL(db, query)
+	query = `CREATE TABLE IF NOT EXISTS word_mfcc (
+		word_id INTEGER PRIMARY KEY,
+		rows INTEGER NOT NULL,
+		cols INTEGER NOT NULL,
+		mfcc_json TEXT NOT NULL,
+		FOREIGN KEY (word_id) REFERENCES words(word_id)) STRICT`
+	execDDL(db, query)
 	var result DBAdapter
 	result.Ctx = ctx
 	result.DB = db
 	return result
 }
 
-func (d DBAdapter) Close() {
+func (d *DBAdapter) Close() {
 	err := d.DB.Close()
 	if err != nil {
 		log.Info(d.Ctx, err)
@@ -192,7 +208,7 @@ func (d *DBAdapter) SelectScalarInt(sql string) (int, dataset.Status) {
 	return count, status
 }
 
-// WordParser
+// SelectScripts is used by WordParser
 func (d *DBAdapter) SelectScripts() ([]Script, dataset.Status) {
 	var results []Script
 	var status dataset.Status
@@ -367,26 +383,18 @@ func (d *DBAdapter) UpdateScriptTimestamps(scripts []Timestamp) dataset.Status {
 	return status
 }
 
+func (d *DBAdapter) SelectScriptTimestamps(bookId string, chapter int) ([]Timestamp, dataset.Status) {
+	query := `SELECT script_id, script_begin_ts, script_end_ts
+		FROM scripts WHERE book_id = ? AND chapter_num = ? ORDER BY script_id`
+	return d.selectTimestamps(query, bookId, chapter)
+}
+
+func (d *DBAdapter) InsertScriptMFCCS(mfccs []MFCC) dataset.Status {
+	query := `REPLACE INTO script_mfcc (script_id, rows, cols, mfcc_json) VALUES (?,?,?,?)`
+	return d.insertMFCCS(query, mfccs)
+}
+
 /*
-def selectScriptTimestamps(self, book_id, chapter_num):
-sql = `SELECT script_id, script_begin_ts, script_end_ts
-FROM audio_scripts WHERE book_id = ? AND chapter_num = ?`
-resultSet = self.sqlite.select(sql, [book_id, chapter_num])
-return resultSet
-
-
-def addScriptMFCC(self, script_id, mfcc):
-dims = mfcc.shape
-self.scriptMfccRecs.append((mfcc.tobytes(), dims[0], dims[1], script_id))
-
-
-def updateScriptMFCCs(self):
-sql = `UPDATE audio_scripts SET script_mfcc = ? , mfcc_rows = ?,
-mfcc_cols = ? WHERE script_id = ?`
-self.sqlite.executeBatch(sql, self.scriptMfccRecs)
-self.scriptMfccRecs = []
-
-
 def selectScriptMFCCs(self):
 sql = `SELECT script_id, script_mfcc, mfcc_rows, mfcc_cols FROM audio_scripts`
 resultSet = self.sqlite.select(sql)
@@ -402,7 +410,7 @@ return finalSet
 // words table
 //
 
-func (d DBAdapter) DeleteWords() {
+func (d *DBAdapter) DeleteWords() {
 	execDDL(d.DB, `DELETE FROM words`)
 }
 
@@ -472,26 +480,61 @@ func (d *DBAdapter) UpdateWordTimestamps(words []Timestamp) dataset.Status {
 	return status
 }
 
+func (d *DBAdapter) SelectWordTimestamps(bookId string, chapter int) ([]Timestamp, dataset.Status) {
+	query := `SELECT word_id, word_begin_ts, word_end_ts
+		FROM scripts WHERE book_id = ? AND chapter_num = ? ORDER BY word_id`
+	return d.selectTimestamps(query, bookId, chapter)
+}
+
+func (d *DBAdapter) selectTimestamps(query string, bookId string, chapter int) ([]Timestamp, dataset.Status) {
+	var results []Timestamp
+	var status dataset.Status
+	rows, err := d.DB.Query(query, bookId, chapter)
+	defer rows.Close()
+	if err != nil {
+		status = log.Error(d.Ctx, 500, err, "Error during Select Timestamps By Book Chapter.")
+		return results, status
+	}
+	for rows.Next() {
+		var rec Timestamp
+		err := rows.Scan(&rec.Id, &rec.BeginTS, &rec.EndTS)
+		if err != nil {
+			status = log.Error(d.Ctx, 500, err, "Error during Select Timestamps By Book Chapter.")
+			return results, status
+		}
+		results = append(results, rec)
+	}
+	err = rows.Err()
+	if err != nil {
+		log.Warn(d.Ctx, err, query)
+	}
+	return results, status
+}
+
+func (d *DBAdapter) InsertWordMFCCS(mfccs []MFCC) dataset.Status {
+	query := `REPLACE INTO word_mfcc (word_id, rows, cols, mfcc_json) VALUES (?,?,?,?)`
+	return d.insertMFCCS(query, mfccs)
+}
+
+func (d *DBAdapter) insertMFCCS(query string, mfccs []MFCC) dataset.Status {
+	var status dataset.Status
+	tx, stmt := d.prepareDML(query)
+	defer stmt.Close()
+	for _, rec := range mfccs {
+		mfccBytes, err := json.Marshal(rec.MFCC)
+		if err != nil {
+			return log.Error(d.Ctx, 500, err, `Error converting MFCC to JSON`)
+		}
+		_, err = stmt.Exec(rec.Id, rec.Rows, rec.Cols, string(mfccBytes))
+		if err != nil {
+			return log.Error(d.Ctx, 500, err, `Error while inserting MFCC.`)
+		}
+	}
+	status = d.commitDML(tx, query)
+	return status
+}
+
 /*
-# In MFCCExample
-def selectWordTimestampsByFile(self, audio_file):
-sql = `SELECT w.word_id, w.word, w.word_begin_ts, w.word_end_ts
-FROM audio_words w JOIN audio_scripts s ON s.script_id = w.script_id
-WHERE s.audio_file = ?`
-return self.sqlite.select(sql, [audio_file])
-
-# In MFCCExample
-def addWordMFCC(self, word_id, word_mfcc):
-dims = word_mfcc.shape
-print(dims)
-self.wordMfccRecs.append((word_mfcc.tobytes(), dims[0], dims[1], word_id))
-
-# In MFCCExample
-def updateWordMFCCs(self):
-sql = `UPDATE audio_words SET word_mfcc = ? , mfcc_rows = ?,
-mfcc_cols = ? WHERE word_id = ?`
-self.sqlite.executeBatch(sql, self.wordMfccRecs)
-self.wordMfccRecs = []
 
 # In MFCCExample
 def selectWordMFCCs(self):

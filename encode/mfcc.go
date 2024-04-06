@@ -8,8 +8,8 @@ import (
 	log "dataset/logger"
 	"encoding/json"
 	"fmt"
-	"os"
 	"os/exec"
+	"strconv"
 )
 
 type MFCC struct {
@@ -28,41 +28,34 @@ func NewMFCC(ctx context.Context, conn db.DBAdapter, bibleId string, audioFSId s
 	return m
 }
 
-func (m *MFCC) Process(detail dataset.TextDetailType) dataset.Status {
+func (m *MFCC) Process(detail dataset.TextDetailType, numMFCC int) dataset.Status {
 	var status dataset.Status
 	audioFiles, status := ReadDirectory(m.ctx, m.bibleId, m.audioFSId)
 	if status.IsErr {
 		return status
 	}
-	if detail == dataset.LINES || detail == dataset.BOTH {
-		status = m.processScripts(audioFiles)
-	} else if detail == dataset.WORDS || detail == dataset.BOTH {
-		status = m.processWords(audioFiles)
-	}
-	return status
-}
-
-func (m *MFCC) processScripts(audioFiles []string) dataset.Status {
-	var status dataset.Status
 	for _, audioFile := range audioFiles {
 		var mfccResp MFCCResp
-		mfccResp, status = m.executeLibrosa(audioFile)
+		mfccResp, status = m.executeLibrosa(audioFile, numMFCC)
 		if status.IsErr {
 			return status
 		}
-		fmt.Println(mfccResp.FrameRate, mfccResp.Type, mfccResp.SampleRate, mfccResp.Shape, mfccResp.MFCC[0][0])
-		// execute scripts timestamp query
-		// possibly move the data to a generic structure, id, beginTS, endTS
-		// break up mfcc data into timestamp segments by ts
-		// update script MFCC segments, create a new type
-
-		os.Exit(0)
+		bookId, chapterNum, status := ParseFilename(m.ctx, audioFile)
+		if status.IsErr {
+			return status
+		}
+		if detail == dataset.LINES || detail == dataset.BOTH {
+			status = m.processScripts(mfccResp, bookId, chapterNum)
+			if status.IsErr {
+				return status
+			}
+		} else if detail == dataset.WORDS || detail == dataset.BOTH {
+			status = m.processWords(mfccResp, bookId, chapterNum)
+			if status.IsErr {
+				return status
+			}
+		}
 	}
-	return status
-}
-
-func (m *MFCC) processWords(audioFiles []string) dataset.Status {
-	var status dataset.Status
 	return status
 }
 
@@ -73,14 +66,14 @@ type MFCCResp struct {
 	FrameRate  float64     `json:"frame_rate"`
 	Shape      []int       `json:"mfcc_shape"`
 	Type       string      `json:"mfcc_type"`
-	MFCC       [][]float64 `json:"mfccs"`
+	MFCC       [][]float32 `json:"mfccs"`
 }
 
-func (m *MFCC) executeLibrosa(audioFile string) (MFCCResp, dataset.Status) {
+func (m *MFCC) executeLibrosa(audioFile string, numMFCC int) (MFCCResp, dataset.Status) {
 	var result MFCCResp
 	var status dataset.Status
 	pythonPath := "python3"
-	cmd := exec.Command(pythonPath, `mfcc_librosa.py`, audioFile)
+	cmd := exec.Command(pythonPath, `mfcc_librosa.py`, audioFile, strconv.Itoa(numMFCC))
 	fmt.Println(cmd.String())
 	var stdoutBuf, stderrBuf bytes.Buffer
 	cmd.Stdout = &stdoutBuf
@@ -103,4 +96,40 @@ func (m *MFCC) executeLibrosa(audioFile string) (MFCCResp, dataset.Status) {
 		status = log.Error(m.ctx, 500, err, `Error parsing json from librosa`)
 	}
 	return result, status
+}
+
+func (m *MFCC) processScripts(mfcc MFCCResp, bookId string, chapterNum int) dataset.Status {
+	var status dataset.Status
+	timestamps, status := m.conn.SelectScriptTimestamps(bookId, chapterNum)
+	mfccs := m.segmentMFCC(timestamps, mfcc)
+	status = m.conn.InsertScriptMFCCS(mfccs)
+	return status
+}
+
+func (m *MFCC) processWords(mfcc MFCCResp, bookId string, chapterNum int) dataset.Status {
+	var status dataset.Status
+	timestamps, status := m.conn.SelectWordTimestamps(bookId, chapterNum)
+	mfccs := m.segmentMFCC(timestamps, mfcc)
+	status = m.conn.InsertWordMFCCS(mfccs)
+	return status
+}
+
+func (m *MFCC) segmentMFCC(timestamps []db.Timestamp, mfcc MFCCResp) []db.MFCC {
+	var mfccs []db.MFCC
+	for _, ts := range timestamps {
+		startIndex := int(ts.BeginTS*mfcc.FrameRate + 0.5)
+		endIndex := int(ts.EndTS*mfcc.FrameRate + 0.5)
+		segment := mfcc.MFCC[startIndex:endIndex][:]
+		var mfcc db.MFCC
+		mfcc.Id = ts.Id
+		mfcc.Rows = len(segment)
+		if mfcc.Rows == 0 {
+			mfcc.Cols = 0
+		} else {
+			mfcc.Cols = len(segment[0])
+		}
+		mfcc.MFCC = segment
+		mfccs = append(mfccs, mfcc)
+	}
+	return mfccs
 }
