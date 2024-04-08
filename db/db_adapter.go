@@ -6,7 +6,6 @@ import (
 	"dataset"
 	log "dataset/logger"
 	"encoding/json"
-
 	//_ "modernc.org/sqlite"
 	_ "github.com/mattn/go-sqlite3"
 	"os"
@@ -38,8 +37,10 @@ func DestroyDatabase(database string) {
 }
 
 type DBAdapter struct {
-	Ctx context.Context
-	DB  *sql.DB
+	Ctx          context.Context
+	Database     string
+	DatabasePath string
+	DB           *sql.DB
 }
 
 func NewDBAdapter(ctx context.Context, database string) DBAdapter {
@@ -130,6 +131,8 @@ func NewDBAdapter(ctx context.Context, database string) DBAdapter {
 	execDDL(db, query)
 	var result DBAdapter
 	result.Ctx = ctx
+	result.Database = database
+	result.DatabasePath = databasePath
 	result.DB = db
 	return result
 }
@@ -429,6 +432,33 @@ func (d *DBAdapter) InsertWords(records []Word) dataset.Status {
 	return status
 }
 
+// SelectWords is used by encode.FastText
+func (d *DBAdapter) SelectWords() ([]Word, dataset.Status) {
+	var results []Word
+	var status dataset.Status
+	var query = `SELECT word_id, ttype, word FROM words ORDER BY word_id`
+	rows, err := d.DB.Query(query)
+	defer rows.Close()
+	if err != nil {
+		status = log.Error(d.Ctx, 500, err, "Error during Select Words.")
+		return results, status
+	}
+	for rows.Next() {
+		var rec Word
+		err := rows.Scan(&rec.WordId, &rec.TType, &rec.Word)
+		if err != nil {
+			status = log.Error(d.Ctx, 500, err, "Error during Select Words.")
+			return results, status
+		}
+		results = append(results, rec)
+	}
+	err = rows.Err()
+	if err != nil {
+		log.Warn(d.Ctx, err, query)
+	}
+	return results, status
+}
+
 // SelectWordsByBookChapter is used by Aeneas
 func (d *DBAdapter) SelectWordsByBookChapter(bookId string, chapter int) ([]Word, dataset.Status) {
 	var results []Word
@@ -548,65 +578,26 @@ mfcc_shaped = mfcc_decoded.reshape((mfcc_rows, mfcc_cols))
 finalSet.append((word_id, mfcc_shaped))
 return finalSet
 
-# In MFCCExample
-def addPadWordMFCC(self, word_id, mfcc):
-dims = mfcc.shape
-print(dims)
-self.mfccPadRecs.append((mfcc.tobytes(), dims[0], dims[1], word_id))
-
-# In MFCCExample
-def updatePadWordMFCCs(self):
-sql = `UPDATE audio_words SET mfcc_norm = ?, mfcc_norm_rows = ?,
-mfcc_norm_cols = ? WHERE word_id = ?`
-self.sqlite.executeBatch(sql, self.mfccPadRecs)
-self.mfccPadRecs = []
-
-# In FastText Example
-def addWordEncoding(self, word_id, word_enc):
-self.wordEncRec.append((word_enc.tobytes(), word_id))
-
-# In FastText Example
-def updateWordEncoding(self):
-sql = `UPDATE audio_words SET word_enc = ? WHERE word_id = ?`
-self.sqlite.executeBatch(sql, self.wordEncRec)
-self.wordEncRec = []
-
-
-def addSrcWordEncoding(self, id, src_word_enc):
-self.wordEncRec.append((src_word_enc.tobytes(), id))
-
-
-def updateSrcWordEncoding(self):
-sql = `UPDATE audio_words SET src_word_enc = ? WHERE id = ?`
-self.sqlite.executeBatch(sql, self.srcWordEncRec)
-self.srcWordEncRec = []
-
-
-def addMultiEncoding(self, id, word_multi_enc, src_word_multi_enc):
-self.multiEncRec.append((word_multi_enc.tobytes(), src_word_multi_enc.tobytes(), id))
-
-
-def updateMultiEncodings(self):
-sql = `UPDATE audio_words SET word_multi_enc = ?,
-src_word_multi_enc = ? WHERE id = ?`
-self.sqlite.executeBatch(sql, self.multiEncRec)
-self.multiEncRec = []
-
-
-func selectTensor() {
-	var sql = `SELECT mfcc_norm, mfcc_rows, mfcc_cols, word_multi_enc,
-		src_word_multi_enc FROM audio_words`
-	resultSet := self.sqlite.select (sql, [])
-	finalSet = []
-	for (mfcc_norm, word_multi_enc, src_word_multi_enc) in resultSet:
-		mfcc_decoded = np.frombuffer(mfcc_norm, dtype = np.float32)
-		mfcc_shaped = mfcc_decoded.shape(mfcc_rows, mfcc_cols)
-		word_decoded = np.frombuffer(word_multi_enc, dtype = np.float32)
-		src_word_decoded = np.frombuffer(src_word_multi_enc, dtype = np.float32)
-		finalSet.append([mfcc_shaped, word_decoded, src_word_decoded])
-	return finalSet
-}
 */
+
+func (d *DBAdapter) UpdateWordEncodings(words []Word) dataset.Status {
+	var status dataset.Status
+	query := `UPDATE words SET word_enc = ? WHERE word_id = ?`
+	tx, stmt := d.prepareDML(query)
+	defer stmt.Close()
+	for _, rec := range words {
+		encBytes, err := json.Marshal(rec.WordEncoded)
+		if err != nil {
+			return log.Error(d.Ctx, 500, err, `Error converting word enc to JSON`)
+		}
+		_, err = stmt.Exec(encBytes, rec.WordId)
+		if err != nil {
+			return log.Error(d.Ctx, 500, err, `Error while inserting word enc.`)
+		}
+	}
+	status = d.commitDML(tx, query)
+	return status
+}
 
 func execDDL(db *sql.DB, sql string) {
 	_, err := db.Exec(sql)

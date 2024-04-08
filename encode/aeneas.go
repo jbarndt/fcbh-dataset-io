@@ -125,13 +125,12 @@ func (a *Aeneas) processWords(language string, audioFiles []string) dataset.Stat
 }
 
 func (a *Aeneas) createFile(bookId string, chapter int, texts []db.Timestamp) (string, dataset.Status) {
-	var filename string
 	var status dataset.Status
 	var fp, err = os.CreateTemp(os.Getenv(`FCBH_DATASET_TMP`), a.audioFSId+bookId+strconv.Itoa(chapter)+`_`)
 	fmt.Println("Created file", fp.Name())
 	if err != nil {
 		status = log.Error(a.ctx, 500, err, `Unable to open temp file for scripts`)
-		return filename, status
+		return ``, status
 	}
 	for _, text := range texts {
 		fp.WriteString(strconv.Itoa(text.Id))

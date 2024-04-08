@@ -31,30 +31,18 @@ type Script struct {
 	ScriptTexts   []string
 	ScriptBeginTS float64
 	ScriptEndTS   float64
-	ScriptMFCC    []byte
-	MFCCRows      int
-	MFCCCols      int
 }
 
 type Word struct {
-	WordId          int
-	ScriptId        int
-	WordSeq         int
-	VerseNum        int
-	TType           string
-	Word            string
-	WordBeginTS     float64
-	WordEndTS       float64
-	WordMfcc        []byte
-	MFCCRows        int
-	MFCCCols        int
-	MFCCNorm        []byte
-	MFCCNormRows    int
-	MFCCNormCols    int
-	WordEnc         []byte
-	SrcWordEnc      []byte
-	WordMultiEnc    []byte
-	SrcWordMultiEnc []byte
+	WordId      int
+	ScriptId    int
+	WordSeq     int
+	VerseNum    int
+	TType       string
+	Word        string
+	WordBeginTS float64
+	WordEndTS   float64
+	WordEncoded []float64
 }
 
 type Timestamp struct {
