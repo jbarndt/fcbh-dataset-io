@@ -14,7 +14,7 @@ func TestWhisper(t *testing.T) {
 	db.DestroyDatabase(database)
 	ctx := context.Background()
 	conn := db.NewDBAdapter(ctx, database)
-	var whisp = NewWhisper(bibleId, conn)
+	var whisp = NewWhisper(bibleId, conn, `small`)
 	whisp.ProcessDirectory(filesetId, dataset.NT)
 	conn.Close()
 }

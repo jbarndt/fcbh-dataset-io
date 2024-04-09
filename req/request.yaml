@@ -1,0 +1,106 @@
+## This is the request file format to run
+
+Required:
+  RequestName:  # should be a unique name
+  RequestorName:
+  RequestorEmail:
+  BibleId:
+  LanguageISO:
+  VersionCode: # ???
+  # What is version
+
+Testament: # Choose one or both
+  NT: # Mark Yes for New Testament
+  OT: # Mark Yes for Old Testament
+# Default: both Yes
+
+# The remaining configuration choices are all optional, but something must be selected in order for some processing to be done.
+
+AudioData: # Choose one of the following
+  BibleBrain: # If Bible Brain put Yes by the desired type
+    MP3_64: # Mark Yes for 64 bit MP3
+    MP3_16: # Mark Yes for 16 bit MP3
+    OPUS: # Mark Yes for OPUS
+  File: # If file, enter path here (TBD)
+  Http: # If http, enter URL (TBD)
+  AWS: # If AWS enter URL ?? Will this work for public only (TBD)
+  POST: # If POST, put Yes here (TBD)
+  NoAudio: # If no audio put Yes here
+# Default:  NoAudio
+
+TextData: # Choose one of the following
+  BibleBrain: # If Bible Brain put Yes by the desired type
+    TextUSXEdit:  # Mark Yes, for USX with text not in audio removed
+    TextPlainEdit: # Mark Yes, for plain_text with headings added to match audio
+    TextPlain: # Mark Yes, for DBP plain_text
+  SpeechToText: # If STT is source Yes by desired type
+    Whisper: # This is OpenAI’s STT model
+      Model: # If using Whisper, choose one of the model sizes by marking it Yes
+        Large:
+        Medium:
+        Small:
+        Base:
+        Tiny:
+  File: # If file, enter path here (TBD)
+  Http: # If http, enter URL here (TBD)
+  AWS: # If AWS enter URL here (TBD)
+  POST: # (TBD)
+  NoText: # If there is no text put an X here
+
+Detail: # Choose word or both
+  Lines: # Mark yes to process script lines
+  Words: # Mark yes to process individual words
+# Default: LINES
+
+Timestamps: # If timestamps are needed, mark Yes by source
+  BibleBrain:
+  Aeneas:
+  NoTimeStamps:
+# Default: NoTimeStamps
+## edit check, there must be an AudioPath
+
+AudioEncoding: # If audio encoding is needed, mark Yes by the method
+  MFCC:
+  NoEncoding:
+# Default: NoEncoding
+## edit check, there must be an AudioPath
+## prerquisite, is timestamps
+# prerequisite is timestamps, prerequisite of timestamps is both text and audio.  DBPEDIT, USXEDiT, and SCRIPT are recommended text types
+
+TextEncoding:
+  FastText:
+  NoTextEncoding:
+# Default: NoTextEncoding
+## edit check, there must be a TextPath
+
+OutputFormat: # Put an X by the desired output format.
+  CSV: # (TBD)
+  JSON: # (TBD)
+  Sqlite: # (TBD)
+# Default: JSON
+## edit check, there must at least be an AudioPath or TextPath, if something is selected here
+
+Compare: # To do a compare, put the names of the two projects here
+  Project1:  # This doesn’t quite work, how does user get name?
+  Project2:
+## compare entries go here
+## edit check, the two projects must exist, and both must have a text source.
+  CompareSettings: # Mark yes, all settings that apply
+    LowerCase: # Mark yes here to move to lower case
+    RemovePromptChars: # Mark yes here to remove prompt chars found in audio transcript
+    RemovePunctuation: # Mark yes here to remove punctuation
+    DoubleQuotes: # Choose no more than one
+      Remove: # Mark yes here to remove double quotes
+      Normalize: # Mark yes here to normalize to ascii double quote
+    Apostrophe: # Choose no more than one
+      Remove: # Mark yes here to remove apostrophes
+      Normalize: # Mark yes here to normalize to ascii apostrophe
+    Hyphen: # Choose no more than one
+      Remove: # Mark yes here to remove Hyphen
+      Normalize: # Mark yes here to normalize to ascii hyphen
+    DiacriticalMarks: # Choose no more than one
+      Remove: # Mark yes here to remove diacritical marks
+      NormalizeNFC: # Mark yes here for Normalization Form Composition
+      NormalizeNFD: # Mark yes here for Normalization Form Decomposition
+      NormalizeNFKC: # Mark yes here for Normalization Form Compatibility Composition
+      NormalizeNFKD: # Mark yes here for Normalization Form Compatibility Decomposition
