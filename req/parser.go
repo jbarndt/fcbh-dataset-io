@@ -36,6 +36,7 @@ func Validate(req Request) {
 	checkRequired(req.Required, &msgs)
 	checkTestament(&req.Testament)
 	checkAudioData(&req.AudioData, &msgs)
+	//checkTextData(&req.TextData, &msgs)
 	for _, msg := range msgs {
 		fmt.Println(msg)
 	}
@@ -63,35 +64,46 @@ func checkTestament(req *Testament) {
 
 // checkAudioData Is checking that no more than one item is selected.
 // if none are selected, it will set the default: NoAudio
-func checkAudioData(req *AudioData, msgs *[]string) int {
+func checkAudioData(req *AudioData, msgs *[]string) {
+	sVal := reflect.ValueOf(*req)
+	count := checkForOne(sVal, msgs)
+	if count == 0 {
+		req.NoAudio = true
+	}
+}
+
+// checkTextData Is checking that no more than one item is selected.
+// if none are selected, it will set the default: NoAudio
+func checkTextData(req *TextData, msgs *[]string) {
+	sVal := reflect.ValueOf(*req)
+	count := checkForOne(sVal, msgs)
+	if count == 0 {
+		req.NoText = true
+	}
+}
+
+func checkForOne(sVal reflect.Value, msgs *[]string) int {
 	var errorCount int
 	var wasSet []string
-	sVal := reflect.ValueOf(*req)
 	for i := 0; i < sVal.NumField(); i++ {
 		field := sVal.Field(i)
-		fType := field.Type().Name()
-		if fType == `string` {
+		if field.Kind() == reflect.String {
 			if field.String() != `` {
-				sTyp := sVal.Type()
-				wasSet = append(wasSet, sTyp.Name()+`.`+sTyp.Field(i).Name)
+				wasSet = append(wasSet, sVal.Type().Name()+`.`+sVal.Type().Field(i).Name)
 			}
-		} else if fType == `bool` {
+		} else if field.Kind() == reflect.Bool {
 			if field.Bool() {
-				sTyp := sVal.Type()
-				wasSet = append(wasSet, sTyp.Name()+`.`+sTyp.Field(i).Name)
+				wasSet = append(wasSet, sVal.Type().Name()+`.`+sVal.Type().Field(i).Name)
 			}
-		} else if fType == `BibleBrainAudio` {
-			bbVal := reflect.ValueOf(req.BibleBrain)
-			for j := 0; j < bbVal.NumField(); j++ {
-				bbField := bbVal.Field(j)
-				//bbType := bbField.Type().Name()
+		} else if field.Kind() == reflect.Struct {
+			for j := 0; j < field.NumField(); j++ {
+				bbField := field.Field(j)
 				if bbField.Bool() {
-					bbType := bbVal.Type()
-					wasSet = append(wasSet, bbType.Name()+`.`+bbType.Field(j).Name)
+					wasSet = append(wasSet, field.Type().Name()+`.`+field.Type().Field(j).Name)
 				}
 			}
 		} else {
-			msg := sVal.Type().Field(i).Name + ` has unexpected type ` + fType
+			msg := sVal.Type().Field(i).Name + ` has unexpected type ` + field.Type().Name()
 			panic(msg)
 		}
 	}
@@ -101,8 +113,6 @@ func checkAudioData(req *AudioData, msgs *[]string) int {
 			msg := `Only 1 Data field can be set ` + item
 			*msgs = append(*msgs, msg)
 		}
-	} else if len(wasSet) == 0 {
-		req.NoAudio = true
 	}
 	return errorCount
 }
