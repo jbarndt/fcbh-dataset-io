@@ -14,11 +14,12 @@ type Request struct {
 }
 
 type Required struct {
-	RequestName   string `yaml:"RequestName"`
-	RequestorName string `yaml:"RequestorName"`
-	BibleId       string `yaml:"BibleId"`
-	LanguageISO   string `yaml:"LanguageISO"`
-	VersionCode   string `yaml:"VersionCode"`
+	RequestName    string `yaml:"RequestName"`
+	RequestorName  string `yaml:"RequestorName"`
+	RequestorEmail string `yaml:"RequestorEmail"`
+	BibleId        string `yaml:"BibleId"`
+	LanguageISO    string `yaml:"LanguageISO"`
+	VersionCode    string `yaml:"VersionCode"`
 }
 
 type Testament struct {

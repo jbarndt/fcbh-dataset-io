@@ -12,7 +12,7 @@ Required:
 Testament: # Choose one or both
   NT: # Mark Yes for New Testament
   OT: # Mark Yes for Old Testament
-# Default: both Yes
+# Default: NT Yes
 
 # The remaining configuration choices are all optional, but something must be selected in order for some processing to be done.
 

@@ -95,6 +95,73 @@ Compare:
 		t.Error("FastText should be true")
 	}
 	encode(req)
+	var boolTests = []bool{req.Testament.OT, req.Testament.NT,
+		req.AudioData.BibleBrain.MP3_64,
+		req.AudioData.BibleBrain.MP3_16,
+		req.AudioData.BibleBrain.OPUS,
+		req.AudioData.POST,
+		req.AudioData.NoAudio,
+		req.TextData.BibleBrain.TextUSXEdit,
+		req.TextData.BibleBrain.TextPlainEdit,
+		req.TextData.BibleBrain.TextPlain,
+		req.TextData.SpeechToText.Whisper.Model.Large,
+		req.TextData.SpeechToText.Whisper.Model.Medium,
+		req.TextData.SpeechToText.Whisper.Model.Small,
+		req.TextData.SpeechToText.Whisper.Model.Base,
+		req.TextData.SpeechToText.Whisper.Model.Tiny,
+		req.TextData.POST,
+		req.TextData.NoText,
+		req.Detail.Lines,
+		req.Detail.Words,
+		req.Timestamps.BibleBrain,
+		req.Timestamps.Aeneas,
+		req.Timestamps.NoTimestamps,
+		req.AudioEncoding.MFCC,
+		req.AudioEncoding.NoEncoding,
+		req.TextEncoding.FastText,
+		req.TextEncoding.NoEncoding,
+		req.OutputFormat.CSV,
+		req.OutputFormat.JSON,
+		req.OutputFormat.Sqlite,
+		req.Compare.CompareSettings.LowerCase,
+		req.Compare.CompareSettings.RemovePromptChars,
+		req.Compare.CompareSettings.RemovePunctuation,
+		req.Compare.CompareSettings.DoubleQuotes.Remove,
+		req.Compare.CompareSettings.DoubleQuotes.Normalize,
+		req.Compare.CompareSettings.Apostrophe.Remove,
+		req.Compare.CompareSettings.Apostrophe.Normalize,
+		req.Compare.CompareSettings.Hyphen.Remove,
+		req.Compare.CompareSettings.Hyphen.Normalize,
+		req.Compare.CompareSettings.DiacriticalMarks.Remove,
+		req.Compare.CompareSettings.DiacriticalMarks.NormalizeNFC,
+		req.Compare.CompareSettings.DiacriticalMarks.NormalizeNFD,
+		req.Compare.CompareSettings.DiacriticalMarks.NormalizeNFKC,
+		req.Compare.CompareSettings.DiacriticalMarks.NormalizeNFKD}
+	for i, item := range boolTests {
+		if !item {
+			t.Error(`The`, i, `th item should be true, but is not`)
+		}
+	}
+	var strs = []string{req.Required.RequestName,
+		req.Required.RequestorName,
+		req.Required.RequestorEmail,
+		req.Required.BibleId,
+		req.Required.LanguageISO,
+		req.Required.VersionCode,
+		req.AudioData.File,
+		req.AudioData.Http,
+		req.AudioData.AWSS3,
+		req.TextData.File,
+		req.TextData.Http,
+		req.TextData.AWSS3,
+		req.Compare.Project1,
+		req.Compare.Project2}
+	for i, item := range strs {
+		if len(item) == 0 {
+			t.Error(`The`, i, `th item should have a value, but is empty`)
+		}
+	}
+
 }
 
 func encode(req Request) {
@@ -103,4 +170,14 @@ func encode(req Request) {
 		log.Fatalf("error: %v", err)
 	}
 	fmt.Printf("--- t dump:\n%s\n\n", string(d))
+}
+
+func TestValidate(t *testing.T) {
+	var req = DecodeFile(`request.yaml`)
+	req.Required.BibleId = `EBGESV`
+	req.Required.VersionCode = `WBT`
+	req.AudioData.File = `file:///where`
+	req.AudioData.BibleBrain.MP3_64 = true
+	req.AudioData.POST = true
+	Validate(req)
 }
