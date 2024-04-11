@@ -1,12 +1,15 @@
 package req
 
 import (
+	"fmt"
 	"testing"
 )
 
 func TestRequestYamlFile(t *testing.T) {
-	req := DecodeFile(`request.yaml`)
-	Encode(req)
+	req, status := DecodeFile(`request.yaml`)
+	fmt.Println(`Status:`, status)
+	yaml, status := Encode(req)
+	fmt.Println(yaml)
 }
 
 func TestParser(t *testing.T) {
@@ -87,11 +90,12 @@ Compare:
       NormalizeNFD: yes
       NormalizeNFKC: yes
       NormalizeNFKD: yes`
-	req := DecodeString(test1)
+	req, status := DecodeString(test1)
+	fmt.Println(`Status:`, status)
 	if !req.TextEncoding.FastText {
 		t.Error("FastText should be true")
 	}
-	_ = Encode(req)
+	_, _ = Encode(req)
 	var boolTests = []bool{req.Testament.OT, req.Testament.NT,
 		req.AudioData.BibleBrain.MP3_64,
 		req.AudioData.BibleBrain.MP3_16,

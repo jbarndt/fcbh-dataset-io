@@ -5,7 +5,7 @@ import (
 )
 
 func TestValidate(t *testing.T) {
-	var req = DecodeFile(`request.yaml`)
+	var req, _ = DecodeFile(`request.yaml`)
 	req.Required.BibleId = `EBGESV`
 	req.Required.VersionCode = `WBT`
 	req.AudioData.File = `file:///where`

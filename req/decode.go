@@ -1,42 +1,48 @@
 package req
 
 import (
-	"fmt"
+	"context"
+	"dataset"
+	log "dataset/logger"
 	"gopkg.in/yaml.v3"
-	"log"
 	"os"
 )
 
-func DecodeFile(path string) Request {
+var ctx = context.Background()
+
+func DecodeFile(path string) (Request, dataset.Status) {
+	var resp Request
+	var status dataset.Status
 	content, err := os.ReadFile(path)
 	if err != nil {
-		panic(err)
+		status = log.Error(ctx, 500, err, `Error reading YAML file`)
+		return resp, status
 	}
-	resp := decode(content)
-	return resp
+	return decode(content)
 }
 
-func DecodeString(str string) Request {
-	resp := decode([]byte(str))
-	return resp
+func DecodeString(str string) (Request, dataset.Status) {
+	return decode([]byte(str))
 }
 
-func decode(requestYaml []byte) Request {
+func decode(requestYaml []byte) (Request, dataset.Status) {
 	var resp Request
+	var status dataset.Status
 	err := yaml.Unmarshal(requestYaml, &resp)
 	if err != nil {
-		log.Fatalf("error: %v", err)
+		status = log.Error(ctx, 500, err, `Error decoding YAML to request`)
 	}
-	return resp
+	return resp, status
 }
 
-func Encode(req Request) string {
+func Encode(req Request) (string, dataset.Status) {
+	var status dataset.Status
 	d, err := yaml.Marshal(&req)
 	if err != nil {
-		log.Fatalf("error: %v", err)
+		status = log.Error(ctx, 500, err, `Error encoding request to YAML`)
+		return ``, status
 	}
-	fmt.Printf("--- t dump:\n%s\n\n", string(d))
-	return string(d)
+	return string(d), status
 }
 
 type Request struct {
