@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func Validate(req Request) dataset.Status {
+func (r *RequestDecoder) Validate(req Request) dataset.Status {
 	var msgs []string
 	checkRequired(req.Required, &msgs)
 	checkTestament(&req.Testament)

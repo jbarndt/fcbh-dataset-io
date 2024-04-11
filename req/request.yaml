@@ -57,28 +57,22 @@ Timestamps: # If timestamps are needed, mark Yes by source
   Aeneas:
   NoTimeStamps:
 # Default: NoTimeStamps
-## edit check, there must be an AudioPath
 
 AudioEncoding: # If audio encoding is needed, mark Yes by the method
   MFCC:
   NoEncoding:
 # Default: NoEncoding
-## edit check, there must be an AudioPath
-## prerquisite, is timestamps
-# prerequisite is timestamps, prerequisite of timestamps is both text and audio.  DBPEDIT, USXEDiT, and SCRIPT are recommended text types
 
 TextEncoding:
   FastText:
   NoEncoding:
 # Default: NoTextEncoding
-## edit check, there must be a TextPath
 
 OutputFormat: # Put an X by the desired output format.
   CSV: # (TBD)
   JSON: # (TBD)
   Sqlite: # (TBD)
 # Default: JSON
-## edit check, there must at least be an AudioPath or TextPath, if something is selected here
 
 Compare: # To do a compare, put the names of the two projects here
   Project1:  # This doesn’t quite work, how does user get name?
