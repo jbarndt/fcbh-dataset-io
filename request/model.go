@@ -1,4 +1,4 @@
-package req
+package request
 
 type Request struct {
 	Required      Required      `yaml:"Required"`
