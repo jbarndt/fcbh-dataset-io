@@ -5,6 +5,7 @@ import (
 	"dataset"
 	"dataset/db"
 	log "dataset/logger"
+	"dataset/request"
 	"encoding/json"
 	"strings"
 )
@@ -85,28 +86,25 @@ func CreateIdent(info BibleInfoType) db.Ident {
 	return id
 }
 
-func (d *APIDBPClient) FindFilesets(info *BibleInfoType, audio dataset.AudioSourceType,
-	text dataset.TextSourceType, testament dataset.TestamentType) bool {
-	var reqSize = string(testament)
+func (d *APIDBPClient) FindFilesets(info *BibleInfoType, audio request.BibleBrainAudio,
+	text request.BibleBrainText, testament request.Testament) bool {
 	var okAudio = true
 	var okText = true
-	switch audio {
-	case dataset.MP3:
-		okAudio = d.searchAudio(info, `audio`, reqSize, string(dataset.MP3))
+	var reqSize = testament.String()
+	codec, bitrate := audio.AudioType()
+	okAudio = d.searchAudio(info, `audio`, reqSize, codec, bitrate)
+	if !okAudio {
+		okAudio = d.searchAudio(info, `audio_drama`, reqSize, codec, bitrate)
 		if !okAudio {
-			okAudio = d.searchAudio(info, `audio_drama`, reqSize, string(dataset.MP3))
+			if codec == `MP3` && bitrate == `64kbps` {
+				okAudio = d.searchAudio(info, `audio`, reqSize, `MP`, `3kbps`)
+				if !okAudio {
+					okAudio = d.searchAudio(info, `audio_drama`, reqSize, `MP`, `3kbps`)
+				}
+			}
 		}
 	}
-	switch text {
-	case dataset.SCRIPT:
-		// audio_script
-	case dataset.DBPTEXT:
-		okText = d.searchText(info, `text_plain`, reqSize)
-	case dataset.TEXTEDIT:
-		okText = d.searchText(info, `text_plain`, reqSize)
-	case dataset.USXEDIT:
-		okText = d.searchText(info, `text_usx`, reqSize)
-	}
+	okText = d.searchText(info, text.String(), reqSize)
 	return okAudio && okText
 }
 
@@ -119,11 +117,13 @@ func (d *APIDBPClient) searchText(info *BibleInfoType, reqType string, reqSize s
 	return len(info.TextFilesets) > 0
 }
 
-func (d *APIDBPClient) searchAudio(info *BibleInfoType, reqType string, reqSize string, reqCodec string) bool {
+func (d *APIDBPClient) searchAudio(info *BibleInfoType, reqType string, reqSize string, codec string, bitRate string) bool {
 	for _, rec := range info.DbpProd.Filesets {
 		if rec.Type == reqType && (reqSize == `C` || rec.Size == reqSize) {
-			if strings.ToUpper(rec.Codec) == reqCodec {
-				info.AudioFilesets = append(info.AudioFilesets, rec)
+			if strings.ToUpper(rec.Codec) == codec || strings.ToUpper(rec.Codec)+`3` == codec {
+				if rec.Bitrate == bitRate || bitRate == `` {
+					info.AudioFilesets = append(info.AudioFilesets, rec)
+				}
 			}
 		}
 	}

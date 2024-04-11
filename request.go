@@ -28,6 +28,7 @@ const (
 type AudioSourceType string
 
 const (
+	MP3                    AudioSourceType = "MP3"
 	MP3_64                 AudioSourceType = "MP3_64"
 	MP3_16                 AudioSourceType = "MP3_16"
 	OPUS                   AudioSourceType = "OPUS"

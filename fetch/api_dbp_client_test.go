@@ -2,22 +2,22 @@ package fetch
 
 import (
 	"context"
-	"dataset"
 	"dataset/db"
+	"dataset/request"
 	"testing"
 )
 
 func TestAPIDBPClient1(t *testing.T) {
-	var req dataset.RequestType
-	req.BibleId = `ENGWEB`
-	req.AudioSource = dataset.MP3
-	req.TextSource = dataset.TEXTEDIT
-	req.Testament = dataset.NT
+	var req request.Request
+	req.Required.BibleId = `ENGWEB`
+	req.AudioData.BibleBrain.MP3_64 = true       // = dataset.MP3
+	req.TextData.BibleBrain.TextPlainEdit = true // = dataset.TEXTEDIT
+	req.Testament.NT = true                      // = dataset.NT
 	ctx := context.Background()
-	client := NewAPIDBPClient(ctx, req.BibleId)
+	client := NewAPIDBPClient(ctx, req.Required.BibleId)
 	var info, status = client.BibleInfo()
 	if !status.IsErr {
-		ok := client.FindFilesets(&info, req.AudioSource, req.TextSource, req.Testament)
+		ok := client.FindFilesets(&info, req.AudioData.BibleBrain, req.TextData.BibleBrain, req.Testament)
 		if ok {
 			identRec := CreateIdent(info)
 			expect := db.Ident{BibleId: `ENGWEB`, AudioFilesetId: `ENGWEBN2DA`,

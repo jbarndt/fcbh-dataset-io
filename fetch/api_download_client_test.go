@@ -2,7 +2,7 @@ package fetch
 
 import (
 	"context"
-	"dataset"
+	"dataset/request"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -11,10 +11,15 @@ import (
 
 func TestPlainText(t *testing.T) {
 	ctx := context.Background()
+	var req request.Request
+	req.AudioData.NoAudio = true
+	req.TextData.BibleBrain.TextPlainEdit = true
+	req.Testament.NT = true
+	req.Testament.OT = true
 	client := NewAPIDBPClient(ctx, `ENGWEB`)
 	info, status := client.BibleInfo()
 	if !status.IsErr {
-		ok := client.FindFilesets(&info, dataset.NOAUDIO, dataset.DBPTEXT, dataset.C)
+		ok := client.FindFilesets(&info, req.AudioData.BibleBrain, req.TextData.BibleBrain, req.Testament)
 		if ok {
 			if len(info.AudioFilesets) > 0 {
 				t.Error(`Should have found no audio filesets.`)
@@ -44,10 +49,14 @@ func TestPlainText(t *testing.T) {
 
 func TestUSXDownload(t *testing.T) {
 	ctx := context.Background()
+	var req request.Request
+	req.AudioData.NoAudio = true
+	req.TextData.BibleBrain.TextUSXEdit = true
+	req.Testament.NT = true
 	client := NewAPIDBPClient(ctx, `ENGWEB`)
 	info, status := client.BibleInfo()
 	if !status.IsErr {
-		ok := client.FindFilesets(&info, dataset.NOAUDIO, dataset.USXEDIT, dataset.NT)
+		ok := client.FindFilesets(&info, req.AudioData.BibleBrain, req.TextData.BibleBrain, req.Testament)
 		if ok {
 			if len(info.AudioFilesets) > 0 {
 				t.Error(`Should have found no audio filesets.`)
@@ -78,10 +87,14 @@ func TestUSXDownload(t *testing.T) {
 
 func TestAudioDownload(t *testing.T) {
 	ctx := context.Background()
+	var req request.Request
+	req.AudioData.BibleBrain.MP3_64 = true
+	req.TextData.NoText = true
+	req.Testament.NT = true
 	client := NewAPIDBPClient(ctx, `ENGWEB`)
 	info, status := client.BibleInfo()
 	if !status.IsErr {
-		ok := client.FindFilesets(&info, dataset.MP3, dataset.NOTEXT, dataset.NT)
+		ok := client.FindFilesets(&info, req.AudioData.BibleBrain, req.TextData.BibleBrain, req.Testament)
 		if ok {
 			if len(info.AudioFilesets) != 1 {
 				t.Error(`Should have found no audio filesets.`, len(info.AudioFilesets))
@@ -112,10 +125,14 @@ func TestAudioDownload(t *testing.T) {
 
 func Test403Error(t *testing.T) {
 	ctx := context.Background()
+	var req request.Request
+	req.AudioData.BibleBrain.MP3_64 = true
+	req.TextData.NoText = true
+	req.Testament.NT = true
 	client := NewAPIDBPClient(ctx, `ENGESV`)
 	info, status := client.BibleInfo()
 	if !status.IsErr {
-		ok := client.FindFilesets(&info, dataset.MP3, dataset.NOTEXT, dataset.NT)
+		ok := client.FindFilesets(&info, req.AudioData.BibleBrain, req.TextData.BibleBrain, req.Testament)
 		if ok {
 			if len(info.AudioFilesets) != 1 {
 				t.Error(`Should have found no audio filesets.`, len(info.AudioFilesets))

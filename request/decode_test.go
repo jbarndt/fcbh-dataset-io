@@ -3,12 +3,17 @@ package request
 import (
 	"context"
 	"fmt"
+	"os"
 	"testing"
 )
 
 func TestRequestYamlFile(t *testing.T) {
 	var d = NewRequestDecoder(context.Background())
-	req, status := d.DecodeFile(`request.yaml`)
+	content, err := os.ReadFile(`request.yaml`)
+	if err != nil {
+		panic(err)
+	}
+	req, status := d.Decode(content)
 	fmt.Println(`Status:`, status)
 	yaml, status := d.Encode(req)
 	fmt.Println(yaml)
@@ -93,7 +98,7 @@ Compare:
       NormalizeNFKC: yes
       NormalizeNFKD: yes`
 	var r = NewRequestDecoder(context.Background())
-	req, status := r.DecodeString(test1)
+	req, status := r.Decode([]byte(test1))
 	fmt.Println(`Status:`, status)
 	if !req.TextEncoding.FastText {
 		t.Error("FastText should be true")

@@ -2,7 +2,6 @@ package request
 
 import (
 	"dataset"
-	"fmt"
 	"reflect"
 	"strings"
 )
@@ -23,7 +22,7 @@ func (r *RequestDecoder) Validate(req Request) dataset.Status {
 	checkForOne(reflect.ValueOf(req.Compare.CompareSettings.Apostrophe), `Apostrophe`, &msgs)
 	checkForOne(reflect.ValueOf(req.Compare.CompareSettings.Hyphen), `Hyphen`, &msgs)
 	checkForOne(reflect.ValueOf(req.Compare.CompareSettings.DiacriticalMarks), `DiscriticalMarks`, &msgs)
-	fmt.Println("")
+	//fmt.Println("")
 	var status dataset.Status
 	if len(msgs) > 0 {
 		status.Status = 400
@@ -31,12 +30,6 @@ func (r *RequestDecoder) Validate(req Request) dataset.Status {
 		status.Message = strings.Join(msgs, "\n")
 		//status.Request =
 	}
-	for _, msg := range msgs {
-		fmt.Println(msg)
-	}
-	fmt.Println("Testament", req.Testament)
-	fmt.Println("Detail", req.Detail)
-	fmt.Println("Timestamps", req.Timestamps)
 	return status
 }
 

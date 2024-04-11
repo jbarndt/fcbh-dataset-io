@@ -2,12 +2,17 @@ package request
 
 import (
 	"context"
+	"os"
 	"testing"
 )
 
 func TestValidate(t *testing.T) {
 	var d = NewRequestDecoder(context.Background())
-	var req, _ = d.DecodeFile(`request.yaml`)
+	content, err := os.ReadFile(`request.yaml`)
+	if err != nil {
+		panic(err)
+	}
+	var req, _ = d.Decode(content)
 	req.Required.BibleId = `EBGESV`
 	req.Required.VersionCode = `WBT`
 	req.AudioData.File = `file:///where`

@@ -27,6 +27,20 @@ type Testament struct {
 	OT bool `yaml:"OT"`
 }
 
+func (t Testament) String() string {
+	var result string
+	if t.NT && t.OT {
+		result = `C`
+	}
+	if t.NT {
+		result = `NT`
+	}
+	if t.OT {
+		result = `OT`
+	}
+	return result
+}
+
 type AudioData struct {
 	BibleBrain BibleBrainAudio `yaml:"BibleBrain"`
 	File       string          `yaml:"File"`
@@ -40,6 +54,22 @@ type BibleBrainAudio struct {
 	MP3_64 bool `yaml:"MP3_64"`
 	MP3_16 bool `yaml:"MP3_16"`
 	OPUS   bool `yaml:"OPUS"`
+}
+
+func (b BibleBrainAudio) AudioType() (string, string) {
+	var result string
+	var codec string
+	if b.MP3_64 {
+		result = `MP3`
+		codec = `64kbps`
+	} else if b.MP3_16 {
+		result = `MP3`
+		codec = `16kbps`
+	} else if b.OPUS {
+		result = `OPUS`
+		codec = ``
+	}
+	return result, codec
 }
 
 type TextData struct {
@@ -56,6 +86,18 @@ type BibleBrainText struct {
 	TextUSXEdit   bool `yaml:"TextUSXEdit"`
 	TextPlainEdit bool `yaml:"TextPlainEdit"`
 	TextPlain     bool `yaml:"TextPlain"`
+}
+
+func (b BibleBrainText) String() string {
+	var result string
+	if b.TextUSXEdit {
+		result = `text_usx`
+	} else if b.TextPlainEdit {
+		result = `text_plain`
+	} else if b.TextPlain {
+		result = `text_plain`
+	}
+	return result
 }
 
 type SpeechToText struct {
