@@ -1,15 +1,12 @@
 package req
 
 import (
-	"fmt"
-	"gopkg.in/yaml.v3"
-	"log"
 	"testing"
 )
 
 func TestRequestYamlFile(t *testing.T) {
 	req := DecodeFile(`request.yaml`)
-	encode(req)
+	Encode(req)
 }
 
 func TestParser(t *testing.T) {
@@ -94,7 +91,7 @@ Compare:
 	if !req.TextEncoding.FastText {
 		t.Error("FastText should be true")
 	}
-	encode(req)
+	_ = Encode(req)
 	var boolTests = []bool{req.Testament.OT, req.Testament.NT,
 		req.AudioData.BibleBrain.MP3_64,
 		req.AudioData.BibleBrain.MP3_16,
@@ -161,23 +158,4 @@ Compare:
 			t.Error(`The`, i, `th item should have a value, but is empty`)
 		}
 	}
-
-}
-
-func encode(req Request) {
-	d, err := yaml.Marshal(&req)
-	if err != nil {
-		log.Fatalf("error: %v", err)
-	}
-	fmt.Printf("--- t dump:\n%s\n\n", string(d))
-}
-
-func TestValidate(t *testing.T) {
-	var req = DecodeFile(`request.yaml`)
-	req.Required.BibleId = `EBGESV`
-	req.Required.VersionCode = `WBT`
-	req.AudioData.File = `file:///where`
-	req.AudioData.BibleBrain.MP3_64 = true
-	req.AudioData.POST = true
-	Validate(req)
 }
