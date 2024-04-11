@@ -69,7 +69,7 @@ AudioEncoding: # If audio encoding is needed, mark Yes by the method
 
 TextEncoding:
   FastText:
-  NoTextEncoding:
+  NoEncoding:
 # Default: NoTextEncoding
 ## edit check, there must be a TextPath
 
