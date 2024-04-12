@@ -342,7 +342,8 @@ WHERE book_id = ? AND chapter_num = ?
 ORDER BY script_id LIMIT 1`
 return self.sqlite.selectScalar(sql, [book_id, chapter_num])
 */
-// SelectScriptsByBookChapter
+
+// SelectScriptsByBookChapter ...
 func (d *DBAdapter) SelectScriptsByBookChapter(bookId string, chapter int) ([]Script, dataset.Status) {
 	var results []Script
 	var status dataset.Status
