@@ -6,6 +6,7 @@ import (
 	"dataset"
 	"dataset/db"
 	log "dataset/logger"
+	"dataset/request"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -44,7 +45,7 @@ func NewWhisper(bibleId string, conn db.DBAdapter, model string) Whisper {
 	return w
 }
 
-func (w *Whisper) ProcessDirectory(filesetId string, testament dataset.TestamentType) dataset.Status {
+func (w *Whisper) ProcessDirectory(filesetId string, testament request.Testament) dataset.Status {
 	var status dataset.Status
 	directory := filepath.Join(os.Getenv(`FCBH_DATASET_FILES`), w.bibleId, filesetId)
 	w.outputDir = directory + `_whisper`
@@ -57,10 +58,10 @@ func (w *Whisper) ProcessDirectory(filesetId string, testament dataset.Testament
 		if !strings.HasPrefix(filename, `.`) {
 			fmt.Println(filename)
 			fileType := filename[:1]
-			if fileType == `A` && (testament == dataset.OT || testament == dataset.C) {
-				w.processFile(directory, filename)
-			} else if fileType == `B` && (testament == dataset.NT || testament == dataset.C) {
-				w.processFile(directory, filename)
+			if fileType == `A` && testament.OT {
+				w.ProcessFile(directory, filename)
+			} else if fileType == `B` && testament.NT {
+				w.ProcessFile(directory, filename)
 			}
 		}
 	}
@@ -68,19 +69,19 @@ func (w *Whisper) ProcessDirectory(filesetId string, testament dataset.Testament
 	return status
 }
 
-func (w *Whisper) processFile(directory string, filename string) dataset.Status {
+func (w *Whisper) ProcessFile(directory string, filename string) dataset.Status {
 	bookId, chapter, status := w.parseFilename(filename)
 	if status.IsErr {
 		return status
 	}
 	if bookId == `TIT` && chapter == 3 {
 		var path = filepath.Join(directory, filename)
-		w.runWhisper(path)
+		w.RunWhisper(path)
 	}
 	return status
 }
 
-func (w *Whisper) runWhisper(audioFilePath string) dataset.Status {
+func (w *Whisper) RunWhisper(audioFilePath string) dataset.Status {
 	var status dataset.Status
 	whisperPath := os.Getenv(`WHISPER_EXE`)
 	cmd := exec.Command(whisperPath, audioFilePath,

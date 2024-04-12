@@ -2,8 +2,8 @@ package speech_to_text
 
 import (
 	"context"
-	"dataset"
 	"dataset/db"
+	"dataset/request"
 	"testing"
 )
 
@@ -15,6 +15,6 @@ func TestWhisper(t *testing.T) {
 	ctx := context.Background()
 	conn := db.NewDBAdapter(ctx, database)
 	var whisp = NewWhisper(bibleId, conn, `small`)
-	whisp.ProcessDirectory(filesetId, dataset.NT)
+	whisp.ProcessDirectory(filesetId, request.Testament{NT: true})
 	conn.Close()
 }

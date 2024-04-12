@@ -115,6 +115,22 @@ type WhisperModel struct {
 	Tiny   bool `yaml:"Tiny"`
 }
 
+func (w WhisperModel) String() string {
+	var result string
+	if w.Large {
+		result = `large`
+	} else if w.Medium {
+		result = `medium`
+	} else if w.Small {
+		result = `small`
+	} else if w.Base {
+		result = `base`
+	} else if w.Tiny {
+		result = `tiny`
+	}
+	return result
+}
+
 type Detail struct {
 	Lines bool `yaml:"Lines"`
 	Words bool `yaml:"Words"`

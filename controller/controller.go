@@ -8,6 +8,7 @@ import (
 	log "dataset/logger"
 	"dataset/read"
 	"dataset/request"
+	"dataset/speech_to_text"
 	"fmt"
 	"strings"
 	"time"
@@ -56,9 +57,16 @@ func (c *Controller) processSteps() dataset.Status {
 		return status
 	}
 	// Read Text Data
-	fmt.Println(info)
-	c.readText()
-
+	status = c.readText()
+	if status.IsErr {
+		return status
+	}
+	if len(info.AudioFilesets) > 0 {
+		status = c.speechToText(info.AudioFilesets)
+		if status.IsErr {
+			return status
+		}
+	}
 	fmt.Println("Duration", time.Since(start))
 	return status
 }
@@ -129,7 +137,21 @@ func (c *Controller) readText() dataset.Status {
 	return status
 }
 
-func (c *Controller) matchText() {
+func (c *Controller) speechToText(filesets []fetch.FilesetType) dataset.Status {
+	var status dataset.Status
+	bibleId := c.req.Required.BibleId
+	var whisperModel = c.req.TextData.SpeechToText.Whisper.Model.String()
+	if whisperModel != `` {
+		var whisp = speech_to_text.NewWhisper(bibleId, c.database, whisperModel)
+		status = whisp.ProcessDirectory(filesets[0].Id, c.req.Testament)
+		if status.IsErr {
+			return status
+		}
+	}
+	return status
+}
+
+func (c *Controller) encodeText() {
 
 }
 
@@ -137,7 +159,7 @@ func (c *Controller) encodeAudio() {
 
 }
 
-func (c *Controller) encodeText() {
+func (c *Controller) matchText() {
 
 }
 
