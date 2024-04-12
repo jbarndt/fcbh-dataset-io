@@ -2,8 +2,8 @@ package encode
 
 import (
 	"context"
-	"dataset"
 	"dataset/db"
+	"dataset/request"
 	"testing"
 )
 
@@ -15,7 +15,7 @@ func TestAeneasLines(t *testing.T) {
 	var conn = db.NewDBAdapter(ctx, `ENGWEB_DBPTEXT.db`)
 	//files, status := ReadDirectory(ctx, bibleId, filesetId)
 	aeneas := NewAeneas(ctx, conn, bibleId, filesetId)
-	aeneas.Process(language, dataset.LINES)
+	aeneas.Process(language, request.Detail{Lines: true})
 }
 
 func TestAeneasWords(t *testing.T) {
@@ -26,5 +26,5 @@ func TestAeneasWords(t *testing.T) {
 	var conn = db.NewDBAdapter(ctx, `ENGWEB_DBPTEXT.db`)
 	//files, status := ReadDirectory(ctx, bibleId, filesetId)
 	aeneas := NewAeneas(ctx, conn, bibleId, filesetId)
-	aeneas.Process(language, dataset.WORDS)
+	aeneas.Process(language, request.Detail{Words: true})
 }

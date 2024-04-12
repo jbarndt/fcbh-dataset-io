@@ -30,7 +30,7 @@ AudioData: # Choose one of the following
 
 TextData: # Choose one of the following
   BibleBrain: # If Bible Brain put Yes by the desired type
-    TextUSXEdit:  # Mark Yes, for USX with text not in audio removed
+    TextUSXEdit: yes # Mark Yes, for USX with text not in audio removed
     TextPlainEdit: # Mark Yes, for plain_text with headings added to match audio
     TextPlain: # Mark Yes, for DBP plain_text
   SpeechToText: # If STT is source Yes by desired type
@@ -39,7 +39,7 @@ TextData: # Choose one of the following
         Large:
         Medium:
         Small:
-        Base: yes
+        Base:
         Tiny:
   File: # If file, enter path here (TBD)
   Http: # If http, enter URL here (TBD)
@@ -54,9 +54,9 @@ Detail: # Choose word or both
 
 Timestamps: # If timestamps are needed, mark Yes by source
   BibleBrain:
-  Aeneas:
-  NoTimeStamps:
-# Default: NoTimeStamps
+  Aeneas: yes
+  NoTimestamps:
+# Default: NoTimestamps
 
 AudioEncoding: # If audio encoding is needed, mark Yes by the method
   MFCC:

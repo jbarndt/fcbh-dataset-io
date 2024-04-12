@@ -55,8 +55,8 @@ Detail: # Choose word or both
 Timestamps: # If timestamps are needed, mark Yes by source
   BibleBrain:
   Aeneas:
-  NoTimeStamps:
-# Default: NoTimeStamps
+  NoTimestamps:
+# Default: NoTimestamps
 
 AudioEncoding: # If audio encoding is needed, mark Yes by the method
   MFCC:

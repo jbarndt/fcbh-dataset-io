@@ -6,6 +6,7 @@ import (
 	"dataset"
 	"dataset/db"
 	log "dataset/logger"
+	"dataset/request"
 	"encoding/json"
 	"fmt"
 	"os/exec"
@@ -28,7 +29,7 @@ func NewMFCC(ctx context.Context, conn db.DBAdapter, bibleId string, audioFSId s
 	return m
 }
 
-func (m *MFCC) Process(detail dataset.TextDetailType, numMFCC int) dataset.Status {
+func (m *MFCC) Process(detail request.Detail, numMFCC int) dataset.Status {
 	var status dataset.Status
 	audioFiles, status := ReadDirectory(m.ctx, m.bibleId, m.audioFSId)
 	if status.IsErr {
@@ -44,12 +45,13 @@ func (m *MFCC) Process(detail dataset.TextDetailType, numMFCC int) dataset.Statu
 		if status.IsErr {
 			return status
 		}
-		if detail == dataset.LINES || detail == dataset.BOTH {
+		if detail.Lines {
 			status = m.processScripts(mfccResp, bookId, chapterNum)
 			if status.IsErr {
 				return status
 			}
-		} else if detail == dataset.WORDS || detail == dataset.BOTH {
+		}
+		if detail.Words {
 			status = m.processWords(mfccResp, bookId, chapterNum)
 			if status.IsErr {
 				return status

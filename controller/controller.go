@@ -4,6 +4,7 @@ import (
 	"context"
 	"dataset"
 	"dataset/db"
+	"dataset/encode"
 	"dataset/fetch"
 	log "dataset/logger"
 	"dataset/read"
@@ -151,16 +152,35 @@ func (c *Controller) speechToText(filesets []fetch.FilesetType) dataset.Status {
 	return status
 }
 
-func (c *Controller) encodeText() {
-
+func (c *Controller) timestamps(filesets []fetch.FilesetType) dataset.Status {
+	var status dataset.Status
+	if c.req.Timestamps.BibleBrain {
+		status.IsErr = true
+		status.Status = 400
+		status.Message = "Timestamps are not yet available"
+	} else if c.req.Timestamps.Aeneas {
+		aeneas := encode.NewAeneas(c.ctx, c.database, c.req.Required.BibleId, filesets[0].Id)
+		status = aeneas.Process(c.req.Required.LanguageISO, c.req.Detail)
+	}
+	return status
 }
 
-func (c *Controller) encodeAudio() {
+func (c *Controller) encodeAudio() dataset.Status {
+	var status dataset.Status
 
+	return status
 }
 
-func (c *Controller) matchText() {
+func (c *Controller) encodeText() dataset.Status {
+	var status dataset.Status
 
+	return status
+}
+
+func (c *Controller) matchText() dataset.Status {
+	var status dataset.Status
+
+	return status
 }
 
 func (c *Controller) output(status dataset.Status) {

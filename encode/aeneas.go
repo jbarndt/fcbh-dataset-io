@@ -6,6 +6,7 @@ import (
 	"dataset"
 	"dataset/db"
 	log "dataset/logger"
+	"dataset/request"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -32,15 +33,16 @@ func NewAeneas(ctx context.Context, conn db.DBAdapter, bibleId string, audioFSId
 	return a
 }
 
-func (a *Aeneas) Process(language string, detail dataset.TextDetailType) dataset.Status {
+func (a *Aeneas) Process(language string, detail request.Detail) dataset.Status {
 	var status dataset.Status
 	audioFiles, status := ReadDirectory(a.ctx, a.bibleId, a.audioFSId)
 	if status.IsErr {
 		return status
 	}
-	if detail == dataset.LINES || detail == dataset.BOTH {
+	if detail.Lines {
 		status = a.processScripts(language, audioFiles)
-	} else if detail == dataset.WORDS || detail == dataset.BOTH {
+	}
+	if detail.Words {
 		status = a.processWords(language, audioFiles)
 	}
 	return status
