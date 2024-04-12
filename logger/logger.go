@@ -147,7 +147,7 @@ func requestInfo(ctx context.Context) string {
 		if request != nil {
 			req := request.(dataset.RequestType)
 			result := `AudioSource=` + string(req.AudioSource) + ` TextSource=` + string(req.TextSource) +
-				` Testament=` + string(req.Testament)
+				` Testament=` //+ string(req.Testament)
 			return result
 		}
 	}

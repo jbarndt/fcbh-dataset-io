@@ -92,19 +92,23 @@ func (d *APIDBPClient) FindFilesets(info *BibleInfoType, audio request.BibleBrai
 	var okText = true
 	var reqSize = testament.String()
 	codec, bitrate := audio.AudioType()
-	okAudio = d.searchAudio(info, `audio`, reqSize, codec, bitrate)
-	if !okAudio {
-		okAudio = d.searchAudio(info, `audio_drama`, reqSize, codec, bitrate)
+	if codec != `` {
+		okAudio = d.searchAudio(info, `audio`, reqSize, codec, bitrate)
 		if !okAudio {
-			if codec == `MP3` && bitrate == `64kbps` {
-				okAudio = d.searchAudio(info, `audio`, reqSize, `MP`, `3kbps`)
-				if !okAudio {
-					okAudio = d.searchAudio(info, `audio_drama`, reqSize, `MP`, `3kbps`)
+			okAudio = d.searchAudio(info, `audio_drama`, reqSize, codec, bitrate)
+			if !okAudio {
+				if codec == `MP3` && bitrate == `64kbps` {
+					okAudio = d.searchAudio(info, `audio`, reqSize, `MP`, `3kbps`)
+					if !okAudio {
+						okAudio = d.searchAudio(info, `audio_drama`, reqSize, `MP`, `3kbps`)
+					}
 				}
 			}
 		}
 	}
-	okText = d.searchText(info, text.String(), reqSize)
+	if text.String() != `` {
+		okText = d.searchText(info, text.String(), reqSize)
+	}
 	return okAudio && okText
 }
 

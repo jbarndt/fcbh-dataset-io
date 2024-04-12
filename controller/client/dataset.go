@@ -1,24 +1,19 @@
 package main
 
 import (
-	"dataset"
 	"dataset/controller"
+	"fmt"
+	"os"
 )
 
 func main() {
-	var req dataset.RequestType
-	//req.BibleId = "BGGWFW"
-	//req.BibleId = "ATIWBT"
-	req.BibleId = "ENGWEB"
-	//req.TextSource = dataset.USXEDIT
-	req.TextSource = dataset.DBPTEXT
-	req.TextDetail = dataset.LINES
-	//req.TextDetail = dataset.BOTH
-	//req.TextSource = dataset.SCRIPT
-	//req.TextSource = dataset.TEXTEDIT
-	//req.AudioSource = dataset.MP3
-	req.AudioSource = dataset.NOAUDIO
-	req.Testament = dataset.NT
-	var control = controller.NewController(req)
-	control.Process()
+	// Should check args, and expect a filepath
+	var yamlPath = `controller/client/request_test.yaml`
+	var content, err = os.ReadFile(yamlPath)
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		var control = controller.NewController(content)
+		control.Process()
+	}
 }

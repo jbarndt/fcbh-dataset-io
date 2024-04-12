@@ -1,16 +1,16 @@
 ## This is the request file format to run
 
 Required:
-  RequestName:
-  RequestorName:
-  RequestorEmail:
-  BibleId:
-  LanguageISO:
-  VersionCode: # ???
+  RequestName: Test1
+  RequestorName: Gary Griswold
+  RequestorEmail: gary@shortsands.com
+  BibleId: ATIWBT
+  LanguageISO: ati
+  VersionCode: WBT
   # What is version
 
 Testament: # Choose one or both
-  NT: # Mark Yes for New Testament
+  NT: yes # Mark Yes for New Testament
   OT: # Mark Yes for Old Testament
 # Default: NT Yes
 
@@ -31,7 +31,7 @@ AudioData: # Choose one of the following
 TextData: # Choose one of the following
   BibleBrain: # If Bible Brain put Yes by the desired type
     TextUSXEdit:  # Mark Yes, for USX with text not in audio removed
-    TextPlainEdit: # Mark Yes, for plain_text with headings added to match audio
+    TextPlainEdit: yes # Mark Yes, for plain_text with headings added to match audio
     TextPlain: # Mark Yes, for DBP plain_text
   SpeechToText: # If STT is source Yes by desired type
     Whisper: # This is OpenAI’s STT model

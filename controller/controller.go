@@ -7,94 +7,124 @@ import (
 	"dataset/fetch"
 	log "dataset/logger"
 	"dataset/read"
+	"dataset/request"
 	"fmt"
 	"strings"
 	"time"
 )
 
 type Controller struct {
-	request  dataset.RequestType
-	dbName   string
-	ctx      context.Context
-	database db.DBAdapter
+	ctx         context.Context
+	yamlRequest []byte
+	req         request.Request
+	req2        request.Request
+	database    db.DBAdapter
 }
 
-func NewController(request dataset.RequestType) Controller {
+func NewController(yamlContent []byte) Controller {
 	var c Controller
-	c.request = request
-	c.dbName = request.BibleId + "_" + string(request.TextSource) + ".db"
-	db.DestroyDatabase(c.dbName)
-	c.ctx = context.WithValue(context.Background(), `request`, request)
-	c.database = db.NewDBAdapter(c.ctx, c.dbName)
+	c.ctx = context.Background()
+	c.yamlRequest = yamlContent
 	return c
 }
 
 func (c *Controller) Process() {
-	var start = time.Now()
-	var info, status, ok = c.fetchMetaDataAndFiles()
-	if !status.IsErr {
-		if !ok {
-			var msg = make([]string, 0, 10)
-			msg = append(msg, "Requested Fileset is not available")
-			for _, rec := range info.DbpProd.Filesets {
-				msg = append(msg, fmt.Sprintf("%+v", rec))
-			}
-			status.Message = strings.Join(msg, "\n")
-			c.output(status)
-		}
-		fmt.Println("INFO", info)
-		identRec := fetch.CreateIdent(info)
-		identRec.TextSource = string(c.request.TextSource)
-		c.database.InsertIdent(identRec)
-		c.readText(c.database)
+	var status = c.processSteps()
+	if status.IsErr {
+		c.output(status)
 	}
-	fmt.Println("Duration", time.Since(start))
-	c.output(status)
 }
 
-func (c *Controller) fetchMetaDataAndFiles() (fetch.BibleInfoType, dataset.Status, bool) {
+func (c *Controller) processSteps() dataset.Status {
+	var start = time.Now()
+	var status dataset.Status
+	// Decode YAML Request File
+	reqDecoder := request.NewRequestDecoder(c.ctx)
+	c.req, status = reqDecoder.Process(c.yamlRequest)
+	if status.IsErr {
+		return status
+	}
+	c.ctx = context.WithValue(context.Background(), `request`, c.req)
+	// Open Database
+	dbName := c.req.Required.BibleId + "_" + c.req.TextData.BibleBrain.String() + ".db"
+	db.DestroyDatabase(dbName)
+	c.database = db.NewDBAdapter(c.ctx, dbName)
+	// Fetch Ident Data from DBP
+	var info fetch.BibleInfoType
+	info, status = c.fetch()
+	if status.IsErr {
+		return status
+	}
+	// Read Text Data
+	fmt.Println(info)
+	c.readText()
+
+	fmt.Println("Duration", time.Since(start))
+	return status
+}
+
+func (c *Controller) fetch() (fetch.BibleInfoType, dataset.Status) {
 	var info fetch.BibleInfoType
 	var status dataset.Status
-	var ok bool
-	req := c.request
-	client := fetch.NewAPIDBPClient(c.ctx, req.BibleId)
+	client := fetch.NewAPIDBPClient(c.ctx, c.req.Required.BibleId)
 	info, status = client.BibleInfo()
-	if !status.IsErr {
-		ok = client.FindFilesets(&info, req.AudioSource, req.TextSource, req.Testament)
-		if ok {
-			download := fetch.NewAPIDownloadClient(c.ctx, req.BibleId)
-			status = download.Download(info)
-		}
+	if status.IsErr {
+		return info, status
 	}
-	return info, status, ok
+	ok := client.FindFilesets(&info, c.req.AudioData.BibleBrain, c.req.TextData.BibleBrain,
+		c.req.Testament)
+	if ok {
+		download := fetch.NewAPIDownloadClient(c.ctx, c.req.Required.BibleId)
+		status = download.Download(info)
+		if status.IsErr {
+			return info, status
+		}
+	} else {
+		var msg = make([]string, 0, 10)
+		msg = append(msg, "Requested Fileset is not available")
+		for _, rec := range info.DbpProd.Filesets {
+			msg = append(msg, fmt.Sprintf("%+v", rec))
+		}
+		status.IsErr = true
+		status.Status = 400
+		status.Message = strings.Join(msg, "\n")
+		return info, status
+	}
+	fmt.Println("INFO", info)
+	identRec := fetch.CreateIdent(info)
+	identRec.TextSource = c.req.TextData.BibleBrain.String()
+	c.database.InsertIdent(identRec)
+	return info, status
 }
 
-func (c *Controller) readText(database db.DBAdapter) dataset.Status {
+func (c *Controller) readText() dataset.Status {
 	var status dataset.Status
-	switch c.request.TextSource {
-	case dataset.USXEDIT:
-		read.ReadUSXEdit(database, c.request.BibleId, c.request.Testament)
-	case dataset.TEXTEDIT:
-		reader := read.NewDBPTextEditReader(c.request.BibleId, database)
-		reader.Process(c.request.Testament)
-	case dataset.DBPTEXT:
-		reader := read.NewDBPTextReader(database)
-		reader.ProcessDirectory(c.request.BibleId, c.request.Testament)
-	case dataset.SCRIPT:
-		reader := read.NewScriptReader(database)
+	bibleId := c.req.Required.BibleId
+	if c.req.TextData.BibleBrain.TextUSXEdit {
+		status = read.ReadUSXEdit(c.database, bibleId, c.req.Testament)
+	} else if c.req.TextData.BibleBrain.TextPlainEdit {
+		reader := read.NewDBPTextEditReader(c.req.Required.BibleId, c.database)
+		status = reader.Process(c.req.Testament)
+	} else if c.req.TextData.BibleBrain.TextPlain {
+		reader := read.NewDBPTextReader(c.database)
+		status = reader.ProcessDirectory(bibleId, c.req.Testament)
+	} else if c.req.TextData.File != `` {
+		reader := read.NewScriptReader(c.database)
 		var file string
-		file, status = reader.FindFile(c.request.BibleId)
+		file, status = reader.FindFile(bibleId)
 		if status.IsErr {
 			return status
 		}
-		reader.Read(file)
-	case dataset.NOTEXT:
-	default:
-		log.Warn(c.ctx, "Could not process ", c.request.TextSource)
+		status = reader.Read(file)
+	} else {
+		log.Warn(c.ctx, "Could not process ", c.req.TextData)
 	}
-	if c.request.TextDetail == dataset.WORDS || c.request.TextDetail == dataset.BOTH {
-		words := read.NewWordParser(database)
-		words.Parse()
+	if status.IsErr {
+		return status
+	}
+	if c.req.Detail.Words {
+		words := read.NewWordParser(c.database)
+		status = words.Parse()
 	}
 	return status
 }
@@ -113,10 +143,10 @@ func (c *Controller) encodeText() {
 
 func (c *Controller) output(status dataset.Status) {
 	if status.IsErr {
-		fmt.Println("IsError", status.IsErr)
-		fmt.Println("Status", status.Status)
-		fmt.Println("Error", status.Err)
-		fmt.Println("Message", status.Message)
+		fmt.Println("IsError:", status.IsErr)
+		fmt.Println("Status:", status.Status)
+		fmt.Println("GoError:", status.Err)
+		fmt.Println("Message:", status.Message)
 	}
-	fmt.Println("Response", status)
+	//fmt.Println("Response", status)
 }
