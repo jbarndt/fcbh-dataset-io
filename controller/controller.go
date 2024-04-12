@@ -44,7 +44,7 @@ func (c *Controller) processSteps() dataset.Status {
 	if status.IsErr {
 		return status
 	}
-	c.ctx = context.WithValue(context.Background(), `request`, c.req)
+	c.ctx = context.WithValue(context.Background(), `request`, string(c.yamlRequest))
 	// Open Database
 	dbName := c.req.Required.BibleId + "_" + c.req.TextData.BibleBrain.String() + ".db"
 	db.DestroyDatabase(dbName)

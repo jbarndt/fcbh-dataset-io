@@ -144,12 +144,7 @@ func Debug(ctx context.Context, param ...any) {
 func requestInfo(ctx context.Context) string {
 	if ctx != nil {
 		request := ctx.Value("request")
-		if request != nil {
-			req := request.(dataset.RequestType)
-			result := `AudioSource=` + string(req.AudioSource) + ` TextSource=` + string(req.TextSource) +
-				` Testament=` //+ string(req.Testament)
-			return result
-		}
+		return request.(string)
 	}
 	return ""
 }
