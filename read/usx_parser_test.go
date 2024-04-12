@@ -2,8 +2,8 @@ package read
 
 import (
 	"context"
-	"dataset"
 	"dataset/db"
+	"dataset/request"
 	"testing"
 )
 
@@ -13,5 +13,5 @@ func TestUSXParser(t *testing.T) {
 	db.DestroyDatabase(database)
 	ctx := context.Background()
 	var conn = db.NewDBAdapter(ctx, database)
-	ReadUSXEdit(conn, bibleId, dataset.NT)
+	ReadUSXEdit(conn, bibleId, request.Testament{NT: true})
 }

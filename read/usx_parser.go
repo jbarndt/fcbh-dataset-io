@@ -5,6 +5,7 @@ import (
 	"dataset"
 	"dataset/db"
 	log "dataset/logger"
+	"dataset/request"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -23,7 +24,7 @@ var hasStyle = map[string]bool{
 
 var numericPattern = regexp.MustCompile(`^\d+`)
 
-func ReadUSXEdit(database db.DBAdapter, bibleId string, testament dataset.TestamentType) dataset.Status {
+func ReadUSXEdit(database db.DBAdapter, bibleId string, testament request.Testament) dataset.Status {
 	var status dataset.Status
 	directory := filepath.Join(os.Getenv(`FCBH_DATASET_FILES`), bibleId)
 	dirs, err := os.ReadDir(directory)
@@ -31,15 +32,12 @@ func ReadUSXEdit(database db.DBAdapter, bibleId string, testament dataset.Testam
 		return log.Error(database.Ctx, 500, err, "Error reading USX directory.")
 	}
 	var suffix string
-	switch testament {
-	case dataset.NT:
-		suffix = `N_ET-usx`
-	case dataset.OT:
-		suffix = `O_ET-usx`
-	case dataset.C:
+	if testament.NT && testament.OT {
 		suffix = `-usx`
-	default:
-		return log.ErrorNoErr(database.Ctx, 500, "Error: Unknown testament type", testament, "in ReadUSXEdit")
+	} else if testament.NT {
+		suffix = `N_ET-usx`
+	} else {
+		suffix = `O_ET-usx`
 	}
 	for _, dir := range dirs {
 		if strings.HasSuffix(dir.Name(), suffix) {
