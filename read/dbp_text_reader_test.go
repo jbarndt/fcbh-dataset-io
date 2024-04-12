@@ -2,8 +2,8 @@ package read
 
 import (
 	"context"
-	"dataset"
 	"dataset/db"
+	"dataset/request"
 	"testing"
 )
 
@@ -13,5 +13,5 @@ func TestDBPTextReader(t *testing.T) {
 	db.DestroyDatabase(database)
 	var db1 = db.NewDBAdapter(context.Background(), database)
 	textAdapter := NewDBPTextReader(db1)
-	textAdapter.ProcessDirectory(bibleId, dataset.NT)
+	textAdapter.ProcessDirectory(bibleId, request.Testament{NT: true})
 }

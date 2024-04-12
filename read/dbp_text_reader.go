@@ -5,10 +5,12 @@ import (
 	"dataset"
 	"dataset/db"
 	log "dataset/logger"
+	"dataset/request"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -25,19 +27,20 @@ func NewDBPTextReader(conn db.DBAdapter) DBPTextReader {
 	return d
 }
 
-func (d *DBPTextReader) ProcessDirectory(bibleId string, testament dataset.TestamentType) dataset.Status {
+func (d *DBPTextReader) ProcessDirectory(bibleId string, testament request.Testament) dataset.Status {
 	var status dataset.Status
 	directory := filepath.Join(os.Getenv("FCBH_DATASET_FILES"), bibleId)
-	switch testament {
-	case dataset.NT:
-		d.processFile(directory, bibleId+"N_ET.json")
-	case dataset.OT:
-		d.processFile(directory, bibleId+"O_ET.json")
-	case dataset.C:
-		d.processFile(directory, bibleId+"O_ET.json")
-		d.processFile(directory, bibleId+"N_ET.json")
-	default:
-		status = log.ErrorNoErr(d.ctx, 500, "Error: unknown TestamentType", testament)
+	if testament.NT {
+		status = d.processFile(directory, bibleId+"N_ET.json")
+		if status.IsErr {
+			return status
+		}
+	}
+	if testament.OT {
+		status = d.processFile(directory, bibleId+"O_ET.json")
+		if status.IsErr {
+			return status
+		}
 	}
 	return status
 }
@@ -54,22 +57,38 @@ func (d *DBPTextReader) processFile(directory, filename string) dataset.Status {
 	fmt.Println("Read", filename, len(content), "bytes")
 	type TempRec struct {
 		BookId     string `json:"book_id"`
+		BookSeq    int
 		ChapterNum int    `json:"chapter"`
 		VerseStart int    `json:"verse_start"`
 		VerseEnd   int    `json:"verse_end"`
 		Text       string `json:"verse_text"`
 	}
-	var verses []TempRec
-	err = json.Unmarshal(content, &verses)
+	type TempResp struct {
+		Data []TempRec `json:"data"`
+	}
+	var response TempResp
+	err = json.Unmarshal(content, &response)
 	if err != nil {
 		return log.Error(d.ctx, 500, err, "Error parsing JSON from plain_text")
 	}
-	fmt.Println("num verses", len(verses))
+	var verses = response.Data
+	for i, vs := range verses {
+		verses[i].BookSeq = db.BookSeqMap[vs.BookId]
+	}
+	sort.Slice(verses, func(i, j int) bool {
+		if verses[i].BookSeq != verses[j].BookSeq {
+			return verses[i].BookSeq < verses[j].BookSeq
+		}
+		if verses[i].ChapterNum != verses[j].ChapterNum {
+			return verses[i].ChapterNum < verses[j].ChapterNum
+		}
+		return verses[i].VerseStart < verses[j].VerseStart
+	})
 	var records = make([]db.Script, 0, 1000)
 	for _, vs := range verses {
 		scriptNum++
 		if vs.BookId != lastBookId {
-			fmt.Println(vs.BookId)
+			//fmt.Println(vs.BookId)
 			lastBookId = vs.BookId
 			scriptNum = 1
 		}
