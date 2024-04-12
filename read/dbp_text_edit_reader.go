@@ -4,6 +4,7 @@ import (
 	"context"
 	"dataset"
 	"dataset/db"
+	"dataset/request"
 	"strconv"
 )
 
@@ -30,7 +31,7 @@ func NewDBPTextEditReader(bibleId string, conn db.DBAdapter) DBPTextEditReader {
 	return d
 }
 
-func (d *DBPTextEditReader) Process(testament dataset.TestamentType) dataset.Status {
+func (d *DBPTextEditReader) Process(testament request.Testament) dataset.Status {
 	d.ensureDBPText(testament)
 	d.ensureUSXEDITText(testament)
 	titleMap, chapMap, status := d.readUSXHeadings() //testament)
@@ -43,7 +44,7 @@ func (d *DBPTextEditReader) Process(testament dataset.TestamentType) dataset.Sta
 	return status
 }
 
-func (d *DBPTextEditReader) ensureDBPText(testament dataset.TestamentType) {
+func (d *DBPTextEditReader) ensureDBPText(testament request.Testament) {
 	var sourceDB = d.bibleId + `_DBPTEXT.db`
 	if !db.Exists(sourceDB) {
 		var conn2 = db.NewDBAdapter(d.ctx, sourceDB)
@@ -53,7 +54,7 @@ func (d *DBPTextEditReader) ensureDBPText(testament dataset.TestamentType) {
 	}
 }
 
-func (d *DBPTextEditReader) ensureUSXEDITText(testament dataset.TestamentType) {
+func (d *DBPTextEditReader) ensureUSXEDITText(testament request.Testament) {
 	var sourceDB = d.bibleId + `_USXEDIT.db`
 	if !db.Exists(sourceDB) {
 		var conn3 = db.NewDBAdapter(d.ctx, sourceDB)
