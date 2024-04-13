@@ -28,8 +28,10 @@ func TestParser(t *testing.T) {
   LanguageISO: eng
   VersionCode: WEB
 Testament:
-  OT: Y
+  OT: 
+  OTBooks: [GEN,EXO,LEV,NUM,DEU]
   NT: Yes
+  NTBooks: []
 AudioData:
   BibleBrain:
     MP3_64: Yes
@@ -104,7 +106,9 @@ Compare:
 		t.Error("FastText should be true")
 	}
 	_, _ = r.Encode(req)
-	var boolTests = []bool{req.Testament.OT, req.Testament.NT,
+	var boolTests = []bool{
+		//req.Testament.OT,
+		req.Testament.NT,
 		req.AudioData.BibleBrain.MP3_64,
 		req.AudioData.BibleBrain.MP3_16,
 		req.AudioData.BibleBrain.OPUS,
@@ -169,5 +173,11 @@ Compare:
 		if len(item) == 0 {
 			t.Error(`The`, i, `th item should have a value, but is empty`)
 		}
+	}
+	if len(req.Testament.OTBooks) != 5 {
+		t.Error(`OTBooks should have a length of 5, not`, len(req.Testament.OTBooks))
+	}
+	if len(req.Testament.NTBooks) != 0 {
+		t.Error(`NTBooks should have a length of 0, not`, len(req.Testament.NTBooks))
 	}
 }

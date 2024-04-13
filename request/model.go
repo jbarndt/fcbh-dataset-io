@@ -23,24 +23,27 @@ type Required struct {
 }
 
 type Testament struct {
-	NT bool `yaml:"NT"`
-	OT bool `yaml:"OT"`
+	NT      bool     `yaml:"NT"`
+	NTBooks []string `yaml:"NTBooks"`
+	OT      bool     `yaml:"OT"`
+	OTBooks []string `yaml:"OTBooks"`
 }
 
-func (t Testament) String() string {
-	var result string
-	if t.NT && t.OT {
-		result = `C`
+/*
+	func (t Testament) String() string {
+		var result string
+		if t.NT && t.OT {
+			result = `C`
+		}
+		if t.NT {
+			result = `NT`
+		}
+		if t.OT {
+			result = `OT`
+		}
+		return result
 	}
-	if t.NT {
-		result = `NT`
-	}
-	if t.OT {
-		result = `OT`
-	}
-	return result
-}
-
+*/
 type AudioData struct {
 	BibleBrain BibleBrainAudio `yaml:"BibleBrain"`
 	File       string          `yaml:"File"`
