@@ -2,15 +2,15 @@ package request
 
 type Request struct {
 	Required      Required      `yaml:"Required"`
-	Testament     Testament     `yaml:"Testament"`
-	AudioData     AudioData     `yaml:"AudioData"`
-	TextData      TextData      `yaml:"TextData"`
-	Detail        Detail        `yaml:"Detail"`
-	Timestamps    Timestamps    `yaml:"Timestamps"`
-	AudioEncoding AudioEncoding `yaml:"AudioEncoding"`
-	TextEncoding  TextEncoding  `yaml:"TextEncoding"`
-	OutputFormat  OutputFormat  `yaml:"OutputFormat"`
-	Compare       Compare       `yaml:"Compare"`
+	Testament     Testament     `yaml:"Testament,omitempty"`
+	AudioData     AudioData     `yaml:"AudioData,omitempty"`
+	TextData      TextData      `yaml:"TextData,omitempty"`
+	Detail        Detail        `yaml:"Detail,omitempty"`
+	Timestamps    Timestamps    `yaml:"Timestamps,omitempty"`
+	AudioEncoding AudioEncoding `yaml:"AudioEncoding,omitempty"`
+	TextEncoding  TextEncoding  `yaml:"TextEncoding,omitempty"`
+	OutputFormat  OutputFormat  `yaml:"OutputFormat,omitempty"`
+	Compare       Compare       `yaml:"Compare,omitempty"`
 }
 
 type Required struct {
@@ -23,10 +23,10 @@ type Required struct {
 }
 
 type Testament struct {
-	NT      bool     `yaml:"NT"`
-	NTBooks []string `yaml:"NTBooks"`
-	OT      bool     `yaml:"OT"`
-	OTBooks []string `yaml:"OTBooks"`
+	NT      bool     `yaml:"NT,omitempty"`
+	NTBooks []string `yaml:"NTBooks,omitempty"`
+	OT      bool     `yaml:"OT,omitempty"`
+	OTBooks []string `yaml:"OTBooks,omitempty"`
 }
 
 /*
@@ -45,18 +45,18 @@ type Testament struct {
 	}
 */
 type AudioData struct {
-	BibleBrain BibleBrainAudio `yaml:"BibleBrain"`
-	File       string          `yaml:"File"`
-	Http       string          `yaml:"Http"`
-	AWSS3      string          `yaml:"AWSS3"`
-	POST       bool            `yaml:"POST"`
-	NoAudio    bool            `yaml:"NoAudio"`
+	BibleBrain BibleBrainAudio `yaml:"BibleBrain,omitempty"`
+	File       string          `yaml:"File,omitempty"`
+	Http       string          `yaml:"Http,omitempty"`
+	AWSS3      string          `yaml:"AWSS3,omitempty"`
+	POST       bool            `yaml:"POST,omitempty"`
+	NoAudio    bool            `yaml:"NoAudio,omitempty"`
 }
 
 type BibleBrainAudio struct {
-	MP3_64 bool `yaml:"MP3_64"`
-	MP3_16 bool `yaml:"MP3_16"`
-	OPUS   bool `yaml:"OPUS"`
+	MP3_64 bool `yaml:"MP3_64,omitempty"`
+	MP3_16 bool `yaml:"MP3_16,omitempty"`
+	OPUS   bool `yaml:"OPUS,omitempty"`
 }
 
 func (b BibleBrainAudio) AudioType() (string, string) {
@@ -76,19 +76,19 @@ func (b BibleBrainAudio) AudioType() (string, string) {
 }
 
 type TextData struct {
-	BibleBrain   BibleBrainText `yaml:"BibleBrain"`
-	SpeechToText SpeechToText   `yaml:"SpeechToText"`
-	File         string         `yaml:"File"`
-	Http         string         `yaml:"Http"`
-	AWSS3        string         `yaml:"AWSS3"`
-	POST         bool           `yaml:"POST"`
-	NoText       bool           `yaml:"NoText"`
+	BibleBrain   BibleBrainText `yaml:"BibleBrain,omitempty"`
+	SpeechToText SpeechToText   `yaml:"SpeechToText,omitempty"`
+	File         string         `yaml:"File,omitempty"`
+	Http         string         `yaml:"Http,omitempty"`
+	AWSS3        string         `yaml:"AWSS3,omitempty"`
+	POST         bool           `yaml:"POST,omitempty"`
+	NoText       bool           `yaml:"NoText,omitempty"`
 }
 
 type BibleBrainText struct {
-	TextUSXEdit   bool `yaml:"TextUSXEdit"`
-	TextPlainEdit bool `yaml:"TextPlainEdit"`
-	TextPlain     bool `yaml:"TextPlain"`
+	TextUSXEdit   bool `yaml:"TextUSXEdit,omitempty"`
+	TextPlainEdit bool `yaml:"TextPlainEdit,omitempty"`
+	TextPlain     bool `yaml:"TextPlain,omitempty"`
 }
 
 func (b BibleBrainText) String() string {
@@ -104,18 +104,18 @@ func (b BibleBrainText) String() string {
 }
 
 type SpeechToText struct {
-	Whisper Whisper `yaml:"Whisper"`
+	Whisper Whisper `yaml:"Whisper,omitempty"`
 }
 
 type Whisper struct {
-	Model WhisperModel `yaml:"Model"`
+	Model WhisperModel `yaml:"Model,omitempty"`
 }
 type WhisperModel struct {
-	Large  bool `yaml:"Large"`
-	Medium bool `yaml:"Medium"`
-	Small  bool `yaml:"Small"`
-	Base   bool `yaml:"Base"`
-	Tiny   bool `yaml:"Tiny"`
+	Large  bool `yaml:"Large,omitempty"`
+	Medium bool `yaml:"Medium,omitempty"`
+	Small  bool `yaml:"Small,omitempty"`
+	Base   bool `yaml:"Base,omitempty"`
+	Tiny   bool `yaml:"Tiny,omitempty"`
 }
 
 func (w WhisperModel) String() string {
@@ -135,57 +135,57 @@ func (w WhisperModel) String() string {
 }
 
 type Detail struct {
-	Lines bool `yaml:"Lines"`
-	Words bool `yaml:"Words"`
+	Lines bool `yaml:"Lines,omitempty"`
+	Words bool `yaml:"Words,omitempty"`
 }
 
 type Timestamps struct {
-	BibleBrain   bool `yaml:"BibleBrain"`
-	Aeneas       bool `yaml:"Aeneas"`
-	NoTimestamps bool `yaml:"NoTimestamps"`
+	BibleBrain   bool `yaml:"BibleBrain,omitempty"`
+	Aeneas       bool `yaml:"Aeneas,omitempty"`
+	NoTimestamps bool `yaml:"NoTimestamps,omitempty"`
 }
 
 type AudioEncoding struct {
-	MFCC       bool `yaml:"MFCC"`
-	NoEncoding bool `yaml:"NoEncoding"`
+	MFCC       bool `yaml:"MFCC,omitempty"`
+	NoEncoding bool `yaml:"NoEncoding,omitempty"`
 }
 
 type TextEncoding struct {
-	FastText   bool `yaml:"FastText"`
-	NoEncoding bool `yaml:"NoEncoding"`
+	FastText   bool `yaml:"FastText,omitempty"`
+	NoEncoding bool `yaml:"NoEncoding,omitempty"`
 }
 
 type OutputFormat struct {
-	CSV    bool `yaml:"CSV"`
-	JSON   bool `yaml:"JSON"`
-	Sqlite bool `yaml:"Sqlite"`
+	CSV    bool `yaml:"CSV,omitempty"`
+	JSON   bool `yaml:"JSON,omitempty"`
+	Sqlite bool `yaml:"Sqlite,omitempty"`
 }
 
 type Compare struct {
-	Project1        string          `yaml:"Project1"`
-	Project2        string          `yaml:"Project2"`
-	CompareSettings CompareSettings `yaml:"CompareSettings"`
+	Project1        string          `yaml:"Project1,omitempty"`
+	Project2        string          `yaml:"Project2,omitempty"`
+	CompareSettings CompareSettings `yaml:"CompareSettings,omitempty"`
 }
 
 type CompareSettings struct {
-	LowerCase         bool              `yaml:"LowerCase"`
-	RemovePromptChars bool              `yaml:"RemovePromptChars"`
-	RemovePunctuation bool              `yaml:"RemovePunctuation"`
-	DoubleQuotes      CompareChoice     `yaml:"DoubleQuotes"`
-	Apostrophe        CompareChoice     `yaml:"Apostrophe"`
-	Hyphen            CompareChoice     `yaml:"Hyphen"`
-	DiacriticalMarks  DiacriticalChoice `yaml:"DiacriticalMarks"`
+	LowerCase         bool              `yaml:"LowerCase,omitempty"`
+	RemovePromptChars bool              `yaml:"RemovePromptChars,omitempty"`
+	RemovePunctuation bool              `yaml:"RemovePunctuation,omitempty"`
+	DoubleQuotes      CompareChoice     `yaml:"DoubleQuotes,omitempty"`
+	Apostrophe        CompareChoice     `yaml:"Apostrophe,omitempty"`
+	Hyphen            CompareChoice     `yaml:"Hyphen,omitempty"`
+	DiacriticalMarks  DiacriticalChoice `yaml:"DiacriticalMarks,omitempty"`
 }
 
 type CompareChoice struct {
-	Remove    bool `yaml:"Remove"`
-	Normalize bool `yaml:"Normalize"`
+	Remove    bool `yaml:"Remove,omitempty"`
+	Normalize bool `yaml:"Normalize,omitempty"`
 }
 
 type DiacriticalChoice struct {
-	Remove        bool `yaml:"Remove"`
-	NormalizeNFC  bool `yaml:"NormalizeNFC"`
-	NormalizeNFD  bool `yaml:"NormalizeNFD"`
-	NormalizeNFKC bool `yaml:"NormalizeNFKC"`
-	NormalizeNFKD bool `yaml:"NormalizeNFKD"`
+	Remove        bool `yaml:"Remove,omitempty"`
+	NormalizeNFC  bool `yaml:"NormalizeNFC,omitempty"`
+	NormalizeNFD  bool `yaml:"NormalizeNFD,omitempty"`
+	NormalizeNFKC bool `yaml:"NormalizeNFKC,omitempty"`
+	NormalizeNFKD bool `yaml:"NormalizeNFKD,omitempty"`
 }
