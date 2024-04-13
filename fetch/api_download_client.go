@@ -36,8 +36,18 @@ func (d *APIDownloadClient) Download(info BibleInfoType) dataset.Status {
 		}
 	}
 	var download []FilesetType
-	download = append(download, info.TextFilesets...)
-	download = append(download, info.AudioFilesets...)
+	if info.AudioOTFileset.Id != `` {
+		download = append(download, info.AudioOTFileset)
+	}
+	if info.AudioNTFileset.Id != `` {
+		download = append(download, info.AudioNTFileset)
+	}
+	if info.TextOTFileset.Id != `` {
+		download = append(download, info.TextOTFileset)
+	}
+	if info.TextNTFileset.Id != `` {
+		download = append(download, info.TextNTFileset)
+	}
 	for _, rec := range download {
 		if rec.Type == `text_plain` {
 			status = d.downloadPlainText(directory, rec.Id)

@@ -144,7 +144,9 @@ func Debug(ctx context.Context, param ...any) {
 func requestInfo(ctx context.Context) string {
 	if ctx != nil {
 		request := ctx.Value("request")
-		return request.(string)
+		if request != nil {
+			return request.(string)
+		}
 	}
 	return ""
 }

@@ -1,18 +1,20 @@
 package db
 
 type Ident struct {
-	DatasetId      int
-	BibleId        string
-	AudioFilesetId string
-	TextFilesetId  string
-	TextSource     string
-	LanguageISO    string
-	VersionCode    string
-	LanguageId     int
-	RolvId         int
-	Alphabet       string
-	LanguageName   string
-	VersionName    string
+	DatasetId    int
+	BibleId      string
+	AudioOTId    string
+	AudioNTId    string
+	TextOTId     string
+	TextNTId     string
+	TextSource   string
+	LanguageISO  string
+	VersionCode  string
+	LanguageId   int
+	RolvId       int
+	Alphabet     string
+	LanguageName string
+	VersionName  string
 }
 
 type Script struct {

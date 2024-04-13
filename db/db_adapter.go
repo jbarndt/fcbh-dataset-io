@@ -53,8 +53,10 @@ func NewDBAdapter(ctx context.Context, database string) DBAdapter {
 	var query = `CREATE TABLE IF NOT EXISTS ident (
 		dataset_id INTEGER PRIMARY KEY AUTOINCREMENT,
 		bible_id TEXT NOT NULL,
-		audio_fileset_id TEXT NOT NULL,
-		text_fileset_id TEXT NOT NULL,
+		audio_OT_id TEXT NOT NULL,
+		audio_NT_id TEXT NOT NULL,
+		text_OT_id TEXT NOT NULL,
+		text_NT_id TEXT NOT NULL,
 		text_source TEXT NOT NULL,
 		language_iso TEXT NOT NULL,
 		version_code TEXT NOT NULL,
@@ -150,17 +152,17 @@ func (d *DBAdapter) Close() {
 
 func (d *DBAdapter) InsertIdent(id Ident) dataset.Status {
 	var status dataset.Status
-	query := `REPLACE INTO ident(bible_id, audio_fileset_id, text_fileset_id,
-		text_source, language_iso, version_code, 
-		languge_id, rolv_id, alphabet, language_name, 
-		version_name) VALUES (?,?,?,?,?,?,?,?,?,?,?)`
+	query := `REPLACE INTO ident(bible_id, audio_OT_id, audio_NT_id, text_OT_id, text_NT_id,
+		text_source, language_iso, version_code, languge_id, 
+		rolv_id, alphabet, language_name, version_name) VALUES (?,?,?,?,?,?,?,?,?,?,?)`
 	stmt, err := d.DB.Prepare(query)
 	defer stmt.Close()
 	if err != nil {
 		return log.Error(d.Ctx, 500, err, `Error while preparing Ident stmt.`)
 	}
-	_, err = stmt.Exec(id.BibleId, id.AudioFilesetId, id.TextFilesetId, id.TextSource, id.LanguageISO,
-		id.VersionCode, id.LanguageId, id.RolvId, id.Alphabet, id.LanguageName, id.VersionName)
+	_, err = stmt.Exec(id.BibleId, id.AudioOTId, id.AudioNTId, id.TextOTId, id.TextNTId,
+		id.TextSource, id.LanguageISO, id.VersionCode, id.LanguageId,
+		id.RolvId, id.Alphabet, id.LanguageName, id.VersionName)
 	if err != nil {
 		return log.Error(d.Ctx, 500, err, `Error while inserting Ident.`)
 	}

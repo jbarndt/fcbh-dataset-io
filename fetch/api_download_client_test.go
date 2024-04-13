@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -14,36 +15,38 @@ func TestPlainText(t *testing.T) {
 	var req request.Request
 	req.AudioData.NoAudio = true
 	req.TextData.BibleBrain.TextPlainEdit = true
-	req.Testament.NT = true
 	req.Testament.OT = true
+	req.Testament.NT = true
 	client := NewAPIDBPClient(ctx, `ENGWEB`)
 	info, status := client.BibleInfo()
-	if !status.IsErr {
-		ok := client.FindFilesets(&info, req.AudioData.BibleBrain, req.TextData.BibleBrain, req.Testament)
-		if ok {
-			if len(info.AudioFilesets) > 0 {
-				t.Error(`Should have found no audio filesets.`)
-			}
-			if len(info.TextFilesets) != 2 {
-				t.Error(`Should have found two text filesets`)
-			}
-			err := deleteFile(info.BibleId, info.TextFilesets[1])
-			if err != nil {
-				t.Error(`Did not delete file.`)
-			}
-			download := NewAPIDownloadClient(ctx, info.BibleId)
-			status := download.Download(info)
-			if status.IsErr {
-				t.Error("Unexpected Error", status.Message)
-			}
-			count, err := countFiles(info.BibleId, info.TextFilesets[1])
-			if count != 2 {
-				t.Error("Two text files are expected")
-			}
-			if err != nil {
-				t.Error(`Download err was not expected`, err)
-			}
-		}
+	if status.IsErr {
+		t.Error(`BibleInfo Error`, status.Err)
+	}
+	client.FindFilesets(&info, req.AudioData.BibleBrain, req.TextData.BibleBrain, req.Testament)
+	fmt.Println("INFO", info)
+	ident := client.CreateIdent(info)
+	fmt.Println("IDENT", ident)
+	if info.AudioOTFileset.Id != `` || info.AudioNTFileset.Id != `` {
+		t.Error(`Should have found no audio filesets.`)
+	}
+	if info.TextNTFileset.Id == `` || info.TextOTFileset.Id == `` {
+		t.Error(`Should have found two text filesets`)
+	}
+	err := deleteFile(info.BibleId, info.TextOTFileset)
+	if err != nil {
+		t.Error(`Did not delete file.`)
+	}
+	download := NewAPIDownloadClient(ctx, info.BibleId)
+	status = download.Download(info)
+	if status.IsErr {
+		t.Error("Unexpected Error", status.Message)
+	}
+	count, err := countFiles(info.BibleId, info.TextOTFileset)
+	if err != nil {
+		t.Error(`Download err was not expected`, err)
+	}
+	if count != 2 {
+		t.Error("Two text files are expected")
 	}
 }
 
@@ -55,33 +58,32 @@ func TestUSXDownload(t *testing.T) {
 	req.Testament.NT = true
 	client := NewAPIDBPClient(ctx, `ENGWEB`)
 	info, status := client.BibleInfo()
-	if !status.IsErr {
-		ok := client.FindFilesets(&info, req.AudioData.BibleBrain, req.TextData.BibleBrain, req.Testament)
-		if ok {
-			if len(info.AudioFilesets) > 0 {
-				t.Error(`Should have found no audio filesets.`)
-			}
-			if len(info.TextFilesets) != 1 {
-				t.Error(`Should have found one text fileset`)
-			}
-			//fmt.Println(info.TextFilesets)
-			err := deleteFile(info.BibleId, info.TextFilesets[0])
-			if err != nil {
-				t.Error(`Did not delete file.`)
-			}
-			download := NewAPIDownloadClient(ctx, info.BibleId)
-			status := download.Download(info)
-			if status.IsErr {
-				t.Error(`Download Err is unexpected`, status.Message)
-			}
-			count, err := countFiles(info.BibleId, info.TextFilesets[0])
-			if count != 27 {
-				t.Error("27 books in NT are expected, found:", count)
-			}
-			if err != nil {
-				t.Error(`Download err was not expected`, err)
-			}
-		}
+	if status.IsErr {
+		t.Error(`BibleInfo Error`, status.Err)
+	}
+	client.FindFilesets(&info, req.AudioData.BibleBrain, req.TextData.BibleBrain, req.Testament)
+	_ = client.CreateIdent(info)
+	if info.AudioOTFileset.Id != `` || info.AudioNTFileset.Id != `` {
+		t.Error(`Should have found no audio filesets.`)
+	}
+	if info.TextOTFileset.Id != `` || info.TextNTFileset.Id == `` {
+		t.Error(`Should have found one text fileset`)
+	}
+	err := deleteFile(info.BibleId, info.TextNTFileset)
+	if err != nil {
+		t.Error(`Did not delete file.`)
+	}
+	download := NewAPIDownloadClient(ctx, info.BibleId)
+	status = download.Download(info)
+	if status.IsErr {
+		t.Error(`Download Err is unexpected`, status.Message)
+	}
+	count, err := countFiles(info.BibleId, info.TextNTFileset)
+	if count != 27 {
+		t.Error("27 books in NT are expected, found:", count)
+	}
+	if err != nil {
+		t.Error(`Download err was not expected`, err)
 	}
 }
 
@@ -93,33 +95,33 @@ func TestAudioDownload(t *testing.T) {
 	req.Testament.NT = true
 	client := NewAPIDBPClient(ctx, `ENGWEB`)
 	info, status := client.BibleInfo()
-	if !status.IsErr {
-		ok := client.FindFilesets(&info, req.AudioData.BibleBrain, req.TextData.BibleBrain, req.Testament)
-		if ok {
-			if len(info.AudioFilesets) != 1 {
-				t.Error(`Should have found no audio filesets.`, len(info.AudioFilesets))
-			}
-			if len(info.TextFilesets) > 0 {
-				t.Error(`Should have found no text fileset`)
-			}
-			//fmt.Println(info.TextFilesets)
-			err := deleteFile(info.BibleId, info.AudioFilesets[0])
-			if err != nil {
-				t.Error(`Did not delete file.`)
-			}
-			download := NewAPIDownloadClient(ctx, info.BibleId)
-			status := download.Download(info)
-			if status.IsErr {
-				t.Error(`Download Err is unexpected`, status.Message)
-			}
-			count, err := countFiles(info.BibleId, info.AudioFilesets[0])
-			if count != 260 {
-				t.Error("260 chapters in NT are expected, found:", count)
-			}
-			if err != nil {
-				t.Error(`Download err was not expected`, err)
-			}
-		}
+	if status.IsErr {
+		t.Error(`BibleInfo Error`, status.Err)
+	}
+	client.FindFilesets(&info, req.AudioData.BibleBrain, req.TextData.BibleBrain, req.Testament)
+	fmt.Println("INFO", info)
+	_ = client.CreateIdent(info)
+	if info.AudioOTFileset.Id != `` || info.AudioNTFileset.Id == `` {
+		t.Error(`Should have found no audio filesets.`)
+	}
+	if info.TextOTFileset.Id != `` || info.TextNTFileset.Id != `` {
+		t.Error(`Should have found no text fileset`)
+	}
+	err := deleteFile(info.BibleId, info.AudioNTFileset)
+	if err != nil {
+		t.Error(`Did not delete file.`)
+	}
+	download := NewAPIDownloadClient(ctx, info.BibleId)
+	status = download.Download(info)
+	if status.IsErr {
+		t.Error(`Download Err is unexpected`, status.Message)
+	}
+	count, err := countFiles(info.BibleId, info.AudioNTFileset)
+	if count != 260 {
+		t.Error("260 chapters in NT are expected, found:", count)
+	}
+	if err != nil {
+		t.Error(`Download err was not expected`, err)
 	}
 }
 
@@ -131,26 +133,28 @@ func Test403Error(t *testing.T) {
 	req.Testament.NT = true
 	client := NewAPIDBPClient(ctx, `ENGESV`)
 	info, status := client.BibleInfo()
-	if !status.IsErr {
-		ok := client.FindFilesets(&info, req.AudioData.BibleBrain, req.TextData.BibleBrain, req.Testament)
-		if ok {
-			if len(info.AudioFilesets) != 1 {
-				t.Error(`Should have found no audio filesets.`, len(info.AudioFilesets))
-			}
-			if len(info.TextFilesets) > 0 {
-				t.Error(`Should have found no text fileset`)
-			}
-			//fmt.Println(info.TextFilesets)
-			err := deleteFile(info.BibleId, info.AudioFilesets[0])
-			if err != nil {
-				t.Error(`Did not delete file.`)
-			}
-			download := NewAPIDownloadClient(ctx, info.BibleId)
-			status := download.Download(info)
-			if status.Status != 403 {
-				t.Error(`Download 403 error is unexpected`, status)
-			}
-		}
+	if status.IsErr {
+		t.Error(`BibleInfo Error`, status.Err)
+	}
+	client.FindFilesets(&info, req.AudioData.BibleBrain, req.TextData.BibleBrain, req.Testament)
+	_ = client.CreateIdent(info)
+	//if len(info.AudioFilesets) != 1 {
+	if info.AudioOTFileset.Id != `` || info.AudioNTFileset.Id == `` {
+		t.Error(`Should have found one audio fileset.`)
+	}
+	//if len(info.TextFilesets) > 0 {
+	if info.TextOTFileset.Id != `` || info.TextNTFileset.Id != `` {
+		t.Error(`Should have found no text fileset`)
+	}
+	//fmt.Println(info.TextFilesets)
+	err := deleteFile(info.BibleId, info.AudioNTFileset)
+	if err != nil {
+		t.Error(`Did not delete file.`)
+	}
+	download := NewAPIDownloadClient(ctx, info.BibleId)
+	status = download.Download(info)
+	if status.Status != 403 {
+		t.Error(`Download 403 error is unexpected`, status)
 	}
 }
 
@@ -163,9 +167,9 @@ func deleteFile(bibleId string, fs FilesetType) error {
 	} else {
 		filePath := filepath.Join(os.Getenv(`FCBH_DATASET_FILES`), bibleId, fs.Id)
 		files, err := os.ReadDir(filePath)
-		if err != nil {
-			os.IsNotExist(err)
-		} else {
+		if os.IsNotExist(err) {
+			return nil
+		} else if err != nil {
 			panic(err)
 		}
 		for _, num := range []int{11, 7, 5, 3, 1} {
@@ -189,7 +193,8 @@ func countFiles(bibleId string, fs FilesetType) (int, error) {
 	} else if fs.Type == `text_usx` {
 		filePath = filepath.Join(os.Getenv(`FCBH_DATASET_FILES`), bibleId, fs.Id, `*.usx`)
 	} else {
-		filePath = filepath.Join(os.Getenv(`FCBH_DATASET_FILES`), bibleId, fs.Id, `*.`+fs.Container)
+		fileExt := strings.ToLower(fs.Codec)
+		filePath = filepath.Join(os.Getenv(`FCBH_DATASET_FILES`), bibleId, fs.Id, `*.`+fileExt)
 	}
 	files, err := filepath.Glob(filePath)
 	return len(files), err
