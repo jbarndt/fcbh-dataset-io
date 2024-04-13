@@ -10,8 +10,10 @@ Required:
   # What is version
 
 Testament: # Choose one or both
-  NT: # Mark Yes for New Testament
-  OT: # Mark Yes for Old Testament
+  NT: # Mark Yes for entire New Testament
+  NTBooks: [] # To process part of the NT, list specific USFM NT book codes, e.g. [MAT,MRK,LUK,JHN]
+  OT: # Mark Yes for entire Old Testament
+  OTBooks: [] # To process part of the OT, list specific USFM OT book codes, e.g. [GEN,EXO,LEV,NUM]
 # Default: NT Yes
 
 # The remaining configuration choices are all optional, but something must be selected in order for some processing to be done.
