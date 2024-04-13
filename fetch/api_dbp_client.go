@@ -78,7 +78,7 @@ func (d *APIDBPClient) FindFilesets(info *BibleInfoType, audio request.BibleBrai
 	text request.BibleBrainText, testament request.Testament) {
 	textType := text.String()
 	codec, bitrate := audio.AudioType()
-	if testament.OT {
+	if testament.OT || len(testament.OTBooks) > 0 {
 		info.TextOTFileset = d.searchText(info, `OT`, textType)
 		info.AudioOTFileset = d.searchAudio(info, `OT`, `audio_drama`, codec, bitrate)
 		tmpAudio := d.searchAudio(info, `OT`, `audio`, codec, bitrate)
@@ -86,7 +86,7 @@ func (d *APIDBPClient) FindFilesets(info *BibleInfoType, audio request.BibleBrai
 			info.AudioOTFileset = tmpAudio
 		}
 	}
-	if testament.NT {
+	if testament.NT || len(testament.NTBooks) > 0 {
 		info.TextNTFileset = d.searchText(info, `NT`, textType)
 		info.AudioNTFileset = d.searchAudio(info, `NT`, `audio_drama`, codec, bitrate)
 		tmpAudio := d.searchAudio(info, `NT`, `audio`, codec, bitrate)
