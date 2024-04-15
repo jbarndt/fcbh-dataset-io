@@ -40,6 +40,7 @@ func (r *RequestDecoder) Decode(requestYaml []byte) (Request, dataset.Status) {
 	if err != nil {
 		status = log.Error(r.ctx, 500, err, `Error decoding YAML to request`)
 	}
+	resp.Testament.BuildBookMaps() // Builds Map for t.HasOT(bookId), t.HasNT(bookId)
 	return resp, status
 }
 

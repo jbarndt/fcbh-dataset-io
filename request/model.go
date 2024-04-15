@@ -27,6 +27,43 @@ type Testament struct {
 	NTBooks []string `yaml:"NTBooks,omitempty"`
 	OT      bool     `yaml:"OT,omitempty"`
 	OTBooks []string `yaml:"OTBooks,omitempty"`
+	otMap   map[string]bool
+	ntMap   map[string]bool
+}
+
+func (t *Testament) BuildBookMaps() {
+	t.otMap = make(map[string]bool)
+	for _, book := range t.OTBooks {
+		t.otMap[book] = true
+	}
+	t.ntMap = make(map[string]bool)
+	for _, book := range t.NTBooks {
+		t.ntMap[book] = true
+	}
+}
+
+func (t *Testament) Has(ttype string, bookId string) bool {
+	if ttype == `NT` {
+		return t.HasNT(bookId)
+	} else {
+		return t.HasOT(bookId)
+	}
+}
+
+func (t *Testament) HasOT(bookId string) bool {
+	if t.OT {
+		return true
+	}
+	_, ok := t.otMap[bookId]
+	return ok
+}
+
+func (t *Testament) HasNT(bookId string) bool {
+	if t.NT {
+		return true
+	}
+	_, ok := t.ntMap[bookId]
+	return ok
 }
 
 /*
