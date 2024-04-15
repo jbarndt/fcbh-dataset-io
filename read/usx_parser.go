@@ -5,7 +5,6 @@ import (
 	"dataset"
 	"dataset/db"
 	log "dataset/logger"
-	"dataset/request"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -24,48 +23,41 @@ var hasStyle = map[string]bool{
 
 var numericPattern = regexp.MustCompile(`^\d+`)
 
-func ReadUSXEdit(database db.DBAdapter, bibleId string, testament request.Testament) dataset.Status {
+type USXParser struct {
+	ctx  context.Context
+	conn db.DBAdapter
+}
+
+func NewUSXParser(conn db.DBAdapter) USXParser {
+	var p USXParser
+	p.ctx = conn.Ctx
+	p.conn = conn
+	return p
+}
+
+func (p *USXParser) ProcessFiles(inputFiles []InputFiles) dataset.Status {
 	var status dataset.Status
-	directory := filepath.Join(os.Getenv(`FCBH_DATASET_FILES`), bibleId)
-	dirs, err := os.ReadDir(directory)
-	if err != nil {
-		return log.Error(database.Ctx, 500, err, "Error reading USX directory.")
-	}
-	var suffix string
-	if testament.NT && testament.OT {
-		suffix = `-usx`
-	} else if testament.NT {
-		suffix = `N_ET-usx`
-	} else {
-		suffix = `O_ET-usx`
-	}
-	for _, dir := range dirs {
-		if strings.HasSuffix(dir.Name(), suffix) {
-			subDir := filepath.Join(directory, dir.Name())
-			files, err := os.ReadDir(subDir)
-			if err != nil {
-				return log.Error(database.Ctx, 500, err, `Error reading directory.`)
-			}
-			for _, file := range files {
-				filename := filepath.Join(subDir, file.Name())
-				fmt.Println(filename)
-				var records []db.Script
-				records, status = decode(database.Ctx, filename) // Also edits out non-script elements
-				if !status.IsErr {
-					titleDesc := extractTitles(records)
-					records = addChapterHeading(records, titleDesc)
-					records = correctScriptNum(records)
-					status = database.InsertScripts(records)
-				}
+	for _, file := range inputFiles {
+		filename := filepath.Join(file.Directory, file.Filename)
+		fmt.Println(filename)
+		var records []db.Script
+		records, status = p.decode(p.ctx, filename) // Also edits out non-script elements
+		if !status.IsErr {
+			titleDesc := p.extractTitles(records)
+			records = p.addChapterHeading(records, titleDesc)
+			records = p.correctScriptNum(records)
+			status = p.conn.InsertScripts(records)
+			if status.IsErr {
+				return status
 			}
 		}
 	}
-	count, status := database.SelectScalarInt(`SELECT count(*) FROM scripts`)
+	count, status := p.conn.SelectScalarInt(`SELECT count(*) FROM scripts`)
 	fmt.Println("Total Records", count)
 	return status
 }
 
-func decode(ctx context.Context, filename string) ([]db.Script, dataset.Status) {
+func (p *USXParser) decode(ctx context.Context, filename string) ([]db.Script, dataset.Status) {
 	var records []db.Script
 	var status dataset.Status
 	xmlFile, err := os.Open(filename)
@@ -97,15 +89,15 @@ func decode(ctx context.Context, filename string) ([]db.Script, dataset.Status) 
 		case xml.StartElement:
 			tagName = se.Name.Local
 			if tagName == `book` {
-				bookId = findAttr(se, `code`)
+				bookId = p.findAttr(se, `code`)
 			} else if tagName == `chapter` {
-				chapterNum = findIntAttr(se, `number`)
+				chapterNum = p.findIntAttr(se, `number`)
 			} else if tagName == `verse` {
-				verseNum = findIntAttr(se, `number`)
-				verseStr = findAttr(se, `number`)
+				verseNum = p.findIntAttr(se, `number`)
+				verseStr = p.findAttr(se, `number`)
 			}
 			if hasStyle[tagName] {
-				usfmStyle = tagName + `.` + findAttr(se, `style`)
+				usfmStyle = tagName + `.` + p.findAttr(se, `style`)
 				if include(usfmStyle) { // This if fileters out the non-script code
 					stack = stack.Push(usfmStyle)
 				} else {
@@ -154,7 +146,7 @@ type titleDesc struct {
 	areDiff bool
 }
 
-func extractTitles(records []db.Script) titleDesc {
+func (p *USXParser) extractTitles(records []db.Script) titleDesc {
 	var results titleDesc
 	for _, rec := range records {
 		if rec.UsfmStyle == `para.h` {
@@ -169,7 +161,7 @@ func extractTitles(records []db.Script) titleDesc {
 	return results
 }
 
-func addChapterHeading(records []db.Script, titles titleDesc) []db.Script {
+func (p *USXParser) addChapterHeading(records []db.Script, titles titleDesc) []db.Script {
 	var results = make([]db.Script, 0, len(records))
 	for _, rec := range titles.title {
 		results = append(results, rec)
@@ -192,7 +184,7 @@ func addChapterHeading(records []db.Script, titles titleDesc) []db.Script {
 	return results
 }
 
-func correctScriptNum(records []db.Script) []db.Script {
+func (p *USXParser) correctScriptNum(records []db.Script) []db.Script {
 	var results = make([]db.Script, 0, len(records))
 	var scriptNum = 0
 	var lastChapter = 0
@@ -208,7 +200,7 @@ func correctScriptNum(records []db.Script) []db.Script {
 	return results
 }
 
-func findAttr(se xml.StartElement, name string) string {
+func (p *USXParser) findAttr(se xml.StartElement, name string) string {
 	for _, attr := range se.Attr {
 		if attr.Name.Local == name {
 			return attr.Value
@@ -217,8 +209,8 @@ func findAttr(se xml.StartElement, name string) string {
 	return ``
 }
 
-func findIntAttr(se xml.StartElement, name string) int {
-	val := findAttr(se, name)
+func (p *USXParser) findIntAttr(se xml.StartElement, name string) int {
+	val := p.findAttr(se, name)
 	if val == `` {
 		return 0
 	} else {
