@@ -91,6 +91,8 @@ func Directory(ctx context.Context, bibleId string, fsType string, filesetId str
 				inputFiles = append(inputFiles, file)
 			}
 		}
+	} else {
+		status = log.ErrorNoErr(ctx, 500, `Type must be one of "text_plain", "text_usx", "audio"`)
 	}
 	return inputFiles, status
 }

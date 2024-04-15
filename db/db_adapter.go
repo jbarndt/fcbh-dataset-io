@@ -14,6 +14,9 @@ import (
 )
 
 func GetDBPath(database string) string {
+	if database == `:memory:` {
+		return database
+	}
 	var directory = os.Getenv(`FCBH_DATASET_DB`)
 	if directory == `` {
 		return database
@@ -137,6 +140,14 @@ func NewDBAdapter(ctx context.Context, database string) DBAdapter {
 	result.DatabasePath = databasePath
 	result.DB = db
 	return result
+}
+
+func (d *DBAdapter) EraseDatabase() {
+	execDDL(d.DB, `DELETE FROM ident`)
+	execDDL(d.DB, `DELETE FROM scripts`)
+	execDDL(d.DB, `DELETE FROM words`)
+	execDDL(d.DB, `DELETE FROM script_mfcc`)
+	execDDL(d.DB, `DELETE FROM word_mfcc`)
 }
 
 func (d *DBAdapter) Close() {

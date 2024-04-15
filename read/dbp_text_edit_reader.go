@@ -5,6 +5,7 @@ import (
 	"dataset"
 	"dataset/db"
 	"dataset/request"
+	"fmt"
 	"strconv"
 )
 
@@ -18,57 +19,82 @@ And add this to the DBPText data, and stores the combined data.
 //Select from each source 1 book at a time, and one chapter at a time
 
 type DBPTextEditReader struct {
-	ctx     context.Context
-	bibleId string
-	conn    db.DBAdapter
+	ctx       context.Context
+	bibleId   string
+	conn      db.DBAdapter
+	req       request.Request
+	testament request.Testament
 }
 
-func NewDBPTextEditReader(bibleId string, conn db.DBAdapter) DBPTextEditReader {
+func NewDBPTextEditReader(conn db.DBAdapter, req request.Request) DBPTextEditReader {
 	var d DBPTextEditReader
 	d.ctx = conn.Ctx
-	d.bibleId = bibleId
+	d.bibleId = req.Required.BibleId
 	d.conn = conn
+	d.req = req
+	d.testament = req.Testament
 	return d
 }
 
-func (d *DBPTextEditReader) Process(testament request.Testament) dataset.Status {
-	d.ensureDBPText(testament)
-	d.ensureUSXEDITText(testament)
-	titleMap, chapMap, status := d.readUSXHeadings() //testament)
+func (d *DBPTextEditReader) Process() dataset.Status {
+	var status dataset.Status
+	testament := d.req.Testament
+	var usxDB db.DBAdapter
+	usxDB, status = d.createUSXEDITText(testament)
+	if status.IsErr {
+		return status
+	}
+	titleMap, chapMap, status := d.readUSXHeadings(usxDB) //testament)
+	if status.IsErr {
+		return status
+	}
+	var textDB db.DBAdapter
+	textDB, status = d.createDBPText(testament)
+	if status.IsErr {
+		return status
+	}
+	records, status := d.combineHeadings(textDB, titleMap, chapMap)
 	if !status.IsErr {
-		records, status := d.combineHeadings(titleMap, chapMap)
-		if !status.IsErr {
-			d.conn.InsertScripts(records)
-		}
+		d.conn.InsertScripts(records)
 	}
 	return status
 }
 
-func (d *DBPTextEditReader) ensureDBPText(testament request.Testament) {
-	var sourceDB = d.bibleId + `_DBPTEXT.db`
-	if !db.Exists(sourceDB) {
-		var conn2 = db.NewDBAdapter(d.ctx, sourceDB)
-		textAdapter := NewDBPTextReader(conn2)
-		textAdapter.ProcessDirectory(d.bibleId, testament)
-		conn2.Close()
+func (d *DBPTextEditReader) createDBPText(testament request.Testament) (db.DBAdapter, dataset.Status) {
+	var database db.DBAdapter
+	var status dataset.Status
+	files, status := DBPDirectory(d.ctx, d.bibleId, `text_plain`, d.bibleId+`O_ET`,
+		d.bibleId+`N_ET`, testament)
+	if status.IsErr {
+		return database, status
 	}
+	database = db.NewDBAdapter(d.ctx, ":memory:")
+	textAdapter := NewDBPTextReader(database, d.req)
+	status = textAdapter.ProcessFiles(files)
+	return database, status
 }
 
-func (d *DBPTextEditReader) ensureUSXEDITText(testament request.Testament) {
-	var sourceDB = d.bibleId + `_USXEDIT.db`
-	if !db.Exists(sourceDB) {
-		var conn3 = db.NewDBAdapter(d.ctx, sourceDB)
-		ReadUSXEdit(conn3, d.bibleId, testament)
-		conn3.Close()
+func (d *DBPTextEditReader) createUSXEDITText(testament request.Testament) (db.DBAdapter, dataset.Status) {
+	var database db.DBAdapter
+	var status dataset.Status
+	files, status := DBPDirectory(d.ctx, d.bibleId, `text_usx`, d.bibleId+`O_ET-usx`,
+		d.bibleId+`N_ET-usx`, testament)
+	if status.IsErr {
+		return database, status
 	}
+	database = db.NewDBAdapter(d.ctx, ":memory:")
+	usx := NewUSXParser(database)
+	for _, file := range files {
+		fmt.Println("FILE", file)
+	}
+	status = usx.ProcessFiles(files)
+	return database, status
 }
 
-func (d *DBPTextEditReader) readUSXHeadings() (map[string][]db.Script, map[string]db.Script, dataset.Status) {
+func (d *DBPTextEditReader) readUSXHeadings(conn4 db.DBAdapter) (map[string][]db.Script, map[string]db.Script, dataset.Status) {
 	var bookTitle = make(map[string][]db.Script)
 	var chapTitle = make(map[string]db.Script)
 	var status dataset.Status
-	var sourceDB = d.bibleId + `_USXEDIT.db`
-	var conn4 = db.NewDBAdapter(d.ctx, sourceDB)
 	var records []db.Script
 	records, status = conn4.SelectScriptHeadings()
 	conn4.Close()
@@ -87,63 +113,64 @@ func (d *DBPTextEditReader) readUSXHeadings() (map[string][]db.Script, map[strin
 	return bookTitle, chapTitle, status
 }
 
-func (d *DBPTextEditReader) combineHeadings(bookTitle map[string][]db.Script,
+func (d *DBPTextEditReader) combineHeadings(conn db.DBAdapter, bookTitle map[string][]db.Script,
 	chapTitle map[string]db.Script) ([]db.Script, dataset.Status) {
 	var results = make([]db.Script, 0, 5000)
-	var database = d.bibleId + `_DBPTEXT.db`
-	var conn = db.NewDBAdapter(d.ctx, database)
 	var lastBookId = ``
 	var lastChapter = -1
 	var scriptNum = 0
 	var records, status = conn.SelectScripts()
+	conn.Close()
 	if status.IsErr {
 		return results, status
 	}
 	for _, rec := range records {
-		if rec.BookId != lastBookId || rec.ChapterNum != lastChapter {
-			scriptNum = 0
-		}
-		if rec.BookId != lastBookId {
-			lastBookId = rec.BookId
-			titleRec := bookTitle[rec.BookId]
-			for _, title := range titleRec {
+		if d.testament.HasOT(rec.BookId) || d.testament.HasNT(rec.BookId) {
+			if rec.BookId != lastBookId || rec.ChapterNum != lastChapter {
+				scriptNum = 0
+			}
+			if rec.BookId != lastBookId {
+				lastBookId = rec.BookId
+				titleRec := bookTitle[rec.BookId]
+				for _, title := range titleRec {
+					scriptNum++
+					var inp db.Script
+					inp.BookId = rec.BookId
+					inp.ChapterNum = rec.ChapterNum
+					inp.UsfmStyle = title.UsfmStyle
+					inp.ScriptNum = strconv.Itoa(scriptNum)
+					inp.VerseNum = 0
+					inp.VerseStr = ``
+					inp.ScriptTexts = []string{title.ScriptText}
+					results = append(results, inp)
+				}
+				lastChapter = -1
+			}
+			if rec.ChapterNum != lastChapter {
+				lastChapter = rec.ChapterNum
+				key := rec.BookId + `:` + strconv.Itoa(rec.ChapterNum)
+				head := chapTitle[key]
 				scriptNum++
 				var inp db.Script
 				inp.BookId = rec.BookId
 				inp.ChapterNum = rec.ChapterNum
-				inp.UsfmStyle = title.UsfmStyle
+				inp.UsfmStyle = head.UsfmStyle
 				inp.ScriptNum = strconv.Itoa(scriptNum)
 				inp.VerseNum = 0
 				inp.VerseStr = ``
-				inp.ScriptTexts = []string{title.ScriptText}
+				inp.ScriptTexts = []string{head.ScriptText}
 				results = append(results, inp)
 			}
-			lastChapter = -1
-		}
-		if rec.ChapterNum != lastChapter {
-			lastChapter = rec.ChapterNum
-			key := rec.BookId + `:` + strconv.Itoa(rec.ChapterNum)
-			head := chapTitle[key]
 			scriptNum++
 			var inp db.Script
 			inp.BookId = rec.BookId
 			inp.ChapterNum = rec.ChapterNum
-			inp.UsfmStyle = head.UsfmStyle
 			inp.ScriptNum = strconv.Itoa(scriptNum)
-			inp.VerseNum = 0
-			inp.VerseStr = ``
-			inp.ScriptTexts = []string{head.ScriptText}
+			inp.VerseNum = rec.VerseNum
+			inp.VerseStr = rec.VerseStr
+			inp.ScriptTexts = []string{rec.ScriptText}
 			results = append(results, inp)
 		}
-		scriptNum++
-		var inp db.Script
-		inp.BookId = rec.BookId
-		inp.ChapterNum = rec.ChapterNum
-		inp.ScriptNum = strconv.Itoa(scriptNum)
-		inp.VerseNum = rec.VerseNum
-		inp.VerseStr = rec.VerseStr
-		inp.ScriptTexts = []string{rec.ScriptText}
-		results = append(results, inp)
 	}
 	return results, status
 }

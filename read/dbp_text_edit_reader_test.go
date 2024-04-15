@@ -8,11 +8,24 @@ import (
 )
 
 func TestDBPEditTextReader(t *testing.T) {
-	var bibleId = `ATIWBT`
-	var database = bibleId + `_EDITTEXT.db`
+	var req request.Request
+	req.Required.BibleId = `ENGWEB`
+	req.Testament = request.Testament{OTBooks: []string{`GEN`, `EXO`}, NTBooks: []string{`MAT`, `JHN`}}
+	req.Testament.BuildBookMaps()
+	var database = req.Required.BibleId + `_EDITTEXT.db`
 	db.DestroyDatabase(database)
 	ctx := context.Background()
 	var db1 = db.NewDBAdapter(ctx, database)
-	reader := NewDBPTextEditReader(bibleId, db1)
-	reader.Process(request.Testament{NT: true})
+	reader := NewDBPTextEditReader(db1, req)
+	status := reader.Process()
+	if status.IsErr {
+		t.Error(status.Message)
+	}
+	count, status := db1.CountScriptRows()
+	if status.IsErr {
+		t.Error(status.Message)
+	}
+	if count != 4845 {
+		t.Error(`Expected count to be 4845`, count)
+	}
 }
