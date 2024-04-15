@@ -190,6 +190,18 @@ func (d *DBAdapter) InsertScripts(records []Script) dataset.Status {
 	return status
 }
 
+func (d *DBAdapter) CountIdentRows() (int, dataset.Status) {
+	return d.SelectScalarInt(`SELECT count(*) FROM ident`)
+}
+
+func (d *DBAdapter) CountScriptRows() (int, dataset.Status) {
+	return d.SelectScalarInt(`SELECT count(*) FROM scripts`)
+}
+
+func (d *DBAdapter) CountWordRows() (int, dataset.Status) {
+	return d.SelectScalarInt(`SELECT count(*) FROM words`)
+}
+
 func (d *DBAdapter) SelectScalarInt(sql string) (int, dataset.Status) {
 	var count int
 	var status dataset.Status

@@ -6,7 +6,6 @@ import (
 	"dataset/db"
 	log "dataset/logger"
 	"dataset/request"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -66,7 +65,7 @@ func Directory(ctx context.Context, bibleId string, fsType string, filesetId str
 			search = filepath.Join(directory, "B*.*")
 		}
 	}
-	fmt.Println("search:", tType, search)
+	//fmt.Println("search:", tType, search)
 	var files []InputFiles
 	files, status = Glob(ctx, directory, search)
 	if status.IsErr {

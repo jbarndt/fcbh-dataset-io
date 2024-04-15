@@ -14,7 +14,7 @@ func TestPlainText(t *testing.T) {
 	ctx := context.Background()
 	var req request.Request
 	req.AudioData.NoAudio = true
-	req.TextData.BibleBrain.TextPlainEdit = true
+	req.TextData.BibleBrain.TextPlain = true
 	req.Testament.OT = true
 	req.Testament.NT = true
 	client := NewAPIDBPClient(ctx, `ENGWEB`)
