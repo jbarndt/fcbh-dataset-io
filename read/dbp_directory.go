@@ -19,6 +19,10 @@ type InputFiles struct {
 	Directory string
 }
 
+func (i *InputFiles) FilePath() string {
+	return filepath.Join(i.Directory, i.Filename)
+}
+
 // DBPDirectory 1. Assign pattern for OT, NT.  2. Glob files.  3. Assign book/chapter & Prune
 func DBPDirectory(ctx context.Context, bibleId string, fsType string, otFileset string, ntFileset string,
 	testament request.Testament) ([]InputFiles, dataset.Status) {
