@@ -35,7 +35,7 @@ func NewUSXParser(conn db.DBAdapter) USXParser {
 	return p
 }
 
-func (p *USXParser) ProcessFiles(inputFiles []InputFiles) dataset.Status {
+func (p *USXParser) ProcessFiles(inputFiles []InputFile) dataset.Status {
 	var status dataset.Status
 	for _, file := range inputFiles {
 		filename := filepath.Join(file.Directory, file.Filename)

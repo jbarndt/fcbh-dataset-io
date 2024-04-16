@@ -12,22 +12,22 @@ import (
 	"strings"
 )
 
-type InputFiles struct {
+type InputFile struct {
 	BookId    string // not used for text_plain
 	Chapter   int    // only used for audio
 	Filename  string
 	Directory string
 }
 
-func (i *InputFiles) FilePath() string {
+func (i *InputFile) FilePath() string {
 	return filepath.Join(i.Directory, i.Filename)
 }
 
 // DBPDirectory 1. Assign pattern for OT, NT.  2. Glob files.  3. Assign book/chapter & Prune
 func DBPDirectory(ctx context.Context, bibleId string, fsType string, otFileset string, ntFileset string,
-	testament request.Testament) ([]InputFiles, dataset.Status) {
-	var results []InputFiles
-	var files []InputFiles
+	testament request.Testament) ([]InputFile, dataset.Status) {
+	var results []InputFile
+	var files []InputFile
 	var status dataset.Status
 	type run struct {
 		filesetId string
@@ -51,7 +51,7 @@ func DBPDirectory(ctx context.Context, bibleId string, fsType string, otFileset 
 }
 
 func Directory(ctx context.Context, bibleId string, fsType string, filesetId string, tType string,
-	testament request.Testament) ([]InputFiles, dataset.Status) {
+	testament request.Testament) ([]InputFile, dataset.Status) {
 	var status dataset.Status
 	var directory string
 	var search string
@@ -70,12 +70,12 @@ func Directory(ctx context.Context, bibleId string, fsType string, filesetId str
 		}
 	}
 	//fmt.Println("search:", tType, search)
-	var files []InputFiles
+	var files []InputFile
 	files, status = Glob(ctx, directory, search)
 	if status.IsErr {
 		return files, status
 	}
-	var inputFiles []InputFiles
+	var inputFiles []InputFile
 	if fsType == `text_plain` {
 		inputFiles = files
 	} else if fsType == `text_usx` {
@@ -101,8 +101,8 @@ func Directory(ctx context.Context, bibleId string, fsType string, filesetId str
 	return inputFiles, status
 }
 
-func Glob(ctx context.Context, directory string, search string) ([]InputFiles, dataset.Status) {
-	var results []InputFiles
+func Glob(ctx context.Context, directory string, search string) ([]InputFile, dataset.Status) {
+	var results []InputFile
 	var status dataset.Status
 	if search != `` {
 		files, err := filepath.Glob(search)
@@ -111,7 +111,7 @@ func Glob(ctx context.Context, directory string, search string) ([]InputFiles, d
 			return results, status
 		}
 		for _, file := range files {
-			var input InputFiles
+			var input InputFile
 			input.Directory = directory
 			input.Filename = filepath.Base(file)
 			results = append(results, input)

@@ -34,7 +34,7 @@ func NewMFCC(ctx context.Context, conn db.DBAdapter, bibleId string,
 	return m
 }
 
-func (m *MFCC) ProcessFiles(audioFiles []read.InputFiles) dataset.Status {
+func (m *MFCC) ProcessFiles(audioFiles []read.InputFile) dataset.Status {
 	var status dataset.Status
 	for _, aFile := range audioFiles {
 		var mfccResp MFCCResp

@@ -29,7 +29,7 @@ func NewDBPTextReader(conn db.DBAdapter, req request.Request) DBPTextReader {
 	return d
 }
 
-func (d *DBPTextReader) ProcessFiles(files []InputFiles) dataset.Status {
+func (d *DBPTextReader) ProcessFiles(files []InputFile) dataset.Status {
 	var status dataset.Status
 	for _, file := range files {
 		filePath := filepath.Join(file.Directory, file.Filename)

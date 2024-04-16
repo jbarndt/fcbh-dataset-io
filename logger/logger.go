@@ -123,7 +123,7 @@ func errorImpl(ctx context.Context, http int, err string, param ...any) dataset.
 func Warn(ctx context.Context, param ...any) {
 	if logLevel >= LOGWARN {
 		warnLog.Println(param, requestInfo(ctx))
-		warnLog.Println(dumpLines())
+		//warnLog.Println(dumpLines())
 	}
 }
 

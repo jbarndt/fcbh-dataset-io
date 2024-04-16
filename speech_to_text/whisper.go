@@ -6,14 +6,13 @@ import (
 	"dataset"
 	"dataset/db"
 	log "dataset/logger"
-	"dataset/request"
+	"dataset/read"
 	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
-	"strings"
 )
 
 /*
@@ -27,12 +26,10 @@ Executable:
 */
 
 type Whisper struct {
-	ctx       context.Context
-	conn      db.DBAdapter
-	bibleId   string
-	model     string
-	outputDir string
-	records   []db.Script
+	ctx     context.Context
+	conn    db.DBAdapter
+	bibleId string
+	model   string
 }
 
 func NewWhisper(bibleId string, conn db.DBAdapter, model string) Whisper {
@@ -41,70 +38,63 @@ func NewWhisper(bibleId string, conn db.DBAdapter, model string) Whisper {
 	w.conn = conn
 	w.bibleId = bibleId
 	w.model = model
-	w.records = make([]db.Script, 0, 100000)
 	return w
 }
 
-func (w *Whisper) ProcessDirectory(filesetId string, testament request.Testament) dataset.Status {
+func (w *Whisper) ProcessFiles(files []read.InputFile) dataset.Status {
 	var status dataset.Status
-	directory := filepath.Join(os.Getenv(`FCBH_DATASET_FILES`), w.bibleId, filesetId)
-	w.outputDir = directory + `_whisper`
-	files, err := os.ReadDir(directory)
-	if err != nil {
-		return log.Error(w.ctx, 500, err, `Error reading directory`)
-	}
+	var outputFile string
 	for _, file := range files {
-		filename := file.Name()
-		if !strings.HasPrefix(filename, `.`) {
-			fmt.Println(filename)
-			fileType := filename[:1]
-			if fileType == `A` && testament.OT {
-				w.ProcessFile(directory, filename)
-			} else if fileType == `B` && testament.NT {
-				w.ProcessFile(directory, filename)
-			}
-		}
+		filename := file.Filename
+		fmt.Println(filename)
+		outputFile, status = w.RunWhisper(file)
+		w.loadWhisperOutput(outputFile, file)
 	}
-	w.loadWhisperOutput(w.outputDir)
 	return status
 }
 
-func (w *Whisper) ProcessFile(directory string, filename string) dataset.Status {
-	bookId, chapter, status := w.parseFilename(filename)
+func (w *Whisper) RunWhisper(audioFile read.InputFile) (string, dataset.Status) {
+	var outputDir, status = w.ensureOutputDir(audioFile)
 	if status.IsErr {
-		return status
+		return outputDir, status
 	}
-	if bookId == `TIT` && chapter == 3 {
-		var path = filepath.Join(directory, filename)
-		w.RunWhisper(path)
-	}
-	return status
-}
-
-func (w *Whisper) RunWhisper(audioFilePath string) dataset.Status {
-	var status dataset.Status
 	whisperPath := os.Getenv(`WHISPER_EXE`)
-	cmd := exec.Command(whisperPath, audioFilePath,
+	cmd := exec.Command(whisperPath, audioFile.FilePath(),
 		`--model`, w.model,
 		`--output_format`, `json`,
-		`--output_dir`, w.outputDir)
+		`--output_dir`, outputDir)
 	// --language is another option
-	fmt.Println(cmd.String())
+	//fmt.Println(cmd.String())
 	var stdoutBuf, stderrBuf bytes.Buffer
 	cmd.Stdout = &stdoutBuf
 	cmd.Stderr = &stderrBuf
 	err := cmd.Run()
 	if err != nil {
-		return log.Error(w.ctx, 500, err, `Error running Whisper`)
+		status = log.Error(w.ctx, 500, err, `Error running Whisper`)
+		// Do not return immediately, must get std error
 	}
 	stderrStr := stderrBuf.String()
 	if stderrStr != `` {
-		log.Warn(w.ctx, err, `Stderr message when running Whisper`)
+		log.Warn(w.ctx, `Whisper Stderr:`, stderrStr)
 	}
-	return status
+	fileType := filepath.Ext(audioFile.Filename)
+	outputFile := filepath.Join(outputDir, audioFile.Filename[:len(audioFile.Filename)-len(fileType)]) + `.json`
+	return outputFile, status
 }
 
-func (w *Whisper) loadWhisperOutput(directory string) dataset.Status {
+func (w *Whisper) ensureOutputDir(audioFile read.InputFile) (string, dataset.Status) {
+	var status dataset.Status
+	var outputDir = audioFile.Directory + `_WHISPER`
+	_, err := os.Stat(outputDir)
+	if os.IsNotExist(err) {
+		err = os.Mkdir(outputDir, 0777)
+	} else if err != nil {
+		status = log.Error(w.ctx, 500, err, `Error creating whisper output directory`)
+	}
+	return outputDir, status
+}
+
+func (w *Whisper) loadWhisperOutput(outputFile string, file read.InputFile) dataset.Status {
 	var status dataset.Status
 	type WhisperSegmentType struct {
 		Id     int     `json:"id"`
@@ -123,48 +113,29 @@ func (w *Whisper) loadWhisperOutput(directory string) dataset.Status {
 		Segments []WhisperSegmentType `json:"segments"`
 		Language string               `json:"language"`
 	}
-	jsonFiles, err := os.ReadDir(directory)
+	var records = make([]db.Script, 0, 100)
+	content, err := os.ReadFile(outputFile)
 	if err != nil {
-		return log.Error(w.ctx, 500, err, `Error reading directory`)
+		return log.Error(w.ctx, 500, err, `Error reading file`)
 	}
-	for _, jsonFile := range jsonFiles {
-		filePath := filepath.Join(directory, jsonFile.Name())
-		content, err := os.ReadFile(filePath)
-		if err != nil {
-			return log.Error(w.ctx, 500, err, `Error reading file`)
-		}
-		var response WhisperOutputType
-		err = json.Unmarshal(content, &response)
-		if err != nil {
-			return log.Error(w.ctx, 500, err, "Error decoding Whisper JSON")
-		}
-		for i, seg := range response.Segments {
-			var rec db.Script
-			rec.BookId, rec.ChapterNum, status = w.parseFilename(jsonFile.Name())
-			rec.AudioFile = jsonFile.Name()
-			rec.ScriptNum = strconv.Itoa(i + 1) // Works because it process 1 chapter per file.
-			rec.VerseNum = 0
-			rec.VerseStr = `0`
-			rec.ScriptTexts = []string{seg.Text}
-			rec.ScriptBeginTS = seg.Start
-			rec.ScriptEndTS = seg.End
-			w.records = append(w.records, rec)
-		}
+	var response WhisperOutputType
+	err = json.Unmarshal(content, &response)
+	if err != nil {
+		return log.Error(w.ctx, 500, err, "Error decoding Whisper JSON")
 	}
-	w.conn.InsertScripts(w.records)
+	for i, seg := range response.Segments {
+		var rec db.Script
+		rec.BookId = file.BookId
+		rec.ChapterNum = file.Chapter
+		rec.AudioFile = file.Filename
+		rec.ScriptNum = strconv.Itoa(i + 1) // Works because it process 1 chapter per file.
+		rec.VerseNum = 0
+		rec.VerseStr = `0`
+		rec.ScriptTexts = []string{seg.Text}
+		rec.ScriptBeginTS = seg.Start
+		rec.ScriptEndTS = seg.End
+		records = append(records, rec)
+	}
+	w.conn.InsertScripts(records)
 	return status
-}
-
-func (w *Whisper) parseFilename(filename string) (string, int, dataset.Status) {
-	var bookId string
-	var chapter int
-	var status dataset.Status
-	chapter, err := strconv.Atoi(filename[6:8])
-	if err != nil {
-		status = log.Error(w.ctx, 500, err, `Error parsing chapter num`)
-		return bookId, chapter, status
-	}
-	bookName := strings.Replace(filename[9:21], `_`, ``, -1)
-	bookId = db.USFMBookId(w.ctx, bookName)
-	return bookId, chapter, status
 }

@@ -36,7 +36,7 @@ func NewAeneas(ctx context.Context, conn db.DBAdapter, bibleId string, languageI
 	return a
 }
 
-func (a *Aeneas) ProcessFiles(audioFiles []read.InputFiles) dataset.Status {
+func (a *Aeneas) ProcessFiles(audioFiles []read.InputFile) dataset.Status {
 	var status dataset.Status
 	if a.detail.Lines {
 		status = a.processScripts(audioFiles)
@@ -47,7 +47,7 @@ func (a *Aeneas) ProcessFiles(audioFiles []read.InputFiles) dataset.Status {
 	return status
 }
 
-func (a *Aeneas) processScripts(audioFiles []read.InputFiles) dataset.Status {
+func (a *Aeneas) processScripts(audioFiles []read.InputFile) dataset.Status {
 	var status dataset.Status
 	for _, aFile := range audioFiles {
 		scripts, status := a.conn.SelectScriptsByBookChapter(aFile.BookId, aFile.Chapter)
@@ -82,7 +82,7 @@ func (a *Aeneas) processScripts(audioFiles []read.InputFiles) dataset.Status {
 	return status
 }
 
-func (a *Aeneas) processWords(audioFiles []read.InputFiles) dataset.Status {
+func (a *Aeneas) processWords(audioFiles []read.InputFile) dataset.Status {
 	var status dataset.Status
 	for _, aFile := range audioFiles {
 		words, status := a.conn.SelectWordsByBookChapter(aFile.BookId, aFile.Chapter)
