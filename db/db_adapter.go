@@ -213,6 +213,14 @@ func (d *DBAdapter) CountWordRows() (int, dataset.Status) {
 	return d.SelectScalarInt(`SELECT count(*) FROM words`)
 }
 
+func (d *DBAdapter) CountScriptMFCCRows() (int, dataset.Status) {
+	return d.SelectScalarInt(`SELECT count(*) FROM script_mfcc`)
+}
+
+func (d *DBAdapter) CountWordMFCCRows() (int, dataset.Status) {
+	return d.SelectScalarInt(`SELECT count(*) FROM word_mfcc`)
+}
+
 func (d *DBAdapter) SelectScalarInt(sql string) (int, dataset.Status) {
 	var count int
 	var status dataset.Status
@@ -537,8 +545,9 @@ func (d *DBAdapter) UpdateWordTimestamps(words []Timestamp) dataset.Status {
 }
 
 func (d *DBAdapter) SelectWordTimestamps(bookId string, chapter int) ([]Timestamp, dataset.Status) {
-	query := `SELECT word_id, word_begin_ts, word_end_ts
-		FROM scripts WHERE book_id = ? AND chapter_num = ? ORDER BY word_id`
+	query := `SELECT w.word_id, w.word_begin_ts, w.word_end_ts
+		FROM words w JOIN scripts s ON w.script_id = s.script_id
+		WHERE s.book_id = ? AND s.chapter_num = ? ORDER BY w.word_id`
 	return d.selectTimestamps(query, bookId, chapter)
 }
 
@@ -565,6 +574,13 @@ func (d *DBAdapter) selectTimestamps(query string, bookId string, chapter int) (
 		log.Warn(d.Ctx, err, query)
 	}
 	return results, status
+}
+
+func (d *DBAdapter) DeleteMFCCs() {
+	query := `DELETE FROM script_mfcc`
+	execDDL(d.DB, query)
+	query = `DELETE FROM word_mfcc`
+	execDDL(d.DB, query)
 }
 
 func (d *DBAdapter) InsertWordMFCCS(mfccs []MFCC) dataset.Status {

@@ -6,53 +6,50 @@ import (
 	"dataset"
 	"dataset/db"
 	log "dataset/logger"
+	"dataset/read"
 	"dataset/request"
 	"encoding/json"
 	"fmt"
+	"os"
 	"os/exec"
 	"strconv"
 )
 
 type MFCC struct {
-	ctx       context.Context
-	conn      db.DBAdapter
-	bibleId   string
-	audioFSId string
+	ctx     context.Context
+	conn    db.DBAdapter
+	bibleId string
+	detail  request.Detail
+	numMFCC int
 }
 
-func NewMFCC(ctx context.Context, conn db.DBAdapter, bibleId string, audioFSId string) MFCC {
+func NewMFCC(ctx context.Context, conn db.DBAdapter, bibleId string,
+	detail request.Detail, numMFCC int) MFCC {
 	var m MFCC
 	m.ctx = ctx
 	m.conn = conn
 	m.bibleId = bibleId
-	m.audioFSId = audioFSId
+	m.detail = detail
+	m.numMFCC = numMFCC
 	return m
 }
 
-func (m *MFCC) Process(detail request.Detail, numMFCC int) dataset.Status {
+func (m *MFCC) ProcessFiles(audioFiles []read.InputFiles) dataset.Status {
 	var status dataset.Status
-	audioFiles, status := ReadDirectory(m.ctx, m.bibleId, m.audioFSId)
-	if status.IsErr {
-		return status
-	}
-	for _, audioFile := range audioFiles {
+	for _, aFile := range audioFiles {
 		var mfccResp MFCCResp
-		mfccResp, status = m.executeLibrosa(audioFile, numMFCC)
+		mfccResp, status = m.executeLibrosa(aFile.FilePath())
 		if status.IsErr {
 			return status
 		}
-		bookId, chapterNum, status := ParseFilename(m.ctx, audioFile)
-		if status.IsErr {
-			return status
-		}
-		if detail.Lines {
-			status = m.processScripts(mfccResp, bookId, chapterNum)
+		if m.detail.Lines {
+			status = m.processScripts(mfccResp, aFile.BookId, aFile.Chapter)
 			if status.IsErr {
 				return status
 			}
 		}
-		if detail.Words {
-			status = m.processWords(mfccResp, bookId, chapterNum)
+		if m.detail.Words {
+			status = m.processWords(mfccResp, aFile.BookId, aFile.Chapter)
 			if status.IsErr {
 				return status
 			}
@@ -71,11 +68,11 @@ type MFCCResp struct {
 	MFCC       [][]float32 `json:"mfccs"`
 }
 
-func (m *MFCC) executeLibrosa(audioFile string, numMFCC int) (MFCCResp, dataset.Status) {
+func (m *MFCC) executeLibrosa(audioFile string) (MFCCResp, dataset.Status) {
 	var result MFCCResp
 	var status dataset.Status
-	pythonPath := "python3"
-	cmd := exec.Command(pythonPath, `mfcc_librosa.py`, audioFile, strconv.Itoa(numMFCC))
+	pythonPath := os.Getenv(`PYTHON_EXE`)
+	cmd := exec.Command(pythonPath, `mfcc_librosa.py`, audioFile, strconv.Itoa(m.numMFCC))
 	fmt.Println(cmd.String())
 	var stdoutBuf, stderrBuf bytes.Buffer
 	cmd.Stdout = &stdoutBuf
@@ -83,7 +80,7 @@ func (m *MFCC) executeLibrosa(audioFile string, numMFCC int) (MFCCResp, dataset.
 	err := cmd.Run()
 	if err != nil {
 		status = log.Error(m.ctx, 500, err, `Error executing mfcc_librosa.py`)
-		return result, status
+		// Don't return here, need to see stderr
 	}
 	if stderrBuf.Len() > 0 {
 		status = log.ErrorNoErr(m.ctx, 500, `mfcc_librosa.py stderr:`, stderrBuf.String())
