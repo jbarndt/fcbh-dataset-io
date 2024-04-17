@@ -13,13 +13,6 @@ import (
 )
 
 type InputFile struct {
-	BookId    string // not used for text_plain
-	Chapter   int    // only used for audio
-	Filename  string
-	Directory string
-}
-
-type InputFile2 struct {
 	MediaId    string
 	Testament  string
 	BookId     string // not used for text_plain
@@ -148,7 +141,7 @@ func ParseV2AudioFilename(ctx context.Context, filename string) (string, int, da
 	return bookId, chapter, status
 }
 
-func ParseV4AudioFilename(ctx context.Context, file *InputFile2) dataset.Status {
+func ParseV4AudioFilename(ctx context.Context, file *InputFile) dataset.Status {
 	var status dataset.Status
 	var err error
 	file.FileExt = filepath.Ext(file.Filename)

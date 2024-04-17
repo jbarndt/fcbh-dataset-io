@@ -241,7 +241,7 @@ func TestIncorrectBooks(t *testing.T) {
 func TestParseV4AudioFilename(t *testing.T) {
 	ctx := context.Background()
 	var status dataset.Status
-	var file InputFile2
+	var file InputFile
 	file.Filename = `ENGESVN2DA_B001_MAT_001.mp3`
 	status = ParseV4AudioFilename(ctx, &file)
 	if status.IsErr {
@@ -266,7 +266,7 @@ func TestParseV4AudioFilename(t *testing.T) {
 		t.Error(`Verse is incorrect`, file.Verse)
 	}
 	//fmt.Println("File", file)
-	var file2 InputFile2
+	var file2 InputFile
 	file2.Filename = `IRUNLCP1DA_B013_1TH_001_001-001_010.mp3`
 	status = ParseV4AudioFilename(ctx, &file2)
 	if status.IsErr {
