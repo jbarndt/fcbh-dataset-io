@@ -19,6 +19,20 @@ type InputFile struct {
 	Directory string
 }
 
+type InputFile2 struct {
+	MediaId    string
+	Testament  string
+	BookId     string // not used for text_plain
+	BookSeq    string
+	Chapter    int    // only used for audio
+	Verse      string // used by OBT and Vessel
+	ChapterEnd int
+	VerseEnd   string
+	Filename   string
+	FileExt    string
+	Directory  string
+}
+
 func (i *InputFile) FilePath() string {
 	return filepath.Join(i.Directory, i.Filename)
 }
@@ -87,7 +101,7 @@ func Directory(ctx context.Context, bibleId string, fsType string, filesetId str
 		}
 	} else if fsType == `audio` {
 		for _, file := range files {
-			file.BookId, file.Chapter, status = ParseAudioFilename(ctx, file.Filename)
+			file.BookId, file.Chapter, status = ParseV2AudioFilename(ctx, file.Filename)
 			if status.IsErr {
 				return inputFiles, status
 			}
@@ -120,7 +134,7 @@ func Glob(ctx context.Context, directory string, search string) ([]InputFile, da
 	return results, status
 }
 
-func ParseAudioFilename(ctx context.Context, filename string) (string, int, dataset.Status) {
+func ParseV2AudioFilename(ctx context.Context, filename string) (string, int, dataset.Status) {
 	var bookId string
 	var chapterNum int
 	var status dataset.Status
@@ -133,3 +147,49 @@ func ParseAudioFilename(ctx context.Context, filename string) (string, int, data
 	bookId = db.USFMBookId(ctx, book)
 	return bookId, chapter, status
 }
+
+func ParseV4AudioFilename(ctx context.Context, file *InputFile2) dataset.Status {
+	var status dataset.Status
+	var err error
+	file.FileExt = filepath.Ext(file.Filename)
+	filename := file.Filename[:len(file.Filename)-len(file.FileExt)]
+	filename = strings.Replace(filename, `-`, `_`, -1)
+	parts := strings.Split(filename, `_`)
+	file.MediaId = parts[0]
+	if len(parts) > 1 {
+		ab := parts[1][0]
+		if ab == 'A' {
+			file.Testament = `OT`
+		} else if ab == 'B' {
+			file.Testament = `NT`
+		}
+		file.BookSeq = parts[1][1:]
+	}
+	if len(parts) > 2 {
+		file.BookId = parts[2]
+	}
+	if len(parts) > 3 {
+		file.Chapter, err = strconv.Atoi(parts[3])
+		if err != nil {
+			return log.Error(ctx, 500, err, `Error convert chapter to int`, parts[3])
+		}
+	}
+	if len(parts) > 4 {
+		file.Verse = parts[4]
+	}
+	if len(parts) > 5 {
+		file.ChapterEnd, err = strconv.Atoi(parts[5])
+		if err != nil {
+			return log.Error(ctx, 500, err, `Error convert chapterEnd to int`, parts[5])
+		}
+	}
+	if len(parts) > 6 {
+		file.VerseEnd = parts[6]
+	}
+	return status
+}
+
+// Parse DBP4 Audio names
+//{mediaid}_{A/B}{ordering}_{USFM book code}_{chapter start}[_{verse start}-{chapter stop}_{verse stop}].mp3|webm
+//eg: ENGESVN2DA_B001_MAT_001.mp3  (full chapter)
+//eg: IRUNLCP1DA_B013_1TH_001_001-001_010.mp3  (partial chapter, verses 1-10)
