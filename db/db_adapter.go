@@ -76,6 +76,7 @@ func NewDBAdapter(ctx context.Context, database string) DBAdapter {
 		dataset_id INTEGER NOT NULL,
 		book_id TEXT NOT NULL,
 		chapter_num INTEGER NOT NULL,
+		chapter_end INTEGER NOT NULL,
 		audio_file TEXT NOT NULL, -- questionable now that audio filesetId is in ident
 		script_num TEXT NOT NULL,
 		usfm_style TEXT,
@@ -83,12 +84,10 @@ func NewDBAdapter(ctx context.Context, database string) DBAdapter {
 		actor TEXT,  /* this should be integer. */
 		verse_num INTEGER NOT NULL,
 		verse_str TEXT NOT NULL, /* e.g. 6-10 7,8 6a */
+		verse_end TEXT NOT NULL,
 		script_text TEXT NOT NULL,
 		script_begin_ts REAL,
 		script_end_ts REAL,
-		-- script_mfcc BLOB,
-		-- mfcc_rows INTEGER,
-		-- mfcc_cols INTEGER,
 		FOREIGN KEY(dataset_id) REFERENCES ident(dataset_id)) STRICT`
 	execDDL(db, query)
 	query = `CREATE UNIQUE INDEX IF NOT EXISTS scripts_idx
@@ -105,16 +104,10 @@ func NewDBAdapter(ctx context.Context, database string) DBAdapter {
 		word TEXT NOT NULL,
 		word_begin_ts REAL,
 		word_end_ts REAL,
-		-- word_mfcc BLOB,
-		-- mfcc_rows INTEGER,
-		-- mfcc_cols INTEGER,
-		-- mfcc_norm BLOB,
-		-- mfcc_norm_rows INTEGER,
-		-- mfcc_norm_cols INTEGER,
-		word_enc BLOB,
-		src_word_enc BLOB,
-		word_multi_enc BLOB,
-		src_word_multi_enc BLOB,
+		word_enc TEXT,
+		src_word_enc TEXT,
+		word_multi_enc TEXT,
+		src_word_multi_enc TEXT,
 		FOREIGN KEY(script_id) REFERENCES scripts(script_id)) STRICT`
 	execDDL(db, query)
 	query = `CREATE UNIQUE INDEX IF NOT EXISTS words_idx
@@ -182,16 +175,16 @@ func (d *DBAdapter) InsertIdent(id Ident) dataset.Status {
 
 func (d *DBAdapter) InsertScripts(records []Script) dataset.Status {
 	var status dataset.Status
-	query := `INSERT INTO scripts(dataset_id, book_id, chapter_num, audio_file, script_num, usfm_style, 
-			person, actor, verse_num, verse_str, script_text, script_begin_ts, script_end_ts) 
-			VALUES (1,?,?,?,?,?,?,?,?,?,?,?,?)`
+	query := `INSERT INTO scripts(dataset_id, book_id, chapter_num, chapter_end, audio_file, script_num, usfm_style, 
+			person, actor, verse_num, verse_str, verse_end, script_text, script_begin_ts, script_end_ts) 
+			VALUES (1,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
 	tx, stmt := d.prepareDML(query)
 	defer stmt.Close()
 	for _, rec := range records {
 		rec.ScriptNum = zeroFill(rec.ScriptNum, 5)
 		text := strings.Join(rec.ScriptTexts, ``)
-		_, err := stmt.Exec(rec.BookId, rec.ChapterNum, rec.AudioFile, rec.ScriptNum,
-			rec.UsfmStyle, rec.Person, rec.Actor, rec.VerseNum, rec.VerseStr, text,
+		_, err := stmt.Exec(rec.BookId, rec.ChapterNum, rec.ChapterEnd, rec.AudioFile, rec.ScriptNum,
+			rec.UsfmStyle, rec.Person, rec.Actor, rec.VerseNum, rec.VerseStr, rec.VerseEnd, text,
 			rec.ScriptBeginTS, rec.ScriptEndTS)
 		if err != nil {
 			return log.Error(d.Ctx, 500, err, `Error while inserting Scripts.`)

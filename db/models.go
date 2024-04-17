@@ -22,6 +22,7 @@ type Script struct {
 	DatasetId     int
 	BookId        string
 	ChapterNum    int
+	ChapterEnd    int
 	AudioFile     string
 	ScriptNum     string
 	UsfmStyle     string
@@ -29,6 +30,7 @@ type Script struct {
 	Actor         string
 	VerseNum      int
 	VerseStr      string
+	VerseEnd      string
 	ScriptText    string
 	ScriptTexts   []string
 	ScriptBeginTS float64
