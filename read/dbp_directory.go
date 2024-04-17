@@ -89,12 +89,20 @@ func Directory(ctx context.Context, bibleId string, fsType string, filesetId str
 		for _, file := range files {
 			file.BookId = file.Filename[3:6]
 			if testament.Has(tType, file.BookId) {
+				file.FileExt = filepath.Ext(file.Filename)
+				file.Testament = tType
+				file.BookSeq = file.Filename[0:3]
 				inputFiles = append(inputFiles, file)
 			}
 		}
 	} else if fsType == `audio` {
 		for _, file := range files {
-			file.BookId, file.Chapter, status = ParseV2AudioFilename(ctx, file.Filename)
+			fN := file.Filename
+			if (fN[0] == 'A' || fN[0] == 'B') && (fN[1] >= '0' && fN[1] <= '9') {
+				status = ParseV2AudioFilename(ctx, &file)
+			} else {
+				status = ParseV4AudioFilename(ctx, &file)
+			}
 			if status.IsErr {
 				return inputFiles, status
 			}
@@ -127,18 +135,27 @@ func Glob(ctx context.Context, directory string, search string) ([]InputFile, da
 	return results, status
 }
 
-func ParseV2AudioFilename(ctx context.Context, filename string) (string, int, dataset.Status) {
-	var bookId string
-	var chapterNum int
+func ParseV2AudioFilename(ctx context.Context, file *InputFile) dataset.Status {
 	var status dataset.Status
-	chapter, err := strconv.Atoi(filename[6:8])
+	var err error
+	file.FileExt = filepath.Ext(file.Filename)
+	filename := file.Filename[:len(file.Filename)-len(file.FileExt)]
+	ab := filename[0]
+	if ab == 'A' {
+		file.Testament = `OT`
+	} else if ab == 'B' {
+		file.Testament = `NT`
+	}
+	seq := filename[1:4]
+	file.BookSeq = strings.Trim(seq, `_`)
+	file.Chapter, err = strconv.Atoi(file.Filename[6:8])
 	if err != nil {
-		status = log.Error(ctx, 500, err, `Error convert chapter to int`, filename[6:8])
-		return bookId, chapterNum, status
+		return log.Error(ctx, 500, err, `Error convert chapter to int`, file.Filename[6:8])
 	}
 	book := strings.Trim(filename[9:21], `_`)
-	bookId = db.USFMBookId(ctx, book)
-	return bookId, chapter, status
+	file.BookId = db.USFMBookId(ctx, book)
+	file.MediaId = filename[21:]
+	return status
 }
 
 func ParseV4AudioFilename(ctx context.Context, file *InputFile) dataset.Status {
