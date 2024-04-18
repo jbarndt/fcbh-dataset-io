@@ -33,6 +33,13 @@ type FilesetType struct {
 type DbpProdType struct {
 	Filesets []FilesetType `json:"dbp-prod"`
 }
+type BooksType struct {
+	BookId    string `json:"book_id"`
+	Name      string `json:"name"`
+	Chapters  []int  `json:"chapters"`
+	BookSeq   string `json:"book_seq"`
+	Testament string `json:"testament"`
+}
 type AlphabetType struct {
 	Alphabet string `json:"script"`
 }
@@ -45,6 +52,7 @@ type BibleInfoType struct {
 	LanguageName   string       `json:"language"`
 	VersionName    string       `json:"name"`
 	Alphabet       AlphabetType `json:"alphabet"` // alphabet.script
+	Books          []BooksType  `json:"books"`
 	DbpProd        DbpProdType  `json:"filesets"`
 	AudioOTFileset FilesetType
 	AudioNTFileset FilesetType
