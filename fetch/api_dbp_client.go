@@ -44,16 +44,17 @@ type AlphabetType struct {
 	Alphabet string `json:"script"`
 }
 type BibleInfoType struct {
-	BibleId        string `json:"abbr"`
-	LanguageISO    string `json:"iso"`
-	VersionCode    string
+	BibleId        string       `json:"abbr"`
+	LanguageISO    string       `json:"iso"`
 	LanguageId     int          `json:"language_id"`
 	RolvId         int          `json:"language_rolv_code"`
 	LanguageName   string       `json:"language"`
 	VersionName    string       `json:"name"`
 	Alphabet       AlphabetType `json:"alphabet"` // alphabet.script
+	Copyright      string       `json:"mark"`
 	Books          []BooksType  `json:"books"`
 	DbpProd        DbpProdType  `json:"filesets"`
+	VersionCode    string
 	AudioOTFileset FilesetType
 	AudioNTFileset FilesetType
 	TextOTFileset  FilesetType
@@ -72,6 +73,7 @@ func (d *APIDBPClient) BibleInfo() (BibleInfoType, dataset.Status) {
 	if status.IsErr {
 		return result, status
 	}
+	//fmt.Println(string(body))
 	err := json.Unmarshal(body, &response)
 	if err != nil {
 		status := log.Error(d.ctx, 500, err, "Error decoding DBP API /bibles JSON")
