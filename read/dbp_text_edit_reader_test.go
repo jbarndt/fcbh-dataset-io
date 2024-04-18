@@ -10,7 +10,7 @@ import (
 func TestDBPEditTextReader(t *testing.T) {
 	var req request.Request
 	req.Required.BibleId = `ENGWEB`
-	req.Testament = request.Testament{OTBooks: []string{`GEN`, `EXO`}, NTBooks: []string{`MAT`, `JHN`}}
+	req.Testament = request.Testament{OTBooks: []string{`GEN`, `EXO`}, NTBooks: []string{`MAT`, `MRK`}}
 	req.Testament.BuildBookMaps()
 	var database = req.Required.BibleId + `_EDITTEXT.db`
 	db.DestroyDatabase(database)
@@ -25,7 +25,7 @@ func TestDBPEditTextReader(t *testing.T) {
 	if status.IsErr {
 		t.Error(status.Message)
 	}
-	if count != 4845 {
-		t.Error(`Expected count to be 4845`, count)
+	if count != 4639 {
+		t.Error(`Expected count to be 4639`, count)
 	}
 }

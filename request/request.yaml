@@ -2,8 +2,6 @@
 
 Required:
   RequestName:  # should be a unique name
-  RequestorName:
-  RequestorEmail:
   BibleId:
   LanguageISO:
   VersionCode: # ???

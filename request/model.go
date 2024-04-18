@@ -14,12 +14,10 @@ type Request struct {
 }
 
 type Required struct {
-	RequestName    string `yaml:"RequestName"`
-	RequestorName  string `yaml:"RequestorName"`
-	RequestorEmail string `yaml:"RequestorEmail"`
-	BibleId        string `yaml:"BibleId"`
-	LanguageISO    string `yaml:"LanguageISO"`
-	VersionCode    string `yaml:"VersionCode"`
+	RequestName string `yaml:"RequestName"`
+	BibleId     string `yaml:"BibleId"`
+	LanguageISO string `yaml:"LanguageISO"`
+	VersionCode string `yaml:"VersionCode"`
 }
 
 type Testament struct {
@@ -66,21 +64,6 @@ func (t *Testament) HasNT(bookId string) bool {
 	return ok
 }
 
-/*
-	func (t Testament) String() string {
-		var result string
-		if t.NT && t.OT {
-			result = `C`
-		}
-		if t.NT {
-			result = `NT`
-		}
-		if t.OT {
-			result = `OT`
-		}
-		return result
-	}
-*/
 type AudioData struct {
 	BibleBrain BibleBrainAudio `yaml:"BibleBrain,omitempty"`
 	File       string          `yaml:"File,omitempty"`

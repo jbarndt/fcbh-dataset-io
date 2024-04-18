@@ -266,6 +266,34 @@ func (d *DBAdapter) SelectScripts() ([]Script, dataset.Status) {
 	return results, status
 }
 
+// SelectScriptIds is used by api_dbp_timestamps
+func (d *DBAdapter) SelectScriptIds() ([]Script, dataset.Status) {
+	var results []Script
+	var status dataset.Status
+	query := `SELECT script_id, book_id, chapter_num, script_num, verse_str 
+		FROM scripts ORDER BY script_id`
+	rows, err := d.DB.Query(query)
+	if err != nil {
+		status = log.Error(d.Ctx, 500, err, "Error during select scripts")
+		return results, status
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var rec Script
+		err := rows.Scan(&rec.ScriptId, &rec.BookId, &rec.ChapterNum, &rec.ScriptNum, &rec.VerseStr)
+		if err != nil {
+			status = log.Error(d.Ctx, 500, err, "Error in SelectScripts.")
+			return results, status
+		}
+		results = append(results, rec)
+	}
+	err = rows.Err()
+	if err != nil {
+		log.Warn(d.Ctx, err, query)
+	}
+	return results, status
+}
+
 func (d *DBAdapter) SelectScriptHeadings() ([]Script, dataset.Status) {
 	var result []Script
 	var status dataset.Status

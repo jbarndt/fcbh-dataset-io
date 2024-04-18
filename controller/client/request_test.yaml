@@ -2,8 +2,6 @@
 
 Required:
   RequestName: Test1
-  RequestorName: Gary Griswold
-  RequestorEmail: gary@shortsands.com
   BibleId: ATIWBT
   LanguageISO: ati
   VersionCode: WBT
