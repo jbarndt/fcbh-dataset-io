@@ -3,6 +3,7 @@ package fetch
 import (
 	"context"
 	"dataset"
+	"dataset/db"
 	log "dataset/logger"
 	"encoding/json"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -57,6 +59,13 @@ func (d *APIDownloadClient) Download(info BibleInfoType) dataset.Status {
 		} else {
 			locations, status := d.downloadLocation(rec.Id)
 			if status.IsErr {
+				if status.Status == 403 {
+					locations, status = d.downloadEachLocation(rec)
+				} else {
+					return status
+				}
+			}
+			if status.IsErr {
 				return status
 			}
 			locations, status = d.sortFileLocations(locations)
@@ -82,7 +91,7 @@ func (d *APIDownloadClient) downloadPlainText(directory string, filesetId string
 	if os.IsNotExist(err) {
 		var get = HOST + "download/" + filesetId + "?v=4&limit=100000"
 		fmt.Println("Downloading to", filePath)
-		content, status = httpGet(d.ctx, get, filesetId)
+		content, status = httpGet(d.ctx, get, false, filesetId)
 		if !status.IsErr {
 			d.saveFile(filePath, content)
 		}
@@ -114,15 +123,51 @@ func (d *APIDownloadClient) downloadLocation(filesetId string) ([]LocationRec, d
 		get = HOST + "download/" + filesetId + "?v=4"
 	}
 	var content []byte
-	content, status = httpGet(d.ctx, get, filesetId)
-	//if len(content) == 0 {
-	if !status.IsErr {
-		var response LocationDownloadRec
-		err := json.Unmarshal(content, &response)
-		if err != nil {
-			status = log.Error(d.ctx, 500, err, "Error parsing json for", filesetId)
-		} else {
-			result = response.Data
+	content, status = httpGet(d.ctx, get, true, filesetId)
+	if status.IsErr {
+		return result, status
+	}
+	var response LocationDownloadRec
+	err := json.Unmarshal(content, &response)
+	if err != nil {
+		status = log.Error(d.ctx, 500, err, "Error parsing json for", filesetId)
+	} else {
+		result = response.Data
+	}
+	return result, status
+}
+
+// downloadEachLocation is used when downloadLocation fails on a 403 error.
+// It accesses the location of one chapter at a time using the /bibles/fileset path
+func (d *APIDownloadClient) downloadEachLocation(fileset FilesetType) ([]LocationRec, dataset.Status) {
+	var result []LocationRec
+	var status dataset.Status
+	var books []string
+	if fileset.Size == `OT` || fileset.Size == `C` {
+		books = append(books, db.BookOT...)
+	}
+	if fileset.Size == `NT` || fileset.Size == `C` {
+		books = append(books, db.BookNT...)
+	}
+	for _, book := range books {
+		maxChapter, _ := db.BookChapterMap[book]
+		for ch := 1; ch <= maxChapter; ch++ {
+			chapter := strconv.Itoa(ch)
+			get := HOST + `bibles/filesets/` + fileset.Id + `/` + book + `/` + chapter + `?v=4&`
+			var content []byte
+			content, status = httpGet(d.ctx, get, false, fileset.Id)
+			if status.IsErr {
+				return result, status
+			}
+			var response LocationDownloadRec
+			err := json.Unmarshal(content, &response)
+			if err != nil {
+				status = log.Error(d.ctx, 500, err, "Error parsing json for", fileset.Id)
+				return result, status
+			}
+			for _, data := range response.Data {
+				result = append(result, data)
+			}
 		}
 	}
 	return result, status
@@ -161,7 +206,7 @@ func (d *APIDownloadClient) downloadFiles(directory string, locations []Location
 		if os.IsNotExist(err) || file.Size() != int64(loc.FileSize) {
 			fmt.Println("Downloading", loc.Filename)
 			var content []byte
-			content, status = httpGet(d.ctx, loc.URL, loc.Filename)
+			content, status = httpGet(d.ctx, loc.URL, false, loc.Filename)
 			if !status.IsErr {
 				if len(content) != loc.FileSize {
 					log.Warn(d.ctx, "Warning for", loc.Filename, "has an expected size of", loc.FileSize, "but, actual size is", len(content))

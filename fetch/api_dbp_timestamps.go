@@ -90,7 +90,7 @@ func (a *APIDBPTimestamps) HavingTimestamps() (map[string]bool, dataset.Status) 
 	var result = make(map[string]bool)
 	var status dataset.Status
 	var get = `https://4.dbt.io/api/timestamps?v=4`
-	body, status := httpGet(a.ctx, get, `timestamps`)
+	body, status := httpGet(a.ctx, get, false, `timestamps`)
 	if status.IsErr {
 		return result, status
 	}
@@ -133,7 +133,7 @@ func (a *APIDBPTimestamps) Timestamps(bookId string, chapter int) ([]Timestamp, 
 	var status dataset.Status
 	chapterStr := strconv.Itoa(chapter)
 	var get = `https://4.dbt.io/api/timestamps/` + a.audioId + `/` + bookId + `/` + chapterStr + `?v=4`
-	body, status := httpGet(a.ctx, get, `timestamps`)
+	body, status := httpGet(a.ctx, get, false, `timestamps`)
 	if status.IsErr {
 		return result, status
 	}

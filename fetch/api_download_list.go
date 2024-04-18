@@ -28,7 +28,7 @@ func (d *APIDBPClient) DownloadList() (map[string]DownloadListType, dataset.Stat
 	var result = make(map[string]DownloadListType)
 	var status dataset.Status
 	var get = `https://4.dbt.io/api/download/list?v=4`
-	body, status := httpGet(d.ctx, get, d.bibleId)
+	body, status := httpGet(d.ctx, get, false, d.bibleId)
 	if status.IsErr {
 		return result, status
 	}

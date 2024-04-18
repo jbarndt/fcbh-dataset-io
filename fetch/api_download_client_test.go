@@ -125,7 +125,7 @@ func TestAudioDownload(t *testing.T) {
 	}
 }
 
-func Test403Error(t *testing.T) {
+func Test403AndDownload(t *testing.T) {
 	ctx := context.Background()
 	var req request.Request
 	req.AudioData.BibleBrain.MP3_64 = true
@@ -138,23 +138,20 @@ func Test403Error(t *testing.T) {
 	}
 	client.FindFilesets(&info, req.AudioData.BibleBrain, req.TextData.BibleBrain, req.Testament)
 	_ = client.CreateIdent(info)
-	//if len(info.AudioFilesets) != 1 {
 	if info.AudioOTFileset.Id != `` || info.AudioNTFileset.Id == `` {
 		t.Error(`Should have found one audio fileset.`)
 	}
-	//if len(info.TextFilesets) > 0 {
 	if info.TextOTFileset.Id != `` || info.TextNTFileset.Id != `` {
 		t.Error(`Should have found no text fileset`)
 	}
-	//fmt.Println(info.TextFilesets)
 	err := deleteFile(info.BibleId, info.AudioNTFileset)
 	if err != nil {
 		t.Error(`Did not delete file.`)
 	}
 	download := NewAPIDownloadClient(ctx, info.BibleId)
 	status = download.Download(info)
-	if status.Status != 403 {
-		t.Error(`Download 403 error is unexpected`, status)
+	if status.IsErr {
+		t.Error(`Download error is unexpected`, status)
 	}
 }
 
