@@ -3,7 +3,7 @@ package encode
 import (
 	"context"
 	"dataset/db"
-	"dataset/read"
+	"dataset/input"
 	"dataset/request"
 	"testing"
 )
@@ -15,7 +15,7 @@ func TestMFCCLines(t *testing.T) {
 	var testament = request.Testament{NTBooks: []string{`MRK`}}
 	testament.BuildBookMaps()
 	var detail = request.Detail{Lines: true}
-	files, status := read.DBPDirectory(ctx, bibleId, `audio`, ``, filesetId, testament)
+	files, status := input.DBPDirectory(ctx, bibleId, `audio`, ``, filesetId, testament)
 	if status.IsErr {
 		t.Error(status.Message)
 	}
@@ -43,7 +43,7 @@ func TestMFCCWords(t *testing.T) {
 	var testament = request.Testament{NTBooks: []string{`MRK`}}
 	testament.BuildBookMaps()
 	var detail = request.Detail{Words: true}
-	files, status := read.DBPDirectory(ctx, bibleId, `audio`, ``, filesetId, testament)
+	files, status := input.DBPDirectory(ctx, bibleId, `audio`, ``, filesetId, testament)
 	if status.IsErr {
 		t.Error(status.Message)
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"dataset"
 	"dataset/db"
+	"dataset/input"
 	log "dataset/logger"
 	"dataset/request"
 	"encoding/json"
@@ -21,15 +22,15 @@ type DBPTextReader struct {
 	testament request.Testament
 }
 
-func NewDBPTextReader(conn db.DBAdapter, req request.Request) DBPTextReader {
+func NewDBPTextReader(conn db.DBAdapter, testament request.Testament) DBPTextReader {
 	var d DBPTextReader
 	d.ctx = conn.Ctx
 	d.conn = conn
-	d.testament = req.Testament
+	d.testament = testament
 	return d
 }
 
-func (d *DBPTextReader) ProcessFiles(files []InputFile) dataset.Status {
+func (d *DBPTextReader) ProcessFiles(files []input.InputFile) dataset.Status {
 	var status dataset.Status
 	for _, file := range files {
 		filePath := filepath.Join(file.Directory, file.Filename)

@@ -3,6 +3,7 @@ package read
 import (
 	"context"
 	"dataset/db"
+	"dataset/input"
 	"dataset/request"
 	"testing"
 )
@@ -14,7 +15,7 @@ func TestDBPTextReader1(t *testing.T) {
 	otFileset := `ENGWEBO_ET`
 	ntFileset := `ENGWEBN_ET`
 	testament := request.Testament{NTBooks: []string{`MAT`, `MRK`}, OTBooks: []string{`JOB`, `PSA`, `PRO`, `SNG`}}
-	files, status := DBPDirectory(ctx, bibleId, fsType, otFileset, ntFileset, testament)
+	files, status := input.DBPDirectory(ctx, bibleId, fsType, otFileset, ntFileset, testament)
 	if status.IsErr {
 		t.Error(status.Message)
 	}
@@ -24,7 +25,7 @@ func TestDBPTextReader1(t *testing.T) {
 	var req request.Request
 	req.Testament = testament
 	req.Testament.BuildBookMaps()
-	textAdapter := NewDBPTextReader(db1, req)
+	textAdapter := NewDBPTextReader(db1, req.Testament)
 	textAdapter.ProcessFiles(files)
 	count, _ := db1.CountScriptRows()
 	if count != 6312 {

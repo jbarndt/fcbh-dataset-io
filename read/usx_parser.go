@@ -4,6 +4,7 @@ import (
 	"context"
 	"dataset"
 	"dataset/db"
+	"dataset/input"
 	log "dataset/logger"
 	"encoding/xml"
 	"fmt"
@@ -35,7 +36,7 @@ func NewUSXParser(conn db.DBAdapter) USXParser {
 	return p
 }
 
-func (p *USXParser) ProcessFiles(inputFiles []InputFile) dataset.Status {
+func (p *USXParser) ProcessFiles(inputFiles []input.InputFile) dataset.Status {
 	var status dataset.Status
 	for _, file := range inputFiles {
 		filename := filepath.Join(file.Directory, file.Filename)

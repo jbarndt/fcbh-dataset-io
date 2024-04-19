@@ -3,6 +3,7 @@ package read
 import (
 	"context"
 	"dataset/db"
+	"dataset/input"
 	"dataset/request"
 	"testing"
 )
@@ -15,7 +16,7 @@ func TestUSXParser(t *testing.T) {
 	ntFileset := `ENGWEBN_ET-usx`
 	testament := request.Testament{NTBooks: []string{`MAT`, `MRK`}, OTBooks: []string{`JOB`, `PSA`, `PRO`, `SNG`}}
 	testament.BuildBookMaps()
-	files, status := DBPDirectory(ctx, bibleId, fsType, otFileset, ntFileset, testament)
+	files, status := input.DBPDirectory(ctx, bibleId, fsType, otFileset, ntFileset, testament)
 	if status.IsErr {
 		t.Error(status.Message)
 	}

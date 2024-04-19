@@ -4,6 +4,7 @@ import (
 	"context"
 	"dataset"
 	"dataset/db"
+	"dataset/input"
 	"dataset/request"
 	"fmt"
 	"strconv"
@@ -63,13 +64,13 @@ func (d *DBPTextEditReader) Process() dataset.Status {
 func (d *DBPTextEditReader) createDBPText(testament request.Testament) (db.DBAdapter, dataset.Status) {
 	var database db.DBAdapter
 	var status dataset.Status
-	files, status := DBPDirectory(d.ctx, d.bibleId, `text_plain`, d.bibleId+`O_ET`,
+	files, status := input.DBPDirectory(d.ctx, d.bibleId, `text_plain`, d.bibleId+`O_ET`,
 		d.bibleId+`N_ET`, testament)
 	if status.IsErr {
 		return database, status
 	}
 	database = db.NewDBAdapter(d.ctx, ":memory:")
-	textAdapter := NewDBPTextReader(database, d.req)
+	textAdapter := NewDBPTextReader(database, d.req.Testament)
 	status = textAdapter.ProcessFiles(files)
 	return database, status
 }
@@ -77,7 +78,7 @@ func (d *DBPTextEditReader) createDBPText(testament request.Testament) (db.DBAda
 func (d *DBPTextEditReader) createUSXEDITText(testament request.Testament) (db.DBAdapter, dataset.Status) {
 	var database db.DBAdapter
 	var status dataset.Status
-	files, status := DBPDirectory(d.ctx, d.bibleId, `text_usx`, d.bibleId+`O_ET-usx`,
+	files, status := input.DBPDirectory(d.ctx, d.bibleId, `text_usx`, d.bibleId+`O_ET-usx`,
 		d.bibleId+`N_ET-usx`, testament)
 	if status.IsErr {
 		return database, status

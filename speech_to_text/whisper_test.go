@@ -3,7 +3,7 @@ package speech_to_text
 import (
 	"context"
 	"dataset/db"
-	"dataset/read"
+	"dataset/input"
 	"dataset/request"
 	"testing"
 )
@@ -14,7 +14,7 @@ func TestWhisper(t *testing.T) {
 	var filesetId = `ENGWEBN2DA-opus16`
 	testament := request.Testament{NTBooks: []string{`TIT`, `PHM`, `3JN`}}
 	testament.BuildBookMaps()
-	files, status := read.DBPDirectory(ctx, bibleId, `audio`, ``, filesetId, testament)
+	files, status := input.DBPDirectory(ctx, bibleId, `audio`, ``, filesetId, testament)
 	if status.IsErr {
 		t.Error(status.Message)
 	}
@@ -28,8 +28,8 @@ func TestWhisper(t *testing.T) {
 		t.Error(status.Message)
 	}
 	count, status := conn.CountScriptRows()
-	if count != 1 {
-		t.Error(`CountScriptRows count != 1`, count)
+	if count != 120 {
+		t.Error(`CountScriptRows count != 120`, count)
 	}
 	conn.Close()
 }

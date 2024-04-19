@@ -5,8 +5,8 @@ import (
 	"context"
 	"dataset"
 	"dataset/db"
+	"dataset/input"
 	log "dataset/logger"
-	"dataset/read"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -41,7 +41,7 @@ func NewWhisper(bibleId string, conn db.DBAdapter, model string) Whisper {
 	return w
 }
 
-func (w *Whisper) ProcessFiles(files []read.InputFile) dataset.Status {
+func (w *Whisper) ProcessFiles(files []input.InputFile) dataset.Status {
 	var status dataset.Status
 	var outputFile string
 	for _, file := range files {
@@ -53,7 +53,7 @@ func (w *Whisper) ProcessFiles(files []read.InputFile) dataset.Status {
 	return status
 }
 
-func (w *Whisper) RunWhisper(audioFile read.InputFile) (string, dataset.Status) {
+func (w *Whisper) RunWhisper(audioFile input.InputFile) (string, dataset.Status) {
 	var outputDir, status = w.ensureOutputDir(audioFile)
 	if status.IsErr {
 		return outputDir, status
@@ -82,7 +82,7 @@ func (w *Whisper) RunWhisper(audioFile read.InputFile) (string, dataset.Status) 
 	return outputFile, status
 }
 
-func (w *Whisper) ensureOutputDir(audioFile read.InputFile) (string, dataset.Status) {
+func (w *Whisper) ensureOutputDir(audioFile input.InputFile) (string, dataset.Status) {
 	var status dataset.Status
 	var outputDir = audioFile.Directory + `_WHISPER`
 	_, err := os.Stat(outputDir)
@@ -94,7 +94,7 @@ func (w *Whisper) ensureOutputDir(audioFile read.InputFile) (string, dataset.Sta
 	return outputDir, status
 }
 
-func (w *Whisper) loadWhisperOutput(outputFile string, file read.InputFile) dataset.Status {
+func (w *Whisper) loadWhisperOutput(outputFile string, file input.InputFile) dataset.Status {
 	var status dataset.Status
 	type WhisperSegmentType struct {
 		Id     int     `json:"id"`

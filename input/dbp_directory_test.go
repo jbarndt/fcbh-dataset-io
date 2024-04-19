@@ -1,4 +1,4 @@
-package read
+package input
 
 import (
 	"context"
