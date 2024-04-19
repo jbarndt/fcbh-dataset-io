@@ -1,5 +1,20 @@
 package db
 
+func Testament(bookId string) string {
+	var result string
+	seq, ok := BookSeqMap[bookId]
+	if !ok {
+		result = `None`
+	} else if seq < 40 {
+		result = `OT`
+	} else if seq < 68 {
+		result = `NT`
+	} else {
+		result = `AP`
+	}
+	return result
+}
+
 var BookSeqMap = map[string]int{
 	`GEN`: 1,
 	`EXO`: 2,
