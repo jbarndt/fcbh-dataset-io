@@ -14,6 +14,7 @@ func main() {
 		fmt.Println(err)
 	} else {
 		var control = controller.NewController(content)
-		control.Process()
+		output := control.Process()
+		fmt.Println(output)
 	}
 }

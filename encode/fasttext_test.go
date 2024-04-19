@@ -10,5 +10,8 @@ func TestFastText(t *testing.T) {
 	var ctx = context.Background()
 	var conn = db.NewDBAdapter(ctx, `ENGWEB_DBPTEXT.db`)
 	var fast = NewFastText(ctx, conn)
-	fast.Process()
+	status := fast.Process()
+	if status.IsErr {
+		t.Error(status.Message)
+	}
 }
