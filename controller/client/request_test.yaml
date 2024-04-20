@@ -21,9 +21,9 @@ AudioData: # Choose one of the following
     MP3_64: yes # Mark Yes for 64 bit MP3
     MP3_16: # Mark Yes for 16 bit MP3
     OPUS: # Mark Yes for OPUS
-  File: # If file, enter path here (TBD)
+  File: # e.g. /{directory}/{mediaId}/*.usx
   Http: # If http, enter URL (TBD)
-  AWS: # If AWS enter URL ?? Will this work for public only (TBD)
+  AWS: # e.g. audio/{bibleId}/{mediaId}/
   POST: # If POST, put Yes here (TBD)
   NoAudio: # If no audio put Yes here
 # Default:  NoAudio
@@ -41,9 +41,9 @@ TextData: # Choose one of the following
         Small:
         Base:
         Tiny:
-  File: # If file, enter path here (TBD)
+  File: # e.g. /{directory}/{mediaId}/*.usx
   Http: # If http, enter URL here (TBD)
-  AWS: # If AWS enter URL here (TBD)
+  AWS: # e.g. text/{bibleId}/{mediaId}/
   POST: # (TBD)
   NoText: # If there is no text put an X here
 
