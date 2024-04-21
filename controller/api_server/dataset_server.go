@@ -19,14 +19,16 @@ func main() {
 }
 
 func echoHandler(w http.ResponseWriter, r *http.Request) {
-	//_, err := io.Copy(w, r.Body)
 	content, err := io.ReadAll(r.Body)
 	if err != nil {
 		panic(err)
 	}
 	var control = controller.NewController(content)
 	var output = control.Process()
-	w.Write(output)
+	_, err = w.Write(output)
+	if err != nil {
+		panic(err)
+	}
 	//if err != nil {
 	//	http.Error(w, "Failed to echo request body", http.StatusInternalServerError)
 	//}

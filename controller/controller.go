@@ -7,6 +7,8 @@ import (
 	"dataset/encode"
 	"dataset/fetch"
 	"dataset/input"
+	log "dataset/logger"
+	"dataset/match"
 	"dataset/read"
 	"dataset/request"
 	"dataset/speech_to_text"
@@ -105,6 +107,13 @@ func (c *Controller) processSteps() dataset.Status {
 	if status.IsErr {
 		return status
 	}
+	// Compare
+	if c.req.Compare.Project1 != `` && c.req.Compare.Project2 != `` {
+		status = c.matchText()
+		if status.IsErr {
+			return status
+		}
+	}
 	fmt.Println("Duration", time.Since(start))
 	return status
 }
@@ -145,8 +154,6 @@ func (c *Controller) collectTextInput() ([]input.InputFile, dataset.Status) {
 	var files []input.InputFile
 	var status dataset.Status
 	var textType string
-	bibleId := c.req.Required.BibleId
-
 	if c.req.TextData.BibleBrain.TextUSXEdit {
 		textType = `text_usx`
 	} else if c.req.TextData.BibleBrain.TextPlainEdit {
@@ -155,11 +162,17 @@ func (c *Controller) collectTextInput() ([]input.InputFile, dataset.Status) {
 		textType = `text_plain`
 	}
 	if textType != `` {
+		bibleId := c.req.Required.BibleId
 		files, status = input.DBPDirectory(c.ctx, bibleId, textType, c.info.TextOTFileset.Id,
 			c.info.TextNTFileset.Id, c.req.Testament)
-		if status.IsErr {
-			return files, status
-		}
+	} else if c.req.TextData.File != `` {
+		files, status = input.FileInput(c.ctx, c.req.TextData.File, c.req.Testament)
+	} else if c.req.TextData.Http != `` {
+		status = log.ErrorNoErr(c.ctx, 400, `Http is not implemented yet`)
+	} else if c.req.TextData.AWSS3 != `` {
+		files, status = input.AWSS3Input(c.ctx, c.req.TextData.AWSS3, c.req.Testament)
+	} else if c.req.TextData.POST {
+		status = log.ErrorNoErr(c.ctx, 400, `POST is not implemented yet`)
 	}
 	return files, status
 }
@@ -167,34 +180,48 @@ func (c *Controller) collectTextInput() ([]input.InputFile, dataset.Status) {
 func (c *Controller) collectAudioInput() ([]input.InputFile, dataset.Status) {
 	var files []input.InputFile
 	var status dataset.Status
-	bibleId := c.req.Required.BibleId
-	files, status = input.DBPDirectory(c.ctx, bibleId, `audio`, c.info.AudioOTFileset.Id,
-		c.info.AudioNTFileset.Id, c.req.Testament)
-	if status.IsErr {
-		return files, status
+	bb := c.req.AudioData.BibleBrain
+	if bb.MP3_64 || bb.MP3_16 || bb.OPUS {
+		bibleId := c.req.Required.BibleId
+		files, status = input.DBPDirectory(c.ctx, bibleId, `audio`, c.info.AudioOTFileset.Id,
+			c.info.AudioNTFileset.Id, c.req.Testament)
+	} else if c.req.AudioData.File != `` {
+		files, status = input.FileInput(c.ctx, c.req.AudioData.File, c.req.Testament)
+	} else if c.req.AudioData.Http != `` {
+		status = log.ErrorNoErr(c.ctx, 400, `Http is not implemented yet`)
+	} else if c.req.AudioData.AWSS3 != `` {
+		files, status = input.AWSS3Input(c.ctx, c.req.AudioData.AWSS3, c.req.Testament)
+	} else if c.req.AudioData.POST {
+		status = log.ErrorNoErr(c.ctx, 400, `POST is not implemented yet`)
 	}
 	return files, status
 }
 
 func (c *Controller) readText(textFiles []input.InputFile) dataset.Status {
 	var status dataset.Status
-	if c.req.TextData.BibleBrain.TextUSXEdit {
+	if len(textFiles) == 0 {
+		return status
+	}
+	//if c.req.TextData.BibleBrain.TextUSXEdit {
+	if textFiles[0].MediaType == `text_usx` {
 		reader := read.NewUSXParser(c.database)
 		status = reader.ProcessFiles(textFiles)
 		if status.IsErr {
 			return status
 		}
-	} else if c.req.TextData.BibleBrain.TextPlainEdit {
-		reader := read.NewDBPTextEditReader(c.database, c.req)
-		status = reader.Process()
-		if status.IsErr {
-			return status
-		}
-	} else if c.req.TextData.BibleBrain.TextPlain {
-		reader := read.NewDBPTextReader(c.database, c.req.Testament)
-		status = reader.ProcessFiles(textFiles)
-		if status.IsErr {
-			return status
+	} else if textFiles[0].MediaType == `text_plain` {
+		if c.req.TextData.BibleBrain.TextPlainEdit {
+			reader := read.NewDBPTextEditReader(c.database, c.req)
+			status = reader.Process()
+			if status.IsErr {
+				return status
+			}
+		} else { //if c.req.TextData.BibleBrain.TextPlain {
+			reader := read.NewDBPTextReader(c.database, c.req.Testament)
+			status = reader.ProcessFiles(textFiles)
+			if status.IsErr {
+				return status
+			}
 		}
 	} else {
 		return status // This is not an error, it is nothing to do
@@ -273,7 +300,8 @@ func (c *Controller) encodeText() dataset.Status {
 
 func (c *Controller) matchText() dataset.Status {
 	var status dataset.Status
-
+	compare := match.NewCompare(c.ctx, c.req.Compare.Project1, c.req.Compare.Project2)
+	status = compare.Process()
 	return status
 }
 

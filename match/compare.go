@@ -98,28 +98,28 @@ p { margin: 20px 40px; }
   </style>
  </head>
  <body>`
-	output.WriteString(head)
-	output.WriteString(`<h2 style="text-align:center">Compare `)
-	output.WriteString(database1)
-	output.WriteString(` to `)
-	output.WriteString(database2)
-	output.WriteString("</h2>\n")
-	output.WriteString(`<h3 style="text-align:center">`)
-	output.WriteString(time.Now().Format(`Mon Jan 2 2006 03:04:05 pm MST`))
-	output.WriteString("</h3>\n")
-	output.WriteString(`<h3 style="text-align:center">RED characters are those in `)
-	output.WriteString(database1[7:])
-	output.WriteString(` only, while GREEN characters are in `)
-	output.WriteString(database2[7:])
-	output.WriteString(" only</h3>\n")
+	_, _ = output.WriteString(head)
+	_, _ = output.WriteString(`<h2 style="text-align:center">Compare `)
+	_, _ = output.WriteString(database1)
+	_, _ = output.WriteString(` to `)
+	_, _ = output.WriteString(database2)
+	_, _ = output.WriteString("</h2>\n")
+	_, _ = output.WriteString(`<h3 style="text-align:center">`)
+	_, _ = output.WriteString(time.Now().Format(`Mon Jan 2 2006 03:04:05 pm MST`))
+	_, _ = output.WriteString("</h3>\n")
+	_, _ = output.WriteString(`<h3 style="text-align:center">RED characters are those in `)
+	_, _ = output.WriteString(database1[7:])
+	_, _ = output.WriteString(` only, while GREEN characters are in `)
+	_, _ = output.WriteString(database2[7:])
+	_, _ = output.WriteString(" only</h3>\n")
 	return output, status
 }
 
 func (c *Compare) closeOutput(output *os.File) {
 	end := ` </body>
 </html>`
-	output.WriteString(end)
-	output.Close()
+	_, _ = output.WriteString(end)
+	_ = output.Close()
 }
 
 func (c *Compare) process(db db.DBAdapter, database string, bookId string, chapterNum int) ([]Verse, dataset.Status) {
@@ -424,11 +424,11 @@ func (c *Compare) diff(output *os.File, verses1 []Verse, verses2 []Verse) {
 				ref := pair.bookId + " " + strconv.Itoa(pair.chapter) + ":" + pair.num + ` `
 				fmt.Println(ref, diffMatch.DiffPrettyText(diffs))
 				fmt.Println("=============")
-				output.WriteString(`<p>`)
-				output.WriteString(ref)
-				output.WriteString(diffMatch.DiffPrettyHtml(diffs))
+				_, _ = output.WriteString(`<p>`)
+				_, _ = output.WriteString(ref)
+				_, _ = output.WriteString(diffMatch.DiffPrettyHtml(diffs))
 				//output.WriteString("<br/><br>")
-				output.WriteString("</p>\n")
+				_, _ = output.WriteString("</p>\n")
 				globalDiffCount++
 			}
 		}

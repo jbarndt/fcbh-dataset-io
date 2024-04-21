@@ -91,7 +91,6 @@ func (f *FastText) executeFastText(inputFile string) (string, dataset.Status) {
 	err := cmd.Run()
 	if err != nil {
 		status = log.Error(f.ctx, 500, err, `Error executing Fasttext`)
-		return outputModel, status
 	}
 	if stderrBuf.Len() > 0 {
 		fmt.Println("STDERR", stderrBuf.String())

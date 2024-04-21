@@ -653,9 +653,12 @@ func (d *DBAdapter) UpdateWordEncodings(words []Word) dataset.Status {
 		if err != nil {
 			return log.Error(d.Ctx, 500, err, `Error converting word enc to JSON`)
 		}
-		_, err = stmt.Exec(encBytes, rec.WordId)
-		if err != nil {
-			return log.Error(d.Ctx, 500, err, `Error while inserting word enc.`)
+		encStr := string(encBytes)
+		if encStr != `null` {
+			_, err = stmt.Exec(encStr, rec.WordId)
+			if err != nil {
+				return log.Error(d.Ctx, 500, err, `Error while inserting word enc.`)
+			}
 		}
 	}
 	status = d.commitDML(tx, query)
