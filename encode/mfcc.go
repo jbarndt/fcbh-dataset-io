@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 )
 
@@ -72,7 +73,8 @@ func (m *MFCC) executeLibrosa(audioFile string) (MFCCResp, dataset.Status) {
 	var result MFCCResp
 	var status dataset.Status
 	pythonPath := os.Getenv(`PYTHON_EXE`)
-	cmd := exec.Command(pythonPath, `mfcc_librosa.py`, audioFile, strconv.Itoa(m.numMFCC))
+	mfccLibrosaPath := filepath.Join(os.Getenv(`GOPATH`), `dataset`, `encode`, `mfcc_librosa.py`)
+	cmd := exec.Command(pythonPath, mfccLibrosaPath, audioFile, strconv.Itoa(m.numMFCC))
 	fmt.Println(cmd.String())
 	var stdoutBuf, stderrBuf bytes.Buffer
 	cmd.Stdout = &stdoutBuf
@@ -114,21 +116,26 @@ func (m *MFCC) processWords(mfcc MFCCResp, bookId string, chapterNum int) datase
 }
 
 func (m *MFCC) segmentMFCC(timestamps []db.Timestamp, mfcc MFCCResp) []db.MFCC {
-	var mfccs []db.MFCC
+	var result []db.MFCC
 	for _, ts := range timestamps {
 		startIndex := int(ts.BeginTS*mfcc.FrameRate + 0.5)
 		endIndex := int(ts.EndTS*mfcc.FrameRate + 0.5)
-		segment := mfcc.MFCC[startIndex:endIndex][:]
-		var mfcc db.MFCC
-		mfcc.Id = ts.Id
-		mfcc.Rows = len(segment)
-		if mfcc.Rows == 0 {
-			mfcc.Cols = 0
+		var segment [][]float32
+		if endIndex != 0 {
+			segment = mfcc.MFCC[startIndex:endIndex][:]
 		} else {
-			mfcc.Cols = len(segment[0])
+			segment = mfcc.MFCC[startIndex:][:] // The last timestamp from DB will be zero
 		}
-		mfcc.MFCC = segment
-		mfccs = append(mfccs, mfcc)
+		var mf db.MFCC
+		mf.Id = ts.Id
+		mf.Rows = len(segment)
+		if mf.Rows == 0 {
+			mf.Cols = 0
+		} else {
+			mf.Cols = len(segment[0])
+		}
+		mf.MFCC = segment
+		result = append(result, mf)
 	}
-	return mfccs
+	return result
 }
