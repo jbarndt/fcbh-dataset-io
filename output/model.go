@@ -27,3 +27,43 @@ type Script struct {
 	MFCCCols      int
 	MFCC          [][]float32 `name:"mfcc,[][]float32"`
 }
+
+type Word struct {
+	WordId      int       `name:"word_id,int"`
+	ScriptId    int       `name:"script_id,int"`
+	BookId      string    `name:"book_id,string"`
+	ChapterNum  int       `name:"chapter_num,int"`
+	VerseStr    string    `name:"verse_str,string"`
+	VerseNum    int       `name:"verse_num,int"`
+	WordSeq     int       `name:"word_seq,int"`
+	Word        string    `name:"word,string"`
+	WordBeginTS float64   `name:"word_begin_ts,float64"`
+	WordEndTS   float64   `name:"word_end_ts,float64"`
+	WordEncoded []float64 `name:"word_enc,float64"`
+	MFCCRows    int
+	MFCCCols    int
+	MFCC        [][]float32 `name:"mfcc,[][]float32"`
+}
+
+type HasMFCC interface {
+	GetMFCC() [][]float32
+	Rows() int
+	Cols() int
+	SetMFCC(mfcc [][]float32)
+}
+
+func (s *Script) GetMFCC() [][]float32 {
+	return s.MFCC
+}
+
+func (s *Script) Rows() int {
+	return s.MFCCRows
+}
+
+func (s *Script) Cols() int {
+	return s.MFCCCols
+}
+
+func (s *Script) SetMFCC(mfcc [][]float32) {
+	s.MFCC = mfcc
+}

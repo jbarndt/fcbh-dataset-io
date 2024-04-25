@@ -568,7 +568,7 @@ func (d *DBAdapter) UpdateWordTimestamps(words []Timestamp) dataset.Status {
 func (d *DBAdapter) SelectWordTimestamps(bookId string, chapter int) ([]Timestamp, dataset.Status) {
 	query := `SELECT w.word_id, w.word_begin_ts, w.word_end_ts
 		FROM words w JOIN scripts s ON w.script_id = s.script_id
-		WHERE s.book_id = ? AND s.chapter_num = ? ORDER BY w.word_id`
+		WHERE w.ttype = 'W' AND s.book_id = ? AND s.chapter_num = ? ORDER BY w.word_id`
 	return d.selectTimestamps(query, bookId, chapter)
 }
 

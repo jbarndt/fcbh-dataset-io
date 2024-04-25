@@ -28,7 +28,7 @@ func TestMFCCLines(t *testing.T) {
 	}
 	count, _ := conn.CountScriptMFCCRows()
 	if count != 678 {
-		t.Error(`Script count should be 1`, count)
+		t.Error(`Script count should be 678`, count)
 	}
 	count, _ = conn.CountWordMFCCRows()
 	if count != 0 {

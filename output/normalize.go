@@ -2,49 +2,51 @@ package output
 
 import "math"
 
-func NormalizeMFCC(scripts []Script, numMFCC int) []Script {
+func NormalizeMFCC(structs []Script, numMFCC int) []HasMFCC {
 	for col := 0; col < numMFCC; col++ {
 		var sum float64
 		var count float64
-		for _, scr := range scripts {
-			for _, mf := range scr.MFCC {
-				value := mf[:][col]
-				sum += float64(value)
+		for _, scr := range structs {
+			for _, mf := range scr.GetMFCC() {
+				sum += float64(mf[col])
 				count++
 			}
 		}
 		var mean = sum / count
 		var devSqr float64
-		for _, scr := range scripts {
-			for _, mf := range scr.MFCC {
-				value := mf[:][col]
-				devSqr += math.Pow(float64(value)-mean, 2)
+		for _, scr := range structs {
+			for _, mf := range scr.GetMFCC() {
+				devSqr += math.Pow(float64(mf[col])-mean, 2)
 			}
 		}
 		var stddev = math.Sqrt(devSqr / count)
-		for i, scr := range scripts {
-			for j, mf := range scr.MFCC {
-				value := float64(mf[:][col])
-				scripts[i].MFCC[j][:][col] = float32((value - mean) / stddev)
+		for i, scr := range structs {
+			var mfccs = scr.GetMFCC()
+			for j, mf := range mfccs {
+				value := float64(mf[col])
+				mfccs[j][col] = float32((value - mean) / stddev)
 			}
+			structs[i].SetMFCC(mfccs)
 		}
 	}
-	return scripts
+	return structs
 }
 
-func PadRows(scripts []Script, numMFCC int) []Script {
+func PadRows(structs []HasMFCC, numMFCC int) []HasMFCC {
 	largest := 0
-	for _, scr := range scripts {
-		if scr.MFCCRows > largest {
-			largest = scr.MFCCRows
+	for _, scr := range structs {
+		if scr.Rows() > largest {
+			largest = scr.Rows()
 		}
 	}
 	var padRow = make([]float32, numMFCC)
-	for _, scr := range scripts {
-		needRows := largest - scr.MFCCRows
+	for i, scr := range structs {
+		mfccs := scr.GetMFCC()
+		needRows := largest - scr.Rows()
 		for i := 0; i < needRows; i++ {
-			scr.MFCC = append(scr.MFCC, padRow)
+			mfccs = append(mfccs, padRow)
 		}
+		structs[i].SetMFCC(mfccs)
 	}
-	return scripts
+	return structs
 }
