@@ -16,13 +16,25 @@ func TestLoadScriptSrtuct(t *testing.T) {
 	var conn = db.NewDBAdapter(ctx, `ENGWEB_DBPTEXT.db`)
 	//prepareTimestampAndFMCCData(conn, `ENGWEB`, `ENGWEBN2DA`, t)
 	scripts := LoadScriptStruct(conn)
-	for i, row := range scripts {
-		fmt.Println(i, row)
-		if i > 5 {
-			break
+	var script Script
+	metaScript := ReflectStruct(script)
+	newMetaScript := FindActiveScriptCols(scripts, metaScript)
+	numMFCC := FindNumMFCC(scripts)
+	for i, meta := range newMetaScript {
+		if meta.Name == `MFCC` {
+			newMetaScript[i].Cols = numMFCC
 		}
 	}
-	fmt.Println(len(scripts))
+	scripts2 := NormalizeMFCC(scripts, numMFCC)
+	scripts3 := PadRows(scripts2, numMFCC)
+	fmt.Println(newMetaScript)
+	fmt.Println("length scripts", len(scripts))
+	fmt.Println("length normalized", len(scripts))
+	fmt.Println("length padded", len(scripts3))
+	filename := WriteScriptCSV(scripts3, newMetaScript)
+	fmt.Println(`CSV Script`, filename)
+	filename2 := WriteScriptJSON(scripts3, newMetaScript)
+	fmt.Println(`JSON Script`, filename2)
 }
 
 func prepareTimestampAndFMCCData(conn db.DBAdapter, bibleId string, filesetId string, t *testing.T) {
@@ -45,3 +57,7 @@ func prepareTimestampAndFMCCData(conn db.DBAdapter, bibleId string, filesetId st
 		t.Error(status.Message)
 	}
 }
+
+//func TestReflectStruct(t *testing.T) {
+//	ReflectScriptStruct()
+//}
