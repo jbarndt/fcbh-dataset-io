@@ -1,5 +1,13 @@
 package output
 
+type Meta struct {
+	Index int
+	Name  string
+	Tag   string
+	Dtype string
+	Cols  int // I don't
+}
+
 type Script struct {
 	ScriptId      int     `name:"script_id,int"`
 	BookId        string  `name:"book_id,string"`
