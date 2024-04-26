@@ -5,6 +5,7 @@ import (
 	"dataset/db"
 	log "dataset/logger"
 	"encoding/json"
+	"strconv"
 )
 
 func LoadScriptStruct(d db.DBAdapter) []Script {
@@ -36,6 +37,7 @@ func LoadScriptStruct(d db.DBAdapter) []Script {
 		if err != nil {
 			panic(err)
 		}
+		sc.Reference = FormatReference(sc.BookId, sc.ChapterNum, sc.ChapterEnd, sc.VerseStr, sc.VerseEnd)
 		results = append(results, sc)
 	}
 	err = rows.Err()
@@ -48,7 +50,8 @@ func LoadScriptStruct(d db.DBAdapter) []Script {
 func LoadWordStruct(d db.DBAdapter) []Word {
 	var results []Word
 	var status dataset.Status
-	query := `SELECT words.word_id, words.script_id, book_id, chapter_num, verse_str, words.verse_num, 
+	query := `SELECT words.word_id, words.script_id, book_id, chapter_num, chapter_end, verse_str, 
+		verse_end, words.verse_num, usfm_style, person, actor, 
 		word_seq, word, word_begin_ts, word_end_ts, word_enc, rows, cols, mfcc_json
 		FROM words JOIN scripts ON words.script_id = scripts.script_id
 		LEFT OUTER JOIN word_mfcc ON word_mfcc.word_id = words.word_id
@@ -64,8 +67,9 @@ func LoadWordStruct(d db.DBAdapter) []Word {
 		var wd Word
 		var wordJson string
 		var mfccJson string
-		err := rows.Scan(&wd.WordId, &wd.ScriptId, &wd.BookId, &wd.ChapterNum, &wd.VerseStr,
-			&wd.VerseNum, &wd.WordSeq, &wd.Word, &wd.WordBeginTS, &wd.WordEndTS,
+		err := rows.Scan(&wd.WordId, &wd.ScriptId, &wd.BookId, &wd.ChapterNum, &wd.ChapterEnd,
+			&wd.VerseStr, &wd.VerseEnd, &wd.VerseNum, &wd.UsfmStyle, &wd.Person, &wd.Actor,
+			&wd.WordSeq, &wd.Word, &wd.WordBeginTS, &wd.WordEndTS,
 			&wordJson, &wd.MFCCRows, &wd.MFCCCols, &mfccJson)
 		if err != nil {
 			status = log.Error(d.Ctx, 500, err, "Error in Select Words.")
@@ -80,6 +84,7 @@ func LoadWordStruct(d db.DBAdapter) []Word {
 		if err != nil {
 			panic(err)
 		}
+		wd.Reference = FormatReference(wd.BookId, wd.ChapterNum, wd.ChapterEnd, wd.VerseStr, wd.VerseEnd)
 		results = append(results, wd)
 	}
 	err = rows.Err()
@@ -87,4 +92,14 @@ func LoadWordStruct(d db.DBAdapter) []Word {
 		log.Warn(d.Ctx, err, query)
 	}
 	return results
+}
+
+func FormatReference(bookId string, chapterNum int, chapterEnd int, verseStr string, verseEnd string) string {
+	var result = bookId + ` ` + strconv.Itoa(chapterNum) + `:` + verseStr
+	if chapterEnd != 0 && chapterNum != chapterEnd {
+		result += `-` + strconv.Itoa(chapterEnd) + `:` + verseEnd
+	} else if verseEnd != `` && verseStr != verseEnd {
+		result += `-` + verseEnd
+	}
+	return result
 }

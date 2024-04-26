@@ -24,7 +24,53 @@ func ReflectStruct(aStruct any) []Meta {
 	return results
 }
 
-func FindActiveScriptCols(structs []Script, meta []Meta) []Meta {
+func FindNumScriptMFCC(structs []Script) int {
+	var result int
+	for _, str := range structs {
+		if str.MFCCCols > 0 {
+			result = str.MFCCCols
+			break
+		}
+	}
+	return result
+}
+
+func FindNumWordMFCC(structs []Word) int {
+	var result int
+	for _, str := range structs {
+		if str.MFCCCols > 0 {
+			result = str.MFCCCols
+			break
+		}
+	}
+	return result
+}
+
+func SetNumMFCC(meta *[]Meta, numMFCC int) {
+	for i, mt := range *meta {
+		if mt.Name == `MFCC` {
+			(*meta)[i].Cols = numMFCC
+		}
+	}
+}
+
+func ConvertScriptsAny(structs []Script) []any {
+	var results = make([]any, 0, len(structs))
+	for _, str := range structs {
+		results = append(results, str)
+	}
+	return results
+}
+
+func ConvertWordsAny(structs []Word) []any {
+	var results = make([]any, 0, len(structs))
+	for _, str := range structs {
+		results = append(results, str)
+	}
+	return results
+}
+
+func FindActiveCols(structs []any, meta []Meta) []Meta {
 	var results []Meta
 	for _, mt := range meta {
 		for _, scr := range structs {
@@ -36,42 +82,4 @@ func FindActiveScriptCols(structs []Script, meta []Meta) []Meta {
 		}
 	}
 	return results
-}
-
-func FindActiveWordCols(structs []Word, meta []Meta) []Meta {
-	var results []Meta
-	for _, mt := range meta {
-		for _, scr := range structs {
-			data := reflect.ValueOf(scr).Field(mt.Index)
-			if !data.IsZero() {
-				results = append(results, mt)
-				break
-			}
-		}
-	}
-	return results
-}
-
-func FindNumScriptMFCC(scripts []Script) int {
-	var result int
-	for _, scr := range scripts {
-		cols := scr.MFCCCols
-		if cols > 0 {
-			result = cols
-			break
-		}
-	}
-	return result
-}
-
-func FindNumWordMFCC(words []Word) int {
-	var result int
-	for _, wd := range words {
-		cols := wd.MFCCCols
-		if cols > 0 {
-			result = cols
-			break
-		}
-	}
-	return result
 }

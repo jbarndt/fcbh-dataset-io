@@ -7,14 +7,6 @@ import (
 	"strconv"
 )
 
-func WriteScriptJSON(scripts []Script, meta []Meta) string {
-	var results = make([]any, 0, len(scripts))
-	for _, script := range scripts {
-		results = append(results, script)
-	}
-	return WriteJSON(results, meta)
-}
-
 func WriteJSON(structs []any, meta []Meta) string {
 	file, err := os.CreateTemp(os.Getenv(`FCBH_DATASET_TMP`), "json")
 	if err != nil {

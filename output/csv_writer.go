@@ -7,14 +7,6 @@ import (
 	"strconv"
 )
 
-func WriteScriptCSV(scripts []Script, meta []Meta) string {
-	var results = make([]any, 0, len(scripts))
-	for _, script := range scripts {
-		results = append(results, script)
-	}
-	return WriteCSV(results, meta)
-}
-
 func WriteCSV(structs []any, meta []Meta) string {
 	file, err := os.CreateTemp(os.Getenv(`FCBH_DATASET_TMP`), "csv")
 	if err != nil {
