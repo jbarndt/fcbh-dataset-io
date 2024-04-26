@@ -34,7 +34,7 @@ func WriteCSV(structs []any, meta []Meta) string {
 					item := data.Index(i)
 					if item.Kind() == reflect.Slice || item.Kind() == reflect.Array {
 						if i > 0 {
-							line = make([]string, col)
+							line = make([]string, col) // this won't work
 						}
 						for j := 0; j < item.Len(); j++ {
 							line = append(line, ToString(item.Index(j)))

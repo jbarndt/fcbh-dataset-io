@@ -4,8 +4,8 @@ type Meta struct {
 	Index int
 	Name  string
 	Tag   string
-	Dtype string // Do I need this, I think .(type) is working fine
-	Cols  int    // Do I need this?
+	Dtype string // Only used by json_writer to control double quotes
+	Cols  int
 }
 
 type Script struct {
