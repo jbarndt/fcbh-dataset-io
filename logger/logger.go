@@ -112,7 +112,7 @@ func errorImpl(ctx context.Context, http int, err string, param ...any) dataset.
 	e.IsErr = true
 	e.Status = http
 	e.Err = err
-	e.Message = string(result)
+	e.Message = strings.TrimSpace(string(result))
 	e.Trace = dumpLines()
 	e.Request = requestInfo(ctx)
 	errorLog.Printf("%+v", e)
