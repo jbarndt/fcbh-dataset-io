@@ -54,6 +54,29 @@ func SetNumMFCC(meta *[]Meta, numMFCC int) {
 	}
 }
 
+func FindNumWordEnc(structs []Word, meta *[]Meta) {
+	var length int
+	for _, str := range structs {
+		if len(str.WordEnc) > 0 {
+			length = len(str.WordEnc)
+			break
+		}
+	}
+	for i, mt := range *meta {
+		if mt.Name == `WordEnc` {
+			(*meta)[i].Cols = length
+		}
+	}
+}
+
+func SetCSVPos(meta *[]Meta) {
+	var pos = 0
+	for i, str := range *meta {
+		(*meta)[i].CSVPos = pos
+		pos += str.Cols
+	}
+}
+
 func ConvertScriptsAny(structs []Script) []any {
 	var results = make([]any, 0, len(structs))
 	for _, str := range structs {

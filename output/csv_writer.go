@@ -26,29 +26,27 @@ func WriteCSV(structs []any, meta []Meta) string {
 	_ = writer.Write(header)
 	for _, scr := range structs {
 		str := reflect.ValueOf(scr)
-		var line []string
-		for col, mt := range meta {
+		var line = make([]string, len(header))
+		for _, mt := range meta {
 			data := str.Field(mt.Index)
-			if data.Kind() == reflect.Slice || data.Kind() == reflect.Array {
+			if data.Kind() == reflect.Slice {
 				for i := 0; i < data.Len(); i++ {
-					item := data.Index(i)
-					if item.Kind() == reflect.Slice || item.Kind() == reflect.Array {
-						if i > 0 {
-							line = make([]string, col) // this won't work
+					if data.Index(i).Kind() == reflect.Slice {
+						for j := 0; j < data.Index(i).Len(); j++ {
+							line[mt.CSVPos+j] = ToString(data.Index(i).Index(j))
 						}
-						for j := 0; j < item.Len(); j++ {
-							line = append(line, ToString(item.Index(j)))
-						}
+						_ = writer.Write(line)
+						line = make([]string, len(header))
 					} else {
-						line = append(line, ToString(item))
+						line[mt.CSVPos+i] = ToString(data.Index(i))
 					}
-					_ = writer.Write(line)
 				}
 			} else {
-				line = append(line, ToString(data))
+				line[mt.CSVPos] = ToString(data)
 			}
 		}
 		_ = writer.Write(line)
+		line = make([]string, len(header))
 	}
 	writer.Flush()
 	err = writer.Error()

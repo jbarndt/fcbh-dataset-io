@@ -1,7 +1,7 @@
 package output
 
 import (
-	"io"
+	"bufio"
 	"os"
 	"reflect"
 	"strconv"
@@ -12,7 +12,7 @@ func WriteJSON(structs []any, meta []Meta) string {
 	if err != nil {
 		panic(err)
 	}
-	writer := io.StringWriter(file)
+	writer := bufio.NewWriter(file)
 	var names []string
 	for _, mt := range meta {
 		if mt.Cols == 1 {
@@ -48,7 +48,7 @@ func WriteJSON(structs []any, meta []Meta) string {
 	return file.Name()
 }
 
-func write(writer io.StringWriter, line int, col int, name string, value string, meta Meta) {
+func write(writer *bufio.Writer, line int, col int, name string, value string, meta Meta) {
 	if line == 0 && col == 0 {
 		_, _ = writer.WriteString(`[{ "`)
 	} else if line > 0 && col == 0 {

@@ -1,11 +1,12 @@
 package output
 
 type Meta struct {
-	Index int
-	Name  string
-	Tag   string
-	Dtype string // Only used by json_writer to control double quotes
-	Cols  int
+	Index  int // Position of field in the struct
+	Name   string
+	Tag    string
+	Dtype  string // Only used by json_writer to control double quotes
+	CSVPos int    // Position of field in CSV output
+	Cols   int
 }
 
 type Script struct {
@@ -46,7 +47,7 @@ type Word struct {
 	Word        string    `name:"word,string"`
 	WordBeginTS float64   `name:"word_begin_ts,float64"`
 	WordEndTS   float64   `name:"word_end_ts,float64"`
-	WordEncoded []float64 `name:"word_enc,float64"`
+	WordEnc     []float64 `name:"word_enc,float64"`
 	MFCCRows    int
 	MFCCCols    int
 	MFCC        [][]float32 `name:"mfcc,[][]float32"`

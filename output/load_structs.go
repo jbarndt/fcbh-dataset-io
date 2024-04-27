@@ -80,7 +80,7 @@ func LoadWordStruct(d db.DBAdapter) []Word {
 		if err != nil {
 			panic(err)
 		}
-		err = json.Unmarshal([]byte(wordJson), &wd.WordEncoded)
+		err = json.Unmarshal([]byte(wordJson), &wd.WordEnc)
 		if err != nil {
 			panic(err)
 		}
