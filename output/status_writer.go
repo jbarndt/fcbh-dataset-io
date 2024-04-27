@@ -1,10 +1,13 @@
 package output
 
 import (
+	"bytes"
 	"context"
 	"dataset"
 	log "dataset/logger"
+	"encoding/csv"
 	"encoding/json"
+	"strconv"
 )
 
 func JSONStatus(ctx context.Context, status dataset.Status, debug bool) string {
@@ -25,5 +28,23 @@ func JSONStatus(ctx context.Context, status dataset.Status, debug bool) string {
 
 func CSVStatus(ctx context.Context, status dataset.Status, debug bool) string {
 	var result string
+	var buffer = bytes.NewBufferString("")
+	writer := csv.NewWriter(buffer)
+	_ = writer.Write([]string{`Name`, `Value`})
+	_ = writer.Write([]string{`is_error`, strconv.FormatBool(status.IsErr)})
+	_ = writer.Write([]string{`message`, status.Message})
+	_ = writer.Write([]string{`status`, strconv.Itoa(status.Status)})
+	_ = writer.Write([]string{`error`, status.Err})
+	_ = writer.Write([]string{`request`, status.Request})
+	if debug {
+		_ = writer.Write([]string{`trace`, status.Trace})
+	}
+	writer.Flush()
+	err := writer.Error()
+	if err != nil {
+		status2 := log.Error(ctx, 500, err, `Error while creating error output`)
+		result = status.String() + `, ` + status2.String()
+	}
+	result = buffer.String()
 	return result
 }

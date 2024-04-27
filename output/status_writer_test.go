@@ -2,9 +2,12 @@ package output
 
 import (
 	"context"
+	"dataset"
 	log "dataset/logger"
 	"dataset/request"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"testing"
 )
 
@@ -15,9 +18,38 @@ func TestDefaultStatus(t *testing.T) {
 	if len(str) != 76 {
 		t.Error(`Status should be len 76`, len(str))
 	}
+	var response any
+	err := json.Unmarshal([]byte(str), &response)
+	if err != nil {
+		t.Error(err)
+	}
+	//fmt.Println(response)
 }
 
-func TestWriteJSONStatus(t *testing.T) {
+func TestJSONStatus(t *testing.T) {
+	status, ctx := prepareError(t)
+	result := JSONStatus(ctx, status, true)
+	fmt.Println(result)
+	if len(result) != 360 {
+		t.Error(`Result should be len 360`, len(result))
+	}
+	var response any
+	err := json.Unmarshal([]byte(result), &response)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestCSVStatus(t *testing.T) {
+	status, ctx := prepareError(t)
+	result := CSVStatus(ctx, status, true)
+	if len(result) != 342 {
+		t.Error(`Result should be len 342`, len(result))
+	}
+	//fmt.Println(result)
+}
+
+func prepareError(t *testing.T) (dataset.Status, context.Context) {
 	var req request.Request
 	req.Required.RequestName = `Test1`
 	req.Required.BibleId = `ENGWEB`
@@ -33,8 +65,5 @@ func TestWriteJSONStatus(t *testing.T) {
 	ctx = context.WithValue(context.Background(), `request`, yaml)
 	err := errors.New("test err")
 	status = log.Error(ctx, 400, err, "my error message")
-	result := JSONStatus(ctx, status, true)
-	if len(result) != 318 {
-		t.Error(`Result should be len 318`, len(result))
-	}
+	return status, ctx
 }
