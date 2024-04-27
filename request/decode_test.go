@@ -9,7 +9,7 @@ import (
 
 func TestRequestYamlFile(t *testing.T) {
 	var d = NewRequestDecoder(context.Background())
-	content, err := os.ReadFile(`request.yaml`)
+	content, err := os.ReadFile(`../controller/client/request_test.yaml`)
 	if err != nil {
 		panic(err)
 	}
@@ -21,9 +21,8 @@ func TestRequestYamlFile(t *testing.T) {
 
 func TestParser(t *testing.T) {
 	var test1 = `Required:
+  IsNew: Yes
   RequestName: Test1  # should be a unique name
-  RequestorName: Gary G
-  RequestorEmail: gary@shortsands.com
   BibleId: ENGWEB
   LanguageISO: eng
   VersionCode: WEB
@@ -78,8 +77,7 @@ OutputFormat:
   JSON: yes
   Sqlite: yes
 Compare:
-  Project1: UseProject1
-  Project2: UseProject2
+  BaseProject: UseProject1
   CompareSettings:
     LowerCase: yes
     RemovePromptChars: yes
@@ -156,8 +154,6 @@ Compare:
 		}
 	}
 	var strs = []string{req.Required.RequestName,
-		req.Required.RequestorName,
-		req.Required.RequestorEmail,
 		req.Required.BibleId,
 		req.Required.LanguageISO,
 		req.Required.VersionCode,
@@ -167,8 +163,7 @@ Compare:
 		req.TextData.File,
 		req.TextData.Http,
 		req.TextData.AWSS3,
-		req.Compare.Project1,
-		req.Compare.Project2}
+		req.Compare.BaseProject}
 	for i, item := range strs {
 		if len(item) == 0 {
 			t.Error(`The`, i, `th item should have a value, but is empty`)

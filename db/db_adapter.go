@@ -6,6 +6,8 @@ import (
 	"dataset"
 	log "dataset/logger"
 	"encoding/json"
+	"fmt"
+
 	//_ "modernc.org/sqlite"
 	_ "github.com/mattn/go-sqlite3"
 	"os"
@@ -25,11 +27,11 @@ func GetDBPath(database string) string {
 	}
 }
 
-func Exists(database string) bool {
-	var databasePath = GetDBPath(database)
-	_, err := os.Stat(databasePath)
-	return !os.IsNotExist(err)
-}
+//func Exists(database string) bool {
+//	var databasePath = GetDBPath(database)
+//	_, err := os.Stat(databasePath)
+//	return !os.IsNotExist(err)
+//}
 
 func DestroyDatabase(database string) {
 	var databasePath = GetDBPath(database)
@@ -41,17 +43,66 @@ func DestroyDatabase(database string) {
 
 type DBAdapter struct {
 	Ctx          context.Context
+	User         string
+	Project      string
 	Database     string
 	DatabasePath string
 	DB           *sql.DB
 }
 
+// NewerDBAdapter should be used for production
+func NewerDBAdapter(ctx context.Context, isNew bool, user string, project string) DBAdapter {
+	var d DBAdapter
+	d.Ctx = ctx
+	d.User = user
+	d.Project = project
+	d.Database = d.Project + ".db"
+	baseDir := os.Getenv(`FCBH_DATASET_DB`)
+	if baseDir == `` {
+		baseDir = os.Getenv(`HOME`)
+	}
+	directory := filepath.Join(baseDir, d.User)
+	_, err := os.Stat(directory)
+	if os.IsNotExist(err) {
+		_ = os.MkdirAll(directory, os.ModePerm)
+	}
+	d.DatabasePath = filepath.Join(directory, d.Database)
+	_, err = os.Stat(d.DatabasePath)
+	doesExist := !os.IsNotExist(err)
+	if isNew && doesExist {
+		_ = os.Remove(d.DatabasePath)
+	}
+	if !isNew && !doesExist {
+		log.Fatal(ctx, `The database does not exist`, d.DatabasePath)
+	}
+	d.DB, err = sql.Open("sqlite3", d.DatabasePath)
+	if err != nil {
+		log.Fatal(ctx, err)
+	}
+	fmt.Println("DB Opened", d.DatabasePath)
+	if isNew {
+		createDatabase(d.DB)
+	}
+	return d
+}
+
+// NewDBAdapter should be used for  :memory: database and test.
 func NewDBAdapter(ctx context.Context, database string) DBAdapter {
 	var databasePath = GetDBPath(database)
 	db, err := sql.Open("sqlite3", databasePath)
 	if err != nil {
 		log.Fatal(ctx, err)
 	}
+	var d DBAdapter
+	d.Ctx = ctx
+	d.Database = database
+	d.DatabasePath = databasePath
+	d.DB = db
+	createDatabase(db)
+	return d
+}
+
+func createDatabase(db *sql.DB) {
 	execDDL(db, `PRAGMA temp_store = MEMORY;`)
 	var query = `CREATE TABLE IF NOT EXISTS ident (
 		dataset_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -127,12 +178,6 @@ func NewDBAdapter(ctx context.Context, database string) DBAdapter {
 		mfcc_json TEXT NOT NULL,
 		FOREIGN KEY (word_id) REFERENCES words(word_id)) STRICT`
 	execDDL(db, query)
-	var result DBAdapter
-	result.Ctx = ctx
-	result.Database = database
-	result.DatabasePath = databasePath
-	result.DB = db
-	return result
 }
 
 func (d *DBAdapter) EraseDatabase() {
@@ -158,7 +203,7 @@ func (d *DBAdapter) InsertIdent(id Ident) dataset.Status {
 	var status dataset.Status
 	query := `REPLACE INTO ident(bible_id, audio_OT_id, audio_NT_id, text_OT_id, text_NT_id,
 		text_source, language_iso, version_code, languge_id, 
-		rolv_id, alphabet, language_name, version_name) VALUES (?,?,?,?,?,?,?,?,?,?,?)`
+		rolv_id, alphabet, language_name, version_name) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`
 	stmt, err := d.DB.Prepare(query)
 	defer stmt.Close()
 	if err != nil {

@@ -17,7 +17,7 @@ func (r *RequestDecoder) Validate(req Request) dataset.Status {
 	checkAudioEncoding(&req.AudioEncoding, `AudioEncoding`, &msgs)
 	checkTextEncoding(&req.TextEncoding, `TextEncoding`, &msgs)
 	checkOutputFormat(&req.OutputFormat, `OutputFormat`, &msgs)
-	checkCompare(req.Compare, &msgs)
+	//checkCompare(req.Compare, &msgs)
 	checkForOne(reflect.ValueOf(req.Compare.CompareSettings.DoubleQuotes), `DoubleQuotes`, &msgs)
 	checkForOne(reflect.ValueOf(req.Compare.CompareSettings.Apostrophe), `Apostrophe`, &msgs)
 	checkForOne(reflect.ValueOf(req.Compare.CompareSettings.Hyphen), `Hyphen`, &msgs)
@@ -104,12 +104,12 @@ func checkOutputFormat(req *OutputFormat, fieldName string, msgs *[]string) {
 	}
 }
 
-func checkCompare(req Compare, msgs *[]string) {
-	if (req.Project1 != `` && req.Project2 == ``) ||
-		(req.Project2 != `` && req.Project1 == ``) {
-		*msgs = append(*msgs, `Compare must have two projects, not one.`)
-	}
-}
+//func checkCompare(req Compare, msgs *[]string) {
+//	if (req.Project1 != `` && req.Project2 == ``) ||
+//		(req.Project2 != `` && req.Project1 == ``) {
+//		*msgs = append(*msgs, `Compare must have two projects, not one.`)
+//	}
+//}
 
 func checkForOne(structVal reflect.Value, fieldName string, msgs *[]string) int {
 	var errorCount int

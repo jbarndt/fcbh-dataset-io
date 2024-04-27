@@ -8,11 +8,12 @@ import (
 
 func TestValidate(t *testing.T) {
 	var d = NewRequestDecoder(context.Background())
-	content, err := os.ReadFile(`request.yaml`)
+	content, err := os.ReadFile(`../controller/client/request_test.yaml`)
 	if err != nil {
 		panic(err)
 	}
 	var req, _ = d.Decode(content)
+	req.Required.IsNew = true
 	req.Required.BibleId = `EBGESV`
 	req.Required.VersionCode = `WBT`
 	req.AudioData.File = `file:///where`

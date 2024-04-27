@@ -14,6 +14,7 @@ type Request struct {
 }
 
 type Required struct {
+	IsNew       bool   `yaml:"IsNew"`
 	RequestName string `yaml:"RequestName"`
 	BibleId     string `yaml:"BibleId"`
 	LanguageISO string `yaml:"LanguageISO"`
@@ -182,8 +183,7 @@ type OutputFormat struct {
 }
 
 type Compare struct {
-	Project1        string          `yaml:"Project1,omitempty"`
-	Project2        string          `yaml:"Project2,omitempty"`
+	BaseProject     string          `yaml:"BaseProject,omitempty"`
 	CompareSettings CompareSettings `yaml:"CompareSettings,omitempty"`
 }
 

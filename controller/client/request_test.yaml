@@ -1,7 +1,8 @@
 ## This is the request file format to run
 
 Required:
-  RequestName: Test1
+  IsNew: yes # Answer yet to start with a clean project
+  RequestName: Test1 # Use a unique name to keep runs separate, or reuse a name to overwrite prior run
   BibleId: ATIWBT
   LanguageISO: ati
   VersionCode: WBT
@@ -75,8 +76,7 @@ OutputFormat: # Put an X by the desired output format.
 # Default: JSON
 
 Compare: # To do a compare, put the names of the two projects here
-  Project1:  # This doesn’t quite work, how does user get name?
-  Project2:
+  BaseProject:  # Name of project to compare to this one
 ## compare entries go here
 ## edit check, the two projects must exist, and both must have a text source.
   CompareSettings: # Mark yes, all settings that apply

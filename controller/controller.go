@@ -62,9 +62,7 @@ func (c *Controller) processSteps() dataset.Status {
 		return status
 	}
 	// Open Database
-	dbName := c.user.Username + "_" + c.req.Required.RequestName + `.db`
-	db.DestroyDatabase(dbName)
-	c.database = db.NewDBAdapter(c.ctx, dbName)
+	c.database = db.NewerDBAdapter(c.ctx, c.req.Required.IsNew, c.user.Username, c.req.Required.RequestName)
 	// Fetch Ident Data from DBP
 	c.info, status = c.fetchData()
 	if status.IsErr {
@@ -108,7 +106,7 @@ func (c *Controller) processSteps() dataset.Status {
 		return status
 	}
 	// Compare
-	if c.req.Compare.Project1 != `` && c.req.Compare.Project2 != `` {
+	if c.req.Compare.BaseProject != `` {
 		status = c.matchText()
 		if status.IsErr {
 			return status
@@ -300,7 +298,7 @@ func (c *Controller) encodeText() dataset.Status {
 
 func (c *Controller) matchText() dataset.Status {
 	var status dataset.Status
-	compare := match.NewCompare(c.ctx, c.req.Compare.Project1, c.req.Compare.Project2)
+	compare := match.NewCompare(c.ctx, c.req.Compare.BaseProject, c.req.Required.RequestName)
 	status = compare.Process()
 	return status
 }
