@@ -32,14 +32,14 @@ func WriteJSON(structs []any, meta []Meta) string {
 					item := data.Index(i)
 					if item.Kind() == reflect.Slice || item.Kind() == reflect.Array {
 						for j := 0; j < item.Len(); j++ {
-							write(writer, line+i, j, names[col+j], ToString(item.Index(j)), mt)
+							write(writer, line+i, j, names[mt.CSVPos+j], ToString(item.Index(j)), mt)
 						}
 					} else {
-						write(writer, line+i, col, names[col], ToString(item), mt)
+						write(writer, line+i, col, names[mt.CSVPos+i], ToString(item), mt)
 					}
 				}
 			} else {
-				write(writer, line, col, names[col], ToString(data), mt)
+				write(writer, line, col, names[mt.CSVPos], ToString(data), mt)
 			}
 		}
 	}
