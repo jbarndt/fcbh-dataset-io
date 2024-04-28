@@ -23,37 +23,51 @@ func WriteJSON(structs []any, meta []Meta) string {
 			}
 		}
 	}
+	_, _ = writer.WriteString(`[`)
+	numStructs := len(structs)
 	for line, scr := range structs {
 		str := reflect.ValueOf(scr)
+		_, _ = writer.WriteString(`{ `)
 		for col, mt := range meta {
 			data := str.Field(mt.Index)
-			if data.Kind() == reflect.Slice || data.Kind() == reflect.Array {
+			if data.Kind() == reflect.Slice {
 				for i := 0; i < data.Len(); i++ {
 					item := data.Index(i)
-					if item.Kind() == reflect.Slice || item.Kind() == reflect.Array {
+					if item.Kind() == reflect.Slice {
+						if i > 0 {
+							_, _ = writer.WriteString(`{ `)
+						}
 						for j := 0; j < item.Len(); j++ {
-							write(writer, line+i, j, names[mt.CSVPos+j], ToString(item.Index(j)), mt)
+							write(writer, j, names[mt.CSVPos+j], ToString(item.Index(j)), mt)
+						}
+						if i < data.Len()-1 {
+							_, _ = writer.WriteString(" },\n")
 						}
 					} else {
-						write(writer, line+i, col, names[mt.CSVPos+i], ToString(item), mt)
+						write(writer, col, names[mt.CSVPos+i], ToString(item), mt)
 					}
 				}
 			} else {
-				write(writer, line, col, names[mt.CSVPos], ToString(data), mt)
+				write(writer, col, names[mt.CSVPos], ToString(data), mt)
 			}
 		}
+		if line < numStructs-1 {
+			_, _ = writer.WriteString(" },\n")
+		} else {
+			_, _ = writer.WriteString(` }`)
+		}
 	}
-	_, _ = writer.WriteString(" }]\n")
+	_, _ = writer.WriteString("]\n")
+	err = writer.Flush()
+	if err != nil {
+		panic(err)
+	}
 	_ = file.Close()
 	return file.Name()
 }
 
-func write(writer *bufio.Writer, line int, col int, name string, value string, meta Meta) {
-	if line == 0 && col == 0 {
-		_, _ = writer.WriteString(`[{ "`)
-	} else if line > 0 && col == 0 {
-		_, _ = writer.WriteString(" },\n{ ")
-	} else {
+func write(writer *bufio.Writer, col int, name string, value string, meta Meta) {
+	if col > 0 {
 		_, _ = writer.WriteString(`, "`)
 	}
 	_, _ = writer.WriteString(name)
