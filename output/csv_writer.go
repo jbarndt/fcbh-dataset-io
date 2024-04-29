@@ -35,8 +35,10 @@ func WriteCSV(structs []any, meta []Meta) string {
 						for j := 0; j < data.Index(i).Len(); j++ {
 							line[mt.CSVPos+j] = ToString(data.Index(i).Index(j))
 						}
-						_ = writer.Write(line)
-						line = make([]string, len(header))
+						if i < data.Len()-1 {
+							_ = writer.Write(line)
+							line = make([]string, len(header))
+						}
 					} else {
 						line[mt.CSVPos+i] = ToString(data.Index(i))
 					}

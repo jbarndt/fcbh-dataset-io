@@ -7,7 +7,6 @@ import (
 	log "dataset/logger"
 	"encoding/json"
 	"fmt"
-
 	//_ "modernc.org/sqlite"
 	_ "github.com/mattn/go-sqlite3"
 	"os"
@@ -588,13 +587,6 @@ func (d *DBAdapter) SelectWordsByBookChapter(bookId string, chapter int) ([]Word
 	return results, status
 }
 
-/*
-# In FastTextExample
-def selectWords(self):
-sql = `SELECT word_id, word, punct, src_word FROM audio_words`
-resultSet = self.sqlite.select(sql)
-return resultSet
-*/
 func (d *DBAdapter) UpdateWordTimestamps(words []Timestamp) dataset.Status {
 	var status dataset.Status
 	query := `UPDATE words SET word_begin_ts = ?, word_end_ts = ? WHERE word_id = ?`
@@ -671,22 +663,6 @@ func (d *DBAdapter) insertMFCCS(query string, mfccs []MFCC) dataset.Status {
 	status = d.commitDML(tx, query)
 	return status
 }
-
-/*
-
-# In MFCCExample
-def selectWordMFCCs(self):
-sql = `SELECT word_id, word_mfcc, mfcc_rows, mfcc_cols FROM audio_words`
-resultSet = self.sqlite.select(sql, [])
-finalSet = []
-for (word_id, word_mfcc, mfcc_rows, mfcc_cols) in resultSet:
-if word_mfcc != None:
-mfcc_decoded = np.frombuffer(word_mfcc, dtype=np.float32)
-mfcc_shaped = mfcc_decoded.reshape((mfcc_rows, mfcc_cols))
-finalSet.append((word_id, mfcc_shaped))
-return finalSet
-
-*/
 
 func (d *DBAdapter) UpdateWordEncodings(words []Word) dataset.Status {
 	var status dataset.Status
