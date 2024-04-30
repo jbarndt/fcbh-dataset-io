@@ -27,7 +27,7 @@ type Script struct {
 	ScriptEndTS   float64 `name:"script_end_ts,float64"`
 	MFCCRows      int
 	MFCCCols      int
-	MFCC          [][]float32 `name:"mfcc,[][]float32"`
+	MFCC          [][]float64 `name:"mfcc,[][]float64"`
 }
 
 type Word struct {

@@ -2,6 +2,7 @@ package output
 
 import (
 	"bufio"
+	"encoding/json"
 	"os"
 	"reflect"
 	"strconv"
@@ -23,41 +24,40 @@ func WriteJSON(structs []any, meta []Meta) string {
 			}
 		}
 	}
-	_, _ = writer.WriteString(`[`)
-	numStructs := len(structs)
-	for line, scr := range structs {
+	var resp = make([]map[string]any, 0, len(structs))
+	for _, scr := range structs {
 		str := reflect.ValueOf(scr)
-		_, _ = writer.WriteString(`{ `)
-		for col, mt := range meta {
+		var rec = make(map[string]any)
+		for _, mt := range meta {
 			data := str.Field(mt.Index)
 			if data.Kind() == reflect.Slice {
 				for i := 0; i < data.Len(); i++ {
 					item := data.Index(i)
 					if item.Kind() == reflect.Slice {
-						if i > 0 {
-							_, _ = writer.WriteString(`{ `)
-						}
 						for j := 0; j < item.Len(); j++ {
-							write(writer, j, names[mt.CSVPos+j], ToString(item.Index(j)), mt)
+							rec[names[mt.CSVPos+j]] = ToValue(item.Index(j))
 						}
 						if i < data.Len()-1 {
-							_, _ = writer.WriteString(" },\n")
+							resp = append(resp, rec)
+							rec = make(map[string]any)
 						}
 					} else {
-						write(writer, col, names[mt.CSVPos+i], ToString(item), mt)
+						rec[names[mt.CSVPos+i]] = ToValue(item)
 					}
 				}
 			} else {
-				write(writer, col, names[mt.CSVPos], ToString(data), mt)
+				rec[names[mt.CSVPos]] = ToValue(data)
 			}
 		}
-		if line < numStructs-1 {
-			_, _ = writer.WriteString(" },\n")
-		} else {
-			_, _ = writer.WriteString(` }`)
-		}
+		resp = append(resp, rec)
+		rec = make(map[string]any)
 	}
-	_, _ = writer.WriteString("]\n")
+	var encoder = json.NewEncoder(writer)
+	encoder.SetIndent("", "  ")
+	err = encoder.Encode(resp)
+	if err != nil {
+		panic(err)
+	}
 	err = writer.Flush()
 	if err != nil {
 		panic(err)
@@ -66,17 +66,23 @@ func WriteJSON(structs []any, meta []Meta) string {
 	return file.Name()
 }
 
-func write(writer *bufio.Writer, col int, name string, value string, meta Meta) {
-	if col > 0 {
-		_, _ = writer.WriteString(`, "`)
+func ToValue(value reflect.Value) any {
+	var result any
+	switch value.Kind() {
+	case reflect.Bool:
+		result = value.Bool()
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		result = value.Int()
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		result = value.Uint()
+	case reflect.Float32:
+		result = value.Float()
+	case reflect.Float64:
+		result = value.Float()
+	case reflect.String:
+		result = value.String()
+	default:
+		panic(`output.ToValue() cannot convert value of type` + value.Type().String())
 	}
-	_, _ = writer.WriteString(name)
-	_, _ = writer.WriteString(`": `)
-	if meta.Dtype == `string` {
-		_, _ = writer.WriteString(`"`)
-		_, _ = writer.WriteString(value)
-		_, _ = writer.WriteString(`"`)
-	} else {
-		_, _ = writer.WriteString(value)
-	}
+	return result
 }
