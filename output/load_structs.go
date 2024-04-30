@@ -63,7 +63,7 @@ func LoadWordStruct(d db.DBAdapter) []Word {
 		FROM words JOIN scripts ON words.script_id = scripts.script_id
 		LEFT OUTER JOIN word_mfcc ON word_mfcc.word_id = words.word_id
 		WHERE ttype = 'W'
-		AND book_id = 'MRK' ORDER BY words.word_id`
+		ORDER BY words.word_id`
 	rows, err := d.DB.Query(query)
 	if err != nil {
 		status = log.Error(d.Ctx, 500, err, "Error during select words")
@@ -72,24 +72,32 @@ func LoadWordStruct(d db.DBAdapter) []Word {
 	defer rows.Close()
 	for rows.Next() {
 		var wd Word
-		var wordJson string
-		var mfccJson string
+		var mfccRows sql.NullInt64
+		var mfccCols sql.NullInt64
+		var mfccJson sql.NullString
+		var wordJson sql.NullString
 		err := rows.Scan(&wd.WordId, &wd.ScriptId, &wd.BookId, &wd.ChapterNum, &wd.ChapterEnd,
 			&wd.VerseStr, &wd.VerseEnd, &wd.VerseNum, &wd.UsfmStyle, &wd.Person, &wd.Actor,
 			&wd.WordSeq, &wd.Word, &wd.WordBeginTS, &wd.WordEndTS,
-			&wordJson, &wd.MFCCRows, &wd.MFCCCols, &mfccJson)
+			&wordJson, &mfccRows, &mfccCols, &mfccJson)
 		if err != nil {
 			status = log.Error(d.Ctx, 500, err, "Error in Select Words.")
 			//return results, status
 			panic(status.Message)
 		}
-		err = json.Unmarshal([]byte(mfccJson), &wd.MFCC)
-		if err != nil {
-			panic(err)
+		if mfccRows.Valid && mfccCols.Valid && mfccJson.Valid {
+			wd.MFCCRows = int(mfccRows.Int64)
+			wd.MFCCCols = int(mfccCols.Int64)
+			err = json.Unmarshal([]byte(mfccJson.String), &wd.MFCC)
+			if err != nil {
+				panic(err)
+			}
 		}
-		err = json.Unmarshal([]byte(wordJson), &wd.WordEnc)
-		if err != nil {
-			panic(err)
+		if wordJson.Valid {
+			err = json.Unmarshal([]byte(wordJson.String), &wd.WordEnc)
+			if err != nil {
+				panic(err)
+			}
 		}
 		wd.Reference = FormatReference(wd.BookId, wd.ChapterNum, wd.ChapterEnd, wd.VerseStr, wd.VerseEnd)
 		results = append(results, wd)

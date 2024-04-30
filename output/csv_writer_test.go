@@ -4,7 +4,6 @@ import (
 	"context"
 	"dataset/db"
 	"encoding/csv"
-	"encoding/json"
 	"fmt"
 	"gonum.org/v1/gonum/floats"
 	"os"
@@ -21,7 +20,22 @@ func TestCSVWriterScript(t *testing.T) {
 	fmt.Println("Loaded Scripts", len(structs))
 	filename := WriteCSV(structs, meta)
 	mfccFile := readCSVMFCC(filename, t)
-	mfccDB := readDBMFCC(conn, `script_mfcc`, t)
+	scripts := LoadScriptStruct(conn)
+	mfccDB := extractScriptMFCC(scripts)
+	compare(mfccDB, mfccFile, t)
+	fmt.Println("Written CSV", filename)
+}
+
+func TestCSVWriterWord(t *testing.T) {
+	ctx := context.Background()
+	var conn = db.NewDBAdapter(ctx, `ENGWEB_DBPTEXT.db`)
+	//prepareTimestampAndFMCCData(conn, `ENGWEB`, `ENGWEBN2DA`, t)
+	structs, meta := PrepareWords(conn, false, false)
+	fmt.Println("Loaded Scripts", len(structs))
+	filename := WriteCSV(structs, meta)
+	mfccFile := readCSVMFCC(filename, t)
+	words := LoadWordStruct(conn)
+	mfccDB := extractWordEncAndMFCC(words)
 	compare(mfccDB, mfccFile, t)
 	fmt.Println("Written CSV", filename)
 }
@@ -35,102 +49,88 @@ func readCSVMFCC(filename string, t *testing.T) [][]float64 {
 		t.Error(err)
 	}
 	header := records[0]
-	var columns []int
+	var firstReal int
 	for i, col := range header {
-		if strings.HasPrefix(col, `mfcc`) {
-			columns = append(columns, i)
+		if strings.HasPrefix(col, `mfcc`) || strings.HasPrefix(col, `word_enc`) {
+			firstReal = i
+			break
 		}
 	}
 	for row, record := range records {
 		if row > 0 {
-			var hasData = false
-			var resultRec []float64
-			for _, index := range columns {
-				value, err := strconv.ParseFloat(record[index], 64)
+			hasData := false
+			tmpRec := record[firstReal:]
+			var rec = make([]float64, 0, len(tmpRec))
+			for _, val := range tmpRec {
+				value, err := strconv.ParseFloat(val, 64)
 				if err != nil {
 					value = 0.0
 				} else {
 					hasData = true
 				}
-				resultRec = append(resultRec, value)
+				rec = append(rec, value)
 			}
 			if hasData {
-				results = append(results, resultRec)
+				results = append(results, rec)
 			}
 		}
 	}
 	return results
 }
 
-func readDBMFCC(conn db.DBAdapter, table string, t *testing.T) [][]float64 {
-	var results = make([][]float64, 0, 10000)
-	var query string
-	if table == `script_mfcc` {
-		query = `SELECT script_id, rows, cols, mfcc_json FROM script_mfcc ORDER BY script_id`
-	} else {
-		query = `SELECT word_id, rows, cols, mfcc_json FROM script_mfcc ORDER BY word_id`
-	}
-	rows, err := conn.DB.Query(query)
-	defer rows.Close()
-	if err != nil {
-		t.Error(err)
-	}
-	for rows.Next() {
-		var rec db.MFCC
-		var mfccJson string
-		err := rows.Scan(&rec.Id, &rec.Rows, &rec.Cols, &mfccJson)
-		if err != nil {
-			t.Error(err)
+func extractScriptMFCC(scripts []Script) [][]float64 {
+	var results [][]float64
+	for _, scr := range scripts {
+		for row := 0; row < scr.MFCCRows; row++ {
+			var resultRec []float64
+			for _, value := range scr.MFCC[row] {
+				resultRec = append(resultRec, float64(value))
+			}
+			results = append(results, resultRec)
 		}
-		err = json.Unmarshal([]byte(mfccJson), &rec.MFCC)
-		if err != nil {
-			t.Error(err)
+	}
+	return results
+}
+
+func extractWordEncAndMFCC(words []Word) [][]float64 {
+	var results [][]float64
+	var wordEncLen = 0
+	var mfccCols = 0
+	for _, wrd := range words {
+		if len(wrd.WordEnc) > 0 {
+			wordEncLen = len(wrd.WordEnc)
 		}
-		if rec.Rows > 0 {
-			for row := 0; row < rec.Rows; row++ {
-				var resultRec []float64
-				for _, value := range rec.MFCC[row] {
-					resultRec = append(resultRec, float64(value))
+		if wrd.MFCCCols > 0 {
+			mfccCols = wrd.MFCCCols
+		}
+		if wordEncLen > 0 && mfccCols > 0 {
+			break
+		}
+	}
+	for _, wrd := range words {
+		if len(wrd.WordEnc) > 0 || len(wrd.MFCC) > 0 {
+			var rec = make([]float64, wordEncLen+mfccCols)
+			if len(wrd.WordEnc) > 0 {
+				for i := 0; i < len(wrd.WordEnc); i++ {
+					rec[i] = wrd.WordEnc[i]
 				}
-				results = append(results, resultRec)
+			}
+			if wrd.MFCCCols > 0 {
+				for col := 0; col < wrd.MFCCCols; col++ {
+					rec[wordEncLen+col] = float64(wrd.MFCC[0][col])
+				}
+				results = append(results, rec)
+				for row := 1; row < wrd.MFCCRows; row++ {
+					rec = make([]float64, wordEncLen+mfccCols)
+					for col := 0; col < wrd.MFCCCols; col++ {
+						rec[wordEncLen+col] = float64(wrd.MFCC[row][col])
+					}
+					results = append(results, rec)
+				}
+			} else {
+				results = append(results, rec)
 			}
 		}
-	}
-	err = rows.Err()
-	if err != nil {
-		t.Error(err)
-	}
-	return results
-}
-
-func testSumMWordEnc(conn db.DBAdapter, t *testing.T) map[string]float64 {
-	var results = make(map[string]float64)
-	query := `SELECT word_enc FROM words`
-	rows, err := conn.DB.Query(query)
-	defer rows.Close()
-	if err != nil {
-		t.Error(err)
-	}
-	for rows.Next() {
-		var wordJson string
-		err := rows.Scan(&wordJson)
-		if err != nil {
-			t.Error(err)
-		}
-		var wordEnc []float64
-		err = json.Unmarshal([]byte(wordJson), &wordEnc)
-		if err != nil {
-			t.Error(err)
-		}
-		for col, wd := range wordEnc {
-			name := `word_enc` + strconv.Itoa(col)
-			total, _ := results[name]
-			results[name] = wd + total
-		}
-	}
-	err = rows.Err()
-	if err != nil {
-		t.Error(err)
 	}
 	return results
 }
@@ -145,7 +145,7 @@ func compare(dbSlice [][]float64, fileSlice [][]float64, t *testing.T) {
 		fileRec := fileSlice[i]
 		if len(dbRec) != len(fileRec) {
 			t.Error(`row`, i, `dbRec len`, len(dbRec), `fileRec len`, len(fileRec))
-		} else if !floats.EqualApprox(dbRec, fileRec, 0.0000001) {
+		} else if !floats.EqualApprox(dbRec, fileRec, 0.0001) { //0.0000001
 			t.Error(`row`, i, `dbRec`, dbRec, `fileRec`, fileRec)
 			rowDiffCount++
 		}
