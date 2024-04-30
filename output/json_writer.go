@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-func WriteJSON(structs []any, meta []Meta) string {
+func (o *Output) WriteJSON(structs []any, meta []Meta) string {
 	file, err := os.CreateTemp(os.Getenv(`FCBH_DATASET_TMP`), "json")
 	if err != nil {
 		panic(err)
@@ -35,18 +35,18 @@ func WriteJSON(structs []any, meta []Meta) string {
 					item := data.Index(i)
 					if item.Kind() == reflect.Slice {
 						for j := 0; j < item.Len(); j++ {
-							rec[names[mt.CSVPos+j]] = ToValue(item.Index(j))
+							rec[names[mt.CSVPos+j]] = o.ToValue(item.Index(j))
 						}
 						if i < data.Len()-1 {
 							resp = append(resp, rec)
 							rec = make(map[string]any)
 						}
 					} else {
-						rec[names[mt.CSVPos+i]] = ToValue(item)
+						rec[names[mt.CSVPos+i]] = o.ToValue(item)
 					}
 				}
 			} else {
-				rec[names[mt.CSVPos]] = ToValue(data)
+				rec[names[mt.CSVPos]] = o.ToValue(data)
 			}
 		}
 		resp = append(resp, rec)
@@ -66,7 +66,7 @@ func WriteJSON(structs []any, meta []Meta) string {
 	return file.Name()
 }
 
-func ToValue(value reflect.Value) any {
+func (o *Output) ToValue(value reflect.Value) any {
 	var result any
 	switch value.Kind() {
 	case reflect.Bool:

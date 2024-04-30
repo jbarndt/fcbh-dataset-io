@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-func ReflectStruct(aStruct any) []Meta {
+func (o *Output) ReflectStruct(aStruct any) []Meta {
 	var results []Meta
 	sc := reflect.TypeOf(aStruct)
 	for i := 0; i < sc.NumField(); i++ {
@@ -24,7 +24,7 @@ func ReflectStruct(aStruct any) []Meta {
 	return results
 }
 
-func FindNumScriptMFCC(structs []Script) int {
+func (o *Output) FindNumScriptMFCC(structs []Script) int {
 	var result int
 	for _, str := range structs {
 		if str.MFCCCols > 0 {
@@ -35,7 +35,7 @@ func FindNumScriptMFCC(structs []Script) int {
 	return result
 }
 
-func FindNumWordMFCC(structs []Word) int {
+func (o *Output) FindNumWordMFCC(structs []Word) int {
 	var result int
 	for _, str := range structs {
 		if str.MFCCCols > 0 {
@@ -46,7 +46,7 @@ func FindNumWordMFCC(structs []Word) int {
 	return result
 }
 
-func SetNumMFCC(meta *[]Meta, numMFCC int) {
+func (o *Output) SetNumMFCC(meta *[]Meta, numMFCC int) {
 	for i, mt := range *meta {
 		if mt.Name == `MFCC` {
 			(*meta)[i].Cols = numMFCC
@@ -54,7 +54,7 @@ func SetNumMFCC(meta *[]Meta, numMFCC int) {
 	}
 }
 
-func FindNumWordEnc(structs []Word, meta *[]Meta) {
+func (o *Output) FindNumWordEnc(structs []Word, meta *[]Meta) {
 	var length int
 	for _, str := range structs {
 		if len(str.WordEnc) > 0 {
@@ -69,7 +69,7 @@ func FindNumWordEnc(structs []Word, meta *[]Meta) {
 	}
 }
 
-func SetCSVPos(meta *[]Meta) {
+func (o *Output) SetCSVPos(meta *[]Meta) {
 	var pos = 0
 	for i, str := range *meta {
 		(*meta)[i].CSVPos = pos
@@ -77,7 +77,7 @@ func SetCSVPos(meta *[]Meta) {
 	}
 }
 
-func ConvertScriptsAny(structs []Script) []any {
+func (o *Output) ConvertScriptsAny(structs []Script) []any {
 	var results = make([]any, 0, len(structs))
 	for _, str := range structs {
 		results = append(results, str)
@@ -85,7 +85,7 @@ func ConvertScriptsAny(structs []Script) []any {
 	return results
 }
 
-func ConvertWordsAny(structs []Word) []any {
+func (o *Output) ConvertWordsAny(structs []Word) []any {
 	var results = make([]any, 0, len(structs))
 	for _, str := range structs {
 		results = append(results, str)
@@ -93,7 +93,7 @@ func ConvertWordsAny(structs []Word) []any {
 	return results
 }
 
-func FindActiveCols(structs []any, meta []Meta) []Meta {
+func (o *Output) FindActiveCols(structs []any, meta []Meta) []Meta {
 	var results []Meta
 	for _, mt := range meta {
 		for _, scr := range structs {

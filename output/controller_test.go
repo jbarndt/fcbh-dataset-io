@@ -15,11 +15,12 @@ func TestPrepareScripts(t *testing.T) {
 	ctx := context.Background()
 	var conn = db.NewDBAdapter(ctx, `ENGWEB_DBPTEXT.db`)
 	//prepareTimestampAndFMCCData(conn, `ENGWEB`, `ENGWEBN2DA`, t)
-	structs, meta := PrepareScripts(conn, true, true)
+	var out = NewOutput(ctx)
+	structs, meta := out.PrepareScripts(conn, true, true)
 	fmt.Println("Loaded Scripts", len(structs))
-	filename := WriteCSV(structs, meta)
-	fmt.Println("CSV File", filename)
-	filename = WriteJSON(structs, meta)
+	filename := out.WriteCSV(structs, meta)
+	fmt.Println("CoSV File", filename)
+	filename = out.WriteJSON(structs, meta)
 	fmt.Println("JSON File", filename)
 }
 
@@ -27,11 +28,12 @@ func TestPrepareWords(t *testing.T) {
 	ctx := context.Background()
 	var conn = db.NewDBAdapter(ctx, `ENGWEB_DBPTEXT.db`)
 	//prepareTimestampAndFMCCData(conn, `ENGWEB`, `ENGWEBN2DA`, t)
-	structs, meta := PrepareWords(conn, false, false)
+	var out = NewOutput(ctx)
+	structs, meta := out.PrepareWords(conn, false, false)
 	fmt.Println("Loaded Scripts", len(structs))
-	filename := WriteCSV(structs, meta)
+	filename := out.WriteCSV(structs, meta)
 	fmt.Println("CSV File", filename)
-	filename = WriteJSON(structs, meta)
+	filename = out.WriteJSON(structs, meta)
 	fmt.Println("JSON File", filename)
 }
 

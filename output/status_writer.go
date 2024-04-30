@@ -10,7 +10,7 @@ import (
 	"strconv"
 )
 
-func JSONStatus(ctx context.Context, status dataset.Status, debug bool) string {
+func (o *Output) JSONStatus(ctx context.Context, status dataset.Status, debug bool) string {
 	var result string
 	if !debug {
 		status.Trace = ``
@@ -26,7 +26,7 @@ func JSONStatus(ctx context.Context, status dataset.Status, debug bool) string {
 	return `[` + result + `]`
 }
 
-func CSVStatus(ctx context.Context, status dataset.Status, debug bool) string {
+func (o *Output) CSVStatus(ctx context.Context, status dataset.Status, debug bool) string {
 	var result string
 	var buffer = bytes.NewBufferString("")
 	writer := csv.NewWriter(buffer)

@@ -9,7 +9,7 @@ import (
 	"strconv"
 )
 
-func LoadScriptStruct(d db.DBAdapter) []Script {
+func (o *Output) LoadScriptStruct(d db.DBAdapter) []Script {
 	var results []Script
 	var status dataset.Status
 	query := `SELECT scripts.script_id, book_id, chapter_num, chapter_end, audio_file, script_num, 
@@ -44,7 +44,7 @@ func LoadScriptStruct(d db.DBAdapter) []Script {
 				panic(err)
 			}
 		}
-		sc.Reference = FormatReference(sc.BookId, sc.ChapterNum, sc.ChapterEnd, sc.VerseStr, sc.VerseEnd)
+		sc.Reference = o.FormatReference(sc.BookId, sc.ChapterNum, sc.ChapterEnd, sc.VerseStr, sc.VerseEnd)
 		results = append(results, sc)
 	}
 	err = rows.Err()
@@ -54,7 +54,7 @@ func LoadScriptStruct(d db.DBAdapter) []Script {
 	return results
 }
 
-func LoadWordStruct(d db.DBAdapter) []Word {
+func (o *Output) LoadWordStruct(d db.DBAdapter) []Word {
 	var results []Word
 	var status dataset.Status
 	query := `SELECT words.word_id, words.script_id, book_id, chapter_num, chapter_end, verse_str, 
@@ -99,7 +99,7 @@ func LoadWordStruct(d db.DBAdapter) []Word {
 				panic(err)
 			}
 		}
-		wd.Reference = FormatReference(wd.BookId, wd.ChapterNum, wd.ChapterEnd, wd.VerseStr, wd.VerseEnd)
+		wd.Reference = o.FormatReference(wd.BookId, wd.ChapterNum, wd.ChapterEnd, wd.VerseStr, wd.VerseEnd)
 		results = append(results, wd)
 	}
 	err = rows.Err()
@@ -109,7 +109,7 @@ func LoadWordStruct(d db.DBAdapter) []Word {
 	return results
 }
 
-func FormatReference(bookId string, chapterNum int, chapterEnd int, verseStr string, verseEnd string) string {
+func (o *Output) FormatReference(bookId string, chapterNum int, chapterEnd int, verseStr string, verseEnd string) string {
 	var result = bookId + ` ` + strconv.Itoa(chapterNum) + `:` + verseStr
 	if chapterEnd != 0 && chapterNum != chapterEnd {
 		result += `-` + strconv.Itoa(chapterEnd) + `:` + verseEnd

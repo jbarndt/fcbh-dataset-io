@@ -2,7 +2,7 @@ package output
 
 import "math"
 
-func NormalizeScriptMFCC(structs []Script, numMFCC int) []Script {
+func (o *Output) NormalizeScriptMFCC(structs []Script, numMFCC int) []Script {
 	for col := 0; col < numMFCC; col++ {
 		var sum float64
 		var count float64
@@ -32,7 +32,7 @@ func NormalizeScriptMFCC(structs []Script, numMFCC int) []Script {
 	return structs
 }
 
-func NormalizeWordMFCC(structs []Word, numMFCC int) []Word {
+func (o *Output) NormalizeWordMFCC(structs []Word, numMFCC int) []Word {
 	for col := 0; col < numMFCC; col++ {
 		var sum float64
 		var count float64
@@ -62,7 +62,7 @@ func NormalizeWordMFCC(structs []Word, numMFCC int) []Word {
 	return structs
 }
 
-func PadScriptRows(structs []Script, numMFCC int) []Script {
+func (o *Output) PadScriptRows(structs []Script, numMFCC int) []Script {
 	largest := 0
 	for _, str := range structs {
 		if str.MFCCRows > largest {
@@ -81,7 +81,7 @@ func PadScriptRows(structs []Script, numMFCC int) []Script {
 	return structs
 }
 
-func PadWordRows(structs []Word, numMFCC int) []Word {
+func (o *Output) PadWordRows(structs []Word, numMFCC int) []Word {
 	largest := 0
 	for _, str := range structs {
 		if str.MFCCRows > largest {

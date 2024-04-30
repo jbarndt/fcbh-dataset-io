@@ -7,7 +7,7 @@ import (
 	"strconv"
 )
 
-func WriteCSV(structs []any, meta []Meta) string {
+func (o *Output) WriteCSV(structs []any, meta []Meta) string {
 	file, err := os.CreateTemp(os.Getenv(`FCBH_DATASET_TMP`), "csv")
 	if err != nil {
 		panic(err)
@@ -33,18 +33,18 @@ func WriteCSV(structs []any, meta []Meta) string {
 				for i := 0; i < data.Len(); i++ {
 					if data.Index(i).Kind() == reflect.Slice {
 						for j := 0; j < data.Index(i).Len(); j++ {
-							line[mt.CSVPos+j] = ToString(data.Index(i).Index(j))
+							line[mt.CSVPos+j] = o.ToString(data.Index(i).Index(j))
 						}
 						if i < data.Len()-1 {
 							_ = writer.Write(line)
 							line = make([]string, len(header))
 						}
 					} else {
-						line[mt.CSVPos+i] = ToString(data.Index(i))
+						line[mt.CSVPos+i] = o.ToString(data.Index(i))
 					}
 				}
 			} else {
-				line[mt.CSVPos] = ToString(data)
+				line[mt.CSVPos] = o.ToString(data)
 			}
 		}
 		_ = writer.Write(line)
@@ -62,7 +62,7 @@ func WriteCSV(structs []any, meta []Meta) string {
 // ToString converts scalar values to string.  It does not convert the following kind.
 // reflect.Uintptr, reflect.Complex64, reflect.Complex128, reflect.Struct, reflect.Array,
 // reflect.Slice, reflect.Chan, reflect.Func, reflect.Interface, reflect.Invalid
-func ToString(value reflect.Value) string {
+func (o *Output) ToString(value reflect.Value) string {
 	var result string
 	switch value.Kind() {
 	case reflect.Bool:
