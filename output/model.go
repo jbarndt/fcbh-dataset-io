@@ -50,5 +50,5 @@ type Word struct {
 	WordEnc     []float64 `name:"word_enc,float64"`
 	MFCCRows    int
 	MFCCCols    int
-	MFCC        [][]float32 `name:"mfcc,[][]float32"`
+	MFCC        [][]float64 `name:"mfcc,[][]float64"`
 }

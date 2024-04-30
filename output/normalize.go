@@ -46,15 +46,15 @@ func NormalizeWordMFCC(structs []Word, numMFCC int) []Word {
 		var devSqr float64
 		for _, str := range structs {
 			for _, mf := range str.MFCC {
-				devSqr += math.Pow(float64(mf[col])-mean, 2)
+				devSqr += math.Pow(mf[col]-mean, 2)
 			}
 		}
 		var stddev = math.Sqrt(devSqr / count)
 		for i, str := range structs {
 			var mfccs = str.MFCC
 			for j, mf := range mfccs {
-				value := float64(mf[col])
-				mfccs[j][col] = float32((value - mean) / stddev)
+				value := mf[col]
+				mfccs[j][col] = (value - mean) / stddev
 			}
 			structs[i].MFCC = mfccs
 		}
@@ -88,7 +88,7 @@ func PadWordRows(structs []Word, numMFCC int) []Word {
 			largest = str.MFCCRows
 		}
 	}
-	var padRow = make([]float32, numMFCC)
+	var padRow = make([]float64, numMFCC)
 	for i, str := range structs {
 		mfccs := str.MFCC
 		needRows := largest - str.MFCCRows
