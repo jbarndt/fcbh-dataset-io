@@ -1,17 +1,23 @@
 package output
 
 import (
+	"dataset"
+	log "dataset/logger"
 	"encoding/csv"
 	"os"
 	"reflect"
 	"strconv"
 )
 
-func (o *Output) WriteCSV(structs []any, meta []Meta) string {
+func (o *Output) WriteCSV(structs []any, meta []Meta) (string, dataset.Status) {
+	var filename string
+	var status dataset.Status
 	file, err := os.CreateTemp(os.Getenv(`FCBH_DATASET_TMP`), "csv")
 	if err != nil {
-		panic(err)
+		status = log.Error(o.ctx, 500, err, `failed to create temp file`)
+		return filename, status
 	}
+	filename = file.Name()
 	writer := csv.NewWriter(file)
 	var header []string
 	for _, mt := range meta {
@@ -53,10 +59,10 @@ func (o *Output) WriteCSV(structs []any, meta []Meta) string {
 	writer.Flush()
 	err = writer.Error()
 	if err != nil {
-		panic(err)
+		status = log.Error(o.ctx, 500, err, `failed to flush csv file`)
 	}
 	_ = file.Close()
-	return file.Name()
+	return filename, status
 }
 
 // ToString converts scalar values to string.  It does not convert the following kind.

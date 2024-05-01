@@ -2,7 +2,6 @@ package output
 
 import (
 	"bytes"
-	"context"
 	"dataset"
 	log "dataset/logger"
 	"encoding/csv"
@@ -10,7 +9,7 @@ import (
 	"strconv"
 )
 
-func (o *Output) JSONStatus(ctx context.Context, status dataset.Status, debug bool) string {
+func (o *Output) JSONStatus(status dataset.Status, debug bool) string {
 	var result string
 	if !debug {
 		status.Trace = ``
@@ -20,13 +19,13 @@ func (o *Output) JSONStatus(ctx context.Context, status dataset.Status, debug bo
 	if err == nil {
 		result = string(bytes)
 	} else {
-		status2 := log.Error(ctx, 500, err, `Error while creating error output`)
+		status2 := log.Error(o.ctx, 500, err, `Error while creating error output`)
 		result = status.String() + `, ` + status2.String()
 	}
 	return `[` + result + `]`
 }
 
-func (o *Output) CSVStatus(ctx context.Context, status dataset.Status, debug bool) string {
+func (o *Output) CSVStatus(status dataset.Status, debug bool) string {
 	var result string
 	var buffer = bytes.NewBufferString("")
 	writer := csv.NewWriter(buffer)
@@ -42,7 +41,7 @@ func (o *Output) CSVStatus(ctx context.Context, status dataset.Status, debug boo
 	writer.Flush()
 	err := writer.Error()
 	if err != nil {
-		status2 := log.Error(ctx, 500, err, `Error while creating error output`)
+		status2 := log.Error(o.ctx, 500, err, `Error while creating error output`)
 		result = status.String() + `, ` + status2.String()
 	}
 	result = buffer.String()

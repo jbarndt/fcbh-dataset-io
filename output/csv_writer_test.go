@@ -19,9 +19,15 @@ func TestCSVWriterScript(t *testing.T) {
 	var out = NewOutput(ctx)
 	structs, meta := out.PrepareScripts(conn, false, false)
 	fmt.Println("Loaded Scripts", len(structs))
-	filename := out.WriteCSV(structs, meta)
+	filename, status := out.WriteCSV(structs, meta)
+	if status.IsErr {
+		t.Error(status)
+	}
 	mfccFile := readCSVMFCC(filename, t)
-	scripts := out.LoadScriptStruct(conn)
+	scripts, status := out.LoadScriptStruct(conn)
+	if status.IsErr {
+		t.Fatal(status.Message)
+	}
 	mfccDB := extractScriptMFCC(scripts)
 	compare(mfccDB, mfccFile, t)
 	fmt.Println("Written CSV", filename)
@@ -34,9 +40,15 @@ func TestCSVWriterWord(t *testing.T) {
 	var out = NewOutput(ctx)
 	structs, meta := out.PrepareWords(conn, false, false)
 	fmt.Println("Loaded Scripts", len(structs))
-	filename := out.WriteCSV(structs, meta)
+	filename, status := out.WriteCSV(structs, meta)
+	if status.IsErr {
+		t.Fatal(status.Message)
+	}
 	mfccFile := readCSVMFCC(filename, t)
-	words := out.LoadWordStruct(conn)
+	words, status := out.LoadWordStruct(conn)
+	if status.IsErr {
+		t.Fatal(status.Message)
+	}
 	mfccDB := extractWordEncAndMFCC(words)
 	compare(mfccDB, mfccFile, t)
 	fmt.Println("Written CSV", filename)

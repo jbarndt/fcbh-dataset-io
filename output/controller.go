@@ -20,7 +20,10 @@ func (o *Output) PrepareScripts(conn db.DBAdapter, normalize bool, pad bool) ([]
 	var script Script
 	meta := o.ReflectStruct(script)
 	fmt.Println("meta :=", meta)
-	scripts := o.LoadScriptStruct(conn)
+	scripts, status := o.LoadScriptStruct(conn)
+	if status.IsErr {
+		panic(status.Message)
+	}
 	numMFCC := o.FindNumScriptMFCC(scripts)
 	fmt.Println("numMFCC :=", numMFCC)
 	o.SetNumMFCC(&meta, numMFCC)
@@ -44,7 +47,10 @@ func (o *Output) PrepareWords(conn db.DBAdapter, normalize bool, pad bool) ([]an
 	var word Word
 	meta := o.ReflectStruct(word)
 	fmt.Println("meta :=", meta)
-	words := o.LoadWordStruct(conn)
+	words, status := o.LoadWordStruct(conn)
+	if status.IsErr {
+		panic(status.Message)
+	}
 	numMFCC := o.FindNumWordMFCC(words)
 	fmt.Println("numMFCC :=", numMFCC)
 	o.SetNumMFCC(&meta, numMFCC)

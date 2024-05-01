@@ -19,10 +19,16 @@ func TestJSONWriterScript(t *testing.T) {
 	var out = NewOutput(ctx)
 	structs, meta := out.PrepareScripts(conn, false, false)
 	fmt.Println("Loaded Scripts", len(structs))
-	filename := out.WriteJSON(structs, meta)
+	filename, status := out.WriteJSON(structs, meta)
+	if status.IsErr {
+		t.Fatal(status.Message)
+	}
 	fileRecs := readJSONScript(filename, t)
 	fmt.Println(len(fileRecs))
-	dbRecs := out.LoadScriptStruct(conn)
+	dbRecs, status := out.LoadScriptStruct(conn)
+	if status.IsErr {
+		t.Fatal(status.Message)
+	}
 	fmt.Println("Written JSON", filename)
 	compareScript(dbRecs, fileRecs, t)
 	fmt.Println("Written JSON", filename)
@@ -35,9 +41,15 @@ func TestJSONWriterWord(t *testing.T) {
 	var out = NewOutput(ctx)
 	structs, meta := out.PrepareWords(conn, false, false)
 	fmt.Println("Loaded Scripts", len(structs))
-	filename := out.WriteJSON(structs, meta)
+	filename, status := out.WriteJSON(structs, meta)
+	if status.IsErr {
+		t.Fatal(status.Message)
+	}
 	fileRecs := readJSONWords(filename, t)
-	dbRecs := out.LoadWordStruct(conn)
+	dbRecs, status := out.LoadWordStruct(conn)
+	if status.IsErr {
+		t.Fatal(status.Message)
+	}
 	fmt.Println("Written JSON", filename)
 	compareWords(dbRecs, fileRecs, t)
 	fmt.Println("Written JSON", filename)

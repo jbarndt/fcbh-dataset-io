@@ -9,7 +9,7 @@ import (
 	"strconv"
 )
 
-func (o *Output) LoadScriptStruct(d db.DBAdapter) []Script {
+func (o *Output) LoadScriptStruct(d db.DBAdapter) ([]Script, dataset.Status) {
 	var results []Script
 	var status dataset.Status
 	query := `SELECT scripts.script_id, book_id, chapter_num, chapter_end, audio_file, script_num, 
@@ -20,7 +20,7 @@ func (o *Output) LoadScriptStruct(d db.DBAdapter) []Script {
 	rows, err := d.DB.Query(query)
 	if err != nil {
 		status = log.Error(d.Ctx, 500, err, "Error during select scripts")
-		panic(status.Message)
+		return results, status
 	}
 	defer rows.Close()
 	for rows.Next() {
@@ -33,15 +33,15 @@ func (o *Output) LoadScriptStruct(d db.DBAdapter) []Script {
 			&sc.ScriptText, &sc.ScriptBeginTS, &sc.ScriptEndTS, &mfccRows, &mfccCols, &mfccJson)
 		if err != nil {
 			status = log.Error(d.Ctx, 500, err, "Error in Select Scripts.")
-			//return results, status
-			panic(status.Message)
+			return results, status
 		}
 		if mfccRows.Valid && mfccCols.Valid && mfccJson.Valid { //&& len(mfccJson.String) > 0 {
 			sc.MFCCRows = int(mfccRows.Int64)
 			sc.MFCCCols = int(mfccCols.Int64)
 			err = json.Unmarshal([]byte(mfccJson.String), &sc.MFCC)
 			if err != nil {
-				panic(err)
+				status = log.Error(d.Ctx, 500, err, "Error in Unmarshalling MFCC")
+				return results, status
 			}
 		}
 		sc.Reference = o.FormatReference(sc.BookId, sc.ChapterNum, sc.ChapterEnd, sc.VerseStr, sc.VerseEnd)
@@ -51,10 +51,10 @@ func (o *Output) LoadScriptStruct(d db.DBAdapter) []Script {
 	if err != nil {
 		log.Warn(d.Ctx, err, query)
 	}
-	return results
+	return results, status
 }
 
-func (o *Output) LoadWordStruct(d db.DBAdapter) []Word {
+func (o *Output) LoadWordStruct(d db.DBAdapter) ([]Word, dataset.Status) {
 	var results []Word
 	var status dataset.Status
 	query := `SELECT words.word_id, words.script_id, book_id, chapter_num, chapter_end, verse_str, 
@@ -67,7 +67,7 @@ func (o *Output) LoadWordStruct(d db.DBAdapter) []Word {
 	rows, err := d.DB.Query(query)
 	if err != nil {
 		status = log.Error(d.Ctx, 500, err, "Error during select words")
-		panic(status.Message)
+		return results, status
 	}
 	defer rows.Close()
 	for rows.Next() {
@@ -82,21 +82,22 @@ func (o *Output) LoadWordStruct(d db.DBAdapter) []Word {
 			&wordJson, &mfccRows, &mfccCols, &mfccJson)
 		if err != nil {
 			status = log.Error(d.Ctx, 500, err, "Error in Select Words.")
-			//return results, status
-			panic(status.Message)
+			return results, status
 		}
 		if mfccRows.Valid && mfccCols.Valid && mfccJson.Valid {
 			wd.MFCCRows = int(mfccRows.Int64)
 			wd.MFCCCols = int(mfccCols.Int64)
 			err = json.Unmarshal([]byte(mfccJson.String), &wd.MFCC)
 			if err != nil {
-				panic(err)
+				status = log.Error(d.Ctx, 500, err, "Error in Unmarshalling MFCC")
+				return results, status
 			}
 		}
 		if wordJson.Valid {
 			err = json.Unmarshal([]byte(wordJson.String), &wd.WordEnc)
 			if err != nil {
-				panic(err)
+				status = log.Error(d.Ctx, 500, err, "Error in Unmarshalling WordEnc")
+				return results, status
 			}
 		}
 		wd.Reference = o.FormatReference(wd.BookId, wd.ChapterNum, wd.ChapterEnd, wd.VerseStr, wd.VerseEnd)
@@ -106,7 +107,7 @@ func (o *Output) LoadWordStruct(d db.DBAdapter) []Word {
 	if err != nil {
 		log.Warn(d.Ctx, err, query)
 	}
-	return results
+	return results, status
 }
 
 func (o *Output) FormatReference(bookId string, chapterNum int, chapterEnd int, verseStr string, verseEnd string) string {

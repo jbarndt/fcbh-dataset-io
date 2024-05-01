@@ -18,9 +18,15 @@ func TestPrepareScripts(t *testing.T) {
 	var out = NewOutput(ctx)
 	structs, meta := out.PrepareScripts(conn, true, true)
 	fmt.Println("Loaded Scripts", len(structs))
-	filename := out.WriteCSV(structs, meta)
+	filename, status := out.WriteCSV(structs, meta)
+	if status.IsErr {
+		t.Error(status)
+	}
 	fmt.Println("CoSV File", filename)
-	filename = out.WriteJSON(structs, meta)
+	filename, status = out.WriteJSON(structs, meta)
+	if status.IsErr {
+		t.Fatal(status)
+	}
 	fmt.Println("JSON File", filename)
 }
 
@@ -31,9 +37,15 @@ func TestPrepareWords(t *testing.T) {
 	var out = NewOutput(ctx)
 	structs, meta := out.PrepareWords(conn, false, false)
 	fmt.Println("Loaded Scripts", len(structs))
-	filename := out.WriteCSV(structs, meta)
+	filename, status := out.WriteCSV(structs, meta)
+	if status.IsErr {
+		t.Error(status)
+	}
 	fmt.Println("CSV File", filename)
-	filename = out.WriteJSON(structs, meta)
+	filename, status = out.WriteJSON(structs, meta)
+	if status.IsErr {
+		t.Fatal(status)
+	}
 	fmt.Println("JSON File", filename)
 }
 

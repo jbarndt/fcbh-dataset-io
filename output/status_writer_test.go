@@ -29,7 +29,7 @@ func TestDefaultStatus(t *testing.T) {
 func TestJSONStatus(t *testing.T) {
 	status, ctx := prepareError(t)
 	var out = NewOutput(ctx)
-	result := out.JSONStatus(ctx, status, true)
+	result := out.JSONStatus(status, true)
 	fmt.Println(result)
 	if len(result) != 360 {
 		t.Error(`Result should be len 360`, len(result))
@@ -44,7 +44,7 @@ func TestJSONStatus(t *testing.T) {
 func TestCSVStatus(t *testing.T) {
 	status, ctx := prepareError(t)
 	var out = NewOutput(ctx)
-	result := out.CSVStatus(ctx, status, true)
+	result := out.CSVStatus(status, true)
 	if len(result) != 342 {
 		t.Error(`Result should be len 342`, len(result))
 	}

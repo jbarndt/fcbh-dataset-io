@@ -2,17 +2,23 @@ package output
 
 import (
 	"bufio"
+	"dataset"
+	log "dataset/logger"
 	"encoding/json"
 	"os"
 	"reflect"
 	"strconv"
 )
 
-func (o *Output) WriteJSON(structs []any, meta []Meta) string {
+func (o *Output) WriteJSON(structs []any, meta []Meta) (string, dataset.Status) {
+	var filename string
+	var status dataset.Status
 	file, err := os.CreateTemp(os.Getenv(`FCBH_DATASET_TMP`), "json")
 	if err != nil {
-		panic(err)
+		status = log.Error(o.ctx, 500, err, `failed to create temp file`)
+		return filename, status
 	}
+	filename = file.Name()
 	writer := bufio.NewWriter(file)
 	var names []string
 	for _, mt := range meta {
@@ -56,14 +62,15 @@ func (o *Output) WriteJSON(structs []any, meta []Meta) string {
 	encoder.SetIndent("", "  ")
 	err = encoder.Encode(resp)
 	if err != nil {
-		panic(err)
+		status = log.Error(o.ctx, 500, err, `failed to write json response`)
+		return filename, status
 	}
 	err = writer.Flush()
 	if err != nil {
-		panic(err)
+		status = log.Error(o.ctx, 500, err, `failed to flush json response`)
 	}
 	_ = file.Close()
-	return file.Name()
+	return filename, status
 }
 
 func (o *Output) ToValue(value reflect.Value) any {
