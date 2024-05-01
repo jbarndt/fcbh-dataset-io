@@ -2,48 +2,81 @@
 
 ## General Guidelines
 
-1. Establish a Test User so that generated files are in one directory.
-2. Give each test a project name that is unique and descriptive
-3. Add info on memory usage and CPU to the log
-4. Define a testing package to hold the system tests
-5. Put request.yaml files into a directory
-    1. ? How do we initiate the execution of a specific test.  Do I create a test function for each test?  Should it submit to the server?  Auto submitting to a CLI would require the use of cmd.Exec
-    2. ? Where are regression test results stored
+- Define a single testing package to hold all system tests 
+- Establish a Test User so that generated files are in one directory. 
+- Give each test a project name that is unique and descriptive. 
+- Add info on memory usage and duration to log.
+- Put request.yaml files into a directory, name each file using RequestName.
+- Make bibleId a variable in each test, and LanguageISO? 
+- Give each request.yaml a func Test{RequestName}.
+- Each func can process the request with a variable list of BibleIds.
+- There is a system wide list of BibleId's to test as well as a list in each test.
+- There is a test harness that submits request to the server or cli.
+- The test harness will always move output to a specific test output directory.
+- Each test func will have some kind of verification, at least a record or line count.
+- Each test function will have a comment that describes what manual verification is recommended.
 
-These are all script level tests
+## Last Minute Changes
 
-When the system is used for textual compares, some of the runs will have no output, except the stored data.
++ Change all database columns to not null with go consistent default values
++ Remove VersionCode from Request
++ Can LanguageISO be removed, or is it not consistently three chars of BibleId
 
-How many languages will be loaded?
-- [ ] Load Plain Text Script from BB-API
-- [ ] Load Plain Text + Headings from BB-API
-- [ ] Load USX Text edited from BB-API
-- [ ] Load Script Using File
-    - [ ] What is the Output that is desired
+### Terminology
 
-In each language loaded:
-Compare Plain Text - Plain Text Edit
-Plain Text Edit - USX Edit
-USX Edit - Script
-Plain Text Edit - Script
-For each compare output, an html file
-The html file should contain count of the number of character differences
-(Purpose is primarily to test correctness of data)
+- Plain Text refers to the DBP plain text dataset
+- Plain Text Edit refers to DBP plain text with headings extracted from USX
+- USX Text Edit refers to USX text edited to contain only content in Script
+- Script refers to Excel spreadsheets used in process of recording Audio Bible
+- Whisper is a Speech to Text program produced by OpenAI
 
-- [ ] Load Audio from BB-API for n languages, do speech to text, output the text as JSON
-- [ ] compare text to USXEdit, output difference (Mark Scott use case)
-- [ ] Load Audio from POST, do speech to text, repeat with same request (OBT use case)
+## Script level text tests
 
-- [ ] Load Project Text with PlainText Edit, because it is verse aligned.  Load time stamps from BB-API
+- [ ] Load Plain Text Script from BB-API, CSV output
+- [ ] Load Plain Text Edit from BB-API, JSON output
+- [ ] Load USX Text Edit from BB-API, CSV output
+- [ ] Load Script Using File, CSV output
+- [ ] What is the Output that is desired
+
+- [ ] Compare Plain Text to Plain Text + headings, HTML output
+- [ ] Compare Plain Text + headings to USX Edit, HTML output
+- [ ] Compare USX Edit to Script, HTML output (Mark Scott use case)
+- [ ] Plain Text Edit to Script, HTML output
+- Note: Part of the purpose of these tests is to verify that each kind of data parsing is correct.
+
+## Script level audio tests
+
+- [ ] Load Audio from BB-API do Whisper speech to text, output the text as JSON
+- [ ] compare text to USXEdit, output HTML (Mark Scott use case)
+- [ ] Load Audio from POST, do speech to text, output HTML (OBT use case)
+- [ ] Reuse request with second and third passage (OBT use case)
+
+- [ ] Load Project Text with Plain Text Edit, because it is verse aligned.  Load time stamps from BB-API, Output CSV
 - [ ] Load same Text, and timestamp with aeneas, compare the timestamps using float to find in difference they are equal (float.SubTo, float.Abs, float.Max.  Or, possibly I need to look at Sandeep’s method
-- [ ] Postpone refinement of Word level timestamps
+- [ ] Load Script and script level timestamps, compare with above case where the script is verse aligned.
+- Note: The comparison code to do this has not yet been written (5/1/24)
 
-- [ ] MFCC calculation, load n audios and compute timestamps and mfcc.  I don’t know how to validate this.  Test must output mfcc data in csv and json.
-- [ ] Panda load test.  Load MFCC data with text into pandas using both CSV and JSON.
+- [ ] Load audios and compute timestamps and mfcc.  Verification is limited to record counts. output CSV
+- [ ] Repeat and output JSON
+- [ ] Load CSV file into Pandas
+- [ ] Load Json file into Pandas
 
-- [ ] Word Test, use word parse on each text type, and some languages, run unit test to compare results with script.
-- [ ] Is there a need to rerun the text comparison tests?
-- [ ] Test the timestamps at a word level (how) aeneas is the only way.
-- [ ] Test MFCC, and FastText, output csv and json
-- [ ] Load both output types into Pandas
+## Word level text tests
+
+- [ ] Using existing Plain Text Edit, generate words, validate word split, fast text words, generate CSV
+- [ ] Using existing USX Text Edit, generate words, validate word split, fast text words, generate JSON
+- [ ] Load CSV file into Pandas
+- [ ] Load Json file into Pandas
+
+## Word level audio tests
+
+- [ ] Load audio into Word Plain Text Test, timestamp words using script timestamps, generate MFCC, output CSV
+- [ ] Load audio into Word USX Text Edit, timestamp words using script timestamps, generate MFCC, output JSON
+- [ ] Load CSV output into Pandas
+- [ ] Load JSON output into Pandas
+
+## Full Test
+
+- [ ] Load USX Text Edit, Audio, timestamp, compute MFCC, word Split, timestamp words, compute MFCC of words, fast text encode words, output JSON.
+- [ ] Rerun and output CSV
 
