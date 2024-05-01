@@ -137,8 +137,22 @@ func Info(ctx context.Context, param ...any) {
 // Debug will log the message with Println and then continue
 func Debug(ctx context.Context, param ...any) {
 	if logLevel >= LOGDEBUG {
+		// For info on each, see: https://golang.org/pkg/runtime/#MemStats
+		var m runtime.MemStats
+		runtime.ReadMemStats(&m)
+		var msg []string
+		msg = append(msg, fmt.Sprintf("Alloc = %v MiB", bToMb(m.Alloc)))
+		msg = append(msg, fmt.Sprintf("TotalAlloc = %v MiB", bToMb(m.TotalAlloc)))
+		msg = append(msg, fmt.Sprintf("Sys = %v MiB", bToMb(m.Sys)))
+		msg = append(msg, fmt.Sprintf("NumGC = %v\n", m.NumGC))
+		param = append(param, strings.Join(msg, "\t"))
+
 		debugLog.Println(param, requestInfo(ctx))
 	}
+}
+
+func bToMb(b uint64) uint64 {
+	return b / 1024 / 1024
 }
 
 func requestInfo(ctx context.Context) string {

@@ -21,6 +21,11 @@ func TestFatal(t *testing.T) {
 	Fatal(ctx, "Error Message")
 }
 
+func TestDebug(t *testing.T) {
+	ctx := context.Background()
+	Debug(ctx, "Debug Message")
+}
+
 func TestError(t *testing.T) {
 	var request = `
 AudioData: 
