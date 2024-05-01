@@ -2,13 +2,13 @@
 
 ## General Guidelines
 
-- Define a single testing package to hold all system tests 
+- Create a single testing package to hold all system tests.
 - Establish a Test User so that generated files are in one directory. 
 - Give each test a project name that is unique and descriptive. 
 - Add info on memory usage and duration to log.
-- Put request.yaml files into a directory, name each file using RequestName.
+- Put request.yaml files into a directory, name each file using RequestName + StepName.
 - Make bibleId a variable in each test, and LanguageISO? 
-- Give each request.yaml a func Test{RequestName}.
+- Give each request.yaml a func Test{RequestName}{StepName}.
 - Each func can process the request with a variable list of BibleIds.
 - There is a system wide list of BibleId's to test as well as a list in each test.
 - There is a test harness that submits request to the server or cli.
@@ -18,8 +18,8 @@
 
 ## Last Minute Changes
 
-+ Change all database columns to not null with go consistent default values
-+ Remove VersionCode from Request
++ Change all database columns to not null with go consistent default values.
++ Remove VersionCode from Request.
 + Can LanguageISO be removed, or is it not consistently three chars of BibleId
 
 ### Terminology
@@ -29,6 +29,9 @@
 - USX Text Edit refers to USX text edited to contain only content in Script
 - Script refers to Excel spreadsheets used in process of recording Audio Bible
 - Whisper is a Speech to Text program produced by OpenAI
+- FastText is a Word Encoding program produced by Meta
+- Aeneas is a Timestamp generating program
+- Librosa is an MFCC generating program
 
 ## Script level text tests
 
@@ -36,13 +39,12 @@
 - [ ] Load Plain Text Edit from BB-API, JSON output
 - [ ] Load USX Text Edit from BB-API, CSV output
 - [ ] Load Script Using File, CSV output
-- [ ] What is the Output that is desired
 
-- [ ] Compare Plain Text to Plain Text + headings, HTML output
-- [ ] Compare Plain Text + headings to USX Edit, HTML output
+- [ ] Compare Plain Text to Plain Text Edit, HTML output
+- [ ] Compare Plain Text Edit to USX Edit, HTML output
 - [ ] Compare USX Edit to Script, HTML output (Mark Scott use case)
 - [ ] Plain Text Edit to Script, HTML output
-- Note: Part of the purpose of these tests is to verify that each kind of data parsing is correct.
+- Note: Part of the purpose of these comparison tests is to verify that each kind of data parsing is correct.
 
 ## Script level audio tests
 
