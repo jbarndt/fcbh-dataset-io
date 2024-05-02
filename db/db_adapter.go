@@ -26,12 +26,6 @@ func GetDBPath(database string) string {
 	}
 }
 
-//func Exists(database string) bool {
-//	var databasePath = GetDBPath(database)
-//	_, err := os.Stat(databasePath)
-//	return !os.IsNotExist(err)
-//}
-
 func DestroyDatabase(database string) {
 	var databasePath = GetDBPath(database)
 	_, err := os.Stat(databasePath)
@@ -113,11 +107,11 @@ func createDatabase(db *sql.DB) {
 		text_source TEXT NOT NULL,
 		language_iso TEXT NOT NULL,
 		version_code TEXT NOT NULL,
-		languge_id INTEGER,
-		rolv_id INTEGER,
-		alphabet TEXT,
-		language_name TEXT,
-		version_name TEXT) STRICT`
+		languge_id INTEGER NOT NULL,
+		rolv_id INTEGER NOT NULL,
+		alphabet TEXT NOT NULL,
+		language_name TEXT NOT NULL,
+		version_name TEXT NOT NULL) STRICT`
 	execDDL(db, query)
 	query = `CREATE INDEX IF NOT EXISTS ident_bible_idx ON ident (bible_id)`
 	execDDL(db, query)
@@ -129,15 +123,15 @@ func createDatabase(db *sql.DB) {
 		chapter_end INTEGER NOT NULL,
 		audio_file TEXT NOT NULL, -- questionable now that audio filesetId is in ident
 		script_num TEXT NOT NULL,
-		usfm_style TEXT,
-		person TEXT,
-		actor TEXT,  /* this should be integer. */
+		usfm_style TEXT NOT NULL,
+		person TEXT NOT NULL,
+		actor TEXT NOT NULL,  
 		verse_num INTEGER NOT NULL,
 		verse_str TEXT NOT NULL, /* e.g. 6-10 7,8 6a */
 		verse_end TEXT NOT NULL,
 		script_text TEXT NOT NULL,
-		script_begin_ts REAL,
-		script_end_ts REAL,
+		script_begin_ts REAL NOT NULL,
+		script_end_ts REAL NOT NULL,
 		FOREIGN KEY(dataset_id) REFERENCES ident(dataset_id)) STRICT`
 	execDDL(db, query)
 	query = `CREATE UNIQUE INDEX IF NOT EXISTS scripts_idx
@@ -149,15 +143,15 @@ func createDatabase(db *sql.DB) {
 		word_id INTEGER PRIMARY KEY AUTOINCREMENT,
 		script_id INTEGER NOT NULL,
 		word_seq INTEGER NOT NULL,
-		verse_num INTEGER,
+		verse_num INTEGER NOT NULL,
 		ttype TEXT NOT NULL,
 		word TEXT NOT NULL,
-		word_begin_ts REAL,
-		word_end_ts REAL,
-		word_enc TEXT,
-		src_word_enc TEXT,
-		word_multi_enc TEXT,
-		src_word_multi_enc TEXT,
+		word_begin_ts REAL NOT NULL DEFAULT 0.0,
+		word_end_ts REAL NOT NULL DEFAULT 0.0,
+		word_enc TEXT NOT NULL DEFAULT '',
+		src_word_enc TEXT NOT NULL DEFAULT '', -- planned
+		word_multi_enc TEXT NOT NULL DEFAULT '', -- planned
+		src_word_multi_enc TEXT NOT NULL DEFAULT '', -- planned
 		FOREIGN KEY(script_id) REFERENCES scripts(script_id)) STRICT`
 	execDDL(db, query)
 	query = `CREATE UNIQUE INDEX IF NOT EXISTS words_idx
