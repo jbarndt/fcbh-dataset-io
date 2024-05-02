@@ -26,7 +26,7 @@ func TestValidate(t *testing.T) {
 	req.AudioEncoding.NoEncoding = true
 	req.Compare.CompareSettings.Apostrophe.Normalize = true
 	req.Compare.CompareSettings.Apostrophe.Remove = true
-	d.Validate(req)
+	d.Validate(&req)
 }
 
 // I should have a test with multiple error

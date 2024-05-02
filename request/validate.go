@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func (r *RequestDecoder) Validate(req Request) dataset.Status {
+func (r *RequestDecoder) Validate(req *Request) dataset.Status {
 	var msgs []string
 	checkRequired(req.Required, &msgs)
 	checkTestament(&req.Testament)
@@ -47,7 +47,7 @@ func checkRequired(req Required, msgs *[]string) {
 }
 
 func checkTestament(req *Testament) {
-	if !req.OT && !req.NT {
+	if !req.OT && !req.NT && len(req.NTBooks) == 0 && len(req.OTBooks) == 0 {
 		req.NT = true
 	}
 }
