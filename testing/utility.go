@@ -2,6 +2,7 @@ package testing
 
 import (
 	"bytes"
+	"encoding/csv"
 	"io"
 	"net/http"
 	"os"
@@ -14,7 +15,7 @@ const (
 	OUTPUT = `/Users/gary/FCBH2024/systemtest/`
 )
 
-func HttpPost(name string, request string, t *testing.T) ([]byte, int) {
+func HttpPost(request string, name string, t *testing.T) ([]byte, int) {
 	client := &http.Client{}
 	req, err := http.NewRequest("POST", HOST, bytes.NewReader([]byte(request)))
 	if err != nil {
@@ -42,4 +43,20 @@ func HttpPost(name string, request string, t *testing.T) ([]byte, int) {
 	}
 	_ = file.Close()
 	return body, resp.StatusCode
+}
+
+func NumCVSLines(content []byte, t *testing.T) int {
+	memFile := bytes.NewReader(content)
+	reader := csv.NewReader(memFile)
+	count := 0
+	for {
+		_, err := reader.Read()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			t.Fatal(err)
+		}
+		count++
+	}
+	return count
 }
