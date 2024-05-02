@@ -26,6 +26,8 @@
 - FastText is a Word Encoding program produced by Meta.
 - Aeneas is a Timestamp generating program.
 - Librosa is an MFCC generating program.
+- Gonum/float is a go library for floating point
+- Pandas is a python dataset manipulation tool frequently used by AI model researchers.
 
 ## Script level text tests
 
@@ -37,19 +39,20 @@
 - [ ] Compare Plain Text to Plain Text Edit, HTML output
 - [ ] Compare Plain Text Edit to USX Edit, HTML output
 - [ ] Compare USX Edit to Script, HTML output (Mark Scott use case)
-- [ ] Plain Text Edit to Script, HTML output
+- [ ] Compare Plain Text Edit to Script, HTML output
 - Note: Part of the purpose of these comparison tests is to verify that each kind of data parsing is correct.
 
 ## Script level audio tests
 
 - [ ] Load Audio from BB-API do Whisper speech to text, output the text as JSON
-- [ ] compare text to USXEdit, output HTML (Mark Scott use case)
-- [ ] Load Audio from POST, do speech to text, output HTML (OBT use case)
-- [ ] Reuse request with second and third passage (OBT use case)
+- [ ] Compare text to USXEdit, output HTML (Mark Scott use case)
+- [ ] Load Audio from POST, do speech to text, output JSON (OBT use case)
+- [ ] Reuse request with second and third passage, output JSON (OBT use case)
 
 - [ ] Load Project Text with Plain Text Edit, because it is verse aligned.  Load time stamps from BB-API, Output CSV
-- [ ] Load same Text, and timestamp with aeneas, compare the timestamps using float to find in difference they are equal (float.SubTo, float.Abs, float.Max.  Or, possibly I need to look at Sandeep’s method
-- [ ] Load Script and script level timestamps, compare with above case where the script is verse aligned.
+- [ ] Load same Text, and timestamp with aeneas, compare the timestamps using gonum/float to find in difference they are equal (float.SubTo, float.Abs, float.Max.  And, I need to look at Sandeep’s method
+- [ ] Load Script and script timestamps, compare with above case where the script is verse aligned.
+- [ ] Output sql script to insert a fileset's timestamp data into DBP (Jon's OBT use case)
 - Note: The comparison code to do this has not yet been written (5/1/24)
 
 - [ ] Load audios and compute timestamps and mfcc.  Verification is limited to record counts. output CSV
@@ -66,13 +69,13 @@
 
 ## Word level audio tests
 
-- [ ] Load audio into Word Plain Text Test, timestamp words using script timestamps, generate MFCC, output CSV
-- [ ] Load audio into Word USX Text Edit, timestamp words using script timestamps, generate MFCC, output JSON
+- [ ] Load audio into Word Plain Text Test, timestamp words using script level timestamps, generate MFCC, output CSV
+- [ ] Load audio into Word USX Text Edit, timestamp words using script level timestamps, generate MFCC, output JSON
 - [ ] Load CSV output into Pandas
 - [ ] Load JSON output into Pandas
 
 ## Full Test
 
 - [ ] Load USX Text Edit, Audio, timestamp, compute MFCC, word Split, timestamp words, compute MFCC of words, fast text encode words, output JSON.
-- [ ] Rerun and output CSV
+- [ ] Output CSV on same database.
 
