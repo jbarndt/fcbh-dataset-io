@@ -18,7 +18,6 @@
 
 ## Last Minute Changes
 
-+ Change all database columns to not null with go consistent default values.
 + Remove VersionCode from Request.
 + Can LanguageISO be removed, or is it not consistently three chars of BibleId
 

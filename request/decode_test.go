@@ -24,8 +24,6 @@ func TestParser(t *testing.T) {
   IsNew: Yes
   RequestName: Test1  # should be a unique name
   BibleId: ENGWEB
-  LanguageISO: eng
-  VersionCode: WEB
 Testament:
   OT: 
   OTBooks: [GEN,EXO,LEV,NUM,DEU]
@@ -155,8 +153,6 @@ Compare:
 	}
 	var strs = []string{req.Required.RequestName,
 		req.Required.BibleId,
-		req.Required.LanguageISO,
-		req.Required.VersionCode,
 		req.AudioData.File,
 		req.AudioData.Http,
 		req.AudioData.AWSS3,

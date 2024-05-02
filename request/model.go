@@ -17,8 +17,6 @@ type Required struct {
 	IsNew       bool   `yaml:"IsNew"`
 	RequestName string `yaml:"RequestName"`
 	BibleId     string `yaml:"BibleId"`
-	LanguageISO string `yaml:"LanguageISO"`
-	VersionCode string `yaml:"VersionCode"`
 }
 
 type Testament struct {

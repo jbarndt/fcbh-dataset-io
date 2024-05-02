@@ -4,9 +4,6 @@ Required:
   IsNew: yes # Answer yet to start with a clean project
   RequestName: Test1 # Use a unique name to keep runs separate, or reuse a name to overwrite prior run
   BibleId: ATIWBT
-  LanguageISO: ati
-  VersionCode: WBT
-  # What is version
 
 Testament: # Choose one or both
   NT: yes # Mark Yes for entire New Testament
