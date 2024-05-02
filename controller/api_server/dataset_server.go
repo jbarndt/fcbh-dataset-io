@@ -42,3 +42,39 @@ func errorResponse(w http.ResponseWriter, err error, message string) {
 		log.Fatal(context.TODO(), err2, message)
 	}
 }
+
+/*
+func main() {
+    // Set up a route and attach handler
+    http.HandleFunc("/download", fileDownloadHandler)
+
+    // Start the server
+    log.Println("Server starting on port 8080...")
+    if err := http.ListenAndServe(":8080", nil); err != nil {
+        log.Fatal(err)
+    }
+}
+
+func fileDownloadHandler(w http.ResponseWriter, r *http.Request) {
+    // Specify the path to the file
+    filePath := "path/to/your/file.txt"
+
+    // Open the file
+    file, err := os.Open(filePath)
+    if err != nil {
+        // If the file does not open, send an appropriate response
+        http.Error(w, "File not found.", 404)
+        return
+    }
+    defer file.Close()
+
+    // Set the header to ensure the downloaded file has the correct name
+    w.Header().Set("Content-Disposition", "attachment; filename=\"" + file.Name() + "\"")
+    w.Header().Set("Content-Type", "application/octet-stream")
+
+    // Copy the file to the response writer
+    if _, err := io.Copy(w, file); err != nil {
+        log.Println("Error writing file to response:", err)
+    }
+}
+*/
