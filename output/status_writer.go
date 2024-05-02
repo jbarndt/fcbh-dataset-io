@@ -9,23 +9,22 @@ import (
 	"strconv"
 )
 
-func (o *Output) JSONStatus(status dataset.Status, debug bool) string {
+func (o *Output) JSONStatus(status dataset.Status, debug bool) []byte {
 	var result string
 	if !debug {
 		status.Trace = ``
 	}
 	bytes, err := json.Marshal(status)
-	//err = errors.New(`wwww`) // for testing error path
 	if err == nil {
 		result = string(bytes)
 	} else {
 		status2 := log.Error(o.ctx, 500, err, `Error while creating error output`)
 		result = status.String() + `, ` + status2.String()
 	}
-	return `[` + result + `]`
+	return []byte(`[` + result + `]`)
 }
 
-func (o *Output) CSVStatus(status dataset.Status, debug bool) string {
+func (o *Output) CSVStatus(status dataset.Status, debug bool) []byte {
 	var result string
 	var buffer = bytes.NewBufferString("")
 	writer := csv.NewWriter(buffer)
@@ -45,5 +44,5 @@ func (o *Output) CSVStatus(status dataset.Status, debug bool) string {
 		result = status.String() + `, ` + status2.String()
 	}
 	result = buffer.String()
-	return result
+	return []byte(`[` + result + `]`)
 }

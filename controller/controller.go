@@ -9,10 +9,12 @@ import (
 	"dataset/input"
 	log "dataset/logger"
 	"dataset/match"
+	"dataset/output"
 	"dataset/read"
 	"dataset/request"
 	"dataset/speech_to_text"
 	"fmt"
+	"os"
 	"time"
 )
 
@@ -33,87 +35,90 @@ func NewController(yamlContent []byte) Controller {
 }
 
 func (c *Controller) Process() []byte {
-	var status = c.processSteps()
+	var content, status = c.processSteps()
 	if status.IsErr {
 		return c.outputStatus(status)
 	}
-	return c.outputStatus(status)
+	return content
 }
 
-func (c *Controller) processSteps() dataset.Status {
+func (c *Controller) processSteps() ([]byte, dataset.Status) {
 	var start = time.Now()
+	var results []byte
 	var status dataset.Status
 	// Decode YAML Request File
 	reqDecoder := request.NewRequestDecoder(c.ctx)
 	c.req, status = reqDecoder.Process(c.yamlRequest)
 	if status.IsErr {
-		return status
+		return results, status
 	}
 	var yaml string
 	// Stuff YAML request into context
 	yaml, status = reqDecoder.Encode(c.req)
 	if status.IsErr {
-		return status
+		return results, status
 	}
 	c.ctx = context.WithValue(context.Background(), `request`, yaml)
 	// Get User
 	c.user, status = fetch.GetDBPUser()
 	if status.IsErr {
-		return status
+		return results, status
 	}
 	// Open Database
 	c.database = db.NewerDBAdapter(c.ctx, c.req.Required.IsNew, c.user.Username, c.req.Required.RequestName)
 	// Fetch Ident Data from DBP
 	c.info, status = c.fetchData()
 	if status.IsErr {
-		return status
+		return results, status
 	}
 	// Collect Text Input
 	var textFiles []input.InputFile
 	textFiles, status = c.collectTextInput()
 	if status.IsErr {
-		return status
+		return results, status
 	}
 	// Collect Audio Input
 	var audioFiles []input.InputFile
 	audioFiles, status = c.collectAudioInput()
 	if status.IsErr {
-		return status
+		return results, status
 	}
 	// Read Text Data
 	status = c.readText(textFiles)
 	if status.IsErr {
-		return status
+		return results, status
 	}
 	// Speech to Text
 	status = c.speechToText(audioFiles)
 	if status.IsErr {
-		return status
+		return results, status
 	}
 	// Timestamps
 	status = c.timestamps(audioFiles)
 	if status.IsErr {
-		return status
+		return results, status
 	}
 	// Encode Audio
 	status = c.encodeAudio(audioFiles)
 	if status.IsErr {
-		return status
+		return results, status
 	}
 	// Encode Text
 	status = c.encodeText()
 	if status.IsErr {
-		return status
+		return results, status
 	}
 	// Compare
 	if c.req.Compare.BaseProject != `` {
 		status = c.matchText()
 		if status.IsErr {
-			return status
+			return results, status
 		}
 	}
+	// Prepare output
+	results = c.output()
 	fmt.Println("Duration", time.Since(start))
-	return status
+	return results, status
 }
 
 func (c *Controller) fetchData() (fetch.BibleInfoType, dataset.Status) {
@@ -303,13 +308,45 @@ func (c *Controller) matchText() dataset.Status {
 	return status
 }
 
-func (c *Controller) outputStatus(status dataset.Status) []byte {
-	if status.IsErr {
-		fmt.Println("IsError:", status.IsErr)
-		fmt.Println("Status:", status.Status)
-		fmt.Println("GoError:", status.Err)
-		fmt.Println("Message:", status.Message)
+func (c *Controller) output() []byte {
+	var status dataset.Status
+	var out = output.NewOutput(c.ctx, c.database, false, false)
+	var records []any
+	var meta []output.Meta
+	if c.req.Detail.Lines {
+		records, meta = out.PrepareScripts()
+	} else {
+		records, meta = out.PrepareWords()
 	}
-	//fmt.Println("Response", status)
-	return []byte{}
+	var filename string
+	if c.req.OutputFormat.CSV {
+		filename, status = out.WriteCSV(records, meta)
+		if status.IsErr {
+			return c.outputStatus(status)
+		}
+	} else if c.req.OutputFormat.JSON {
+		filename, status = out.WriteJSON(records, meta)
+		if status.IsErr {
+			return c.outputStatus(status)
+		}
+	}
+	bytes, err := os.ReadFile(filename)
+	if err != nil {
+		status = log.Error(c.ctx, 500, err, `Error reading finished output file`)
+		bytes = c.outputStatus(status)
+	}
+	return bytes
+}
+
+func (c *Controller) outputStatus(status dataset.Status) []byte {
+	var result []byte
+	var out = output.NewOutput(c.ctx, db.DBAdapter{}, false, false)
+	if c.req.OutputFormat.CSV {
+		result = out.CSVStatus(status, true)
+	} else if c.req.OutputFormat.JSON {
+		result = out.JSONStatus(status, true)
+	} else {
+		result = []byte(status.String())
+	}
+	return result
 }

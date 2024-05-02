@@ -16,8 +16,8 @@ func TestCSVWriterScript(t *testing.T) {
 	ctx := context.Background()
 	var conn = db.NewDBAdapter(ctx, `ENGWEB_DBPTEXT.db`)
 	//prepareTimestampAndFMCCData(conn, `ENGWEB`, `ENGWEBN2DA`, t)
-	var out = NewOutput(ctx)
-	structs, meta := out.PrepareScripts(conn, false, false)
+	var out = NewOutput(ctx, conn, false, false)
+	structs, meta := out.PrepareScripts()
 	fmt.Println("Loaded Scripts", len(structs))
 	filename, status := out.WriteCSV(structs, meta)
 	if status.IsErr {
@@ -37,8 +37,8 @@ func TestCSVWriterWord(t *testing.T) {
 	ctx := context.Background()
 	var conn = db.NewDBAdapter(ctx, `ENGWEB_DBPTEXT.db`)
 	//prepareTimestampAndFMCCData(conn, `ENGWEB`, `ENGWEBN2DA`, t)
-	var out = NewOutput(ctx)
-	structs, meta := out.PrepareWords(conn, false, false)
+	var out = NewOutput(ctx, conn, false, false)
+	structs, meta := out.PrepareWords()
 	fmt.Println("Loaded Scripts", len(structs))
 	filename, status := out.WriteCSV(structs, meta)
 	if status.IsErr {

@@ -7,20 +7,26 @@ import (
 )
 
 type Output struct {
-	ctx context.Context
+	ctx       context.Context
+	conn      db.DBAdapter
+	normalize bool
+	pad       bool
 }
 
-func NewOutput(ctx context.Context) Output {
+func NewOutput(ctx context.Context, conn db.DBAdapter, normalize bool, pad bool) Output {
 	var o Output
 	o.ctx = ctx
+	o.conn = conn
+	o.normalize = normalize
+	o.pad = pad
 	return o
 }
 
-func (o *Output) PrepareScripts(conn db.DBAdapter, normalize bool, pad bool) ([]any, []Meta) {
+func (o *Output) PrepareScripts() ([]any, []Meta) {
 	var script Script
 	meta := o.ReflectStruct(script)
 	fmt.Println("meta :=", meta)
-	scripts, status := o.LoadScriptStruct(conn)
+	scripts, status := o.LoadScriptStruct(o.conn)
 	if status.IsErr {
 		panic(status.Message)
 	}
@@ -28,10 +34,10 @@ func (o *Output) PrepareScripts(conn db.DBAdapter, normalize bool, pad bool) ([]
 	fmt.Println("numMFCC :=", numMFCC)
 	o.SetNumMFCC(&meta, numMFCC)
 	fmt.Println("meta-num :=", meta)
-	if normalize {
+	if o.normalize {
 		scripts = o.NormalizeScriptMFCC(scripts, numMFCC)
 	}
-	if pad {
+	if o.pad {
 		scripts = o.PadScriptRows(scripts, numMFCC)
 	}
 	scriptAny := o.ConvertScriptsAny(scripts)
@@ -43,11 +49,11 @@ func (o *Output) PrepareScripts(conn db.DBAdapter, normalize bool, pad bool) ([]
 	return scriptAny, meta
 }
 
-func (o *Output) PrepareWords(conn db.DBAdapter, normalize bool, pad bool) ([]any, []Meta) {
+func (o *Output) PrepareWords() ([]any, []Meta) {
 	var word Word
 	meta := o.ReflectStruct(word)
 	fmt.Println("meta :=", meta)
-	words, status := o.LoadWordStruct(conn)
+	words, status := o.LoadWordStruct(o.conn)
 	if status.IsErr {
 		panic(status.Message)
 	}
@@ -57,10 +63,10 @@ func (o *Output) PrepareWords(conn db.DBAdapter, normalize bool, pad bool) ([]an
 	fmt.Println("meta-num :=", meta)
 	o.FindNumWordEnc(words, &meta)
 	fmt.Println("meta-enc :=", meta)
-	if normalize {
+	if o.normalize {
 		words = o.NormalizeWordMFCC(words, numMFCC)
 	}
-	if pad {
+	if o.pad {
 		words = o.PadWordRows(words, numMFCC)
 	}
 	wordAny := o.ConvertWordsAny(words)

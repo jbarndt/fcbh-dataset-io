@@ -7,10 +7,10 @@
 - Give each test a project name that is unique and descriptive. 
 - Add info on memory usage and duration to log.
 - Put request.yaml files into a directory, name each file using RequestName + StepName.
-- Make bibleId a variable in each test, and LanguageISO? 
+- Make bibleId a variable in each test. 
 - Give each request.yaml a func Test{RequestName}{StepName}.
 - Each func can process the request with a variable list of BibleIds.
-- There is a system wide list of BibleId's to test as well as a list in each test.
+- There is a system wide list of BibleId's to test as well as an optional list in each test.
 - There is a test harness that submits request to the server or cli.
 - The test harness will always move output to a specific test output directory.
 - Each test func will have some kind of verification, at least a record or line count.
@@ -78,4 +78,8 @@
 
 - [ ] Load USX Text Edit, Audio, timestamp, compute MFCC, word Split, timestamp words, compute MFCC of words, fast text encode words, output JSON.
 - [ ] Output CSV on same database.
+
+## Error Tests
+
+- [ ] List here a number of error conditions, output error
 

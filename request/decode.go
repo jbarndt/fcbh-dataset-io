@@ -24,7 +24,7 @@ func (r *RequestDecoder) Process(yamlRequest []byte) (Request, dataset.Status) {
 	if status.IsErr {
 		return request, status
 	}
-	status = r.Validate(request)
+	status = r.Validate(&request)
 	if status.IsErr {
 		return request, status
 	}

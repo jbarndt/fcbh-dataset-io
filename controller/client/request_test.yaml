@@ -66,10 +66,10 @@ TextEncoding:
   NoEncoding:
 # Default: NoTextEncoding
 
-OutputFormat: # Put an X by the desired output format.
-  CSV: # (TBD)
-  JSON: # (TBD)
-  Sqlite: # (TBD)
+OutputFormat: # Put yes by the desired output format.
+  CSV:  
+  JSON:
+  Sqlite:
 # Default: JSON
 
 Compare: # To do a compare, put the names of the two projects here

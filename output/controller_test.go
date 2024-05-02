@@ -15,8 +15,8 @@ func TestPrepareScripts(t *testing.T) {
 	ctx := context.Background()
 	var conn = db.NewDBAdapter(ctx, `ENGWEB_DBPTEXT.db`)
 	//prepareTimestampAndFMCCData(conn, `ENGWEB`, `ENGWEBN2DA`, t)
-	var out = NewOutput(ctx)
-	structs, meta := out.PrepareScripts(conn, true, true)
+	var out = NewOutput(ctx, conn, true, true)
+	structs, meta := out.PrepareScripts()
 	fmt.Println("Loaded Scripts", len(structs))
 	filename, status := out.WriteCSV(structs, meta)
 	if status.IsErr {
@@ -34,8 +34,8 @@ func TestPrepareWords(t *testing.T) {
 	ctx := context.Background()
 	var conn = db.NewDBAdapter(ctx, `ENGWEB_DBPTEXT.db`)
 	//prepareTimestampAndFMCCData(conn, `ENGWEB`, `ENGWEBN2DA`, t)
-	var out = NewOutput(ctx)
-	structs, meta := out.PrepareWords(conn, false, false)
+	var out = NewOutput(ctx, conn, true, true)
+	structs, meta := out.PrepareWords()
 	fmt.Println("Loaded Scripts", len(structs))
 	filename, status := out.WriteCSV(structs, meta)
 	if status.IsErr {

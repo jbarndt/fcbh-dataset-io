@@ -3,6 +3,7 @@ package output
 import (
 	"context"
 	"dataset"
+	"dataset/db"
 	log "dataset/logger"
 	"dataset/request"
 	"encoding/json"
@@ -28,7 +29,7 @@ func TestDefaultStatus(t *testing.T) {
 
 func TestJSONStatus(t *testing.T) {
 	status, ctx := prepareError(t)
-	var out = NewOutput(ctx)
+	var out = NewOutput(ctx, db.DBAdapter{}, false, false)
 	result := out.JSONStatus(status, true)
 	fmt.Println(result)
 	if len(result) != 360 {
@@ -43,7 +44,7 @@ func TestJSONStatus(t *testing.T) {
 
 func TestCSVStatus(t *testing.T) {
 	status, ctx := prepareError(t)
-	var out = NewOutput(ctx)
+	var out = NewOutput(ctx, db.DBAdapter{}, false, false)
 	result := out.CSVStatus(status, true)
 	if len(result) != 342 {
 		t.Error(`Result should be len 342`, len(result))
@@ -56,7 +57,6 @@ func prepareError(t *testing.T) (dataset.Status, context.Context) {
 	req.Required.RequestName = `Test1`
 	req.Required.BibleId = `ENGWEB`
 	req.Required.IsNew = true
-	req.Required.LanguageISO = `eng`
 	req.Testament.NT = true
 	ctx := context.Background()
 	reqDecoder := request.NewRequestDecoder(ctx)
