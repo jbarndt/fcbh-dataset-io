@@ -16,21 +16,16 @@
 - Each test func will have some kind of verification, at least a record or line count.
 - Each test function will have a comment that describes what manual verification is recommended.
 
-## Last Minute Changes
-
-+ Remove VersionCode from Request.
-+ Can LanguageISO be removed, or is it not consistently three chars of BibleId
-
 ### Terminology
 
-- Plain Text refers to the DBP plain text dataset
-- Plain Text Edit refers to DBP plain text with headings extracted from USX
-- USX Text Edit refers to USX text edited to contain only content in Script
-- Script refers to Excel spreadsheets used in process of recording Audio Bible
-- Whisper is a Speech to Text program produced by OpenAI
-- FastText is a Word Encoding program produced by Meta
-- Aeneas is a Timestamp generating program
-- Librosa is an MFCC generating program
+- Plain Text refers to the DBP plain text dataset.
+- Plain Text Edit refers to DBP plain text with headings extracted from USX.
+- USX Text Edit refers to USX text edited to contain only content in Script.
+- Script refers to Excel spreadsheets used in process of recording Audio Bible.
+- Whisper is a Speech to Text program produced by OpenAI.
+- FastText is a Word Encoding program produced by Meta.
+- Aeneas is a Timestamp generating program.
+- Librosa is an MFCC generating program.
 
 ## Script level text tests
 
