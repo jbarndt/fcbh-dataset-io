@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -64,6 +65,13 @@ func CLIExec(requestYaml string, t *testing.T) (string, string) {
 	}
 	_ = os.Remove(file.Name())
 	return stdoutBuf.String(), stderrBuf.String()
+}
+
+func ExtractFilenaame(stdout string) string {
+	start := strings.Index(stdout, `Success: `) + 9
+	end := strings.Index(stdout[start:], "\n")
+	filename := stdout[start : start+end]
+	return filename
 }
 
 func NumCVSLines(content []byte, t *testing.T) int {

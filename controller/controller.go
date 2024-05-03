@@ -69,6 +69,7 @@ func (c *Controller) processSteps() (string, dataset.Status) {
 	}
 	// Open Database
 	c.database = db.NewerDBAdapter(c.ctx, c.req.Required.IsNew, c.user.Username, c.req.Required.RequestName)
+	defer c.database.Close()
 	// Fetch Ident Data from DBP
 	c.info, status = c.fetchData()
 	if status.IsErr {

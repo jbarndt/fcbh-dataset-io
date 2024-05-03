@@ -1,6 +1,7 @@
 package request
 
 import (
+	"bytes"
 	"context"
 	"dataset"
 	log "dataset/logger"
@@ -36,7 +37,10 @@ func (r *RequestDecoder) Process(yamlRequest []byte) (Request, dataset.Status) {
 func (r *RequestDecoder) Decode(requestYaml []byte) (Request, dataset.Status) {
 	var resp Request
 	var status dataset.Status
-	err := yaml.Unmarshal(requestYaml, &resp)
+	reader := bytes.NewReader(requestYaml)
+	decoder := yaml.NewDecoder(reader)
+	decoder.KnownFields(true)
+	err := decoder.Decode(&resp)
 	if err != nil {
 		status = log.Error(r.ctx, 500, err, `Error decoding YAML to request`)
 	}

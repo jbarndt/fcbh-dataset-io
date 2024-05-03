@@ -38,10 +38,7 @@ func TestPlainTextScriptCLI(t *testing.T) {
 	stdout, stderr := CLIExec(request, t)
 	fmt.Println(`STDOUT:`, stdout)
 	fmt.Println(`STDERR:`, stderr)
-	start := strings.Index(stdout, `Success: `) + 9
-	end := strings.Index(stdout[start:], "\n")
-	filename := stdout[start : start+end]
-	fmt.Println(filename)
+	filename := ExtractFilenaame(stdout)
 	numLines := NumCVSFileLines(filename, t)
 	count := 7959
 	if numLines != count {
