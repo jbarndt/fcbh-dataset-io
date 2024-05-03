@@ -3,6 +3,7 @@ package testing
 import (
 	"bytes"
 	"encoding/csv"
+	"encoding/json"
 	"io"
 	"net/http"
 	"os"
@@ -91,5 +92,23 @@ func numCVSLineGeneric(reader *csv.Reader, t *testing.T) int {
 		}
 		count++
 	}
+	return count
+}
+
+func NumJSONFileLines(filename string, t *testing.T) int {
+	content, err := os.ReadFile(filename)
+	if err != nil {
+		t.Error(err)
+	}
+	return NumJSONLines(content, t)
+}
+
+func NumJSONLines(content []byte, t *testing.T) int {
+	var response []map[string]any
+	err := json.Unmarshal(content, &response)
+	if err != nil {
+		t.Error(err)
+	}
+	count := len(response)
 	return count
 }

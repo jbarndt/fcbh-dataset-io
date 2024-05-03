@@ -63,8 +63,16 @@ func (d *DBPTextEditReader) Process() dataset.Status {
 func (d *DBPTextEditReader) createDBPText(testament request.Testament) (db.DBAdapter, dataset.Status) {
 	var database db.DBAdapter
 	var status dataset.Status
-	files, status := input.DBPDirectory(d.ctx, d.bibleId, `text_plain`, d.bibleId+`O_ET`,
-		d.bibleId+`N_ET`, testament)
+	var otMediaId string
+	var ntMediaId string
+	if testament.OT || len(testament.OTBooks) > 0 {
+		otMediaId = d.bibleId + `O_ET`
+	}
+	if testament.NT || len(testament.NTBooks) > 0 {
+		ntMediaId = d.bibleId + `N_ET`
+	}
+	files, status := input.DBPDirectory(d.ctx, d.bibleId, `text_plain`, otMediaId,
+		ntMediaId, testament)
 	if status.IsErr {
 		return database, status
 	}
