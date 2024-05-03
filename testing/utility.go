@@ -3,9 +3,11 @@ package testing
 import (
 	"bytes"
 	"encoding/csv"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"testing"
 )
@@ -45,9 +47,42 @@ func HttpPost(request string, name string, t *testing.T) ([]byte, int) {
 	return body, resp.StatusCode
 }
 
+func CLIExec(requestYaml string, t *testing.T) (string, string) {
+	file, err := os.CreateTemp(os.Getenv(`FCBH_DATASET_TMP`), `request`+"_*.yaml")
+	if err != nil {
+		t.Error(err)
+	}
+	file.Write([]byte(requestYaml))
+	file.Close()
+	var cmd = exec.Command(`go`, `run`, `../controller/client/dataset.go`, file.Name())
+	fmt.Println("cmd", cmd.String())
+	var stdoutBuf, stderrBuf bytes.Buffer
+	cmd.Stdout = &stdoutBuf
+	cmd.Stderr = &stderrBuf
+	err = cmd.Run()
+	if err != nil {
+		t.Error(err.Error())
+	}
+	_ = os.Remove(file.Name())
+	return stdoutBuf.String(), stderrBuf.String()
+}
+
 func NumCVSLines(content []byte, t *testing.T) int {
-	memFile := bytes.NewReader(content)
-	reader := csv.NewReader(memFile)
+	file := bytes.NewReader(content)
+	reader := csv.NewReader(file)
+	return numCVSLineGeneric(reader, t)
+}
+
+func NumCVSFileLines(filename string, t *testing.T) int {
+	file, err := os.Open(filename)
+	if err != nil {
+		t.Error(err)
+	}
+	reader := csv.NewReader(file)
+	return numCVSLineGeneric(reader, t)
+}
+
+func numCVSLineGeneric(reader *csv.Reader, t *testing.T) int {
 	count := 0
 	for {
 		_, err := reader.Read()

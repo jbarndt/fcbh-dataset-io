@@ -7,16 +7,18 @@ import (
 )
 
 type Output struct {
-	ctx       context.Context
-	conn      db.DBAdapter
-	normalize bool
-	pad       bool
+	ctx         context.Context
+	conn        db.DBAdapter
+	requestName string
+	normalize   bool
+	pad         bool
 }
 
-func NewOutput(ctx context.Context, conn db.DBAdapter, normalize bool, pad bool) Output {
+func NewOutput(ctx context.Context, conn db.DBAdapter, reqName string, normalize bool, pad bool) Output {
 	var o Output
 	o.ctx = ctx
 	o.conn = conn
+	o.requestName = reqName
 	o.normalize = normalize
 	o.pad = pad
 	return o

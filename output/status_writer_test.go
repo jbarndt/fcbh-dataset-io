@@ -29,27 +29,28 @@ func TestDefaultStatus(t *testing.T) {
 
 func TestJSONStatus(t *testing.T) {
 	status, ctx := prepareError(t)
-	var out = NewOutput(ctx, db.DBAdapter{}, false, false)
-	result := out.JSONStatus(status, true)
-	fmt.Println(result)
-	if len(result) != 360 {
-		t.Error(`Result should be len 360`, len(result))
+	var out = NewOutput(ctx, db.DBAdapter{}, `TestStatus`, false, false)
+	filename, status2 := out.JSONStatus(status, true)
+	if status2.IsErr {
+		t.Fatal(status2)
 	}
-	var response any
-	err := json.Unmarshal([]byte(result), &response)
-	if err != nil {
-		t.Error(err)
+	fmt.Println(filename)
+	if len(filename) != 360 {
+		t.Error(`Result should be len 360`, len(filename))
 	}
 }
 
 func TestCSVStatus(t *testing.T) {
 	status, ctx := prepareError(t)
-	var out = NewOutput(ctx, db.DBAdapter{}, false, false)
-	result := out.CSVStatus(status, true)
-	if len(result) != 342 {
-		t.Error(`Result should be len 342`, len(result))
+	var out = NewOutput(ctx, db.DBAdapter{}, `TestStatus`, false, false)
+	filename, status2 := out.CSVStatus(status, true)
+	if len(filename) != 342 {
+		t.Error(`Result should be len 342`, len(filename))
 	}
-	//fmt.Println(result)
+	if status2.IsErr {
+		t.Fatal(status2)
+	}
+	fmt.Println(filename)
 }
 
 func prepareError(t *testing.T) (dataset.Status, context.Context) {
