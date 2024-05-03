@@ -63,12 +63,10 @@ func (a *Aeneas) processScripts(audioFiles []input.InputFile) dataset.Status {
 		if status.IsErr {
 			return status
 		}
-		fmt.Println(textFile, status)
 		outputFile, status := a.executeAeneas(a.language, aFile.FilePath(), textFile)
 		if status.IsErr {
 			return status
 		}
-		fmt.Println("Output", outputFile)
 		fragments, status := a.parseResponse(outputFile, aFile.Filename)
 		if status.IsErr {
 			return status
@@ -98,12 +96,10 @@ func (a *Aeneas) processWords(audioFiles []input.InputFile) dataset.Status {
 		if status.IsErr {
 			return status
 		}
-		fmt.Println(textFile, status)
 		outputFile, status := a.executeAeneas(a.language, aFile.FilePath(), textFile)
 		if status.IsErr {
 			return status
 		}
-		fmt.Println("Output", outputFile)
 		fragments, status := a.parseResponse(outputFile, aFile.Filename)
 		if status.IsErr {
 			return status
@@ -124,7 +120,6 @@ func (a *Aeneas) createFile(bookId string, chapter int, texts []db.Timestamp) (s
 		status = log.Error(a.ctx, 500, err, `Unable to open temp file for scripts`)
 		return ``, status
 	}
-	fmt.Println("Created file", fp.Name())
 	for _, text := range texts {
 		fp.WriteString(strconv.Itoa(text.Id))
 		fp.WriteString("|")
@@ -154,7 +149,6 @@ func (a *Aeneas) executeAeneas(language string, audioFile string, textFile strin
 		`task_language=`+language+`|os_task_file_format=json|is_text_type=parsed`,
 		output.Name(),
 		`-example-words --presets-word`)
-	fmt.Println(cmd.String())
 	var stdoutBuf, stderrBuf bytes.Buffer
 	cmd.Stdout = &stdoutBuf
 	cmd.Stderr = &stderrBuf

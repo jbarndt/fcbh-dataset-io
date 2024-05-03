@@ -13,7 +13,6 @@ import (
 	"dataset/read"
 	"dataset/request"
 	"dataset/speech_to_text"
-	"fmt"
 	"time"
 )
 
@@ -36,11 +35,14 @@ func NewController(yamlContent []byte) Controller {
 func (c *Controller) Process() (string, dataset.Status) {
 	var start = time.Now()
 	log.SetLevel(log.LOGDEBUG)
+	log.SetOutput(c.ctx, `stderr`)
+	log.Debug(c.ctx)
 	var filename, status = c.processSteps()
 	if status.IsErr {
 		filename = c.outputStatus(status)
 	}
-	fmt.Println("Duration", time.Since(start))
+	log.Info(c.ctx, "Duration", time.Since(start))
+	log.Debug(c.ctx)
 	return filename, status
 }
 
@@ -146,7 +148,6 @@ func (c *Controller) fetchData() (fetch.BibleInfoType, dataset.Status) {
 	//	status.Message = strings.Join(msg, "\n")
 	//	return info, status
 	//}
-	fmt.Println("INFO", info)
 	identRec := client.CreateIdent(info)
 	identRec.TextSource = c.req.TextData.BibleBrain.String() // unclear value
 	c.database.InsertIdent(identRec)

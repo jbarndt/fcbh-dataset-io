@@ -7,7 +7,6 @@ import (
 	"dataset/input"
 	log "dataset/logger"
 	"encoding/xml"
-	"fmt"
 	"io"
 	_ "modernc.org/sqlite"
 	"os"
@@ -40,7 +39,6 @@ func (p *USXParser) ProcessFiles(inputFiles []input.InputFile) dataset.Status {
 	var status dataset.Status
 	for _, file := range inputFiles {
 		filename := filepath.Join(file.Directory, file.Filename)
-		fmt.Println(filename)
 		var records []db.Script
 		records, status = p.decode(p.ctx, filename) // Also edits out non-script elements
 		if !status.IsErr {
@@ -53,8 +51,8 @@ func (p *USXParser) ProcessFiles(inputFiles []input.InputFile) dataset.Status {
 			}
 		}
 	}
-	count, status := p.conn.SelectScalarInt(`SELECT count(*) FROM scripts`)
-	fmt.Println("Total Records", count)
+	//count, status := p.conn.SelectScalarInt(`SELECT count(*) FROM scripts`)
+	//fmt.Println("Total Records", count)
 	return status
 }
 
@@ -114,7 +112,6 @@ func (p *USXParser) decode(ctx context.Context, filename string) ([]db.Script, d
 			if len(strings.TrimSpace(text)) > 0 {
 				// This is needed because scripts use {n} as a verse number.
 				if strings.Contains(text, "{") || strings.Contains(text, "}") {
-					fmt.Println("Found { } changed to ( ) in:", text)
 					text = strings.Replace(text, `{`, `(`, -1)
 					text = strings.Replace(text, `}`, `)`, -1)
 				}
@@ -137,7 +134,6 @@ func (p *USXParser) decode(ctx context.Context, filename string) ([]db.Script, d
 				VerseNum: verseNum, VerseStr: verseStr, UsfmStyle: usfmStyle}
 		}
 	}
-	fmt.Println("num records", len(records))
 	return records, status
 }
 

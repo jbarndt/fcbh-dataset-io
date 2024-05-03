@@ -5,7 +5,6 @@ import (
 	"dataset"
 	log "dataset/logger"
 	"dataset/request"
-	"fmt"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -57,7 +56,7 @@ func AWSS3Input(ctx context.Context, path string, testament request.Testament) (
 			filePath := inFile.FilePath()
 			fileInfo, stErr := os.Stat(filePath)
 			if os.IsNotExist(stErr) || fileInfo.Size() != *object.Size {
-				fmt.Println(`Downloading file`, objKey)
+				log.Info(ctx, `Downloading file`, objKey)
 				response, getErr := client.GetObject(ctx, &s3.GetObjectInput{
 					Bucket: aws.String(bucket),
 					Key:    aws.String(objKey),

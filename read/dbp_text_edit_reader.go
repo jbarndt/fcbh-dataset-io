@@ -6,7 +6,6 @@ import (
 	"dataset/db"
 	"dataset/input"
 	"dataset/request"
-	"fmt"
 	"strconv"
 )
 
@@ -85,9 +84,6 @@ func (d *DBPTextEditReader) createUSXEDITText(testament request.Testament) (db.D
 	}
 	database = db.NewDBAdapter(d.ctx, ":memory:")
 	usx := NewUSXParser(database)
-	for _, file := range files {
-		fmt.Println("FILE", file)
-	}
 	status = usx.ProcessFiles(files)
 	return database, status
 }

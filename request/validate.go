@@ -22,7 +22,6 @@ func (r *RequestDecoder) Validate(req *Request) dataset.Status {
 	checkForOne(reflect.ValueOf(req.Compare.CompareSettings.Apostrophe), `Apostrophe`, &msgs)
 	checkForOne(reflect.ValueOf(req.Compare.CompareSettings.Hyphen), `Hyphen`, &msgs)
 	checkForOne(reflect.ValueOf(req.Compare.CompareSettings.DiacriticalMarks), `DiscriticalMarks`, &msgs)
-	//fmt.Println("")
 	var status dataset.Status
 	if len(msgs) > 0 {
 		status.Status = 400

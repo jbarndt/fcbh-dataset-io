@@ -6,7 +6,6 @@ import (
 	"dataset"
 	log "dataset/logger"
 	"encoding/json"
-	"fmt"
 	//_ "modernc.org/sqlite"
 	_ "github.com/mattn/go-sqlite3"
 	"os"
@@ -72,7 +71,7 @@ func NewerDBAdapter(ctx context.Context, isNew bool, user string, project string
 	if err != nil {
 		log.Fatal(ctx, err)
 	}
-	fmt.Println("DB Opened", d.DatabasePath)
+	log.Info(d.Ctx, "DB Opened", d.DatabasePath)
 	if isNew {
 		createDatabase(d.DB)
 	}

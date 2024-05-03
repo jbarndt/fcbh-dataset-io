@@ -8,7 +8,6 @@ import (
 	log "dataset/logger"
 	"dataset/request"
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
@@ -34,7 +33,6 @@ func (d *DBPTextReader) ProcessFiles(files []input.InputFile) dataset.Status {
 	var status dataset.Status
 	for _, file := range files {
 		filePath := filepath.Join(file.Directory, file.Filename)
-		fmt.Println("Processing", filePath)
 		content, err := os.ReadFile(filePath)
 		if err != nil {
 			return log.Error(d.ctx, 500, err, "Error reading file:", filePath)
@@ -75,7 +73,6 @@ func (d *DBPTextReader) ProcessFiles(files []input.InputFile) dataset.Status {
 			if d.testament.HasNT(vs.BookId) || d.testament.HasOT(vs.BookId) {
 				scriptNum++
 				if vs.BookId != lastBookId {
-					//fmt.Println(vs.BookId)
 					lastBookId = vs.BookId
 					scriptNum = 1
 				}

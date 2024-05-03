@@ -4,7 +4,6 @@ import (
 	"dataset"
 	log "dataset/logger"
 	"encoding/json"
-	"fmt"
 )
 
 /*
@@ -32,14 +31,12 @@ func (d *APIDBPClient) DownloadList() (map[string]DownloadListType, dataset.Stat
 	if status.IsErr {
 		return result, status
 	}
-	fmt.Println(string(body))
 	var response DownloadListResp
 	err := json.Unmarshal(body, &response)
 	if err != nil {
 		status := log.Error(d.ctx, 500, err, "Error decoding DBP API /bibles JSON")
 		return result, status
 	}
-	//fmt.Println(response)
 	for _, item := range response.Data {
 		result[item.FilesetId] = item
 	}

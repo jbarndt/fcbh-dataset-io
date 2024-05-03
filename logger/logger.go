@@ -130,7 +130,7 @@ func Warn(ctx context.Context, param ...any) {
 // Info will log the message with Println and then continue
 func Info(ctx context.Context, param ...any) {
 	if logLevel >= LOGINFO {
-		infoLog.Println(param, requestInfo(ctx))
+		infoLog.Println(param)
 	}
 }
 
@@ -141,13 +141,12 @@ func Debug(ctx context.Context, param ...any) {
 		var m runtime.MemStats
 		runtime.ReadMemStats(&m)
 		var msg []string
-		msg = append(msg, fmt.Sprintf("Alloc = %v MiB", bToMb(m.Alloc)))
-		msg = append(msg, fmt.Sprintf("TotalAlloc = %v MiB", bToMb(m.TotalAlloc)))
-		msg = append(msg, fmt.Sprintf("Sys = %v MiB", bToMb(m.Sys)))
-		msg = append(msg, fmt.Sprintf("NumGC = %v\n", m.NumGC))
-		param = append(param, strings.Join(msg, "\t"))
-
-		debugLog.Println(param, requestInfo(ctx))
+		msg = append(msg, fmt.Sprintf("Alloc = %v mb,", bToMb(m.Alloc)))
+		msg = append(msg, fmt.Sprintf("TotalAlloc = %v mb,", bToMb(m.TotalAlloc)))
+		msg = append(msg, fmt.Sprintf("Sys = %v mb,", bToMb(m.Sys)))
+		msg = append(msg, fmt.Sprintf("NumGC = %v", m.NumGC))
+		param = append(param, strings.Join(msg, " "))
+		debugLog.Println(param)
 	}
 }
 

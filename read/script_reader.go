@@ -5,7 +5,6 @@ import (
 	"dataset"
 	"dataset/db"
 	log "dataset/logger"
-	"fmt"
 	"github.com/xuri/excelize/v2"
 	"os"
 	"path/filepath"
@@ -48,7 +47,6 @@ func (r ScriptReader) FindFile(bibleId string) (string, dataset.Status) {
 
 func (r ScriptReader) Read(filePath string) dataset.Status {
 	var status dataset.Status
-	fmt.Println("reading", filePath)
 	file, err := excelize.OpenFile(filePath)
 	if err != nil {
 		return log.Error(r.ctx, 500, err, "Error: could not open", filePath)

@@ -56,7 +56,6 @@ func (w *WordParser) Parse() dataset.Status {
 	if status.IsErr {
 		return status
 	}
-	//for _, rec := range w.conn.SelectScripts() {
 	for _, rec := range records {
 		//fmt.Printf("%s %d:%s  %s\n", rec.BookId, rec.ChapterNum, rec.VerseStr, rec.ScriptText)
 		var term = make([]rune, 0, 100) // None
@@ -210,9 +209,6 @@ func (w *WordParser) addWord(scriptId int, verseNum int, ttype string, text []ru
 	w.wordSeq += 1
 	if ttype == `` || len(text) == 0 { // or rec.VerseNum == None:
 		return log.ErrorNoErr(w.ctx, 500, 0, `Aparant bug trying to addWord`)
-		//word := string(text)
-		//fmt.Println(scriptId, verseNum, ttype, word)
-		//os.Exit(0)
 	}
 	//fmt.Println("seq: ", w.wordSeq, " verse: ", verseNum, " type: ", ttype, " word: ", string(text))
 	var rec db.Word

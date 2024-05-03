@@ -3,7 +3,6 @@ package testing
 import (
 	"bytes"
 	"encoding/csv"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -55,7 +54,6 @@ func CLIExec(requestYaml string, t *testing.T) (string, string) {
 	file.Write([]byte(requestYaml))
 	file.Close()
 	var cmd = exec.Command(`go`, `run`, `../controller/client/dataset.go`, file.Name())
-	fmt.Println("cmd", cmd.String())
 	var stdoutBuf, stderrBuf bytes.Buffer
 	cmd.Stdout = &stdoutBuf
 	cmd.Stderr = &stderrBuf

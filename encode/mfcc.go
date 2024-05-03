@@ -9,7 +9,6 @@ import (
 	log "dataset/logger"
 	"dataset/request"
 	"encoding/json"
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -75,7 +74,6 @@ func (m *MFCC) executeLibrosa(audioFile string) (MFCCResp, dataset.Status) {
 	pythonPath := os.Getenv(`PYTHON_EXE`)
 	mfccLibrosaPath := filepath.Join(os.Getenv(`GOPATH`), `dataset`, `encode`, `mfcc_librosa.py`)
 	cmd := exec.Command(pythonPath, mfccLibrosaPath, audioFile, strconv.Itoa(m.numMFCC))
-	fmt.Println(cmd.String())
 	var stdoutBuf, stderrBuf bytes.Buffer
 	cmd.Stdout = &stdoutBuf
 	cmd.Stderr = &stderrBuf

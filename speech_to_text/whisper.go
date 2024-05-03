@@ -8,7 +8,6 @@ import (
 	"dataset/input"
 	log "dataset/logger"
 	"encoding/json"
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -45,8 +44,6 @@ func (w *Whisper) ProcessFiles(files []input.InputFile) dataset.Status {
 	var status dataset.Status
 	var outputFile string
 	for _, file := range files {
-		filename := file.Filename
-		fmt.Println(filename)
 		outputFile, status = w.RunWhisper(file)
 		w.loadWhisperOutput(outputFile, file)
 	}
@@ -64,7 +61,6 @@ func (w *Whisper) RunWhisper(audioFile input.InputFile) (string, dataset.Status)
 		`--output_format`, `json`,
 		`--output_dir`, outputDir)
 	// --language is another option
-	//fmt.Println(cmd.String())
 	var stdoutBuf, stderrBuf bytes.Buffer
 	cmd.Stdout = &stdoutBuf
 	cmd.Stderr = &stderrBuf

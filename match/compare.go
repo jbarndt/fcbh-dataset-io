@@ -201,7 +201,7 @@ func (c *Compare) consolidateScript(verses []Verse) []Verse {
 			} else {
 				start := max(0, index-50)
 				end := min(len(text)-1, index+50)
-				fmt.Println("WARNING:", bookId, chapter, verseNum, `Invalid char in {nn, expect n or } found `,
+				log.Warn(c.ctx, bookId, chapter, verseNum, `Invalid char in {nn, expect n or } found `,
 					string(char), ` in `, text[start:end])
 				verseNum = string(tmpNum)
 				state = begin

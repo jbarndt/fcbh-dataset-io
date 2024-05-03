@@ -46,12 +46,10 @@ func (f *FastText) Process() dataset.Status {
 	if status.IsErr {
 		return status
 	}
-	fmt.Println("Created file", inputFile)
 	outputModel, status := f.executeFastText(inputFile)
 	if status.IsErr {
 		return status
 	}
-	fmt.Println("Created file", outputModel)
 	words, status = f.getWordEncodings(outputModel, words)
 	if status.IsErr {
 		return status
@@ -82,9 +80,7 @@ func (f *FastText) executeFastText(inputFile string) (string, dataset.Status) {
 	var status dataset.Status
 	model := `skipgram` // or `cbow
 	outputModel := strings.Replace(f.conn.DatabasePath, `.db`, `_fasttext`, 1)
-	fmt.Println("outputModel", outputModel)
 	cmd := exec.Command(`fasttext`, model, `-input`, inputFile, `-output`, outputModel)
-	fmt.Println("cmd", cmd.String())
 	var stdoutBuf, stderrBuf bytes.Buffer
 	cmd.Stdout = &stdoutBuf
 	cmd.Stderr = &stderrBuf
