@@ -29,7 +29,7 @@ type DBPTextEditReader struct {
 func NewDBPTextEditReader(conn db.DBAdapter, req request.Request) DBPTextEditReader {
 	var d DBPTextEditReader
 	d.ctx = conn.Ctx
-	d.bibleId = req.Required.BibleId
+	d.bibleId = req.BibleId
 	d.conn = conn
 	d.req = req
 	d.testament = req.Testament

@@ -20,10 +20,9 @@ func TestRequestYamlFile(t *testing.T) {
 }
 
 func TestParser(t *testing.T) {
-	var test1 = `Required:
-  IsNew: Yes
-  RequestName: Test1  # should be a unique name
-  BibleId: ENGWEB
+	var test1 = `IsNew: Yes
+RequestName: Test1  # should be a unique name
+BibleId: ENGWEB
 Testament:
   OT: 
   OTBooks: [GEN,EXO,LEV,NUM,DEU]
@@ -151,8 +150,8 @@ Compare:
 			t.Error(`The`, i, `th item should be true, but is not`)
 		}
 	}
-	var strs = []string{req.Required.RequestName,
-		req.Required.BibleId,
+	var strs = []string{req.RequestName,
+		req.BibleId,
 		req.AudioData.File,
 		req.AudioData.Http,
 		req.AudioData.AWSS3,

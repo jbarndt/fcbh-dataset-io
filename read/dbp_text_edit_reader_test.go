@@ -9,10 +9,10 @@ import (
 
 func TestDBPEditTextReader(t *testing.T) {
 	var req request.Request
-	req.Required.BibleId = `ENGWEB`
+	req.BibleId = `ENGWEB`
 	req.Testament = request.Testament{OTBooks: []string{`GEN`, `EXO`}, NTBooks: []string{`MAT`, `MRK`}}
 	req.Testament.BuildBookMaps()
-	var database = req.Required.BibleId + `_EDITTEXT.db`
+	var database = req.BibleId + `_EDITTEXT.db`
 	db.DestroyDatabase(database)
 	ctx := context.Background()
 	var db1 = db.NewDBAdapter(ctx, database)

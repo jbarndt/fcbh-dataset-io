@@ -68,7 +68,7 @@ func (c *Controller) processSteps() (string, dataset.Status) {
 		return filename, status
 	}
 	// Open Database
-	c.database = db.NewerDBAdapter(c.ctx, c.req.Required.IsNew, c.user.Username, c.req.Required.RequestName)
+	c.database = db.NewerDBAdapter(c.ctx, c.req.IsNew, c.user.Username, c.req.RequestName)
 	defer c.database.Close()
 	// Fetch Ident Data from DBP
 	c.info, status = c.fetchData()
@@ -127,13 +127,13 @@ func (c *Controller) processSteps() (string, dataset.Status) {
 func (c *Controller) fetchData() (fetch.BibleInfoType, dataset.Status) {
 	var info fetch.BibleInfoType
 	var status dataset.Status
-	client := fetch.NewAPIDBPClient(c.ctx, c.req.Required.BibleId)
+	client := fetch.NewAPIDBPClient(c.ctx, c.req.BibleId)
 	info, status = client.BibleInfo()
 	if status.IsErr {
 		return info, status
 	}
 	client.FindFilesets(&info, c.req.AudioData.BibleBrain, c.req.TextData.BibleBrain, c.req.Testament)
-	download := fetch.NewAPIDownloadClient(c.ctx, c.req.Required.BibleId)
+	download := fetch.NewAPIDownloadClient(c.ctx, c.req.BibleId)
 	status = download.Download(info)
 	if status.IsErr {
 		return info, status
@@ -167,7 +167,7 @@ func (c *Controller) collectTextInput() ([]input.InputFile, dataset.Status) {
 		textType = `text_plain`
 	}
 	if textType != `` {
-		bibleId := c.req.Required.BibleId
+		bibleId := c.req.BibleId
 		files, status = input.DBPDirectory(c.ctx, bibleId, textType, c.info.TextOTFileset.Id,
 			c.info.TextNTFileset.Id, c.req.Testament)
 	} else if c.req.TextData.File != `` {
@@ -187,7 +187,7 @@ func (c *Controller) collectAudioInput() ([]input.InputFile, dataset.Status) {
 	var status dataset.Status
 	bb := c.req.AudioData.BibleBrain
 	if bb.MP3_64 || bb.MP3_16 || bb.OPUS {
-		bibleId := c.req.Required.BibleId
+		bibleId := c.req.BibleId
 		files, status = input.DBPDirectory(c.ctx, bibleId, `audio`, c.info.AudioOTFileset.Id,
 			c.info.AudioNTFileset.Id, c.req.Testament)
 	} else if c.req.AudioData.File != `` {
@@ -240,7 +240,7 @@ func (c *Controller) readText(textFiles []input.InputFile) dataset.Status {
 
 func (c *Controller) speechToText(audioFiles []input.InputFile) dataset.Status {
 	var status dataset.Status
-	bibleId := c.req.Required.BibleId
+	bibleId := c.req.BibleId
 	var whisperModel = c.req.TextData.SpeechToText.Whisper.Model.String()
 	if whisperModel != `` {
 		var whisper = speech_to_text.NewWhisper(bibleId, c.database, whisperModel)
@@ -271,7 +271,7 @@ func (c *Controller) timestamps(audioFiles []input.InputFile) dataset.Status {
 			}
 		}
 	} else if c.req.Timestamps.Aeneas {
-		bibleId := c.req.Required.BibleId
+		bibleId := c.req.BibleId
 		aeneas := encode.NewAeneas(c.ctx, c.database, bibleId, c.info.LanguageISO, c.req.Detail)
 		status = aeneas.ProcessFiles(audioFiles)
 		if status.IsErr {
@@ -283,7 +283,7 @@ func (c *Controller) timestamps(audioFiles []input.InputFile) dataset.Status {
 
 func (c *Controller) encodeAudio(audioFiles []input.InputFile) dataset.Status {
 	var status dataset.Status
-	bibleId := c.req.Required.BibleId
+	bibleId := c.req.BibleId
 	if c.req.AudioEncoding.MFCC {
 		mfcc := encode.NewMFCC(c.ctx, c.database, bibleId, c.req.Detail, 7)
 		status = mfcc.ProcessFiles(audioFiles)
@@ -305,7 +305,7 @@ func (c *Controller) encodeText() dataset.Status {
 
 func (c *Controller) matchText() dataset.Status {
 	var status dataset.Status
-	compare := match.NewCompare(c.ctx, c.req.Compare.BaseProject, c.req.Required.RequestName)
+	compare := match.NewCompare(c.ctx, c.req.Compare.BaseProject, c.req.RequestName)
 	status = compare.Process()
 	return status
 }
@@ -313,7 +313,7 @@ func (c *Controller) matchText() dataset.Status {
 func (c *Controller) output() (string, dataset.Status) {
 	var filename string
 	var status dataset.Status
-	var out = output.NewOutput(c.ctx, c.database, c.req.Required.RequestName, false, false)
+	var out = output.NewOutput(c.ctx, c.database, c.req.RequestName, false, false)
 	var records []any
 	var meta []output.Meta
 	if c.req.Detail.Lines {
@@ -340,7 +340,7 @@ func (c *Controller) output() (string, dataset.Status) {
 func (c *Controller) outputStatus(status dataset.Status) string {
 	var filename string
 	var status2 dataset.Status
-	var out = output.NewOutput(c.ctx, db.DBAdapter{}, c.req.Required.RequestName, false, false)
+	var out = output.NewOutput(c.ctx, db.DBAdapter{}, c.req.RequestName, false, false)
 	if c.req.OutputFormat.CSV {
 		filename, status2 = out.CSVStatus(status, true)
 	} else if c.req.OutputFormat.JSON {

@@ -7,10 +7,9 @@ import (
 	"testing"
 )
 
-const USXTextEditScript = `Required:
-  IsNew: yes
-  RequestName: USX Text Edit Script
-  BibleId: {bibleId}
+const USXTextEditScript = `IsNew: yes
+RequestName: USX Text Edit Script
+BibleId: {bibleId}
 TextData:
   BibleBrain:
     TextUSXEdit: yes
@@ -26,7 +25,7 @@ func TestUSXTextEditScriptCLI(t *testing.T) {
 	fmt.Println(`STDERR:`, stderr)
 	filename := ExtractFilenaame(stdout)
 	numLines := NumJSONFileLines(filename, t)
-	count := 8250
+	count := 9568
 	if numLines != count {
 		t.Error(`Expected `, count, `records, got`, numLines)
 	}

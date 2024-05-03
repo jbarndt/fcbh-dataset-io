@@ -1,7 +1,9 @@
 package request
 
 type Request struct {
-	Required      Required      `yaml:"Required"`
+	IsNew         bool          `yaml:"IsNew"`
+	RequestName   string        `yaml:"RequestName"`
+	BibleId       string        `yaml:"BibleId"`
 	Testament     Testament     `yaml:"Testament,omitempty"`
 	AudioData     AudioData     `yaml:"AudioData,omitempty"`
 	TextData      TextData      `yaml:"TextData,omitempty"`
@@ -11,12 +13,6 @@ type Request struct {
 	TextEncoding  TextEncoding  `yaml:"TextEncoding,omitempty"`
 	OutputFormat  OutputFormat  `yaml:"OutputFormat,omitempty"`
 	Compare       Compare       `yaml:"Compare,omitempty"`
-}
-
-type Required struct {
-	IsNew       bool   `yaml:"IsNew"`
-	RequestName string `yaml:"RequestName"`
-	BibleId     string `yaml:"BibleId"`
 }
 
 type Testament struct {

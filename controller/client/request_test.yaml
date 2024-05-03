@@ -1,9 +1,8 @@
 ## This is the request file format to run
 
-Required:
-  IsNew: yes # Answer yet to start with a clean project
-  RequestName: Test1 # Use a unique name to keep runs separate, or reuse a name to overwrite prior run
-  BibleId: ATIWBT
+IsNew: yes # Answer yet to start with a clean project
+RequestName: Test1 # Use a unique name to keep runs separate, or reuse a name to overwrite prior run
+BibleId: ATIWBT
 
 Testament: # Choose one or both
   NT: yes # Mark Yes for entire New Testament
@@ -21,7 +20,7 @@ AudioData: # Choose one of the following
     OPUS: # Mark Yes for OPUS
   File: # e.g. /{directory}/{mediaId}/*.usx Note: include twice for OT and NT
   Http: # If http, enter URL (TBD)
-  AWS: # e.g. s3://{bucket}/audio/{bibleId}/{mediaId}/*.mp3  Note: include twice for OT and NT
+  AWSS3: # e.g. s3://{bucket}/audio/{bibleId}/{mediaId}/*.mp3  Note: include twice for OT and NT
   POST: # If POST, put Yes here (TBD)
   NoAudio: # If no audio put Yes here
 # Default:  NoAudio
@@ -41,7 +40,7 @@ TextData: # Choose one of the following
         Tiny:
   File: # e.g. /{directory}/{mediaId}/*.usx Note: include twice for OT and NT
   Http: # If http, enter URL here (TBD)
-  AWS: # e.g. s3://{bucket}/text/{bibleId}/{mediaId}/*.usx  Note: include twice for OT and NT
+  AWSS3: # e.g. s3://{bucket}/text/{bibleId}/{mediaId}/*.usx  Note: include twice for OT and NT
   POST: # (TBD)
   NoText: # If there is no text put an X here
 

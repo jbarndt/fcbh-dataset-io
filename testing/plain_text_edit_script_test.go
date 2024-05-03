@@ -6,10 +6,9 @@ import (
 	"testing"
 )
 
-const PlainTextEditScript = `Required:
-  IsNew: yes
-  RequestName: PlainTextEditScript
-  BibleId: {bibleId}
+const PlainTextEditScript = `IsNew: yes
+RequestName: PlainTextEditScript
+BibleId: {bibleId}
 TextData:
   BibleBrain:
     TextPlainEdit: yes

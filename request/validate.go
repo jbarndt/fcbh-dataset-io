@@ -8,7 +8,7 @@ import (
 
 func (r *RequestDecoder) Validate(req *Request) dataset.Status {
 	var msgs []string
-	checkRequired(req.Required, &msgs)
+	checkRequired(req, &msgs)
 	checkTestament(&req.Testament)
 	checkAudioData(&req.AudioData, `AudioData`, &msgs)
 	checkTextData(&req.TextData, `TextData`, &msgs)
@@ -32,17 +32,16 @@ func (r *RequestDecoder) Validate(req *Request) dataset.Status {
 	return status
 }
 
-func checkRequired(req Required, msgs *[]string) {
-	sVal := reflect.ValueOf(req)
-	for i := 0; i < sVal.NumField(); i++ {
-		field := sVal.Field(i)
-		if field.String() == `` {
-			sTyp := sVal.Type()
-			name := sTyp.Name() + `.` + sTyp.Field(i).Name
-			msg := `Required field ` + name + ` is missing.`
-			*msgs = append(*msgs, msg)
-		}
+func checkRequired(req *Request, msgs *[]string) {
+	if req.RequestName == `` {
+		msg := `Required field RequestName is empty`
+		*msgs = append(*msgs, msg)
 	}
+	if req.BibleId == `` {
+		msg := `Required field BibleId is empty`
+		*msgs = append(*msgs, msg)
+	}
+	req.RequestName = strings.Replace(req.RequestName, ` `, `_`, -1)
 }
 
 func checkTestament(req *Testament) {
