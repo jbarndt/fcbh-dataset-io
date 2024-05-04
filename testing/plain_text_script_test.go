@@ -16,7 +16,7 @@ OutputFormat:
   CSV: yes
 `
 
-func TestPlainTextScript(t *testing.T) {
+func TestPlainTextScriptAPI(t *testing.T) {
 	var cases = make(map[string]int)
 	cases[`ENGWEB`] = 7959
 	for bibleId, count := range cases {

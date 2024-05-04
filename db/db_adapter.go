@@ -6,6 +6,7 @@ import (
 	"dataset"
 	log "dataset/logger"
 	"encoding/json"
+	"io"
 	//_ "modernc.org/sqlite"
 	_ "github.com/mattn/go-sqlite3"
 	"os"
@@ -202,6 +203,13 @@ func (d *DBAdapter) Close() {
 	}
 }
 
+func (d *DBAdapter) closeDef(cls io.Closer, desc string) {
+	err := cls.Close()
+	if err != nil {
+		log.Warn(d.Ctx, `Error closing`, desc, err)
+	}
+}
+
 func (d *DBAdapter) commitDML(tx *sql.Tx, query string) dataset.Status {
 	var status dataset.Status
 	err := tx.Commit()
@@ -257,7 +265,7 @@ func (d *DBAdapter) InsertIdent(id Ident) dataset.Status {
 		text_source, language_iso, version_code, languge_id, 
 		rolv_id, alphabet, language_name, version_name) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`
 	stmt, err := d.DB.Prepare(query)
-	defer stmt.Close()
+	defer d.closeDef(stmt, `InsertIdent stmt`)
 	if err != nil {
 		return log.Error(d.Ctx, 500, err, `Error while preparing Ident stmt.`)
 	}
@@ -273,7 +281,7 @@ func (d *DBAdapter) InsertIdent(id Ident) dataset.Status {
 func (d *DBAdapter) insertMFCCS(query string, mfccs []MFCC) dataset.Status {
 	var status dataset.Status
 	tx, stmt := d.prepareDML(query)
-	defer stmt.Close()
+	defer d.closeDef(stmt, "InsertMFCCS stmt")
 	for _, rec := range mfccs {
 		mfccBytes, err := json.Marshal(rec.MFCC)
 		if err != nil {
@@ -294,7 +302,7 @@ func (d *DBAdapter) InsertScripts(records []Script) dataset.Status {
 			person, actor, verse_num, verse_str, verse_end, script_text, script_begin_ts, script_end_ts) 
 			VALUES (1,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
 	tx, stmt := d.prepareDML(query)
-	defer stmt.Close()
+	defer d.closeDef(stmt, "InsertScripts stmt")
 	for _, rec := range records {
 		rec.ScriptNum = zeroFill(rec.ScriptNum, 5)
 		text := strings.Join(rec.ScriptTexts, ``)
@@ -323,7 +331,7 @@ func (d *DBAdapter) InsertWords(records []Word) dataset.Status {
 	var status dataset.Status
 	sql1 := `INSERT INTO words(script_id, word_seq, verse_num, ttype, word) VALUES (?,?,?,?,?)`
 	tx, stmt := d.prepareDML(sql1)
-	defer stmt.Close()
+	defer d.closeDef(stmt, "InsertWords stmt")
 	for _, rec := range records {
 		_, err := stmt.Exec(rec.ScriptId, rec.WordSeq, rec.VerseNum, rec.TType, rec.Word)
 		if err != nil {
@@ -362,7 +370,7 @@ func (d *DBAdapter) ReadNumChapters() (map[string]int, dataset.Status) {
 	}
 	for rows.Next() {
 		var tmp rec
-		err := rows.Scan(&tmp.bookId, &tmp.numChapters)
+		err = rows.Scan(&tmp.bookId, &tmp.numChapters)
 		if err != nil {
 			status = log.Error(d.Ctx, 500, err, `Error reading rows in ReadNumChapters`)
 			return results, status
@@ -384,11 +392,11 @@ func (d *DBAdapter) ReadScriptsByChapter(bookId string, chapterNum int) ([]Scrip
 			WHERE book_id=? AND chapter_num=?
 			ORDER BY script_id`
 	stmt, err := d.DB.Prepare(sqlStmt)
-	defer stmt.Close()
 	if err != nil {
 		status = log.Error(d.Ctx, 500, err, `Error preparing ReadScriptByChapter`)
 		return results, status
 	}
+	defer d.closeDef(stmt, "ReadScriptsByChapter stmt")
 	rows, err := stmt.Query(bookId, chapterNum)
 	if err != nil {
 		status = log.Error(d.Ctx, 500, err, `Error reading rows in ReadScriptByChapter`)
@@ -396,7 +404,7 @@ func (d *DBAdapter) ReadScriptsByChapter(bookId string, chapterNum int) ([]Scrip
 	}
 	for rows.Next() {
 		var vs Script
-		err := rows.Scan(&vs.BookId, &vs.ChapterNum, &vs.VerseStr, &vs.ScriptText)
+		err = rows.Scan(&vs.BookId, &vs.ChapterNum, &vs.VerseStr, &vs.ScriptText)
 		if err != nil {
 			status = log.Error(d.Ctx, 500, err, `Error scanning in ReadScriptByChapter`)
 			return results, status
@@ -418,7 +426,7 @@ func (d *DBAdapter) SelectScalarInt(sql string) (int, dataset.Status) {
 		status = log.Error(d.Ctx, 500, err, sql)
 		return count, status
 	}
-	defer rows.Close()
+	defer d.closeDef(rows, "SelectScalarInt stmt")
 	for rows.Next() {
 		err = rows.Scan(&count)
 		if err != nil {
@@ -444,10 +452,10 @@ func (d *DBAdapter) SelectScripts() ([]Script, dataset.Status) {
 		status = log.Error(d.Ctx, 500, err, "Error during select scripts")
 		return results, status
 	}
-	defer rows.Close()
+	defer d.closeDef(rows, "SelectScripts stmt")
 	for rows.Next() {
 		var rec Script
-		err := rows.Scan(&rec.ScriptId, &rec.BookId, &rec.ChapterNum, &rec.VerseNum,
+		err = rows.Scan(&rec.ScriptId, &rec.BookId, &rec.ChapterNum, &rec.VerseNum,
 			&rec.VerseStr, &rec.ScriptText)
 		if err != nil {
 			status = log.Error(d.Ctx, 500, err, "Error in SelectScripts.")
@@ -469,14 +477,14 @@ func (d *DBAdapter) SelectScriptsByBookChapter(bookId string, chapter int) ([]Sc
 	var query = `SELECT script_id, script_text FROM scripts 
 		WHERE book_id = ? AND chapter_num = ? ORDER BY script_id`
 	rows, err := d.DB.Query(query, bookId, chapter)
-	defer rows.Close()
 	if err != nil {
 		status = log.Error(d.Ctx, 500, err, "Error during Select Script By Book Chapter.")
 		return results, status
 	}
+	defer d.closeDef(rows, "SelectScriptsByBookChapter stmt")
 	for rows.Next() {
 		var rec = Script{BookId: bookId, ChapterNum: chapter}
-		err := rows.Scan(&rec.ScriptId, &rec.ScriptText)
+		err = rows.Scan(&rec.ScriptId, &rec.ScriptText)
 		if err != nil {
 			status = log.Error(d.Ctx, 500, err, "Error during Select Script By Book Chapter.")
 			return results, status
@@ -502,10 +510,10 @@ func (d *DBAdapter) SelectScriptHeadings() ([]Script, dataset.Status) {
 		status = log.Error(d.Ctx, 500, err, "Error during Select Script Headings.")
 		return result, status
 	}
-	defer rows.Close()
+	defer d.closeDef(rows, "SelectScriptHeadings stmt")
 	for rows.Next() {
 		var rec Script
-		err := rows.Scan(&rec.ScriptId, &rec.BookId, &rec.ChapterNum, &rec.UsfmStyle, &rec.VerseNum,
+		err = rows.Scan(&rec.ScriptId, &rec.BookId, &rec.ChapterNum, &rec.UsfmStyle, &rec.VerseNum,
 			&rec.VerseStr, &rec.ScriptText)
 		if err != nil {
 			status = log.Error(d.Ctx, 500, err, "Error during Select Script Headings.")
@@ -531,10 +539,10 @@ func (d *DBAdapter) SelectScriptIds() ([]Script, dataset.Status) {
 		status = log.Error(d.Ctx, 500, err, "Error during select scripts")
 		return results, status
 	}
-	defer rows.Close()
+	defer d.closeDef(rows, "SelectScriptIds stmt")
 	for rows.Next() {
 		var rec Script
-		err := rows.Scan(&rec.ScriptId, &rec.BookId, &rec.ChapterNum, &rec.ScriptNum, &rec.VerseStr)
+		err = rows.Scan(&rec.ScriptId, &rec.BookId, &rec.ChapterNum, &rec.ScriptNum, &rec.VerseStr)
 		if err != nil {
 			status = log.Error(d.Ctx, 500, err, "Error in SelectScripts.")
 			return results, status
@@ -558,11 +566,11 @@ func (d *DBAdapter) selectTimestamps(query string, bookId string, chapter int) (
 	var results []Timestamp
 	var status dataset.Status
 	rows, err := d.DB.Query(query, bookId, chapter)
-	defer rows.Close()
 	if err != nil {
 		status = log.Error(d.Ctx, 500, err, "Error during Select Timestamps By Book Chapter.")
 		return results, status
 	}
+	defer d.closeDef(rows, "SelectTimestamps stmt")
 	for rows.Next() {
 		var rec Timestamp
 		err := rows.Scan(&rec.Id, &rec.BeginTS, &rec.EndTS)
@@ -585,11 +593,11 @@ func (d *DBAdapter) SelectWords() ([]Word, dataset.Status) {
 	var status dataset.Status
 	var query = `SELECT word_id, ttype, word FROM words ORDER BY word_id`
 	rows, err := d.DB.Query(query)
-	defer rows.Close()
 	if err != nil {
 		status = log.Error(d.Ctx, 500, err, "Error during Select Words.")
 		return results, status
 	}
+	defer d.closeDef(rows, "SelectWords stmt")
 	for rows.Next() {
 		var rec Word
 		err := rows.Scan(&rec.WordId, &rec.TType, &rec.Word)
@@ -614,14 +622,14 @@ func (d *DBAdapter) SelectWordsByBookChapter(bookId string, chapter int) ([]Word
 		FROM words w JOIN scripts s ON w.script_id = s.script_id
 		WHERE w.ttype = 'W' AND s.book_id = ? AND s.chapter_num = ? ORDER BY w.word_id`
 	rows, err := d.DB.Query(query, bookId, chapter)
-	defer rows.Close()
 	if err != nil {
 		status = log.Error(d.Ctx, 500, err, "Error during Select Words By Book Chapter.")
 		return results, status
 	}
+	defer d.closeDef(rows, "SelectWordsByBookChapter stmt")
 	for rows.Next() {
 		var rec Word
-		err := rows.Scan(&rec.WordId, &rec.Word)
+		err = rows.Scan(&rec.WordId, &rec.Word)
 		if err != nil {
 			status = log.Error(d.Ctx, 500, err, "Error during Select Words By Book Chapter.")
 			return results, status
@@ -647,7 +655,7 @@ func (d *DBAdapter) UpdateScriptTimestamps(scripts []Timestamp) dataset.Status {
 	query := `UPDATE scripts SET audio_file = ?, script_begin_ts = ?,
 		script_end_ts = ? WHERE script_id = ?`
 	tx, stmt := d.prepareDML(query)
-	defer stmt.Close()
+	defer d.closeDef(stmt, "UpdateScriptTimestamps stmt")
 	for _, rec := range scripts {
 		_, err := stmt.Exec(rec.AudioFile, rec.BeginTS, rec.EndTS, rec.Id)
 		if err != nil {
@@ -662,7 +670,7 @@ func (d *DBAdapter) UpdateWordEncodings(words []Word) dataset.Status {
 	var status dataset.Status
 	query := `UPDATE words SET word_enc = ? WHERE word_id = ?`
 	tx, stmt := d.prepareDML(query)
-	defer stmt.Close()
+	defer d.closeDef(stmt, "UpdateWordEncodings stmt")
 	for _, rec := range words {
 		encBytes, err := json.Marshal(rec.WordEncoded)
 		if err != nil {
@@ -684,7 +692,7 @@ func (d *DBAdapter) UpdateWordTimestamps(words []Timestamp) dataset.Status {
 	var status dataset.Status
 	query := `UPDATE words SET word_begin_ts = ?, word_end_ts = ? WHERE word_id = ?`
 	tx, stmt := d.prepareDML(query)
-	defer stmt.Close()
+	defer d.closeDef(stmt, "UpdateWordTimestamps stmt")
 	for _, rec := range words {
 		_, err := stmt.Exec(rec.BeginTS, rec.EndTS, rec.Id)
 		if err != nil {
