@@ -13,6 +13,7 @@ import (
 	"strings"
 )
 
+// GetDBPath is not correct with user/project database names
 func GetDBPath(database string) string {
 	if database == `:memory:` {
 		return database
@@ -25,6 +26,7 @@ func GetDBPath(database string) string {
 	}
 }
 
+// DestroyDatabase should only be used by testing
 func DestroyDatabase(database string) {
 	var databasePath = GetDBPath(database)
 	_, err := os.Stat(databasePath)
@@ -180,6 +182,19 @@ func (d *DBAdapter) EraseDatabase() {
 	execDDL(d.DB, `DELETE FROM word_mfcc`)
 }
 
+func execDDL(db *sql.DB, sql string) {
+	_, err := db.Exec(sql)
+	if err != nil {
+		log.Panic(context.Background(), err, sql)
+	}
+}
+
+func zeroFill(a string, size int) string {
+	num := countDigits(a)
+	b := "0000000"[:size-num] + a
+	return b
+}
+
 func (d *DBAdapter) Close() {
 	err := d.DB.Close()
 	if err != nil {
@@ -187,9 +202,54 @@ func (d *DBAdapter) Close() {
 	}
 }
 
-//
-// ident table
-//
+func (d *DBAdapter) commitDML(tx *sql.Tx, query string) dataset.Status {
+	var status dataset.Status
+	err := tx.Commit()
+	if err != nil {
+		status = log.Error(d.Ctx, 500, err, query)
+	}
+	return status
+}
+
+func countDigits(a string) int {
+	for i, ch := range a {
+		if ch < '0' || ch > '9' {
+			return i
+		}
+	}
+	return len(a)
+}
+
+func (d *DBAdapter) CountIdentRows() (int, dataset.Status) {
+	return d.SelectScalarInt(`SELECT count(*) FROM ident`)
+}
+
+func (d *DBAdapter) CountScriptRows() (int, dataset.Status) {
+	return d.SelectScalarInt(`SELECT count(*) FROM scripts`)
+}
+
+func (d *DBAdapter) CountWordRows() (int, dataset.Status) {
+	return d.SelectScalarInt(`SELECT count(*) FROM words`)
+}
+
+func (d *DBAdapter) CountScriptMFCCRows() (int, dataset.Status) {
+	return d.SelectScalarInt(`SELECT count(*) FROM script_mfcc`)
+}
+
+func (d *DBAdapter) CountWordMFCCRows() (int, dataset.Status) {
+	return d.SelectScalarInt(`SELECT count(*) FROM word_mfcc`)
+}
+
+func (d *DBAdapter) DeleteMFCCs() {
+	query := `DELETE FROM script_mfcc`
+	execDDL(d.DB, query)
+	query = `DELETE FROM word_mfcc`
+	execDDL(d.DB, query)
+}
+
+func (d *DBAdapter) DeleteWords() {
+	execDDL(d.DB, `DELETE FROM words`)
+}
 
 func (d *DBAdapter) InsertIdent(id Ident) dataset.Status {
 	var status dataset.Status
@@ -207,6 +267,24 @@ func (d *DBAdapter) InsertIdent(id Ident) dataset.Status {
 	if err != nil {
 		return log.Error(d.Ctx, 500, err, `Error while inserting Ident.`)
 	}
+	return status
+}
+
+func (d *DBAdapter) insertMFCCS(query string, mfccs []MFCC) dataset.Status {
+	var status dataset.Status
+	tx, stmt := d.prepareDML(query)
+	defer stmt.Close()
+	for _, rec := range mfccs {
+		mfccBytes, err := json.Marshal(rec.MFCC)
+		if err != nil {
+			return log.Error(d.Ctx, 500, err, `Error converting MFCC to JSON`)
+		}
+		_, err = stmt.Exec(rec.Id, rec.Rows, rec.Cols, string(mfccBytes))
+		if err != nil {
+			return log.Error(d.Ctx, 500, err, `Error while inserting MFCC.`)
+		}
+	}
+	status = d.commitDML(tx, query)
 	return status
 }
 
@@ -231,134 +309,41 @@ func (d *DBAdapter) InsertScripts(records []Script) dataset.Status {
 	return status
 }
 
-func (d *DBAdapter) CountIdentRows() (int, dataset.Status) {
-	return d.SelectScalarInt(`SELECT count(*) FROM ident`)
+func (d *DBAdapter) InsertScriptMFCCS(mfccs []MFCC) dataset.Status {
+	query := `REPLACE INTO script_mfcc (script_id, rows, cols, mfcc_json) VALUES (?,?,?,?)`
+	return d.insertMFCCS(query, mfccs)
 }
 
-func (d *DBAdapter) CountScriptRows() (int, dataset.Status) {
-	return d.SelectScalarInt(`SELECT count(*) FROM scripts`)
+func (d *DBAdapter) InsertWordMFCCS(mfccs []MFCC) dataset.Status {
+	query := `REPLACE INTO word_mfcc (word_id, rows, cols, mfcc_json) VALUES (?,?,?,?)`
+	return d.insertMFCCS(query, mfccs)
 }
 
-func (d *DBAdapter) CountWordRows() (int, dataset.Status) {
-	return d.SelectScalarInt(`SELECT count(*) FROM words`)
-}
-
-func (d *DBAdapter) CountScriptMFCCRows() (int, dataset.Status) {
-	return d.SelectScalarInt(`SELECT count(*) FROM script_mfcc`)
-}
-
-func (d *DBAdapter) CountWordMFCCRows() (int, dataset.Status) {
-	return d.SelectScalarInt(`SELECT count(*) FROM word_mfcc`)
-}
-
-func (d *DBAdapter) SelectScalarInt(sql string) (int, dataset.Status) {
-	var count int
+func (d *DBAdapter) InsertWords(records []Word) dataset.Status {
 	var status dataset.Status
-	rows, err := d.DB.Query(sql)
-	if err != nil {
-		status = log.Error(d.Ctx, 500, err, sql)
-		return count, status
-	}
-	defer rows.Close()
-	for rows.Next() {
-		err = rows.Scan(&count)
+	sql1 := `INSERT INTO words(script_id, word_seq, verse_num, ttype, word) VALUES (?,?,?,?,?)`
+	tx, stmt := d.prepareDML(sql1)
+	defer stmt.Close()
+	for _, rec := range records {
+		_, err := stmt.Exec(rec.ScriptId, rec.WordSeq, rec.VerseNum, rec.TType, rec.Word)
 		if err != nil {
-			status = log.Error(d.Ctx, 500, err, sql)
-			return count, status
+			return log.Error(d.Ctx, 500, err, "Error while inserting Words.")
 		}
 	}
-	err = rows.Err()
-	if err != nil {
-		log.Warn(d.Ctx, err, sql)
-	}
-	return count, status
+	status = d.commitDML(tx, sql1)
+	return status
 }
 
-// SelectScripts is used by WordParser
-func (d *DBAdapter) SelectScripts() ([]Script, dataset.Status) {
-	var results []Script
-	var status dataset.Status
-	query := `SELECT script_id, book_id, chapter_num, verse_num, verse_str, script_text 
-		FROM scripts ORDER BY script_id`
-	rows, err := d.DB.Query(query)
+func (d *DBAdapter) prepareDML(query string) (*sql.Tx, *sql.Stmt) {
+	tx, err := d.DB.Begin()
 	if err != nil {
-		status = log.Error(d.Ctx, 500, err, "Error during select scripts")
-		return results, status
+		log.Fatal(d.Ctx, err, query)
 	}
-	defer rows.Close()
-	for rows.Next() {
-		var rec Script
-		err := rows.Scan(&rec.ScriptId, &rec.BookId, &rec.ChapterNum, &rec.VerseNum,
-			&rec.VerseStr, &rec.ScriptText)
-		if err != nil {
-			status = log.Error(d.Ctx, 500, err, "Error in SelectScripts.")
-			return results, status
-		}
-		results = append(results, rec)
-	}
-	err = rows.Err()
+	stmt, err := tx.Prepare(query)
 	if err != nil {
-		log.Warn(d.Ctx, err, query)
+		log.Fatal(d.Ctx, err, query)
 	}
-	return results, status
-}
-
-// SelectScriptIds is used by api_dbp_timestamps
-func (d *DBAdapter) SelectScriptIds() ([]Script, dataset.Status) {
-	var results []Script
-	var status dataset.Status
-	query := `SELECT script_id, book_id, chapter_num, script_num, verse_str 
-		FROM scripts ORDER BY script_id`
-	rows, err := d.DB.Query(query)
-	if err != nil {
-		status = log.Error(d.Ctx, 500, err, "Error during select scripts")
-		return results, status
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var rec Script
-		err := rows.Scan(&rec.ScriptId, &rec.BookId, &rec.ChapterNum, &rec.ScriptNum, &rec.VerseStr)
-		if err != nil {
-			status = log.Error(d.Ctx, 500, err, "Error in SelectScripts.")
-			return results, status
-		}
-		results = append(results, rec)
-	}
-	err = rows.Err()
-	if err != nil {
-		log.Warn(d.Ctx, err, query)
-	}
-	return results, status
-}
-
-func (d *DBAdapter) SelectScriptHeadings() ([]Script, dataset.Status) {
-	var result []Script
-	var status dataset.Status
-	query := `SELECT script_id, book_id, chapter_num, usfm_style, verse_num, verse_str, script_text 
-		FROM scripts
-		WHERE usfm_style IN ('para.h', 'para.mt', 'para.mt1', 'para.mt2', 'para.mt3')
-		ORDER BY script_id`
-	rows, err := d.DB.Query(query)
-	if err != nil {
-		status = log.Error(d.Ctx, 500, err, "Error during Select Script Headings.")
-		return result, status
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var rec Script
-		err := rows.Scan(&rec.ScriptId, &rec.BookId, &rec.ChapterNum, &rec.UsfmStyle, &rec.VerseNum,
-			&rec.VerseStr, &rec.ScriptText)
-		if err != nil {
-			status = log.Error(d.Ctx, 500, err, "Error during Select Script Headings.")
-			return result, status
-		}
-		result = append(result, rec)
-	}
-	err = rows.Err()
-	if err != nil {
-		log.Warn(d.Ctx, err, query)
-	}
-	return result, status
+	return tx, stmt
 }
 
 // ReadNumChapters is used by match.Compare
@@ -425,14 +410,57 @@ func (d *DBAdapter) ReadScriptsByChapter(bookId string, chapterNum int) ([]Scrip
 	return results, status
 }
 
-/*
-# In FileAdapter
-def findChapterStart(self, book_id, chapter_num):
-sql = `SELECT script_id FROM audio_scripts
-WHERE book_id = ? AND chapter_num = ?
-ORDER BY script_id LIMIT 1`
-return self.sqlite.selectScalar(sql, [book_id, chapter_num])
-*/
+func (d *DBAdapter) SelectScalarInt(sql string) (int, dataset.Status) {
+	var count int
+	var status dataset.Status
+	rows, err := d.DB.Query(sql)
+	if err != nil {
+		status = log.Error(d.Ctx, 500, err, sql)
+		return count, status
+	}
+	defer rows.Close()
+	for rows.Next() {
+		err = rows.Scan(&count)
+		if err != nil {
+			status = log.Error(d.Ctx, 500, err, sql)
+			return count, status
+		}
+	}
+	err = rows.Err()
+	if err != nil {
+		log.Warn(d.Ctx, err, sql)
+	}
+	return count, status
+}
+
+// SelectScripts is used by WordParser
+func (d *DBAdapter) SelectScripts() ([]Script, dataset.Status) {
+	var results []Script
+	var status dataset.Status
+	query := `SELECT script_id, book_id, chapter_num, verse_num, verse_str, script_text 
+		FROM scripts ORDER BY script_id`
+	rows, err := d.DB.Query(query)
+	if err != nil {
+		status = log.Error(d.Ctx, 500, err, "Error during select scripts")
+		return results, status
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var rec Script
+		err := rows.Scan(&rec.ScriptId, &rec.BookId, &rec.ChapterNum, &rec.VerseNum,
+			&rec.VerseStr, &rec.ScriptText)
+		if err != nil {
+			status = log.Error(d.Ctx, 500, err, "Error in SelectScripts.")
+			return results, status
+		}
+		results = append(results, rec)
+	}
+	err = rows.Err()
+	if err != nil {
+		log.Warn(d.Ctx, err, query)
+	}
+	return results, status
+}
 
 // SelectScriptsByBookChapter ...
 func (d *DBAdapter) SelectScriptsByBookChapter(bookId string, chapter int) ([]Script, dataset.Status) {
@@ -462,20 +490,62 @@ func (d *DBAdapter) SelectScriptsByBookChapter(bookId string, chapter int) ([]Sc
 	return results, status
 }
 
-func (d *DBAdapter) UpdateScriptTimestamps(scripts []Timestamp) dataset.Status {
+func (d *DBAdapter) SelectScriptHeadings() ([]Script, dataset.Status) {
+	var result []Script
 	var status dataset.Status
-	query := `UPDATE scripts SET audio_file = ?, script_begin_ts = ?,
-		script_end_ts = ? WHERE script_id = ?`
-	tx, stmt := d.prepareDML(query)
-	defer stmt.Close()
-	for _, rec := range scripts {
-		_, err := stmt.Exec(rec.AudioFile, rec.BeginTS, rec.EndTS, rec.Id)
-		if err != nil {
-			return log.Error(d.Ctx, 500, err, `Error while updating script timestamps.`)
-		}
+	query := `SELECT script_id, book_id, chapter_num, usfm_style, verse_num, verse_str, script_text 
+		FROM scripts
+		WHERE usfm_style IN ('para.h', 'para.mt', 'para.mt1', 'para.mt2', 'para.mt3')
+		ORDER BY script_id`
+	rows, err := d.DB.Query(query)
+	if err != nil {
+		status = log.Error(d.Ctx, 500, err, "Error during Select Script Headings.")
+		return result, status
 	}
-	status = d.commitDML(tx, query)
-	return status
+	defer rows.Close()
+	for rows.Next() {
+		var rec Script
+		err := rows.Scan(&rec.ScriptId, &rec.BookId, &rec.ChapterNum, &rec.UsfmStyle, &rec.VerseNum,
+			&rec.VerseStr, &rec.ScriptText)
+		if err != nil {
+			status = log.Error(d.Ctx, 500, err, "Error during Select Script Headings.")
+			return result, status
+		}
+		result = append(result, rec)
+	}
+	err = rows.Err()
+	if err != nil {
+		log.Warn(d.Ctx, err, query)
+	}
+	return result, status
+}
+
+// SelectScriptIds is used by api_dbp_timestamps
+func (d *DBAdapter) SelectScriptIds() ([]Script, dataset.Status) {
+	var results []Script
+	var status dataset.Status
+	query := `SELECT script_id, book_id, chapter_num, script_num, verse_str 
+		FROM scripts ORDER BY script_id`
+	rows, err := d.DB.Query(query)
+	if err != nil {
+		status = log.Error(d.Ctx, 500, err, "Error during select scripts")
+		return results, status
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var rec Script
+		err := rows.Scan(&rec.ScriptId, &rec.BookId, &rec.ChapterNum, &rec.ScriptNum, &rec.VerseStr)
+		if err != nil {
+			status = log.Error(d.Ctx, 500, err, "Error in SelectScripts.")
+			return results, status
+		}
+		results = append(results, rec)
+	}
+	err = rows.Err()
+	if err != nil {
+		log.Warn(d.Ctx, err, query)
+	}
+	return results, status
 }
 
 func (d *DBAdapter) SelectScriptTimestamps(bookId string, chapter int) ([]Timestamp, dataset.Status) {
@@ -484,44 +554,29 @@ func (d *DBAdapter) SelectScriptTimestamps(bookId string, chapter int) ([]Timest
 	return d.selectTimestamps(query, bookId, chapter)
 }
 
-func (d *DBAdapter) InsertScriptMFCCS(mfccs []MFCC) dataset.Status {
-	query := `REPLACE INTO script_mfcc (script_id, rows, cols, mfcc_json) VALUES (?,?,?,?)`
-	return d.insertMFCCS(query, mfccs)
-}
-
-/*
-def selectScriptMFCCs(self):
-sql = `SELECT script_id, script_mfcc, mfcc_rows, mfcc_cols FROM audio_scripts`
-resultSet = self.sqlite.select(sql)
-finalSet = []
-for (script_id, script_mfcc, mfcc_rows, mfcc_cols) in resultSet:
-if script_mfcc != None:
-mfcc_decoded = np.frombuffer(script_mfcc, dtype=np.float32)
-mfcc_shaped = mfcc_decoded.reshape((mfcc_rows, mfcc_cols))
-finalSet.append((script_id, mfcc_shaped))
-return finalSet
-*/
-//
-// words table
-//
-
-func (d *DBAdapter) DeleteWords() {
-	execDDL(d.DB, `DELETE FROM words`)
-}
-
-func (d *DBAdapter) InsertWords(records []Word) dataset.Status {
+func (d *DBAdapter) selectTimestamps(query string, bookId string, chapter int) ([]Timestamp, dataset.Status) {
+	var results []Timestamp
 	var status dataset.Status
-	sql1 := `INSERT INTO words(script_id, word_seq, verse_num, ttype, word) VALUES (?,?,?,?,?)`
-	tx, stmt := d.prepareDML(sql1)
-	defer stmt.Close()
-	for _, rec := range records {
-		_, err := stmt.Exec(rec.ScriptId, rec.WordSeq, rec.VerseNum, rec.TType, rec.Word)
-		if err != nil {
-			return log.Error(d.Ctx, 500, err, "Error while inserting Words.")
-		}
+	rows, err := d.DB.Query(query, bookId, chapter)
+	defer rows.Close()
+	if err != nil {
+		status = log.Error(d.Ctx, 500, err, "Error during Select Timestamps By Book Chapter.")
+		return results, status
 	}
-	status = d.commitDML(tx, sql1)
-	return status
+	for rows.Next() {
+		var rec Timestamp
+		err := rows.Scan(&rec.Id, &rec.BeginTS, &rec.EndTS)
+		if err != nil {
+			status = log.Error(d.Ctx, 500, err, "Error during Select Timestamps By Book Chapter.")
+			return results, status
+		}
+		results = append(results, rec)
+	}
+	err = rows.Err()
+	if err != nil {
+		log.Warn(d.Ctx, err, query)
+	}
+	return results, status
 }
 
 // SelectWords is used by encode.FastText
@@ -580,21 +635,6 @@ func (d *DBAdapter) SelectWordsByBookChapter(bookId string, chapter int) ([]Word
 	return results, status
 }
 
-func (d *DBAdapter) UpdateWordTimestamps(words []Timestamp) dataset.Status {
-	var status dataset.Status
-	query := `UPDATE words SET word_begin_ts = ?, word_end_ts = ? WHERE word_id = ?`
-	tx, stmt := d.prepareDML(query)
-	defer stmt.Close()
-	for _, rec := range words {
-		_, err := stmt.Exec(rec.BeginTS, rec.EndTS, rec.Id)
-		if err != nil {
-			return log.Error(d.Ctx, 500, err, `Error while updating word timestamps.`)
-		}
-	}
-	status = d.commitDML(tx, query)
-	return status
-}
-
 func (d *DBAdapter) SelectWordTimestamps(bookId string, chapter int) ([]Timestamp, dataset.Status) {
 	query := `SELECT w.word_id, w.word_begin_ts, w.word_end_ts
 		FROM words w JOIN scripts s ON w.script_id = s.script_id
@@ -602,55 +642,16 @@ func (d *DBAdapter) SelectWordTimestamps(bookId string, chapter int) ([]Timestam
 	return d.selectTimestamps(query, bookId, chapter)
 }
 
-func (d *DBAdapter) selectTimestamps(query string, bookId string, chapter int) ([]Timestamp, dataset.Status) {
-	var results []Timestamp
+func (d *DBAdapter) UpdateScriptTimestamps(scripts []Timestamp) dataset.Status {
 	var status dataset.Status
-	rows, err := d.DB.Query(query, bookId, chapter)
-	defer rows.Close()
-	if err != nil {
-		status = log.Error(d.Ctx, 500, err, "Error during Select Timestamps By Book Chapter.")
-		return results, status
-	}
-	for rows.Next() {
-		var rec Timestamp
-		err := rows.Scan(&rec.Id, &rec.BeginTS, &rec.EndTS)
-		if err != nil {
-			status = log.Error(d.Ctx, 500, err, "Error during Select Timestamps By Book Chapter.")
-			return results, status
-		}
-		results = append(results, rec)
-	}
-	err = rows.Err()
-	if err != nil {
-		log.Warn(d.Ctx, err, query)
-	}
-	return results, status
-}
-
-func (d *DBAdapter) DeleteMFCCs() {
-	query := `DELETE FROM script_mfcc`
-	execDDL(d.DB, query)
-	query = `DELETE FROM word_mfcc`
-	execDDL(d.DB, query)
-}
-
-func (d *DBAdapter) InsertWordMFCCS(mfccs []MFCC) dataset.Status {
-	query := `REPLACE INTO word_mfcc (word_id, rows, cols, mfcc_json) VALUES (?,?,?,?)`
-	return d.insertMFCCS(query, mfccs)
-}
-
-func (d *DBAdapter) insertMFCCS(query string, mfccs []MFCC) dataset.Status {
-	var status dataset.Status
+	query := `UPDATE scripts SET audio_file = ?, script_begin_ts = ?,
+		script_end_ts = ? WHERE script_id = ?`
 	tx, stmt := d.prepareDML(query)
 	defer stmt.Close()
-	for _, rec := range mfccs {
-		mfccBytes, err := json.Marshal(rec.MFCC)
+	for _, rec := range scripts {
+		_, err := stmt.Exec(rec.AudioFile, rec.BeginTS, rec.EndTS, rec.Id)
 		if err != nil {
-			return log.Error(d.Ctx, 500, err, `Error converting MFCC to JSON`)
-		}
-		_, err = stmt.Exec(rec.Id, rec.Rows, rec.Cols, string(mfccBytes))
-		if err != nil {
-			return log.Error(d.Ctx, 500, err, `Error while inserting MFCC.`)
+			return log.Error(d.Ctx, 500, err, `Error while updating script timestamps.`)
 		}
 	}
 	status = d.commitDML(tx, query)
@@ -679,45 +680,17 @@ func (d *DBAdapter) UpdateWordEncodings(words []Word) dataset.Status {
 	return status
 }
 
-func execDDL(db *sql.DB, sql string) {
-	_, err := db.Exec(sql)
-	if err != nil {
-		log.Panic(context.Background(), err, sql)
-	}
-}
-
-func zeroFill(a string, size int) string {
-	num := countDigits(a)
-	b := "0000000"[:size-num] + a
-	return b
-}
-
-func countDigits(a string) int {
-	for i, ch := range a {
-		if ch < '0' || ch > '9' {
-			return i
+func (d *DBAdapter) UpdateWordTimestamps(words []Timestamp) dataset.Status {
+	var status dataset.Status
+	query := `UPDATE words SET word_begin_ts = ?, word_end_ts = ? WHERE word_id = ?`
+	tx, stmt := d.prepareDML(query)
+	defer stmt.Close()
+	for _, rec := range words {
+		_, err := stmt.Exec(rec.BeginTS, rec.EndTS, rec.Id)
+		if err != nil {
+			return log.Error(d.Ctx, 500, err, `Error while updating word timestamps.`)
 		}
 	}
-	return len(a)
-}
-
-func (d *DBAdapter) prepareDML(query string) (*sql.Tx, *sql.Stmt) {
-	tx, err := d.DB.Begin()
-	if err != nil {
-		log.Fatal(d.Ctx, err, query)
-	}
-	stmt, err := tx.Prepare(query)
-	if err != nil {
-		log.Fatal(d.Ctx, err, query)
-	}
-	return tx, stmt
-}
-
-func (d *DBAdapter) commitDML(tx *sql.Tx, query string) dataset.Status {
-	var status dataset.Status
-	err := tx.Commit()
-	if err != nil {
-		status = log.Error(d.Ctx, 500, err, query)
-	}
+	status = d.commitDML(tx, query)
 	return status
 }
