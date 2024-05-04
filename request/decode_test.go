@@ -22,7 +22,7 @@ func TestRequestYamlFile(t *testing.T) {
 func TestParser(t *testing.T) {
 	var test1 = `IsNew: Yes
 RequestName: Test1  # should be a unique name
-BibleId: ENGWEB
+Bibleid: ENGWEB
 Testament:
   OT: 
   OTBooks: [GEN,EXO,LEV,NUM,DEU]

@@ -6,6 +6,7 @@ import (
 	"dataset"
 	log "dataset/logger"
 	"gopkg.in/yaml.v3"
+	"strings"
 )
 
 type RequestDecoder struct {
@@ -37,7 +38,8 @@ func (r *RequestDecoder) Process(yamlRequest []byte) (Request, dataset.Status) {
 func (r *RequestDecoder) Decode(requestYaml []byte) (Request, dataset.Status) {
 	var resp Request
 	var status dataset.Status
-	reader := bytes.NewReader(requestYaml)
+	var request = []byte(strings.ToLower(string(requestYaml)))
+	reader := bytes.NewReader(request)
 	decoder := yaml.NewDecoder(reader)
 	decoder.KnownFields(true)
 	err := decoder.Decode(&resp)
