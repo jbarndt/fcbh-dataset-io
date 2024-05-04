@@ -1,96 +1,96 @@
-## This is the request file format to run
+## This is the request file format.
 
-IsNew: yes # Answer yet to start with a clean project
-RequestName: Test1 # Use a unique name to keep runs separate, or reuse a name to overwrite prior run
-BibleId: ATIWBT
-
-Testament: # Choose one or both
-  NT: yes # Mark Yes for entire New Testament
-  NTBooks: [] # To process part of the NT, list specific USFM NT book codes, e.g. [MAT,MRK,LUK,JHN]
-  OT: # Mark Yes for entire Old Testament
-  OTBooks: [] # To process part of the OT, list specific USFM OT book codes, e.g. [GEN,EXO,LEV,NUM]
-# Default: NT Yes
+# These three fields are required
+is_new: yes # Answer yet to start with a clean project
+request_name: Test1 # Use a unique name to keep runs separate, or reuse a name to add to a prior run
+bible_id: ATIWBT
 
 # The remaining configuration choices are all optional, but something must be selected in order for some processing to be done.
 
-AudioData: # Choose one of the following
-  BibleBrain: # If Bible Brain put Yes by the desired type
-    MP3_64: yes # Mark Yes for 64 bit MP3
-    MP3_16: # Mark Yes for 16 bit MP3
-    OPUS: # Mark Yes for OPUS
-  File: # e.g. /{directory}/{mediaId}/*.usx Note: include twice for OT and NT
-  Http: # If http, enter URL (TBD)
-  AWSS3: # e.g. s3://{bucket}/audio/{bibleId}/{mediaId}/*.mp3  Note: include twice for OT and NT
-  POST: # If POST, put Yes here (TBD)
-  NoAudio: # If no audio put Yes here
-# Default:  NoAudio
+testament: # Choose one or both
+  nt: yes # Mark Yes for entire New Testament
+  nt_books: [] # To process part of the NT, list specific USFM NT book codes, e.g. [MAT,MRK,LUK,JHN]
+  ot: # Mark Yes for entire Old Testament
+  ot_books: [] # To process part of the OT, list specific USFM OT book codes, e.g. [GEN,EXO,LEV,NUM]
+# Default: nt
 
-TextData: # Choose one of the following
-  BibleBrain: # If Bible Brain put Yes by the desired type
-    TextUSXEdit: yes # Mark Yes, for USX with text not in audio removed
-    TextPlainEdit: # Mark Yes, for plain_text with headings added to match audio
-    TextPlain: # Mark Yes, for DBP plain_text
-  SpeechToText: # If STT is source Yes by desired type
-    Whisper: # This is OpenAI’s STT model
-      Model: # If using Whisper, choose one of the model sizes by marking it Yes
-        Large:
-        Medium:
-        Small:
-        Base:
-        Tiny:
-  File: # e.g. /{directory}/{mediaId}/*.usx Note: include twice for OT and NT
-  Http: # If http, enter URL here (TBD)
-  AWSS3: # e.g. s3://{bucket}/text/{bibleId}/{mediaId}/*.usx  Note: include twice for OT and NT
-  POST: # (TBD)
-  NoText: # If there is no text put an X here
+audio_data: # Choose one of the following
+  bible_brain: # If Bible Brain put Yes by the desired type
+    mp3_64: yes # Mark Yes for 64 bit MP3
+    mp3_16: # Mark Yes for 16 bit MP3
+    opus: # Mark Yes for OPUS
+  file: # e.g. /{directory}/{mediaId}/*.usx Note: include twice for OT and NT
+  aws_s3: # e.g. s3://{bucket}/audio/{bibleId}/{mediaId}/*.mp3  Note: include twice for OT and NT
+  post: # If POST, put Yes here (TBD)
+  no_audio: # If no audio put Yes here
+# Default:  no_audio
 
-Detail: # Choose word or both
-  Lines: # Mark yes to process script lines
-  Words: # Mark yes to process individual words
-# Default: LINES
+text_data: # Choose one of the following
+  bible_brain: # If Bible Brain put Yes by the desired type
+    text_usx_edit: yes # Mark Yes, for USX with text not in audio removed
+    text_plain_edit: # Mark Yes, for plain_text with headings added to match audio
+    text_plain: # Mark Yes, for DBP plain_text
+  speech_to_text: # If STT is source Yes by desired type
+    whisper: # This is OpenAI’s STT model
+      model: # If using Whisper, choose one of the model sizes by marking it Yes
+        large:
+        medium:
+        small:
+        base:
+        tiny:
+  file: # e.g. /{directory}/{mediaId}/*.usx Note: include twice for OT and NT
+  aws_s3: # e.g. s3://{bucket}/text/{bibleId}/{mediaId}/*.usx  Note: include twice for OT and NT
+  post: # e.g. {mediaId}_{chapter}_{verse}[-{chapter_end}_{verse_end}
+  no_text: # If there is no text yes here
+# Default: no_text
 
-Timestamps: # If timestamps are needed, mark Yes by source
-  BibleBrain:
-  Aeneas: yes
-  NoTimestamps:
-# Default: NoTimestamps
+detail: # Choose word or both
+  lines: # Mark yes to process script lines
+  words: # Mark yes to process individual words
+# Default: lines
 
-AudioEncoding: # If audio encoding is needed, mark Yes by the method
-  MFCC:
-  NoEncoding:
-# Default: NoEncoding
+timestamps: # If timestamps are needed, mark Yes by source
+  bible_brain:
+  aeneas: yes
+  no_timestamps:
+# Default: no_timestamps
 
-TextEncoding:
-  FastText:
-  NoEncoding:
-# Default: NoTextEncoding
+audio_encoding: # If audio encoding is needed, mark Yes by the method
+  mfcc:
+  no_encoding:
+# Default: no_encoding
 
-OutputFormat: # Put yes by the desired output format.
-  CSV:  
-  JSON:
-  Sqlite:
-# Default: JSON
+text_encoding:
+  fast_text:
+  no_encoding:
+# Default: no_encoding
 
-Compare: # To do a compare, put the names of the two projects here
-  BaseProject:  # Name of project to compare to this one
+output_format: # Put yes by the desired output format.
+  csv:
+  json:
+  sqlite:
+# Default: json
+
+compare: # To do a compare, put the names of the two projects here
+  base_project:  # Name of project to compare to this one
 ## compare entries go here
 ## edit check, the two projects must exist, and both must have a text source.
-  CompareSettings: # Mark yes, all settings that apply
-    LowerCase: # Mark yes here to move to lower case
-    RemovePromptChars: # Mark yes here to remove prompt chars found in audio transcript
-    RemovePunctuation: # Mark yes here to remove punctuation
-    DoubleQuotes: # Choose no more than one
-      Remove: # Mark yes here to remove double quotes
-      Normalize: # Mark yes here to normalize to ascii double quote
-    Apostrophe: # Choose no more than one
-      Remove: # Mark yes here to remove apostrophes
-      Normalize: # Mark yes here to normalize to ascii apostrophe
-    Hyphen: # Choose no more than one
-      Remove: # Mark yes here to remove Hyphen
-      Normalize: # Mark yes here to normalize to ascii hyphen
-    DiacriticalMarks: # Choose no more than one
-      Remove: # Mark yes here to remove diacritical marks
-      NormalizeNFC: # Mark yes here for Normalization Form Composition
-      NormalizeNFD: # Mark yes here for Normalization Form Decomposition
-      NormalizeNFKC: # Mark yes here for Normalization Form Compatibility Composition
-      NormalizeNFKD: # Mark yes here for Normalization Form Compatibility Decomposition
+  compare_settings: # Mark yes, all settings that apply
+    lower_case: # Mark yes here to move to lower case
+    remove_prompt_chars: # Mark yes here to remove prompt chars found in audio transcript
+    remove_punctuation: # Mark yes here to remove punctuation
+    double_quotes: # Choose no more than one
+      remove: # Mark yes here to remove double quotes
+      normalize: # Mark yes here to normalize to ascii double quote
+    apostrophe: # Choose no more than one
+      remove: # Mark yes here to remove apostrophes
+      normalize: # Mark yes here to normalize to ascii apostrophe
+    hyphen: # Choose no more than one
+      remove: # Mark yes here to remove Hyphen
+      normalize: # Mark yes here to normalize to ascii hyphen
+    diacritical_marks: # Choose no more than one
+      remove: # Mark yes here to remove diacritical marks
+      normalize_nfc: # Mark yes here for Normalization Form Composition
+      normalize_nfd: # Mark yes here for Normalization Form Decomposition
+      normalize_nfkc: # Mark yes here for Normalization Form Compatibility Composition
+      normalize_nfkd: # Mark yes here for Normalization Form Compatibility Decomposition

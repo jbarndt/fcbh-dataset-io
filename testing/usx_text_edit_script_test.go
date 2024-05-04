@@ -7,14 +7,14 @@ import (
 	"testing"
 )
 
-const USXTextEditScript = `IsNew: yes
-RequestName: USX Text Edit Script
-BibleId: {bibleId}
-TextData:
-  BibleBrain:
-    TextUSXEdit: yes
-OutputFormat:
-  JSON: yes
+const USXTextEditScript = `is_new: yes
+request_name: USX Text Edit Script
+bible_id: {bibleId}
+text_data:
+  bible_brain:
+    text_usx_edit: yes
+output_format:
+  json: yes
 `
 
 func TestUSXTextEditScriptCLI(t *testing.T) {

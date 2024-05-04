@@ -20,80 +20,78 @@ func TestRequestYamlFile(t *testing.T) {
 }
 
 func TestParser(t *testing.T) {
-	var test1 = `IsNew: Yes
-RequestName: Test1  # should be a unique name
-Bibleid: ENGWEB
-Testament:
-  OT: 
-  OTBooks: [GEN,EXO,LEV,NUM,DEU]
-  NT: Yes
-  NTBooks: []
-AudioData:
-  BibleBrain:
-    MP3_64: Yes
-    MP3_16: Y
-    OPUS: y
-  File: file:///Users/who/where.mp3
-  Http: http://go.there.com/path
-  AWSS3: http://west1/path
-  POST: Yes
-  NoAudio: Yes
-TextData: 
-  BibleBrain: 
-    TextUSXEdit: Yes
-    TextPlainEdit: Yes
-    TextPlain: Yes
-  SpeechToText: 
-    Whisper: 
-      Model: 
-        Large: Yes
-        Medium: Yes
-        Small: Yes
-        Base: Yes
-        Tiny: Yes
-  File: /Users/who/where.mp3
-  Http: http://go.there.com/path
-  AWSS3: http://west1/path
-  POST: Yes
-  NoText: Yes
-Detail:
-  Lines: yes
-  Words: yes
-Timestamps:
-  BibleBrain: yes
-  Aeneas: yes
-  NoTimestamps: yes
-AudioEncoding:
-  MFCC: yes
-  NoEncoding: yes
-TextEncoding:
-  FastText: yes
-  NoEncoding: yes
-OutputFormat:
-  CSV: yes
-  JSON: yes
-  Sqlite: yes
-Compare:
-  BaseProject: UseProject1
-  CompareSettings:
-    LowerCase: yes
-    RemovePromptChars: yes
-    RemovePunctuation: yes
-    DoubleQuotes: 
-      Remove: yes
-      Normalize: yes
-    Apostrophe: 
-      Remove: yes
-      Normalize: yes
-    Hyphen: 
-      Remove: yes
-      Normalize: yes
-    DiacriticalMarks: 
-      Remove: yes
-      NormalizeNFC: yes
-      NormalizeNFD: yes
-      NormalizeNFKC: yes
-      NormalizeNFKD: yes`
+	var test1 = `is_new: Yes
+request_name: Test1  # should be a unique name
+bible_id: ENGWEB
+testament:
+  ot: 
+  ot_books: [GEN,EXO,LEV,NUM,DEU]
+  nt: Yes
+  nt_books: []
+audio_data:
+  bible_brain:
+    mp3_64: Yes
+    mp3_16: Y
+    opus: y
+  file: file:///Users/who/where.mp3
+  aws_s3: http://west1/path
+  post: Yes
+  no_audio: Yes
+text_data: 
+  bible_brain: 
+    text_usx_edit: Yes
+    text_plain_edit: Yes
+    text_plain: Yes
+  speech_to_text: 
+    whisper: 
+      model: 
+        large: Yes
+        medium: Yes
+        small: Yes
+        base: Yes
+        tiny: Yes
+  file: /Users/who/where.mp3
+  aws_s3: http://west1/path
+  post: Yes
+  no_text: Yes
+detail:
+  lines: yes
+  words: yes
+timestamps:
+  bible_brain: yes
+  aeneas: yes
+  no_timestamps: yes
+audio_encoding:
+  mfcc: yes
+  no_encoding: yes
+text_encoding:
+  fast_text: yes
+  no_encoding: yes
+output_format:
+  csv: yes
+  json: yes
+  sqlite: yes
+compare:
+  base_project: UseProject1
+  compare_settings:
+    lower_case: yes
+    remove_prompt_chars: yes
+    remove_punctuation: yes
+    double_quotes: 
+      remove: yes
+      normalize: yes
+    apostrophe: 
+      remove: yes
+      normalize: yes
+    hyphen: 
+      remove: yes
+      normalize: yes
+    diacritical_marks: 
+      remove: yes
+      normalize_nfc: yes
+      normalize_nfd: yes
+      normalize_nfkc: yes
+      normalize_nfkd: yes`
 	var r = NewRequestDecoder(context.Background())
 	req, status := r.Decode([]byte(test1))
 	fmt.Println(`Status:`, status)
@@ -153,10 +151,8 @@ Compare:
 	var strs = []string{req.RequestName,
 		req.BibleId,
 		req.AudioData.File,
-		req.AudioData.Http,
 		req.AudioData.AWSS3,
 		req.TextData.File,
-		req.TextData.Http,
 		req.TextData.AWSS3,
 		req.Compare.BaseProject}
 	for i, item := range strs {

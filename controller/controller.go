@@ -172,8 +172,6 @@ func (c *Controller) collectTextInput() ([]input.InputFile, dataset.Status) {
 			c.info.TextNTFileset.Id, c.req.Testament)
 	} else if c.req.TextData.File != `` {
 		files, status = input.FileInput(c.ctx, c.req.TextData.File, c.req.Testament)
-	} else if c.req.TextData.Http != `` {
-		status = log.ErrorNoErr(c.ctx, 400, `Http is not implemented yet`)
 	} else if c.req.TextData.AWSS3 != `` {
 		files, status = input.AWSS3Input(c.ctx, c.req.TextData.AWSS3, c.req.Testament)
 	} else if c.req.TextData.POST {
@@ -192,8 +190,6 @@ func (c *Controller) collectAudioInput() ([]input.InputFile, dataset.Status) {
 			c.info.AudioNTFileset.Id, c.req.Testament)
 	} else if c.req.AudioData.File != `` {
 		files, status = input.FileInput(c.ctx, c.req.AudioData.File, c.req.Testament)
-	} else if c.req.AudioData.Http != `` {
-		status = log.ErrorNoErr(c.ctx, 400, `Http is not implemented yet`)
 	} else if c.req.AudioData.AWSS3 != `` {
 		files, status = input.AWSS3Input(c.ctx, c.req.AudioData.AWSS3, c.req.Testament)
 	} else if c.req.AudioData.POST {

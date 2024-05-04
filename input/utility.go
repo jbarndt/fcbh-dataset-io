@@ -40,6 +40,8 @@ func SetMediaType(ctx context.Context, file *InputFile) dataset.Status {
 		file.MediaType = `text_usx`
 	} else if (fN[0] == 'A' || fN[0] == 'B') && (fN[1] >= '0' && fN[1] <= '9') {
 		file.MediaType = `audio`
+	} else if strings.HasSuffix(fN, `ST.xlsx`) {
+		file.MediaType = `text_script`
 	} else {
 		parts := strings.Split(fN, `_`)
 		if len(parts) > 2 {

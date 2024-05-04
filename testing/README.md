@@ -34,7 +34,7 @@
 - [ ] Load Plain Text Script from BB-API, CSV output
 - [ ] Load Plain Text Edit from BB-API, JSON output
 - [ ] Load USX Text Edit from BB-API, CSV output
-- [ ] Load Script Using File, CSV output
+- [ ] Load Script Using File, Sqlite output
 
 - [ ] Compare Plain Text to Plain Text Edit, HTML output
 - [ ] Compare Plain Text Edit to USX Edit, HTML output

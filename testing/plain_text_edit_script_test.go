@@ -6,14 +6,14 @@ import (
 	"testing"
 )
 
-const PlainTextEditScript = `IsNew: yes
-RequestName: PlainTextEditScript
-BibleId: {bibleId}
-TextData:
-  BibleBrain:
-    TextPlainEdit: yes
-OutputFormat:
-  JSON: yes
+const PlainTextEditScript = `is_new: yes
+request_name: PlainTextEditScript
+bible_id: {bibleId}
+text_data:
+  bible_brain:
+    text_plain_edit: yes
+output_format:
+  json: yes
 `
 
 func TestPlainTextEditScriptCLI(t *testing.T) {

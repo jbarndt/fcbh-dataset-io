@@ -16,7 +16,7 @@ import (
 
 // GetDBPath is not correct with user/project database names
 func GetDBPath(database string) string {
-	if database == `:memory:` {
+	if database == `:memory:` || strings.Contains(database, `/`) {
 		return database
 	}
 	var directory = os.Getenv(`FCBH_DATASET_DB`)
