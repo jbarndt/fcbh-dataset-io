@@ -2,7 +2,7 @@
 
 # These three fields are required
 is_new: yes # Answer yet to start with a clean project
-request_name: Test1 # Use a unique name to keep runs separate, or reuse a name to add to a prior run
+dataset_name: Test1 # Use a unique name to keep runs separate, or reuse a name to add to a prior run
 bible_id: ATIWBT
 
 # The remaining configuration choices are all optional, but something must be selected in order for some processing to be done.
@@ -72,7 +72,7 @@ output_format: # Put yes by the desired output format.
 # Default: json
 
 compare: # To do a compare, put the names of the two projects here
-  base_project:  # Name of project to compare to this one
+  base_dataset:  # Name of dataset to compare to this one
 ## compare entries go here
 ## edit check, the two projects must exist, and both must have a text source.
   compare_settings: # Mark yes, all settings that apply

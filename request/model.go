@@ -2,7 +2,7 @@ package request
 
 type Request struct {
 	IsNew         bool          `yaml:"is_new"`
-	RequestName   string        `yaml:"request_name"`
+	RequestName   string        `yaml:"dataset_name"`
 	BibleId       string        `yaml:"bible_id"`
 	Testament     Testament     `yaml:"testament,omitempty"`
 	AudioData     AudioData     `yaml:"audio_data,omitempty"`
@@ -175,7 +175,7 @@ type OutputFormat struct {
 }
 
 type Compare struct {
-	BaseProject     string          `yaml:"base_project,omitempty"`
+	BaseProject     string          `yaml:"base_dataset,omitempty"`
 	CompareSettings CompareSettings `yaml:"compare_settings,omitempty"`
 }
 
