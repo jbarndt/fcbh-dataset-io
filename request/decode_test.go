@@ -21,7 +21,7 @@ func TestRequestYamlFile(t *testing.T) {
 
 func TestParser(t *testing.T) {
 	var test1 = `is_new: Yes
-request_name: Test1  # should be a unique name
+dataset_name: Test1  # should be a unique name
 bible_id: ENGWEB
 testament:
   ot: 
@@ -72,7 +72,7 @@ output_format:
   json: yes
   sqlite: yes
 compare:
-  base_project: UseProject1
+  base_dataset: UseProject1
   compare_settings:
     lower_case: yes
     remove_prompt_chars: yes

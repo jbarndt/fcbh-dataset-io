@@ -10,7 +10,7 @@ import (
 )
 
 const ScriptTextScript = `is_new: yes
-request_name: ScriptTextScript
+dataset_name: ScriptTextScript
 bible_id: {bibleId}
 text_data:
   file: /Users/gary/FCBH2024/download/ATIWBT/ATIWBTN2ST.xlsx

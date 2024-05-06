@@ -8,7 +8,7 @@ import (
 )
 
 const USXTextEditScript = `is_new: yes
-request_name: USX Text Edit Script
+dataset_name: USX Text Edit Script
 bible_id: {bibleId}
 text_data:
   bible_brain:

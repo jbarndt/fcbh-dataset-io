@@ -7,7 +7,7 @@ import (
 )
 
 const PlainTextEditScript = `is_new: yes
-request_name: PlainTextEditScript
+dataset_name: PlainTextEditScript
 bible_id: {bibleId}
 text_data:
   bible_brain:
