@@ -4,12 +4,10 @@ import (
 	"context"
 	"dataset"
 	"dataset/db"
+	"dataset/input"
 	log "dataset/logger"
 	"github.com/xuri/excelize/v2"
-	"os"
-	"path/filepath"
 	"strconv"
-	"strings"
 )
 
 // This program will read Excel data and load the audio_scripts table
@@ -26,23 +24,12 @@ func NewScriptReader(db db.DBAdapter) ScriptReader {
 	return d
 }
 
-func (r ScriptReader) FindFile(bibleId string) (string, dataset.Status) {
-	var result string
+func (r ScriptReader) ProcessFiles(files []input.InputFile) dataset.Status {
 	var status dataset.Status
-	directory := filepath.Join(os.Getenv("FCBH_DATASET_FILES"), bibleId)
-	files, err := os.ReadDir(directory)
-	if err != nil {
-		status = log.Error(r.ctx, 500, err, "Could not read directory", directory)
-		return result, status
-	}
 	for _, file := range files {
-		filename := file.Name()
-		if strings.HasSuffix(filename, ".xlsx") {
-			return filepath.Join(directory, filename), status
-		}
+		status = r.Read(file.FilePath())
 	}
-	status = log.Error(r.ctx, 500, err, "Could not find .xlsx file in", directory)
-	return result, status
+	return status
 }
 
 func (r ScriptReader) Read(filePath string) dataset.Status {

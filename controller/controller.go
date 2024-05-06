@@ -120,7 +120,11 @@ func (c *Controller) processSteps() (string, dataset.Status) {
 		}
 	}
 	// Prepare output
-	filename, status = c.output()
+	if c.req.OutputFormat.Sqlite {
+		filename = c.database.DatabasePath
+	} else {
+		filename, status = c.output()
+	}
 	return filename, status
 }
 
@@ -223,6 +227,12 @@ func (c *Controller) readText(textFiles []input.InputFile) dataset.Status {
 			if status.IsErr {
 				return status
 			}
+		}
+	} else if textFiles[0].MediaType == `text_script` {
+		reader := read.NewScriptReader(c.database)
+		status = reader.ProcessFiles(textFiles)
+		if status.IsErr {
+			return status
 		}
 	} else {
 		return status // This is not an error, it is nothing to do

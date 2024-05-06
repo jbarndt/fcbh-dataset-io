@@ -26,13 +26,14 @@ func TestScriptTextScript(t *testing.T) {
 	if status.IsErr {
 		t.Fatal(status)
 	}
-	fmt.Println(filename)
+	fmt.Println("Filename:", filename)
 	conn := db.NewDBAdapter(context.TODO(), filename)
 	count, status := conn.CountScriptRows()
 	if status.IsErr {
 		t.Fatal(status)
 	}
-	if count != 10 {
-		t.Error(`Expected `, count, `records, got`, count)
+	var expected = 9747
+	if count != expected {
+		t.Error(`Expected `, expected, `records, got`, count)
 	}
 }
