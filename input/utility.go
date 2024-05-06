@@ -75,6 +75,15 @@ func ParseFilenames(ctx context.Context, file *InputFile) dataset.Status {
 		file.BookSeq = file.Filename[0:3]
 		file.Testament = db.Testament(file.BookId)
 		file.FileExt = filepath.Ext(file.Filename)
+	} else if file.MediaType == `text_script` {
+		file.MediaId = strings.Split(file.Filename, `.`)[0]
+		test := file.Filename[6]
+		if test == 'O' {
+			file.Testament = `OT`
+		} else if test == 'N' {
+			file.Testament = `NT`
+		}
+		file.FileExt = filepath.Ext(file.Filename)
 	} else if file.MediaType == `audio` || file.MediaType == `audio_drama` {
 		fN := file.Filename
 		if (fN[0] == 'A' || fN[0] == 'B') && (fN[1] >= '0' && fN[1] <= '9') {

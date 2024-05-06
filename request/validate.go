@@ -113,8 +113,8 @@ func checkForOne(structVal reflect.Value, fieldName string, msgs *[]string) int 
 	var errorCount int
 	var wasSet []string
 	checkForOneRecursive(structVal, &wasSet)
+	errorCount += len(wasSet)
 	if len(wasSet) > 1 {
-		errorCount += len(wasSet)
 		msg := `Only 1 field can be set on ` + fieldName + `: ` + strings.Join(wasSet, `,`)
 		*msgs = append(*msgs, msg)
 	}
