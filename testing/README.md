@@ -31,15 +31,15 @@
 
 ## Script level text tests
 
-- [ ] Load Plain Text Script from BB-API, CSV output
-- [ ] Load Plain Text Edit from BB-API, JSON output
-- [ ] Load USX Text Edit from BB-API, CSV output
-- [ ] Load Script Using File, Sqlite output
+- [ ] 01 Load Plain Text Script from BB-API, CSV output
+- [ ] 02 Load Plain Text Edit from BB-API, JSON output
+- [ ] 03 Load USX Text Edit from BB-API, CSV output
+- [ ] 04 Load Script Using File, Sqlite output
 
-- [ ] Compare Plain Text to Plain Text Edit, HTML output
-- [ ] Compare Plain Text Edit to USX Edit, HTML output
-- [ ] Compare USX Edit to Script, HTML output (Mark Scott use case)
-- [ ] Compare Plain Text Edit to Script, HTML output
+- [ ] 05 Compare Plain Text to Plain Text Edit, HTML output
+- [ ] 06 Compare Plain Text Edit to USX Edit, HTML output
+- [ ] 07 Compare USX Edit to Script, HTML output (Mark Scott use case)
+- [ ] 08 Compare Plain Text Edit to Script, HTML output
 - Note: Part of the purpose of these comparison tests is to verify that each kind of data parsing is correct.
 
 ## Script level audio tests
