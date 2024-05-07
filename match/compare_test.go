@@ -2,26 +2,30 @@ package match
 
 import (
 	"context"
+	"dataset/db"
+	"dataset/fetch"
+	"dataset/request"
 	"fmt"
 	"testing"
 )
 
 func TestCompare(t *testing.T) {
 	ctx := context.Background()
-	compare := NewCompare(ctx, `ATIWBT_USXEDIT.db`, `ATIWBT_SCRIPT.db`)
+	user, _ := fetch.GetDBPUser()
+	user.Username = ``
+	var cfg request.CompareSettings
+	cfg.LowerCase = true
+	cfg.RemovePromptChars = true
+	cfg.RemovePunctuation = true
+	cfg.DoubleQuotes.Remove = true
+	cfg.Apostrophe.Remove = true
+	cfg.Hyphen.Remove = true
+	cfg.DiacriticalMarks.NormalizeNFD = true
+	conn := db.NewDBAdapter(ctx, `ATIWBT_SCRIPT.db`)
+	compare := NewCompare(ctx, user, `ATIWBT_USXEDIT`, conn, cfg)
 	status := compare.Process()
 	fmt.Println(status)
 	if globalDiffCount != 2 {
 		t.Error(`Expected count is 2, actual was`, globalDiffCount)
 	}
 }
-
-/*if
-func getCommandLine() (string, string) {
-	if len(os.Args) < 3 {
-		fmt.Println("Usage: $HOME/Documents/go2/bin/compare  database1  database2")
-		os.Exit(1)
-	}
-	return os.Args[1], os.Args[2]
-}
-*/

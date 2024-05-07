@@ -6,6 +6,7 @@ import (
 	"dataset/db"
 	"dataset/fetch"
 	log "dataset/logger"
+	"dataset/request"
 	"fmt"
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"golang.org/x/text/unicode/norm"
@@ -24,6 +25,7 @@ type Compare struct {
 	dataset     string
 	baseDb      db.DBAdapter
 	database    db.DBAdapter
+	settings    request.CompareSettings
 }
 
 type Verse struct {
@@ -33,13 +35,15 @@ type Verse struct {
 	text    string
 }
 
-func NewCompare(ctx context.Context, user fetch.DBPUser, baseDSet string, db db.DBAdapter) Compare {
+func NewCompare(ctx context.Context, user fetch.DBPUser, baseDSet string, db db.DBAdapter,
+	settings request.CompareSettings) Compare {
 	var c Compare
 	c.ctx = ctx
 	c.user = user
 	c.baseDataset = baseDSet
 	c.dataset = strings.Split(db.Database, `.`)[0]
 	c.database = db
+	c.settings = settings
 	return c
 }
 
@@ -142,8 +146,7 @@ func (c *Compare) process(conn db.DBAdapter, bookId string, chapterNum int) ([]V
 	} else if ident.TextSource == `text_usx` {
 		lines = c.consolidateUSX(lines)
 	}
-	cfg := getConfig()
-	lines = c.cleanUp(lines, cfg)
+	lines = c.cleanUp(lines)
 	return lines, status
 }
 
@@ -255,14 +258,15 @@ func (c *Compare) consolidateUSX(verses []Verse) []Verse {
 	return results
 }
 
-func (c *Compare) cleanUp(verses []Verse, cfg config) []Verse {
-	if cfg.lowerCase {
+func (c *Compare) cleanUp(verses []Verse) []Verse {
+	cfg := c.settings
+	if cfg.LowerCase {
 		for i, vs := range verses {
 			verses[i].text = strings.ToLower(vs.text)
 		}
 	}
 	var replace []string
-	if cfg.removePromptChars {
+	if cfg.RemovePromptChars {
 		replace = append(replace, "<<", "")
 		replace = append(replace, ">>", "")
 		replace = append(replace, "((", "")
@@ -272,7 +276,7 @@ func (c *Compare) cleanUp(verses []Verse, cfg config) []Verse {
 		replace = append(replace, "<", "") // AAAMLT
 		replace = append(replace, ">", "") // AAAMLT
 	}
-	if cfg.removePunctuation {
+	if cfg.RemovePunctuation {
 		replace = append(replace, ",", "")
 		replace = append(replace, ";", "")
 		replace = append(replace, ":", "")
@@ -281,14 +285,14 @@ func (c *Compare) cleanUp(verses []Verse, cfg config) []Verse {
 		replace = append(replace, "?", "")
 		replace = append(replace, "~", "")
 	}
-	if cfg.doubleQuotes == normalize {
+	if cfg.DoubleQuotes.Normalize {
 		//replace = append(replace, "\u201C", "\u0022") // left quote
 		//replace = append(replace, "\u201D", "\u0022") // right quote
 		//replace = append(replace, "\u2033", "\u0022") // minutes or seconds
 		replace = append(replace, "\u00AB", "\u0022") // <<
 		//replace = append(replace, "\u00BB", "\u0022") // >>
 		//replace = append(replace, "\u201E", "\u0022") // low 9 quote
-	} else if cfg.doubleQuotes == remove {
+	} else if cfg.DoubleQuotes.Remove {
 		replace = append(replace, "\u0022", "") // ascii
 		replace = append(replace, "\u201C", "") // left quote
 		replace = append(replace, "\u201D", "") // right quote
@@ -297,14 +301,14 @@ func (c *Compare) cleanUp(verses []Verse, cfg config) []Verse {
 		replace = append(replace, "\u00BB", "") // >>
 		//replace = append(replace, "\u201E", "") // low 9 quote
 	}
-	if cfg.apostrophe == normalize {
+	if cfg.Apostrophe.Normalize {
 		replace = append(replace, "\uA78C", "'") // ? found in script text
 		replace = append(replace, "\u2018", "'") // left
 		replace = append(replace, "\u2019", "'") // right
 		replace = append(replace, "\u02BC", "'") // modifier letter apos
 		replace = append(replace, "\u2032", "'") // prime
 		replace = append(replace, "\u00B4", "'") // acute accent (not really apos)
-	} else if cfg.apostrophe == remove {
+	} else if cfg.Apostrophe.Remove {
 		replace = append(replace, "'", "")
 		replace = append(replace, "\uA78C", "") // ? found in script text
 		replace = append(replace, "\u2018", "") // left
@@ -313,7 +317,7 @@ func (c *Compare) cleanUp(verses []Verse, cfg config) []Verse {
 		//replace = append(replace, "\u2032", "") // prime
 		//replace = append(replace, "\u00B4", "") // acute accent (not really apos)
 	}
-	if cfg.hyphen == normalize {
+	if cfg.Hyphen.Normalize {
 		replace = append(replace, "\u2010", "\u002D") // hypen
 		replace = append(replace, "\u2011", "\u002D") // non-breaking hyphen
 		replace = append(replace, "\u2012", "\u002D") // figure dash
@@ -324,7 +328,7 @@ func (c *Compare) cleanUp(verses []Verse, cfg config) []Verse {
 		replace = append(replace, "\uFE62", "\u002D") // small en dash
 		replace = append(replace, "\uFE63", "\u002D") // small hyphen minus
 		replace = append(replace, "\uFF0D", "\u002D") // fullwidth hypen-minus
-	} else if cfg.hyphen == remove {
+	} else if cfg.Hyphen.Remove {
 		replace = append(replace, "\u002D", "") // hypen
 		replace = append(replace, "\u2010", "") // hypen
 		replace = append(replace, "\u2011", "") // non-breaking hyphen
@@ -344,29 +348,26 @@ func (c *Compare) cleanUp(verses []Verse, cfg config) []Verse {
 		}
 	}
 	// https://unicode.org/reports/tr15/  Normalization Doc
-	if cfg.diacritical == normalize {
-		if cfg.normalizeType == norm.NFC {
-			for i, vs := range verses {
-				verses[i].text = norm.NFC.String(vs.text)
-			}
-		} else if cfg.normalizeType == norm.NFD {
-			for i, vs := range verses {
-				verses[i].text = norm.NFD.String(vs.text)
-			}
-		} else if cfg.normalizeType == norm.NFKC {
-			for i, vs := range verses {
-				verses[i].text = norm.NFKC.String(vs.text)
-			}
-		} else if cfg.normalizeType == norm.NFKD {
-			for i, vs := range verses {
-				verses[i].text = norm.NFKD.String(vs.text)
-			}
+	//if cfg.DiacriticalMarks.Normalize {
+	if cfg.DiacriticalMarks.NormalizeNFC {
+		for i, vs := range verses {
+			verses[i].text = norm.NFC.String(vs.text)
 		}
-	} else if cfg.diacritical == remove {
-		if cfg.normalizeType != norm.NFD && cfg.normalizeType != norm.NFKD {
-			for i, vs := range verses {
-				verses[i].text = norm.NFKD.String(vs.text)
-			}
+	} else if cfg.DiacriticalMarks.NormalizeNFD {
+		for i, vs := range verses {
+			verses[i].text = norm.NFD.String(vs.text)
+		}
+	} else if cfg.DiacriticalMarks.NormalizeNFKC {
+		for i, vs := range verses {
+			verses[i].text = norm.NFKC.String(vs.text)
+		}
+	} else if cfg.DiacriticalMarks.NormalizeNFKD {
+		for i, vs := range verses {
+			verses[i].text = norm.NFKD.String(vs.text)
+		}
+	} else if cfg.DiacriticalMarks.Remove {
+		for i, vs := range verses {
+			verses[i].text = norm.NFKD.String(vs.text)
 		}
 		var filtered = make([]rune, 0, 300)
 		for i, vs := range verses {
