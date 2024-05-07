@@ -25,7 +25,7 @@ func TestCompare(t *testing.T) {
 	compare := NewCompare(ctx, user, `ATIWBT_USXEDIT`, conn, cfg)
 	filename, status := compare.Process()
 	fmt.Println(status, filename)
-	if globalDiffCount != 2 {
-		t.Error(`Expected count is 2, actual was`, globalDiffCount)
+	if compare.diffCount != 2 {
+		t.Error(`Expected count is 2, actual was`, compare.diffCount)
 	}
 }
