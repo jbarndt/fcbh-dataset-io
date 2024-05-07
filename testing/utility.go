@@ -53,8 +53,8 @@ func CLIExec(requestYaml string, t *testing.T) (string, string) {
 	if err != nil {
 		t.Error(err)
 	}
-	file.Write([]byte(requestYaml))
-	file.Close()
+	_, _ = file.Write([]byte(requestYaml))
+	_ = file.Close()
 	var cmd = exec.Command(`go`, `run`, `../controller/client/dataset.go`, file.Name())
 	var stdoutBuf, stderrBuf bytes.Buffer
 	cmd.Stdout = &stdoutBuf

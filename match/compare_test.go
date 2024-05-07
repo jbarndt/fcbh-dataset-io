@@ -23,8 +23,8 @@ func TestCompare(t *testing.T) {
 	cfg.DiacriticalMarks.NormalizeNFD = true
 	conn := db.NewDBAdapter(ctx, `ATIWBT_SCRIPT.db`)
 	compare := NewCompare(ctx, user, `ATIWBT_USXEDIT`, conn, cfg)
-	status := compare.Process()
-	fmt.Println(status)
+	filename, status := compare.Process()
+	fmt.Println(status, filename)
 	if globalDiffCount != 2 {
 		t.Error(`Expected count is 2, actual was`, globalDiffCount)
 	}
