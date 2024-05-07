@@ -355,6 +355,7 @@ func (d *DBAdapter) prepareDML(query string) (*sql.Tx, *sql.Stmt) {
 }
 
 // ReadNumChapters is used by match.Compare
+// Deprecated -- replaced by book_chapters
 func (d *DBAdapter) ReadNumChapters() (map[string]int, dataset.Status) {
 	var results = make(map[string]int)
 	var status dataset.Status
@@ -384,24 +385,50 @@ func (d *DBAdapter) ReadNumChapters() (map[string]int, dataset.Status) {
 	return results, status
 }
 
-// ReadScriptsByChapter is used by Compare
-func (d *DBAdapter) ReadScriptsByChapter(bookId string, chapterNum int) ([]Script, dataset.Status) {
+func (d *DBAdapter) SelectIdent() (Ident, dataset.Status) {
+	var results Ident
+	var status dataset.Status
+	query := `SELECT dataset_id, bible_id, audio_OT_id, audio_NT_id, text_OT_id, 
+		text_NT_id, text_source, language_iso, version_code, languge_id, 
+		rolv_id, alphabet, language_name, version_name 
+		FROM ident WHERE dataset_id = 1`
+	rows, err := d.DB.Query(query)
+	if err != nil {
+		status = log.Error(d.Ctx, 500, err, `Error reading rows in SelectIdent`)
+		return results, status
+	}
+	defer d.closeDef(rows, `SelectIdent`)
+	for rows.Next() {
+		var id Ident
+		err = rows.Scan(&id.DatasetId, &id.BibleId, &id.AudioOTId, &id.AudioNTId, &id.TextOTId,
+			&id.TextNTId, &id.TextSource, &id.LanguageISO, &id.VersionCode, &id.LanguageId,
+			&id.RolvId, &id.Alphabet, &id.LanguageName, &id.VersionName)
+		if err != nil {
+			status = log.Error(d.Ctx, 500, err, `Error scanning in SelectIdent`)
+			return results, status
+		}
+		results = id
+	}
+	err = rows.Err()
+	if err != nil {
+		status = log.Error(d.Ctx, 500, err, `Error at end of rows in SelectIdent`)
+	}
+	return results, status
+}
+
+// SelectScriptsByChapter is used by Compare
+func (d *DBAdapter) SelectScriptsByChapter(bookId string, chapterNum int) ([]Script, dataset.Status) {
 	var results []Script
 	var status dataset.Status
 	sqlStmt := `SELECT book_id, chapter_num, verse_str, script_text FROM scripts 
 			WHERE book_id=? AND chapter_num=?
 			ORDER BY script_id`
-	stmt, err := d.DB.Prepare(sqlStmt)
-	if err != nil {
-		status = log.Error(d.Ctx, 500, err, `Error preparing ReadScriptByChapter`)
-		return results, status
-	}
-	defer d.closeDef(stmt, "ReadScriptsByChapter stmt")
-	rows, err := stmt.Query(bookId, chapterNum)
+	rows, err := d.DB.Query(sqlStmt, bookId, chapterNum)
 	if err != nil {
 		status = log.Error(d.Ctx, 500, err, `Error reading rows in ReadScriptByChapter`)
 		return results, status
 	}
+	defer d.closeDef(rows, `SelectScriptsByChapter`)
 	for rows.Next() {
 		var vs Script
 		err = rows.Scan(&vs.BookId, &vs.ChapterNum, &vs.VerseStr, &vs.ScriptText)

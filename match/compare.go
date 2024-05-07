@@ -4,12 +4,12 @@ import (
 	"context"
 	"dataset"
 	"dataset/db"
+	"dataset/fetch"
 	log "dataset/logger"
 	"fmt"
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"golang.org/x/text/unicode/norm"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -18,11 +18,12 @@ import (
 var globalDiffCount = 0
 
 type Compare struct {
-	ctx       context.Context
-	database1 string
-	database2 string
-	db1       db.DBAdapter
-	db2       db.DBAdapter
+	ctx         context.Context
+	user        fetch.DBPUser
+	baseDataset string
+	dataset     string
+	baseDb      db.DBAdapter
+	database    db.DBAdapter
 }
 
 type Verse struct {
@@ -32,35 +33,32 @@ type Verse struct {
 	text    string
 }
 
-func NewCompare(ctx context.Context, db1 string, db2 string) Compare {
+func NewCompare(ctx context.Context, user fetch.DBPUser, baseDSet string, db db.DBAdapter) Compare {
 	var c Compare
 	c.ctx = ctx
-	c.database1 = db1
-	c.database2 = db2
+	c.user = user
+	c.baseDataset = baseDSet
+	c.dataset = strings.Split(db.Database, `.`)[0]
+	c.database = db
 	return c
 }
 
 func (c *Compare) Process() dataset.Status {
-	c.db1 = db.NewDBAdapter(c.ctx, c.database1)
-	c.db2 = db.NewDBAdapter(c.ctx, c.database2)
-	var numChapters, status = c.db1.ReadNumChapters()
-	if status.IsErr {
-		return status
-	}
-	var output *os.File
-	output, status = c.openOutput(c.database1, c.database2)
+	c.baseDb = db.NewerDBAdapter(c.ctx, false, c.user.Username, c.baseDataset)
+	output, status := c.openOutput(c.baseDataset, c.dataset)
 	if status.IsErr {
 		return status
 	}
 	for _, bookId := range db.BookNT {
-		var chapInBook, _ = numChapters[bookId] // Need to check OK, because bookId could be in error?
+		var chapInBook, _ = db.BookChapterMap[bookId] // Need to check OK, because bookId could be in error?
 		var chapter = 1
 		for chapter <= chapInBook {
-			lines1, status := c.process(c.db1, c.database1, bookId, chapter)
+			var lines1, lines2 []Verse
+			lines1, status = c.process(c.baseDb, bookId, chapter)
 			if status.IsErr {
 				return status
 			}
-			lines2, status := c.process(c.db2, c.database2, bookId, chapter)
+			lines2, status = c.process(c.database, bookId, chapter)
 			if status.IsErr {
 				return status
 			}
@@ -68,8 +66,7 @@ func (c *Compare) Process() dataset.Status {
 			chapter++
 		}
 	}
-	c.db1.Close()
-	c.db2.Close()
+	c.baseDb.Close()
 	fmt.Println("Num Diff", globalDiffCount)
 	output.WriteString(`<p>`)
 	output.WriteString("TOTAL Difference Count: ")
@@ -81,9 +78,7 @@ func (c *Compare) Process() dataset.Status {
 
 func (c *Compare) openOutput(database1 string, database2 string) (*os.File, dataset.Status) {
 	var status dataset.Status
-	bibleId := database1[:6]
-	outPath := filepath.Join(os.Getenv("FCBH_DATASET_FILES"), bibleId, "diff.html")
-	output, err := os.Create(outPath)
+	output, err := os.CreateTemp(os.Getenv(`FCBH_DATASET_TMP`), c.dataset+"_*diff.html")
 	if err != nil {
 		status = log.Error(c.ctx, 500, err, `Error creating output file for diff`)
 		return output, status
@@ -108,9 +103,9 @@ p { margin: 20px 40px; }
 	_, _ = output.WriteString(time.Now().Format(`Mon Jan 2 2006 03:04:05 pm MST`))
 	_, _ = output.WriteString("</h3>\n")
 	_, _ = output.WriteString(`<h3 style="text-align:center">RED characters are those in `)
-	_, _ = output.WriteString(database1[7:])
+	_, _ = output.WriteString(database1)
 	_, _ = output.WriteString(` only, while GREEN characters are in `)
-	_, _ = output.WriteString(database2[7:])
+	_, _ = output.WriteString(database2)
 	_, _ = output.WriteString(" only</h3>\n")
 	return output, status
 }
@@ -122,10 +117,18 @@ func (c *Compare) closeOutput(output *os.File) {
 	_ = output.Close()
 }
 
-func (c *Compare) process(db db.DBAdapter, database string, bookId string, chapterNum int) ([]Verse, dataset.Status) {
+func (c *Compare) process(conn db.DBAdapter, bookId string, chapterNum int) ([]Verse, dataset.Status) {
 	var lines []Verse
 	var status dataset.Status
-	scripts, status := db.ReadScriptsByChapter(bookId, chapterNum)
+	var ident db.Ident
+	ident, status = conn.SelectIdent()
+	if status.IsErr {
+		return lines, status
+	}
+	scripts, status := conn.SelectScriptsByChapter(bookId, chapterNum)
+	if status.IsErr {
+		return lines, status
+	}
 	for _, script := range scripts {
 		var vs Verse
 		vs.bookId = script.BookId
@@ -134,12 +137,9 @@ func (c *Compare) process(db db.DBAdapter, database string, bookId string, chapt
 		vs.text = script.ScriptText
 		lines = append(lines, vs)
 	}
-	if status.IsErr {
-		return lines, status
-	}
-	if strings.Contains(database, "SCRIPT") {
+	if ident.TextSource == `text_script` {
 		lines = c.consolidateScript(lines)
-	} else if strings.Contains(database, "USX") {
+	} else if ident.TextSource == `text_usx` {
 		lines = c.consolidateUSX(lines)
 	}
 	cfg := getConfig()

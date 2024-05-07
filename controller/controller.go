@@ -22,6 +22,7 @@ type Controller struct {
 	req         request.Request
 	user        fetch.DBPUser
 	info        fetch.BibleInfoType
+	ident       db.Ident
 	database    db.DBAdapter
 }
 
@@ -153,9 +154,13 @@ func (c *Controller) fetchData() (fetch.BibleInfoType, dataset.Status) {
 	//	status.Message = strings.Join(msg, "\n")
 	//	return info, status
 	//}
-	identRec := client.CreateIdent(info)
-	identRec.TextSource = c.req.TextData.BibleBrain.String() // unclear value
-	c.database.InsertIdent(identRec)
+	c.ident = client.CreateIdent(info)
+	c.ident.TextSource = c.req.TextData.BibleBrain.String() // unclear value
+	if c.req.IsNew {
+		status = c.database.InsertIdent(c.ident)
+	} else {
+		c.ident, status = c.database.SelectIdent()
+	}
 	return info, status
 }
 
@@ -311,7 +316,7 @@ func (c *Controller) encodeText() dataset.Status {
 
 func (c *Controller) matchText() dataset.Status {
 	var status dataset.Status
-	compare := match.NewCompare(c.ctx, c.req.Compare.BaseDataset, c.req.DatasetName)
+	compare := match.NewCompare(c.ctx, c.user, c.req.Compare.BaseDataset, c.database)
 	status = compare.Process()
 	return status
 }
