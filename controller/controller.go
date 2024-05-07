@@ -21,7 +21,6 @@ type Controller struct {
 	yamlRequest []byte
 	req         request.Request
 	user        fetch.DBPUser
-	info        fetch.BibleInfoType
 	ident       db.Ident
 	database    db.DBAdapter
 }
@@ -72,7 +71,7 @@ func (c *Controller) processSteps() (string, dataset.Status) {
 	c.database = db.NewerDBAdapter(c.ctx, c.req.IsNew, c.user.Username, c.req.DatasetName)
 	defer c.database.Close()
 	// Fetch Ident Data from DBP
-	c.info, status = c.fetchData()
+	c.ident, status = c.fetchData()
 	if status.IsErr {
 		return filename, status
 	}
@@ -129,19 +128,20 @@ func (c *Controller) processSteps() (string, dataset.Status) {
 	return filename, status
 }
 
-func (c *Controller) fetchData() (fetch.BibleInfoType, dataset.Status) {
-	var info fetch.BibleInfoType
+func (c *Controller) fetchData() (db.Ident, dataset.Status) {
+	var ident db.Ident
 	var status dataset.Status
+	var info fetch.BibleInfoType
 	client := fetch.NewAPIDBPClient(c.ctx, c.req.BibleId)
 	info, status = client.BibleInfo()
 	if status.IsErr {
-		return info, status
+		return ident, status
 	}
 	client.FindFilesets(&info, c.req.AudioData.BibleBrain, c.req.TextData.BibleBrain, c.req.Testament)
 	download := fetch.NewAPIDownloadClient(c.ctx, c.req.BibleId)
 	status = download.Download(info)
 	if status.IsErr {
-		return info, status
+		return ident, status
 	}
 	//} else {
 	//	var msg = make([]string, 0, 10)
@@ -161,7 +161,7 @@ func (c *Controller) fetchData() (fetch.BibleInfoType, dataset.Status) {
 	} else {
 		c.ident, status = c.database.SelectIdent()
 	}
-	return info, status
+	return c.ident, status
 }
 
 func (c *Controller) collectTextInput() ([]input.InputFile, dataset.Status) {
@@ -177,8 +177,8 @@ func (c *Controller) collectTextInput() ([]input.InputFile, dataset.Status) {
 	}
 	if textType != `` {
 		bibleId := c.req.BibleId
-		files, status = input.DBPDirectory(c.ctx, bibleId, textType, c.info.TextOTFileset.Id,
-			c.info.TextNTFileset.Id, c.req.Testament)
+		files, status = input.DBPDirectory(c.ctx, bibleId, textType, c.ident.TextOTId,
+			c.ident.TextNTId, c.req.Testament)
 	} else if c.req.TextData.File != `` {
 		files, status = input.FileInput(c.ctx, c.req.TextData.File, c.req.Testament)
 	} else if c.req.TextData.AWSS3 != `` {
@@ -195,8 +195,8 @@ func (c *Controller) collectAudioInput() ([]input.InputFile, dataset.Status) {
 	bb := c.req.AudioData.BibleBrain
 	if bb.MP3_64 || bb.MP3_16 || bb.OPUS {
 		bibleId := c.req.BibleId
-		files, status = input.DBPDirectory(c.ctx, bibleId, `audio`, c.info.AudioOTFileset.Id,
-			c.info.AudioNTFileset.Id, c.req.Testament)
+		files, status = input.DBPDirectory(c.ctx, bibleId, `audio`, c.ident.AudioOTId,
+			c.ident.AudioNTId, c.req.Testament)
 	} else if c.req.AudioData.File != `` {
 		files, status = input.FileInput(c.ctx, c.req.AudioData.File, c.req.Testament)
 	} else if c.req.AudioData.AWSS3 != `` {
@@ -267,11 +267,11 @@ func (c *Controller) timestamps(audioFiles []input.InputFile) dataset.Status {
 	var status dataset.Status
 	if c.req.Timestamps.BibleBrain {
 		var filesetIds []string
-		if c.info.AudioOTFileset.Id != `` {
-			filesetIds = append(filesetIds, c.info.AudioOTFileset.Id)
+		if c.ident.AudioOTId != `` {
+			filesetIds = append(filesetIds, c.ident.AudioOTId)
 		}
-		if c.info.AudioNTFileset.Id != `` {
-			filesetIds = append(filesetIds, c.info.AudioNTFileset.Id)
+		if c.ident.AudioNTId != `` {
+			filesetIds = append(filesetIds, c.ident.AudioNTId)
 		}
 		for _, filesetId := range filesetIds {
 			api := fetch.NewAPIDBPTimestamps(c.database, filesetId)
@@ -283,7 +283,7 @@ func (c *Controller) timestamps(audioFiles []input.InputFile) dataset.Status {
 		}
 	} else if c.req.Timestamps.Aeneas {
 		bibleId := c.req.BibleId
-		aeneas := encode.NewAeneas(c.ctx, c.database, bibleId, c.info.LanguageISO, c.req.Detail)
+		aeneas := encode.NewAeneas(c.ctx, c.database, bibleId, c.ident.LanguageISO, c.req.Detail)
 		status = aeneas.ProcessFiles(audioFiles)
 		if status.IsErr {
 			return status
