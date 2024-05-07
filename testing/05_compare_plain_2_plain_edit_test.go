@@ -41,14 +41,13 @@ func TestComparePlain2PlainEditScript(t *testing.T) {
 	var request = strings.Replace(ComparePlain2PlainEditScript, `{bibleId}`, bibleId, 1)
 	var control = controller.NewController([]byte(request))
 	filename, status := control.Process()
-	fmt.Println("Filename", filename)
 	if status.IsErr {
 		t.Fatal(status)
 	}
-
-	//numLines := NumJSONFileLines(filename, t)
-	//count := 9568
-	//if numLines != count {
-	//	t.Error(`Expected `, count, `records, got`, numLines)
-	//}
+	fmt.Println("Filename", filename)
+	count := NumHTMLFileLines(filename, t)
+	expected := 307
+	if count != expected {
+		t.Error(`expected`, expected, `found`, count)
+	}
 }

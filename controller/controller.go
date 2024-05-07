@@ -114,10 +114,8 @@ func (c *Controller) processSteps() (string, dataset.Status) {
 	}
 	// Compare
 	if c.req.Compare.BaseDataset != `` {
-		status = c.matchText()
-		if status.IsErr {
-			return filename, status
-		}
+		filename, status = c.matchText()
+		return filename, status // return whether success or not
 	}
 	// Prepare output
 	if c.req.OutputFormat.Sqlite {
@@ -314,11 +312,12 @@ func (c *Controller) encodeText() dataset.Status {
 	return status
 }
 
-func (c *Controller) matchText() dataset.Status {
+func (c *Controller) matchText() (string, dataset.Status) {
+	var filename string
 	var status dataset.Status
 	compare := match.NewCompare(c.ctx, c.user, c.req.Compare.BaseDataset, c.database, c.req.Compare.CompareSettings)
-	status = compare.Process()
-	return status
+	filename, status = compare.Process()
+	return filename, status
 }
 
 func (c *Controller) output() (string, dataset.Status) {

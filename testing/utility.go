@@ -120,3 +120,13 @@ func NumJSONLines(content []byte, t *testing.T) int {
 	count := len(response)
 	return count
 }
+
+func NumHTMLFileLines(filename string, t *testing.T) int {
+	//count := 0
+	content, err := os.ReadFile(filename)
+	if err != nil {
+		t.Fatal(err)
+	}
+	records := strings.Split(string(content), "\n")
+	return len(records)
+}

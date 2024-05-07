@@ -47,12 +47,14 @@ func NewCompare(ctx context.Context, user fetch.DBPUser, baseDSet string, db db.
 	return c
 }
 
-func (c *Compare) Process() dataset.Status {
+func (c *Compare) Process() (string, dataset.Status) {
+	var filename string
 	c.baseDb = db.NewerDBAdapter(c.ctx, false, c.user.Username, c.baseDataset)
 	output, status := c.openOutput(c.baseDataset, c.dataset)
 	if status.IsErr {
-		return status
+		return filename, status
 	}
+	filename = output.Name()
 	for _, bookId := range db.BookNT {
 		var chapInBook, _ = db.BookChapterMap[bookId] // Need to check OK, because bookId could be in error?
 		var chapter = 1
@@ -60,11 +62,11 @@ func (c *Compare) Process() dataset.Status {
 			var lines1, lines2 []Verse
 			lines1, status = c.process(c.baseDb, bookId, chapter)
 			if status.IsErr {
-				return status
+				return filename, status
 			}
 			lines2, status = c.process(c.database, bookId, chapter)
 			if status.IsErr {
-				return status
+				return filename, status
 			}
 			c.diff(output, lines1, lines2)
 			chapter++
@@ -72,12 +74,12 @@ func (c *Compare) Process() dataset.Status {
 	}
 	c.baseDb.Close()
 	fmt.Println("Num Diff", globalDiffCount)
-	output.WriteString(`<p>`)
-	output.WriteString("TOTAL Difference Count: ")
-	output.WriteString(strconv.Itoa(globalDiffCount))
-	output.WriteString("</p>\n")
+	_, _ = output.WriteString(`<p>`)
+	_, _ = output.WriteString("TOTAL Difference Count: ")
+	_, _ = output.WriteString(strconv.Itoa(globalDiffCount))
+	_, _ = output.WriteString("</p>\n")
 	c.closeOutput(output)
-	return status
+	return filename, status
 }
 
 func (c *Compare) openOutput(database1 string, database2 string) (*os.File, dataset.Status) {
@@ -423,8 +425,8 @@ func (c *Compare) diff(output *os.File, verses1 []Verse, verses2 []Verse) {
 			diffs := diffMatch.DiffMain(pair.text1, pair.text2, false)
 			if !c.isMatch(diffs) {
 				ref := pair.bookId + " " + strconv.Itoa(pair.chapter) + ":" + pair.num + ` `
-				fmt.Println(ref, diffMatch.DiffPrettyText(diffs))
-				fmt.Println("=============")
+				//fmt.Println(ref, diffMatch.DiffPrettyText(diffs))
+				//fmt.Println("=============")
 				_, _ = output.WriteString(`<p>`)
 				_, _ = output.WriteString(ref)
 				_, _ = output.WriteString(diffMatch.DiffPrettyHtml(diffs))
