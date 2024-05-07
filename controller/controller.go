@@ -68,7 +68,7 @@ func (c *Controller) processSteps() (string, dataset.Status) {
 		return filename, status
 	}
 	// Open Database
-	c.database = db.NewerDBAdapter(c.ctx, c.req.IsNew, c.user.Username, c.req.RequestName)
+	c.database = db.NewerDBAdapter(c.ctx, c.req.IsNew, c.user.Username, c.req.DatasetName)
 	defer c.database.Close()
 	// Fetch Ident Data from DBP
 	c.info, status = c.fetchData()
@@ -113,7 +113,7 @@ func (c *Controller) processSteps() (string, dataset.Status) {
 		return filename, status
 	}
 	// Compare
-	if c.req.Compare.BaseProject != `` {
+	if c.req.Compare.BaseDataset != `` {
 		status = c.matchText()
 		if status.IsErr {
 			return filename, status
@@ -311,7 +311,7 @@ func (c *Controller) encodeText() dataset.Status {
 
 func (c *Controller) matchText() dataset.Status {
 	var status dataset.Status
-	compare := match.NewCompare(c.ctx, c.req.Compare.BaseProject, c.req.RequestName)
+	compare := match.NewCompare(c.ctx, c.req.Compare.BaseDataset, c.req.DatasetName)
 	status = compare.Process()
 	return status
 }
@@ -319,7 +319,7 @@ func (c *Controller) matchText() dataset.Status {
 func (c *Controller) output() (string, dataset.Status) {
 	var filename string
 	var status dataset.Status
-	var out = output.NewOutput(c.ctx, c.database, c.req.RequestName, false, false)
+	var out = output.NewOutput(c.ctx, c.database, c.req.DatasetName, false, false)
 	var records []any
 	var meta []output.Meta
 	if c.req.Detail.Lines {
@@ -346,7 +346,7 @@ func (c *Controller) output() (string, dataset.Status) {
 func (c *Controller) outputStatus(status dataset.Status) string {
 	var filename string
 	var status2 dataset.Status
-	var out = output.NewOutput(c.ctx, db.DBAdapter{}, c.req.RequestName, false, false)
+	var out = output.NewOutput(c.ctx, db.DBAdapter{}, c.req.DatasetName, false, false)
 	if c.req.OutputFormat.CSV {
 		filename, status2 = out.CSVStatus(status, true)
 	} else if c.req.OutputFormat.JSON {

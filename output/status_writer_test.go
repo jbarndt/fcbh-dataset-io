@@ -55,7 +55,7 @@ func TestCSVStatus(t *testing.T) {
 
 func prepareError(t *testing.T) (dataset.Status, context.Context) {
 	var req request.Request
-	req.RequestName = `Test1`
+	req.DatasetName = `Test1`
 	req.BibleId = `ENGWEB`
 	req.IsNew = true
 	req.Testament.NT = true

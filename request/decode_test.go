@@ -148,13 +148,13 @@ compare:
 			t.Error(`The`, i, `th item should be true, but is not`)
 		}
 	}
-	var strs = []string{req.RequestName,
+	var strs = []string{req.DatasetName,
 		req.BibleId,
 		req.AudioData.File,
 		req.AudioData.AWSS3,
 		req.TextData.File,
 		req.TextData.AWSS3,
-		req.Compare.BaseProject}
+		req.Compare.BaseDataset}
 	for i, item := range strs {
 		if len(item) == 0 {
 			t.Error(`The`, i, `th item should have a value, but is empty`)

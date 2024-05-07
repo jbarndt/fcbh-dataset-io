@@ -33,7 +33,7 @@ func (r *RequestDecoder) Validate(req *Request) dataset.Status {
 }
 
 func checkRequired(req *Request, msgs *[]string) {
-	if req.RequestName == `` {
+	if req.DatasetName == `` {
 		msg := `Required field RequestName is empty`
 		*msgs = append(*msgs, msg)
 	}
@@ -41,7 +41,7 @@ func checkRequired(req *Request, msgs *[]string) {
 		msg := `Required field BibleId is empty`
 		*msgs = append(*msgs, msg)
 	}
-	req.RequestName = strings.Replace(req.RequestName, ` `, `_`, -1)
+	req.DatasetName = strings.Replace(req.DatasetName, ` `, `_`, -1)
 }
 
 func checkTestament(req *Testament) {
