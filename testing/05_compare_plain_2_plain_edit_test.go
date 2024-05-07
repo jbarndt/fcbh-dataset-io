@@ -33,9 +33,6 @@ compare:
       normalize_nfkd:
 `
 
-//output_format:
-//  html: yes
-
 func TestComparePlain2PlainEditScript(t *testing.T) {
 	var bibleId = `ENGWEB`
 	var request = strings.Replace(ComparePlain2PlainEditScript, `{bibleId}`, bibleId, 1)
@@ -46,7 +43,7 @@ func TestComparePlain2PlainEditScript(t *testing.T) {
 	}
 	fmt.Println("Filename", filename)
 	count := NumHTMLFileLines(filename, t)
-	expected := 307
+	expected := 308
 	if count != expected {
 		t.Error(`expected`, expected, `found`, count)
 	}

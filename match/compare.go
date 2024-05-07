@@ -16,8 +16,6 @@ import (
 	"time"
 )
 
-var globalDiffCount = 0
-
 type Compare struct {
 	ctx         context.Context
 	user        fetch.DBPUser
@@ -26,12 +24,15 @@ type Compare struct {
 	baseDb      db.DBAdapter
 	database    db.DBAdapter
 	settings    request.CompareSettings
+	diffCount   int
+	insertSum   int
+	deleteSum   int
 }
 
 type Verse struct {
 	bookId  string
 	chapter int
-	num     string
+	num     string // should this be verse, or is there a reason to be generic? E
 	text    string
 }
 
@@ -73,10 +74,15 @@ func (c *Compare) Process() (string, dataset.Status) {
 		}
 	}
 	c.baseDb.Close()
-	fmt.Println("Num Diff", globalDiffCount)
+	fmt.Println("Num Diff", c.diffCount)
+	_, _ = output.WriteString(`<p>Total Inserted Chars `)
+	_, _ = output.WriteString(strconv.Itoa(c.insertSum))
+	_, _ = output.WriteString(`, Total Deleted Chars `)
+	_, _ = output.WriteString(strconv.Itoa(c.deleteSum))
+	_, _ = output.WriteString("</p>\n")
 	_, _ = output.WriteString(`<p>`)
-	_, _ = output.WriteString("TOTAL Difference Count: ")
-	_, _ = output.WriteString(strconv.Itoa(globalDiffCount))
+	_, _ = output.WriteString("Total Difference Count: ")
+	_, _ = output.WriteString(strconv.Itoa(c.diffCount))
 	_, _ = output.WriteString("</p>\n")
 	c.closeOutput(output)
 	return filename, status
@@ -424,15 +430,22 @@ func (c *Compare) diff(output *os.File, verses1 []Verse, verses2 []Verse) {
 		if len(pair.text1) > 0 || len(pair.text2) > 0 {
 			diffs := diffMatch.DiffMain(pair.text1, pair.text2, false)
 			if !c.isMatch(diffs) {
+				inserts, deletes := c.measure(diffs)
+				c.insertSum += inserts
+				c.deleteSum += deletes
 				ref := pair.bookId + " " + strconv.Itoa(pair.chapter) + ":" + pair.num + ` `
 				//fmt.Println(ref, diffMatch.DiffPrettyText(diffs))
 				//fmt.Println("=============")
 				_, _ = output.WriteString(`<p>`)
 				_, _ = output.WriteString(ref)
+				_, _ = output.WriteString(` +`)
+				_, _ = output.WriteString(strconv.Itoa(inserts))
+				_, _ = output.WriteString(` -`)
+				_, _ = output.WriteString(strconv.Itoa(deletes))
+				_, _ = output.WriteString(` `)
 				_, _ = output.WriteString(diffMatch.DiffPrettyHtml(diffs))
-				//output.WriteString("<br/><br>")
 				_, _ = output.WriteString("</p>\n")
-				globalDiffCount++
+				c.diffCount++
 			}
 		}
 	}
@@ -447,4 +460,17 @@ func (c *Compare) isMatch(diffs []diffmatchpatch.Diff) bool {
 		}
 	}
 	return true
+}
+
+func (c *Compare) measure(diffs []diffmatchpatch.Diff) (int, int) {
+	var inserts = 0
+	var deletes = 0
+	for _, diff := range diffs {
+		if diff.Type == diffmatchpatch.DiffInsert {
+			inserts += len(diff.Text)
+		} else if diff.Type == diffmatchpatch.DiffDelete {
+			deletes += len(diff.Text)
+		}
+	}
+	return inserts, deletes
 }
