@@ -30,10 +30,11 @@ type Compare struct {
 }
 
 type Verse struct {
-	bookId  string
-	chapter int
-	num     string // should this be verse, or is there a reason to be generic? E
-	text    string
+	bookId   string
+	chapter  int
+	verse    string
+	verseEnd string
+	text     string
 }
 
 func NewCompare(ctx context.Context, user fetch.DBPUser, baseDSet string, db db.DBAdapter,
@@ -145,7 +146,8 @@ func (c *Compare) process(conn db.DBAdapter, bookId string, chapterNum int) ([]V
 		var vs Verse
 		vs.bookId = script.BookId
 		vs.chapter = script.ChapterNum
-		vs.num = script.VerseStr
+		vs.verse = script.VerseStr
+		vs.verseEnd = script.VerseEnd
 		vs.text = script.ScriptText
 		lines = append(lines, vs)
 	}
@@ -197,7 +199,7 @@ func (c *Compare) consolidateScript(verses []Verse) []Verse {
 				tmpNum = []byte{}
 				sumOutput += len(part) + 1
 			}
-			verse := Verse{bookId: bookId, chapter: chapter, num: verseNum, text: part}
+			verse := Verse{bookId: bookId, chapter: chapter, verse: verseNum, text: part}
 			results = append(results, verse)
 			index += len(part) + 1
 		case inNum:
@@ -247,14 +249,14 @@ func (c *Compare) consolidateUSX(verses []Verse) []Verse {
 	var verse Verse
 	for _, rec := range verses {
 		sumInput += len(rec.text)
-		if rec.chapter != lastChapter || rec.num != lastVerse {
+		if rec.chapter != lastChapter || rec.verse != lastVerse {
 			if lastChapter != -1 {
 				results = append(results, verse)
 				sumOutput += len(verse.text)
 			}
 			lastChapter = rec.chapter
-			lastVerse = rec.num
-			verse = Verse{bookId: rec.bookId, chapter: rec.chapter, num: rec.num, text: ``}
+			lastVerse = rec.verse
+			verse = Verse{bookId: rec.bookId, chapter: rec.chapter, verse: rec.verse, text: ``}
 		}
 		if !strings.HasSuffix(verse.text, ` `) && !strings.HasPrefix(rec.text, ` `) {
 			verse.text += ` ` + rec.text
@@ -279,7 +281,7 @@ func (c *Compare) consolidatePlainEdit(verses []Verse) []Verse {
 	for pos, rec := range verses {
 		if pos == 0 {
 			first = rec
-		} else if rec.num == `` {
+		} else if rec.verse == `` {
 			if !strings.HasSuffix(first.text, ` `) && !strings.HasPrefix(rec.text, ` `) {
 				first.text += ` ` + rec.text
 			} else {
@@ -433,24 +435,24 @@ func (c *Compare) diff(output *os.File, verses1 []Verse, verses2 []Verse) {
 	// Put the second data in a map
 	var verse2Map = make(map[string]Verse)
 	for _, vs2 := range verses2 {
-		verse2Map[vs2.num] = vs2
+		verse2Map[vs2.verse] = vs2
 	}
 	// combine the verse2 to verse1 that match
 	var didMatch = make(map[string]bool)
 	var pairs = make([]pair, 0, len(verses1))
 	for _, vs1 := range verses1 {
-		vs2, ok := verse2Map[vs1.num]
+		vs2, ok := verse2Map[vs1.verse]
 		if ok {
-			didMatch[vs1.num] = true
+			didMatch[vs1.verse] = true
 		}
-		p := pair{bookId: vs1.bookId, chapter: vs1.chapter, num: vs1.num, text1: vs1.text, text2: vs2.text}
+		p := pair{bookId: vs1.bookId, chapter: vs1.chapter, num: vs1.verse, text1: vs1.text, text2: vs2.text}
 		pairs = append(pairs, p)
 	}
 	// pick up any verse2 that did not match verse1
 	for _, vs2 := range verses2 {
-		_, ok := didMatch[vs2.num]
+		_, ok := didMatch[vs2.verse]
 		if !ok {
-			p := pair{bookId: vs2.bookId, chapter: vs2.chapter, num: vs2.num, text1: ``, text2: vs2.text}
+			p := pair{bookId: vs2.bookId, chapter: vs2.chapter, num: vs2.verse, text1: ``, text2: vs2.text}
 			pairs = append(pairs, p)
 		}
 	}
