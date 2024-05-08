@@ -8,10 +8,10 @@ import (
 )
 
 const ComparePlainEdit2USXEditScript = `is_new: no
-dataset_name: PlainTextEditScript
+dataset_name: PlainTextEditScript_{bibleId}
 bible_id: {bibleId}
 compare:
-  base_dataset: USX Text Edit Script
+  base_dataset: USX Text Edit Script_{bibleId}
   compare_settings: # Mark yes, all settings that apply
     lower_case: n
     remove_prompt_chars: y
@@ -35,7 +35,7 @@ compare:
 
 func TestComparePlainEdit2USXEditScript(t *testing.T) {
 	var bibleId = `ENGWEB`
-	var request = strings.Replace(ComparePlainEdit2USXEditScript, `{bibleId}`, bibleId, 1)
+	var request = strings.Replace(ComparePlainEdit2USXEditScript, `{bibleId}`, bibleId, 3)
 	var control = controller.NewController([]byte(request))
 	filename, status := control.Process()
 	if status.IsErr {

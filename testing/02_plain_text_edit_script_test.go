@@ -8,7 +8,7 @@ import (
 )
 
 const PlainTextEditScript = `is_new: yes
-dataset_name: PlainTextEditScript
+dataset_name: PlainTextEditScript_{bibleId}
 bible_id: {bibleId}
 text_data:
   bible_brain:
@@ -19,7 +19,7 @@ output_format:
 
 func TestPlainTextEditScriptCLI(t *testing.T) {
 	var bibleId = `ENGWEB`
-	var request = strings.Replace(PlainTextEditScript, `{bibleId}`, bibleId, 1)
+	var request = strings.Replace(PlainTextEditScript, `{bibleId}`, bibleId, 2)
 	stdout, stderr := CLIExec(request, t)
 	fmt.Println(`STDOUT:`, stdout)
 	fmt.Println(`STDERR:`, stderr)
@@ -33,7 +33,7 @@ func TestPlainTextEditScriptCLI(t *testing.T) {
 
 func TestPlainTextEditScript(t *testing.T) {
 	var bibleId = `ENGWEB`
-	var request = strings.Replace(PlainTextEditScript, `{bibleId}`, bibleId, 1)
+	var request = strings.Replace(PlainTextEditScript, `{bibleId}`, bibleId, 2)
 	var control = controller.NewController([]byte(request))
 	filename, status := control.Process()
 	if status.IsErr {

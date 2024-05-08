@@ -10,7 +10,7 @@ import (
 )
 
 const ScriptTextScript = `is_new: yes
-dataset_name: ScriptTextScript
+dataset_name: ScriptTextScript_{bibleId}
 bible_id: {bibleId}
 text_data:
   file: /Users/gary/FCBH2024/download/ATIWBT/ATIWBTN2ST.xlsx
@@ -20,7 +20,7 @@ output_format:
 
 func TestScriptTextScript(t *testing.T) {
 	var bibleId = `ATIWBT`
-	var request = strings.Replace(ScriptTextScript, `{bibleId}`, bibleId, 1)
+	var request = strings.Replace(ScriptTextScript, `{bibleId}`, bibleId, 2)
 	var control = controller.NewController([]byte(request))
 	filename, status := control.Process()
 	if status.IsErr {

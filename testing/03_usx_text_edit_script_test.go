@@ -8,7 +8,7 @@ import (
 )
 
 const USXTextEditScript = `is_new: yes
-dataset_name: USX Text Edit Script
+dataset_name: USX Text Edit Script_{bibleId}
 bible_id: {bibleId}
 text_data:
   bible_brain:
@@ -19,7 +19,7 @@ output_format:
 
 func TestUSXTextEditScriptCLI(t *testing.T) {
 	var bibleId = `ENGWEB`
-	var request = strings.Replace(USXTextEditScript, `{bibleId}`, bibleId, 1)
+	var request = strings.Replace(USXTextEditScript, `{bibleId}`, bibleId, 2)
 	stdout, stderr := CLIExec(request, t)
 	fmt.Println(`STDOUT:`, stdout)
 	fmt.Println(`STDERR:`, stderr)
@@ -32,8 +32,8 @@ func TestUSXTextEditScriptCLI(t *testing.T) {
 }
 
 func TestUSXTextEditScript(t *testing.T) {
-	var bibleId = `ENGWEB`
-	var request = strings.Replace(USXTextEditScript, `{bibleId}`, bibleId, 1)
+	var bibleId = `ATIWBT`
+	var request = strings.Replace(USXTextEditScript, `{bibleId}`, bibleId, 2)
 	var control = controller.NewController([]byte(request))
 	filename, status := control.Process()
 	if status.IsErr {
@@ -41,7 +41,7 @@ func TestUSXTextEditScript(t *testing.T) {
 	}
 	fmt.Println(filename)
 	numLines := NumJSONFileLines(filename, t)
-	count := 9588
+	count := 8254
 	if numLines != count {
 		t.Error(`Expected `, count, `records, got`, numLines)
 	}

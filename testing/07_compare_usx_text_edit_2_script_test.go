@@ -7,13 +7,13 @@ import (
 	"testing"
 )
 
-const ComparePlain2PlainEditScript = `is_new: no
-dataset_name: PlainTextScript_{bibleId}
+const CompareUsXTextEdit2Script = `is_new: no
+dataset_name: ScriptTextScript_{bibleId}
 bible_id: {bibleId}
 compare:
-  base_dataset: PlainTextEditScript_{bibleId}
+  base_dataset: USX Text Edit Script_{bibleId}
   compare_settings: # Mark yes, all settings that apply
-    lower_case: 
+    lower_case: n
     remove_prompt_chars: y
     remove_punctuation: y
     double_quotes: 
@@ -33,9 +33,9 @@ compare:
       normalize_nfkd:
 `
 
-func TestComparePlain2PlainEditScript(t *testing.T) {
-	var bibleId = `ENGWEB`
-	var request = strings.Replace(ComparePlain2PlainEditScript, `{bibleId}`, bibleId, 3)
+func TestCompareUsXTextEdit2Script(t *testing.T) {
+	var bibleId = `ATIWBT`
+	var request = strings.Replace(CompareUsXTextEdit2Script, `{bibleId}`, bibleId, 3)
 	var control = controller.NewController([]byte(request))
 	filename, status := control.Process()
 	if status.IsErr {
@@ -43,7 +43,7 @@ func TestComparePlain2PlainEditScript(t *testing.T) {
 	}
 	fmt.Println("Filename", filename)
 	count := NumHTMLFileLines(filename, t)
-	expected := 276
+	expected := 16
 	if count != expected {
 		t.Error(`expected`, expected, `found`, count)
 	}
