@@ -25,9 +25,9 @@ func TestUSXTextEditScriptCLI(t *testing.T) {
 	fmt.Println(`STDERR:`, stderr)
 	filename := ExtractFilenaame(stdout)
 	numLines := NumJSONFileLines(filename, t)
-	count := 9568
-	if numLines != count {
-		t.Error(`Expected `, count, `records, got`, numLines)
+	expected := 9588
+	if numLines != expected {
+		t.Error(`Expected `, expected, `records, got`, numLines)
 	}
 }
 
@@ -41,7 +41,7 @@ func TestUSXTextEditScript(t *testing.T) {
 	}
 	fmt.Println(filename)
 	numLines := NumJSONFileLines(filename, t)
-	count := 9568
+	count := 9588
 	if numLines != count {
 		t.Error(`Expected `, count, `records, got`, numLines)
 	}

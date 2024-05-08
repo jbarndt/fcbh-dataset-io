@@ -134,6 +134,9 @@ func (p *USXParser) decode(ctx context.Context, filename string) ([]db.Script, d
 				VerseNum: verseNum, VerseStr: verseStr, UsfmStyle: usfmStyle}
 		}
 	}
+	if bookId != `` && len(rec.ScriptTexts) > 0 {
+		records = append(records, rec)
+	}
 	return records, status
 }
 

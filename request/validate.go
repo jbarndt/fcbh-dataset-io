@@ -42,6 +42,9 @@ func checkRequired(req *Request, msgs *[]string) {
 		*msgs = append(*msgs, msg)
 	}
 	req.DatasetName = strings.Replace(req.DatasetName, ` `, `_`, -1)
+	if req.Compare.BaseDataset != `` {
+		req.Compare.BaseDataset = strings.Replace(req.Compare.BaseDataset, ` `, `_`, -1)
+	}
 }
 
 func checkTestament(req *Testament) {
