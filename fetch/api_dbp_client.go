@@ -86,7 +86,7 @@ func (d *APIDBPClient) BibleInfo() (BibleInfoType, dataset.Status) {
 
 func (d *APIDBPClient) FindFilesets(info *BibleInfoType, audio request.BibleBrainAudio,
 	text request.BibleBrainText, testament request.Testament) {
-	textType := text.String()
+	textType := text.TextType()
 	codec, bitrate := audio.AudioType()
 	if testament.OT || len(testament.OTBooks) > 0 {
 		info.TextOTFileset = d.searchText(info, `OT`, textType)
@@ -106,9 +106,9 @@ func (d *APIDBPClient) FindFilesets(info *BibleInfoType, audio request.BibleBrai
 	}
 }
 
-func (d *APIDBPClient) searchText(info *BibleInfoType, size string, textType string) FilesetType {
+func (d *APIDBPClient) searchText(info *BibleInfoType, size string, textType request.TextType) FilesetType {
 	for _, rec := range info.DbpProd.Filesets {
-		if rec.Type == textType && rec.Size == size {
+		if textType.IsFrom(rec.Type) && rec.Size == size {
 			return rec
 		}
 	}

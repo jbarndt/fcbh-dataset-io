@@ -13,7 +13,7 @@ bible_id: {bibleId}
 compare:
   base_dataset: PlainTextEditScript
   compare_settings: # Mark yes, all settings that apply
-    lower_case: y
+    lower_case: 
     remove_prompt_chars: y
     remove_punctuation: y
     double_quotes: 
@@ -43,7 +43,7 @@ func TestComparePlain2PlainEditScript(t *testing.T) {
 	}
 	fmt.Println("Filename", filename)
 	count := NumHTMLFileLines(filename, t)
-	expected := 308
+	expected := 276
 	if count != expected {
 		t.Error(`expected`, expected, `found`, count)
 	}

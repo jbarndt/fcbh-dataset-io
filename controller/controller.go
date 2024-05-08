@@ -153,7 +153,7 @@ func (c *Controller) fetchData() (db.Ident, dataset.Status) {
 	//	return info, status
 	//}
 	c.ident = client.CreateIdent(info)
-	c.ident.TextSource = c.req.TextData.BibleBrain.String() // unclear value
+	c.ident.TextSource = c.req.TextData.BibleBrain.TextType()
 	if c.req.IsNew {
 		status = c.database.InsertIdent(c.ident)
 	} else {

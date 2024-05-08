@@ -149,10 +149,12 @@ func (c *Compare) process(conn db.DBAdapter, bookId string, chapterNum int) ([]V
 		vs.text = script.ScriptText
 		lines = append(lines, vs)
 	}
-	if ident.TextSource == `text_script` {
+	if ident.TextSource == request.TextScript {
 		lines = c.consolidateScript(lines)
-	} else if ident.TextSource == `text_usx` {
+	} else if ident.TextSource == request.TextUSXEdit {
 		lines = c.consolidateUSX(lines)
+	} else if ident.TextSource == request.TextPlainEdit {
+		lines = c.consolidatePlainEdit(lines)
 	}
 	lines = c.cleanUp(lines)
 	return lines, status
@@ -256,6 +258,7 @@ func (c *Compare) consolidateUSX(verses []Verse) []Verse {
 		}
 		if !strings.HasSuffix(verse.text, ` `) && !strings.HasPrefix(rec.text, ` `) {
 			verse.text += ` ` + rec.text
+			sumOutput--
 		} else {
 			verse.text += rec.text
 		}
@@ -266,6 +269,29 @@ func (c *Compare) consolidateUSX(verses []Verse) []Verse {
 	}
 	if sumInput != sumOutput {
 		log.Warn(c.ctx, "Bug: Not all data processed by consolidateUSX input:", sumInput, " output:", sumOutput)
+	}
+	return results
+}
+
+func (c *Compare) consolidatePlainEdit(verses []Verse) []Verse {
+	var results = make([]Verse, 0, len(verses))
+	var first Verse
+	for pos, rec := range verses {
+		if pos == 0 {
+			first = rec
+		} else if rec.num == `` {
+			if !strings.HasSuffix(first.text, ` `) && !strings.HasPrefix(rec.text, ` `) {
+				first.text += ` ` + rec.text
+			} else {
+				first.text += rec.text
+			}
+		} else {
+			if len(first.text) > 0 {
+				results = append(results, first)
+				first = Verse{}
+			}
+			results = append(results, rec)
+		}
 	}
 	return results
 }
