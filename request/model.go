@@ -104,14 +104,43 @@ type BibleBrainText struct {
 	TextPlain     bool `yaml:"text_plain,omitempty"`
 }
 
-func (b BibleBrainText) String() string {
-	var result string
+type TextType string
+
+const (
+	TextUSXEdit   TextType = "text_usx_edit"
+	TextPlainEdit TextType = "text_plain_edit"
+	TextPlain     TextType = "text_plain"
+	TextScript    TextType = "text_script"
+	TextNone      TextType = "text_none"
+)
+
+func (b BibleBrainText) TextType() TextType {
+	var result TextType
 	if b.TextUSXEdit {
-		result = `text_usx`
+		result = TextUSXEdit
 	} else if b.TextPlainEdit {
-		result = `text_plain`
+		result = TextPlainEdit
 	} else if b.TextPlain {
-		result = `text_plain`
+		result = TextPlain
+	} else {
+		result = TextNone
+	}
+	return result
+}
+
+func (t TextType) IsFrom(ttype string) bool {
+	var result = false
+	switch t {
+	case TextUSXEdit:
+		result = ttype == `text_usx`
+	case TextPlainEdit:
+		result = ttype == `text_plain`
+	case TextPlain:
+		result = ttype == `text_plain`
+	case TextScript:
+		result = ttype == `text_script`
+	case TextNone:
+		result = ttype == `text_none`
 	}
 	return result
 }

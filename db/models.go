@@ -1,5 +1,7 @@
 package db
 
+import "dataset/request"
+
 type Ident struct {
 	DatasetId    int
 	BibleId      string
@@ -7,7 +9,7 @@ type Ident struct {
 	AudioNTId    string
 	TextOTId     string
 	TextNTId     string
-	TextSource   string
+	TextSource   request.TextType
 	LanguageISO  string
 	VersionCode  string
 	LanguageId   int
