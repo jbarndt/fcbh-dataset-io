@@ -254,7 +254,11 @@ func (c *Compare) consolidateUSX(verses []Verse) []Verse {
 			lastVerse = rec.num
 			verse = Verse{bookId: rec.bookId, chapter: rec.chapter, num: rec.num, text: ``}
 		}
-		verse.text += rec.text
+		if !strings.HasSuffix(verse.text, ` `) && !strings.HasPrefix(rec.text, ` `) {
+			verse.text += ` ` + rec.text
+		} else {
+			verse.text += rec.text
+		}
 	}
 	if len(verse.text) > 0 {
 		results = append(results, verse)

@@ -13,7 +13,7 @@ bible_id: {bibleId}
 compare:
   base_dataset: USX Text Edit Script
   compare_settings: # Mark yes, all settings that apply
-    lower_case: y
+    lower_case: n
     remove_prompt_chars: y
     remove_punctuation: y
     double_quotes: 
