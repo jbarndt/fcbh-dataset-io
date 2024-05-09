@@ -87,6 +87,11 @@ func (c *Controller) processSteps() (string, dataset.Status) {
 	if status.IsErr {
 		return filename, status
 	}
+	// Update Ident Table
+	status = input.UpdateIdent(c.database, &c.ident, textFiles, audioFiles)
+	if status.IsErr {
+		return filename, status
+	}
 	// Read Text Data
 	status = c.readText(textFiles)
 	if status.IsErr {
@@ -127,19 +132,19 @@ func (c *Controller) processSteps() (string, dataset.Status) {
 }
 
 func (c *Controller) fetchData() (db.Ident, dataset.Status) {
-	var ident db.Ident
+	//var ident db.Ident
 	var status dataset.Status
 	var info fetch.BibleInfoType
 	client := fetch.NewAPIDBPClient(c.ctx, c.req.BibleId)
 	info, status = client.BibleInfo()
 	if status.IsErr {
-		return ident, status
+		return c.ident, status
 	}
 	client.FindFilesets(&info, c.req.AudioData.BibleBrain, c.req.TextData.BibleBrain, c.req.Testament)
 	download := fetch.NewAPIDownloadClient(c.ctx, c.req.BibleId)
 	status = download.Download(info)
 	if status.IsErr {
-		return ident, status
+		return c.ident, status
 	}
 	//} else {
 	//	var msg = make([]string, 0, 10)
@@ -155,7 +160,7 @@ func (c *Controller) fetchData() (db.Ident, dataset.Status) {
 	c.ident = client.CreateIdent(info)
 	c.ident.TextSource = c.req.TextData.BibleBrain.TextType()
 	if c.req.IsNew {
-		status = c.database.InsertIdent(c.ident)
+		status = c.database.InsertIdent(&c.ident)
 	} else {
 		c.ident, status = c.database.SelectIdent()
 	}

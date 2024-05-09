@@ -259,7 +259,7 @@ func (d *DBAdapter) DeleteWords() {
 	execDDL(d.DB, `DELETE FROM words`)
 }
 
-func (d *DBAdapter) InsertIdent(id Ident) dataset.Status {
+func (d *DBAdapter) InsertIdent(id *Ident) dataset.Status {
 	var status dataset.Status
 	query := `REPLACE INTO ident(bible_id, audio_OT_id, audio_NT_id, text_OT_id, text_NT_id,
 		text_source, language_iso, version_code, languge_id, 
@@ -269,11 +269,16 @@ func (d *DBAdapter) InsertIdent(id Ident) dataset.Status {
 	if err != nil {
 		return log.Error(d.Ctx, 500, err, `Error while preparing Ident stmt.`)
 	}
-	_, err = stmt.Exec(id.BibleId, id.AudioOTId, id.AudioNTId, id.TextOTId, id.TextNTId,
+	var ans sql.Result
+	ans, err = stmt.Exec(id.BibleId, id.AudioOTId, id.AudioNTId, id.TextOTId, id.TextNTId,
 		id.TextSource, id.LanguageISO, id.VersionCode, id.LanguageId,
 		id.RolvId, id.Alphabet, id.LanguageName, id.VersionName)
 	if err != nil {
 		return log.Error(d.Ctx, 500, err, `Error while inserting Ident.`)
+	}
+	id.DatasetId, err = ans.LastInsertId()
+	if err != nil {
+		return log.Error(d.Ctx, 500, err, `Error while get dataset_id from insert.`)
 	}
 	return status
 }
@@ -675,6 +680,23 @@ func (d *DBAdapter) SelectWordTimestamps(bookId string, chapter int) ([]Timestam
 		FROM words w JOIN scripts s ON w.script_id = s.script_id
 		WHERE w.ttype = 'W' AND s.book_id = ? AND s.chapter_num = ? ORDER BY w.word_id`
 	return d.selectTimestamps(query, bookId, chapter)
+}
+
+func (d *DBAdapter) UpdateIdent(ident Ident) dataset.Status {
+	var status dataset.Status
+	query := `UPDATE ident SET audio_OT_id = ?, audio_NT_id = ?, text_OT_id = ?,
+		text_NT_id = ?, text_source = ? WHERE dataset_id = ?`
+	stmt, err := d.DB.Prepare(query)
+	defer d.closeDef(stmt, `UpdateIdent stmt`)
+	if err != nil {
+		return log.Error(d.Ctx, 500, err, `Error while preparing Ident stmt.`)
+	}
+	_, err = stmt.Exec(ident.AudioOTId, ident.AudioNTId, ident.TextOTId, ident.TextNTId,
+		ident.TextSource, ident.DatasetId)
+	if err != nil {
+		status = log.Error(d.Ctx, 500, err, `Error while updating Ident.`)
+	}
+	return status
 }
 
 func (d *DBAdapter) UpdateScriptTimestamps(scripts []Timestamp) dataset.Status {

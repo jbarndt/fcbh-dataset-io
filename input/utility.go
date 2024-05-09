@@ -174,6 +174,58 @@ func PruneBooksByRequest(files []InputFile, testament request.Testament) []Input
 	return results
 }
 
+func UpdateIdent(conn db.DBAdapter, ident *db.Ident, textFiles []InputFile, audioFiles []InputFile) dataset.Status {
+	var status dataset.Status
+	textUpdates := updateIdentText(ident, textFiles)
+	audioUpdates := updateIdentAudio(ident, audioFiles)
+	if textUpdates || audioUpdates {
+		status = conn.UpdateIdent(*ident)
+	}
+	return status
+}
+
+func updateIdentText(ident *db.Ident, files []InputFile) bool {
+	var result = false
+	for _, f := range files {
+		result = true
+		if f.Testament == `OT` {
+			ident.TextOTId = f.MediaId
+			switch f.MediaType {
+			case `text_plain`:
+				ident.TextSource = request.TextPlainEdit
+			case `text_usx`:
+				ident.TextSource = request.TextUSXEdit
+			case `text_script`:
+				ident.TextSource = request.TextScript
+			}
+		} else if f.Testament == `NT` {
+			ident.TextNTId = f.MediaId
+			switch f.MediaType {
+			case `text_plain`:
+				ident.TextSource = request.TextPlainEdit
+			case `text_usx`:
+				ident.TextSource = request.TextUSXEdit
+			case `text_script`:
+				ident.TextSource = request.TextScript
+			}
+		}
+	}
+	return result
+}
+
+func updateIdentAudio(ident *db.Ident, files []InputFile) bool {
+	var result = false
+	for _, f := range files {
+		result = true
+		if f.Testament == `OT` {
+			ident.AudioOTId = f.MediaId
+		} else if f.Testament == `NT` {
+			ident.AudioNTId = f.MediaId
+		}
+	}
+	return result
+}
+
 // Parse DBP4 Audio names
 //{mediaid}_{A/B}{ordering}_{USFM book code}_{chapter start}[_{verse start}-{chapter stop}_{verse stop}].mp3|webm
 //eg: ENGESVN2DA_B001_MAT_001.mp3  (full chapter)

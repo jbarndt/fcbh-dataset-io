@@ -23,9 +23,7 @@ Warn, Info, and Debug log messages and continue.
 type LogLevel int
 
 const (
-	LOGFATAL LogLevel = iota + 1
-	LOGERROR
-	LOGWARN
+	LOGWARN LogLevel = iota + 3
 	LOGINFO
 	LOGDEBUG
 )

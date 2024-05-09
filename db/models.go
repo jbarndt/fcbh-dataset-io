@@ -3,7 +3,7 @@ package db
 import "dataset/request"
 
 type Ident struct {
-	DatasetId    int
+	DatasetId    int64
 	BibleId      string
 	AudioOTId    string
 	AudioNTId    string
