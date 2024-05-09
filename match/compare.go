@@ -23,6 +23,7 @@ type Compare struct {
 	dataset     string
 	baseDb      db.DBAdapter
 	database    db.DBAdapter
+	testament   request.Testament
 	settings    request.CompareSettings
 	diffCount   int
 	insertSum   int
@@ -38,13 +39,14 @@ type Verse struct {
 }
 
 func NewCompare(ctx context.Context, user fetch.DBPUser, baseDSet string, db db.DBAdapter,
-	settings request.CompareSettings) Compare {
+	testament request.Testament, settings request.CompareSettings) Compare {
 	var c Compare
 	c.ctx = ctx
 	c.user = user
 	c.baseDataset = baseDSet
 	c.dataset = strings.Split(db.Database, `.`)[0]
 	c.database = db
+	c.testament = testament
 	c.settings = settings
 	return c
 }
@@ -61,7 +63,7 @@ func (c *Compare) Process() (string, dataset.Status) {
 		return filename, status
 	}
 	filename = output.Name()
-	for _, bookId := range db.BookNT {
+	for _, bookId := range db.RequestedBooks(c.testament) {
 		var chapInBook, _ = db.BookChapterMap[bookId] // Need to check OK, because bookId could be in error?
 		var chapter = 1
 		for chapter <= chapInBook {
