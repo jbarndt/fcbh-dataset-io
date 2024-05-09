@@ -44,10 +44,10 @@
 
 ## Script level audio tests
 
-- [ ] Load Audio from BB-API do Whisper speech to text, output the text as JSON
-- [ ] Compare text to USXEdit, output HTML (Mark Scott use case)
-- [ ] Load Audio from POST, do speech to text, output JSON (OBT use case)
-- [ ] Reuse request with second and third passage, output JSON (OBT use case)
+- [ ] 09 Load Audio from BB-API do Whisper speech to text, output the text as JSON
+- [ ] 10 Compare text to USXEdit, output HTML (Mark Scott use case)
+- [ ] 11 Load Audio from POST, do speech to text, output JSON (OBT use case)
+- [ ] 12 Reuse request with second and third passage, output JSON (OBT use case)
 
 - [ ] Load Project Text with Plain Text Edit, because it is verse aligned.  Load time stamps from BB-API, Output CSV
 - [ ] Load same Text, and timestamp with aeneas, compare the timestamps using gonum/float to find in difference they are equal (float.SubTo, float.Abs, float.Max.  And, I need to look at Sandeep’s method
