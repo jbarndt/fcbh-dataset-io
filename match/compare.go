@@ -460,6 +460,8 @@ func (c *Compare) diff(output *os.File, verses1 []Verse, verses2 []Verse) {
 	diffMatch := diffmatchpatch.New()
 	for _, pair := range pairs {
 		if len(pair.text1) > 0 || len(pair.text2) > 0 {
+			pair.text1 = strings.TrimSpace(pair.text1)
+			pair.text2 = strings.TrimSpace(pair.text2)
 			diffs := diffMatch.DiffMain(pair.text1, pair.text2, false)
 			if !c.isMatch(diffs) {
 				inserts, deletes := c.measure(diffs)
@@ -477,6 +479,9 @@ func (c *Compare) diff(output *os.File, verses1 []Verse, verses2 []Verse) {
 				_, _ = output.WriteString(` `)
 				_, _ = output.WriteString(diffMatch.DiffPrettyHtml(diffs))
 				_, _ = output.WriteString("</p>\n")
+				//_, _ = output.WriteString(`<p>`)
+				//_, _ = output.WriteString(fmt.Sprint(diffs))
+				//_, _ = output.WriteString("</p>\n")
 				c.diffCount++
 			}
 		}
