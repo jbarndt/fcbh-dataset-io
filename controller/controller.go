@@ -68,7 +68,10 @@ func (c *Controller) processSteps() (string, dataset.Status) {
 		return filename, status
 	}
 	// Open Database
-	c.database = db.NewerDBAdapter(c.ctx, c.req.IsNew, c.user.Username, c.req.DatasetName)
+	c.database, status = db.NewerDBAdapter(c.ctx, c.req.IsNew, c.user.Username, c.req.DatasetName)
+	if status.IsErr {
+		return filename, status
+	}
 	defer c.database.Close()
 	// Fetch Ident Data from DBP
 	c.ident, status = c.fetchData()

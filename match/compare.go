@@ -51,7 +51,11 @@ func NewCompare(ctx context.Context, user fetch.DBPUser, baseDSet string, db db.
 
 func (c *Compare) Process() (string, dataset.Status) {
 	var filename string
-	c.baseDb = db.NewerDBAdapter(c.ctx, false, c.user.Username, c.baseDataset)
+	var status dataset.Status
+	c.baseDb, status = db.NewerDBAdapter(c.ctx, false, c.user.Username, c.baseDataset)
+	if status.IsErr {
+		return filename, status
+	}
 	output, status := c.openOutput(c.baseDataset, c.dataset)
 	if status.IsErr {
 		return filename, status

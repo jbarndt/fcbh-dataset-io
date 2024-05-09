@@ -46,8 +46,9 @@ type DBAdapter struct {
 }
 
 // NewerDBAdapter should be used for production
-func NewerDBAdapter(ctx context.Context, isNew bool, user string, project string) DBAdapter {
+func NewerDBAdapter(ctx context.Context, isNew bool, user string, project string) (DBAdapter, dataset.Status) {
 	var d DBAdapter
+	var status dataset.Status
 	d.Ctx = ctx
 	d.User = user
 	d.Project = project
@@ -68,17 +69,19 @@ func NewerDBAdapter(ctx context.Context, isNew bool, user string, project string
 		_ = os.Remove(d.DatabasePath)
 	}
 	if !isNew && !doesExist {
-		log.Fatal(ctx, `The database does not exist`, d.DatabasePath)
+		status = log.Error(ctx, 400, err, `The database does not exist`, d.DatabasePath)
+		return d, status
 	}
 	d.DB, err = sql.Open("sqlite3", d.DatabasePath)
 	if err != nil {
-		log.Fatal(ctx, err)
+		status = log.Error(ctx, 500, err, `Failed to open database`, d.DatabasePath)
+		return d, status
 	}
 	log.Info(d.Ctx, "DB Opened", d.DatabasePath)
 	if isNew {
 		createDatabase(d.DB)
 	}
-	return d
+	return d, status
 }
 
 // NewDBAdapter should be used for  :memory: database and test.
