@@ -326,7 +326,11 @@ func (c *Controller) matchText() (string, dataset.Status) {
 	var filename string
 	var status dataset.Status
 	compare := match.NewCompare(c.ctx, c.user, c.req.Compare.BaseDataset, c.database, c.req.Testament, c.req.Compare.CompareSettings)
-	filename, status = compare.Process()
+	if c.ident.TextSource == request.TextSTT {
+		filename, status = compare.CompareChapters()
+	} else {
+		filename, status = compare.Process()
+	}
 	return filename, status
 }
 

@@ -15,7 +15,7 @@ testament:
 compare:
   base_dataset: USX Text Edit Script_{bibleId}
   compare_settings: # Mark yes, all settings that apply
-    lower_case: n
+    lower_case: y
     remove_prompt_chars: y
     remove_punctuation: y
     double_quotes: 

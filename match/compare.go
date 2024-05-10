@@ -25,6 +25,7 @@ type Compare struct {
 	database    db.DBAdapter
 	testament   request.Testament
 	settings    request.CompareSettings
+	replacer    *strings.Replacer
 	diffCount   int
 	insertSum   int
 	deleteSum   int
@@ -48,6 +49,7 @@ func NewCompare(ctx context.Context, user fetch.DBPUser, baseDSet string, db db.
 	c.database = db
 	c.testament = testament
 	c.settings = settings
+	c.replacer = c.cleanUpSetup()
 	return c
 }
 
@@ -81,17 +83,7 @@ func (c *Compare) Process() (string, dataset.Status) {
 		}
 	}
 	c.baseDb.Close()
-	fmt.Println("Num Diff", c.diffCount)
-	_, _ = output.WriteString(`<p>Total Inserted Chars `)
-	_, _ = output.WriteString(strconv.Itoa(c.insertSum))
-	_, _ = output.WriteString(`, Total Deleted Chars `)
-	_, _ = output.WriteString(strconv.Itoa(c.deleteSum))
-	_, _ = output.WriteString("</p>\n")
-	_, _ = output.WriteString(`<p>`)
-	_, _ = output.WriteString("Total Difference Count: ")
-	_, _ = output.WriteString(strconv.Itoa(c.diffCount))
-	_, _ = output.WriteString("</p>\n")
-	c.closeOutput(output)
+	c.endReport(output)
 	return filename, status
 }
 
@@ -129,7 +121,17 @@ p { margin: 20px 40px; }
 	return output, status
 }
 
-func (c *Compare) closeOutput(output *os.File) {
+func (c *Compare) endReport(output *os.File) {
+	fmt.Println("Num Diff", c.diffCount)
+	_, _ = output.WriteString(`<p>Total Inserted Chars `)
+	_, _ = output.WriteString(strconv.Itoa(c.insertSum))
+	_, _ = output.WriteString(`, Total Deleted Chars `)
+	_, _ = output.WriteString(strconv.Itoa(c.deleteSum))
+	_, _ = output.WriteString("</p>\n")
+	_, _ = output.WriteString(`<p>`)
+	_, _ = output.WriteString("Total Difference Count: ")
+	_, _ = output.WriteString(strconv.Itoa(c.diffCount))
+	_, _ = output.WriteString("</p>\n")
 	end := ` </body>
 </html>`
 	_, _ = output.WriteString(end)
@@ -164,7 +166,7 @@ func (c *Compare) process(conn db.DBAdapter, bookId string, chapterNum int) ([]V
 	} else if ident.TextSource == request.TextPlainEdit {
 		lines = c.consolidatePlainEdit(lines)
 	}
-	lines = c.cleanUp(lines)
+	lines = c.cleanUpVerses(lines)
 	return lines, status
 }
 
@@ -304,14 +306,9 @@ func (c *Compare) consolidatePlainEdit(verses []Verse) []Verse {
 	return results
 }
 
-func (c *Compare) cleanUp(verses []Verse) []Verse {
-	cfg := c.settings
-	if cfg.LowerCase {
-		for i, vs := range verses {
-			verses[i].text = strings.ToLower(vs.text)
-		}
-	}
+func (c *Compare) cleanUpSetup() *strings.Replacer {
 	var replace []string
+	cfg := c.settings
 	if cfg.RemovePromptChars {
 		replace = append(replace, "<<", "")
 		replace = append(replace, ">>", "")
@@ -387,46 +384,49 @@ func (c *Compare) cleanUp(verses []Verse) []Verse {
 		replace = append(replace, "\uFE63", "") // small hyphen minus
 		replace = append(replace, "\uFF0D", "") // fullwidth hypen-minus
 	}
+	var replacer *strings.Replacer
 	if len(replace) > 0 {
-		replacer := strings.NewReplacer(replace...)
-		for i, vs := range verses {
-			verses[i].text = replacer.Replace(vs.text)
-		}
+		replacer = strings.NewReplacer(replace...)
+	}
+	return replacer
+}
+
+func (c *Compare) cleanUpVerses(verses []Verse) []Verse {
+	for i, vs := range verses {
+		verses[i].text = c.cleanup(vs.text)
+	}
+	return verses
+}
+
+func (c *Compare) cleanup(text string) string {
+	if c.replacer != nil {
+		text = c.replacer.Replace(text)
+	}
+	cfg := c.settings
+	if cfg.LowerCase {
+		text = strings.ToLower(text)
 	}
 	// https://unicode.org/reports/tr15/  Normalization Doc
 	//if cfg.DiacriticalMarks.Normalize {
 	if cfg.DiacriticalMarks.NormalizeNFC {
-		for i, vs := range verses {
-			verses[i].text = norm.NFC.String(vs.text)
-		}
+		text = norm.NFC.String(text)
 	} else if cfg.DiacriticalMarks.NormalizeNFD {
-		for i, vs := range verses {
-			verses[i].text = norm.NFD.String(vs.text)
-		}
+		text = norm.NFD.String(text)
 	} else if cfg.DiacriticalMarks.NormalizeNFKC {
-		for i, vs := range verses {
-			verses[i].text = norm.NFKC.String(vs.text)
-		}
+		text = norm.NFKC.String(text)
 	} else if cfg.DiacriticalMarks.NormalizeNFKD {
-		for i, vs := range verses {
-			verses[i].text = norm.NFKD.String(vs.text)
-		}
+		text = norm.NFKD.String(text)
 	} else if cfg.DiacriticalMarks.Remove {
-		for i, vs := range verses {
-			verses[i].text = norm.NFKD.String(vs.text)
-		}
+		text = norm.NFKD.String(text)
 		var filtered = make([]rune, 0, 300)
-		for i, vs := range verses {
-			filtered = []rune{}
-			for _, ch := range vs.text {
-				if ch < '\u0300' || ch > '\u036F' {
-					filtered = append(filtered, ch)
-				}
+		for _, ch := range text {
+			if ch < '\u0300' || ch > '\u036F' {
+				filtered = append(filtered, ch)
 			}
-			verses[i].text = string(filtered)
 		}
+		text = string(filtered)
 	}
-	return verses
+	return text
 }
 
 /* This diff method assumes one chapter at a time */
@@ -469,6 +469,7 @@ func (c *Compare) diff(output *os.File, verses1 []Verse, verses2 []Verse) {
 			pair.text1 = strings.TrimSpace(pair.text1)
 			pair.text2 = strings.TrimSpace(pair.text2)
 			diffs := diffMatch.DiffMain(pair.text1, pair.text2, false)
+			//diffs = diffMatch.DiffCleanupSemantic(diffs)
 			if !c.isMatch(diffs) {
 				inserts, deletes := c.measure(diffs)
 				c.insertSum += inserts
