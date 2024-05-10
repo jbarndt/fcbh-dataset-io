@@ -111,6 +111,7 @@ const (
 	TextPlainEdit TextType = "text_plain_edit"
 	TextPlain     TextType = "text_plain"
 	TextScript    TextType = "text_script"
+	TextSTT       TextType = "text_stt"
 	TextNone      TextType = "text_none"
 )
 

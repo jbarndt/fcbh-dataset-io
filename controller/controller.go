@@ -265,6 +265,8 @@ func (c *Controller) speechToText(audioFiles []input.InputFile) dataset.Status {
 		if status.IsErr {
 			return status
 		}
+		c.ident.TextSource = request.TextSTT
+		c.database.UpdateIdent(c.ident)
 	}
 	return status
 }
