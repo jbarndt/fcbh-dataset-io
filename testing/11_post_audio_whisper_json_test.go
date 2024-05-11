@@ -39,22 +39,22 @@ func TestPostAudioWhisperJsonAPI(t *testing.T) {
 		bibleId  string
 		filePath string
 		namev4   string
+		expected int
 	}
 	var a try
 	a.bibleId = `ENGWEB`
 	a.filePath = filepath.Join(os.Getenv(`FCBH_DATASET_FILES`), `ENGWEB/ENGWEBN2DA/B23___01_1John_______ENGWEBN2DA.mp3`)
 	a.namev4 = `ENGWEBN2DA_B23_1JN_001.mp3`
+	a.expected = 183
 	var request = strings.Replace(PostAudioWhisperJson, `{bibleId}`, a.bibleId, 2)
 	request = strings.Replace(request, `{namev4}`, a.namev4, 1)
 	stdout, stderr := CurlExec(request, a.filePath, t)
 	fmt.Println(`STDOUT`, stdout)
 	fmt.Println(`STDERR`, stderr)
-	//fmt.Println("Filename", filename)
-	//count := NumHTMLFileLines(filename, t)
-	//expected := 18
-	//if count != expected {
-	//	t.Error(`expected`, expected, `found`, count)
-	//}
+	lines := strings.Split(stdout, "\n")
+	if len(lines) != a.expected {
+		t.Error(`expected,`, a.expected, `found`, len(lines))
+	}
 }
 
 func CurlExec(requestYaml string, filePath string, t *testing.T) (string, string) {
