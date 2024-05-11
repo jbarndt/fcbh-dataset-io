@@ -1,0 +1,46 @@
+package testing
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+)
+
+const PostAudio2WhisperJson = `is_new: no
+dataset_name: PostAudioWhisperJson_{bibleId}
+bible_id: {bibleId}
+audio_data:
+  post: {namev4}
+text_data:
+  speech_to_text:
+    whisper:
+      model:
+        tiny: yes
+output_format:
+  json: yes
+`
+
+func TestPostAudio2WhisperJsonAPI(t *testing.T) {
+	type try struct {
+		bibleId  string
+		filePath string
+		namev4   string
+		expected int
+	}
+	var a try
+	a.bibleId = `ENGWEB`
+	a.filePath = filepath.Join(os.Getenv(`FCBH_DATASET_FILES`), `ENGWEB/ENGWEBN2DA/B23___02_1John_______ENGWEBN2DA.mp3`)
+	a.namev4 = `ENGWEBN2DA_B23_1JN_002.mp3`
+	a.expected = 72
+	var request = strings.Replace(PostAudio2WhisperJson, `{bibleId}`, a.bibleId, 2)
+	request = strings.Replace(request, `{namev4}`, a.namev4, 1)
+	stdout, stderr := CurlExec(request, a.filePath, t)
+	fmt.Println(`STDOUT`, stdout)
+	fmt.Println(`STDERR`, stderr)
+	count := countRecords(stdout)
+	if count != a.expected {
+		t.Error(`expected,`, a.expected, `found`, count)
+	}
+}

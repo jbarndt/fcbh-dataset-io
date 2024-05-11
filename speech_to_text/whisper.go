@@ -45,7 +45,7 @@ func (w *Whisper) ProcessFiles(files []input.InputFile) dataset.Status {
 	var outputFile string
 	for _, file := range files {
 		outputFile, status = w.RunWhisper(file)
-		w.loadWhisperOutput(outputFile, file)
+		status = w.loadWhisperOutput(outputFile, file)
 	}
 	return status
 }
@@ -132,6 +132,12 @@ func (w *Whisper) loadWhisperOutput(outputFile string, file input.InputFile) dat
 		rec.ScriptEndTS = seg.End
 		records = append(records, rec)
 	}
-	w.conn.InsertScripts(records)
+	if len(records) > 0 {
+		status = w.conn.DeleteScripts(records[0].BookId, records[0].ChapterNum)
+		if status.IsErr {
+			return status
+		}
+		status = w.conn.InsertScripts(records)
+	}
 	return status
 }

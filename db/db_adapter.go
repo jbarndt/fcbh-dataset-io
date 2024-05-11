@@ -258,6 +258,16 @@ func (d *DBAdapter) DeleteMFCCs() {
 	execDDL(d.DB, query)
 }
 
+func (d *DBAdapter) DeleteScripts(bookId string, chapterNum int) dataset.Status {
+	var status dataset.Status
+	query := `DELETE FROM scripts WHERE book_id = ? AND chapter_num = ?`
+	_, err := d.DB.Exec(query, bookId, chapterNum)
+	if err != nil {
+		status = log.Error(d.Ctx, 500, err, `Error deleting scripts`, bookId, chapterNum)
+	}
+	return status
+}
+
 func (d *DBAdapter) DeleteWords() {
 	execDDL(d.DB, `DELETE FROM words`)
 }

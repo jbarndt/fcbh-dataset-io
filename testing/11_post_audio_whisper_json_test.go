@@ -45,15 +45,15 @@ func TestPostAudioWhisperJsonAPI(t *testing.T) {
 	a.bibleId = `ENGWEB`
 	a.filePath = filepath.Join(os.Getenv(`FCBH_DATASET_FILES`), `ENGWEB/ENGWEBN2DA/B23___01_1John_______ENGWEBN2DA.mp3`)
 	a.namev4 = `ENGWEBN2DA_B23_1JN_001.mp3`
-	a.expected = 183
+	a.expected = 15
 	var request = strings.Replace(PostAudioWhisperJson, `{bibleId}`, a.bibleId, 2)
 	request = strings.Replace(request, `{namev4}`, a.namev4, 1)
 	stdout, stderr := CurlExec(request, a.filePath, t)
 	fmt.Println(`STDOUT`, stdout)
 	fmt.Println(`STDERR`, stderr)
-	lines := strings.Split(stdout, "\n")
-	if len(lines) != a.expected {
-		t.Error(`expected,`, a.expected, `found`, len(lines))
+	count := countRecords(stdout)
+	if count != a.expected {
+		t.Error(`expected,`, a.expected, `found`, count)
 	}
 }
 
@@ -77,6 +77,16 @@ func CurlExec(requestYaml string, filePath string, t *testing.T) (string, string
 	}
 	_ = os.Remove(yamlFile.Name())
 	return stdoutBuf.String(), stderrBuf.String()
+}
+
+func countRecords(output string) int {
+	var count int
+	for _, line := range strings.Split(output, "\n") {
+		if strings.Contains(line, `book_id`) {
+			count++
+		}
+	}
+	return count
 }
 
 //curl -X POST http://localhost:8080 \
