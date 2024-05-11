@@ -23,7 +23,8 @@ audio_data: # Choose one of the following
     opus: # Mark Yes for OPUS
   file: # e.g. /{directory}/{mediaId}/*.usx Note: include twice for OT and NT
   aws_s3: # e.g. s3://{bucket}/audio/{bibleId}/{mediaId}/*.mp3  Note: include twice for OT and NT
-  post: # If POST, put Yes here (TBD)
+  post: # e.g. {mediaId}_{A/Bseq}_{book}_{chapter}_{verse}-{chapter_end}_{verse_end}, use detail as needed
+    mp3:
   no_audio: # If no audio put Yes here
 # Default:  no_audio
 
@@ -32,6 +33,9 @@ text_data: # Choose one of the following
     text_usx_edit: yes # Mark Yes, for USX with text not in audio removed
     text_plain_edit: # Mark Yes, for plain_text with headings added to match audio
     text_plain: # Mark Yes, for DBP plain_text
+  file: # e.g. /{directory}/{mediaId}/*.usx Note: include twice for OT and NT
+  aws_s3: # e.g. s3://{bucket}/text/{bibleId}/{mediaId}/*.usx  Note: include twice for OT and NT
+  post: # {mediaId}_{A/Bseq}_{book}_{chapter}_{verse}-{chapter_end}_{verse_end}, use detail as needed
   speech_to_text: # If STT is source Yes by desired type
     whisper: # This is OpenAI’s STT model
       model: # If using Whisper, choose one of the model sizes by marking it Yes
@@ -40,9 +44,6 @@ text_data: # Choose one of the following
         small:
         base:
         tiny:
-  file: # e.g. /{directory}/{mediaId}/*.usx Note: include twice for OT and NT
-  aws_s3: # e.g. s3://{bucket}/text/{bibleId}/{mediaId}/*.usx  Note: include twice for OT and NT
-  post: # e.g. {mediaId}_{chapter}_{verse}[-{chapter_end}_{verse_end}
   no_text: # If there is no text yes here
 # Default: no_text
 

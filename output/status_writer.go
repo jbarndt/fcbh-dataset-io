@@ -17,6 +17,7 @@ func (o *Output) JSONStatus(status dataset.Status, debug bool) (string, dataset.
 		errStatus = log.Error(o.ctx, 500, err, status.Err)
 		return filename, errStatus
 	}
+	filename = file.Name()
 	//var result string
 	if !debug {
 		status.Trace = ``
@@ -40,6 +41,7 @@ func (o *Output) CSVStatus(status dataset.Status, debug bool) (string, dataset.S
 		errStatus = log.Error(o.ctx, 500, err, status.Err)
 		return filename, errStatus
 	}
+	filename = file.Name()
 	writer := csv.NewWriter(file)
 	//var result string
 	//var buffer = bytes.NewBufferString("")

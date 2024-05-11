@@ -14,8 +14,9 @@ import (
 )
 
 const (
-	HOST   = `http://localhost:8080/`
-	OUTPUT = `/Users/gary/FCBH2024/systemtest/`
+	HOST       = `http://localhost:8080/`
+	UPLOADHOST = `http://localhost:8080/upload`
+	OUTPUT     = `/Users/gary/FCBH2024/systemtest/`
 )
 
 func HttpPost(request string, name string, t *testing.T) ([]byte, int) {

@@ -13,6 +13,7 @@ type Request struct {
 	TextEncoding  TextEncoding  `yaml:"text_encoding,omitempty"`
 	OutputFormat  OutputFormat  `yaml:"output_format,omitempty"`
 	Compare       Compare       `yaml:"compare,omitempty"`
+	UploadedFile  string        `yaml:"uploaded_filepath,omitempty"`
 }
 
 type Testament struct {
@@ -63,7 +64,7 @@ type AudioData struct {
 	BibleBrain BibleBrainAudio `yaml:"bible_brain,omitempty"`
 	File       string          `yaml:"file,omitempty"`
 	AWSS3      string          `yaml:"aws_s3,omitempty"`
-	POST       bool            `yaml:"post,omitempty"`
+	POST       string          `yaml:"post,omitempty"`
 	NoAudio    bool            `yaml:"no_audio,omitempty"`
 }
 
@@ -94,7 +95,7 @@ type TextData struct {
 	SpeechToText SpeechToText   `yaml:"speech_to_text,omitempty"`
 	File         string         `yaml:"file,omitempty"`
 	AWSS3        string         `yaml:"aws_s3,omitempty"`
-	POST         bool           `yaml:"post,omitempty"`
+	POST         string         `yaml:"post,omitempty"`
 	NoText       bool           `yaml:"no_text,omitempty"`
 }
 
