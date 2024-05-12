@@ -59,7 +59,10 @@ func TestLoadTimestamps(t *testing.T) {
 	ctx := context.Background()
 	bibleId := `ENGWEB`
 	database := bibleId + `_EDITTEXT`
-	conn := db.NewerDBAdapter(ctx, false, `GaryNGriswold`, database)
+	conn, status := db.NewerDBAdapter(ctx, false, `GaryNGriswold`, database)
+	if status.IsErr {
+		t.Fatal(status)
+	}
 	filesetId := `ENGWEBN2DA`
 	testament := request.Testament{NTBooks: []string{`MAT`, `MRK`}}
 	testament.BuildBookMaps()

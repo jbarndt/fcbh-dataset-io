@@ -160,13 +160,12 @@ func (c *Controller) fetchData() (db.Ident, dataset.Status) {
 	//	status.Message = strings.Join(msg, "\n")
 	//	return info, status
 	//}
-	c.ident = client.CreateIdent(info)
-	c.ident.TextSource = c.req.TextData.BibleBrain.TextType()
-	if c.req.IsNew {
-		status = c.database.InsertIdent(&c.ident)
-	} else {
-		c.ident, status = c.database.SelectIdent()
+	c.ident, status = c.database.SelectIdent()
+	if status.IsErr {
+		return c.ident, status
 	}
+	c.ident = client.UpdateIdent(c.ident, info)
+	status = c.database.InsertReplaceIdent(&c.ident)
 	return c.ident, status
 }
 

@@ -137,19 +137,40 @@ func (d *APIDBPClient) searchAudio(info *BibleInfoType, size string, audioType s
 	return FilesetType{}
 }
 
-func (d *APIDBPClient) CreateIdent(info BibleInfoType) db.Ident {
-	var id db.Ident
+func (d *APIDBPClient) UpdateIdent(id db.Ident, info BibleInfoType) db.Ident {
 	id.BibleId = info.BibleId
-	id.AudioOTId = info.AudioOTFileset.Id
-	id.AudioNTId = info.AudioNTFileset.Id
-	id.TextOTId = info.TextOTFileset.Id
-	id.TextNTId = info.TextNTFileset.Id
-	id.LanguageISO = info.LanguageISO
-	id.VersionCode = info.VersionCode
-	id.LanguageId = info.LanguageId
-	id.RolvId = info.RolvId
-	id.Alphabet = info.Alphabet.Alphabet
-	id.LanguageName = info.LanguageName
-	id.VersionName = info.VersionName
+	if info.AudioOTFileset.Id != `` {
+		id.AudioOTId = info.AudioOTFileset.Id
+	}
+	if info.AudioNTFileset.Id != `` {
+		id.AudioNTId = info.AudioNTFileset.Id
+	}
+	if info.TextOTFileset.Id != `` {
+		id.TextOTId = info.TextOTFileset.Id
+	}
+	if info.TextNTFileset.Id != `` {
+		id.TextNTId = info.TextNTFileset.Id
+	}
+	if info.LanguageISO != `` {
+		id.LanguageISO = info.LanguageISO
+	}
+	if info.VersionCode != `` {
+		id.VersionCode = info.VersionCode
+	}
+	if info.LanguageId != 0 {
+		id.LanguageId = info.LanguageId
+	}
+	if info.RolvId != 0 {
+		id.RolvId = info.RolvId
+	}
+	if info.Alphabet.Alphabet != `` {
+		id.Alphabet = info.Alphabet.Alphabet
+	}
+	if info.LanguageName != `` {
+		id.LanguageName = info.LanguageName
+	}
+	if info.VersionName != `` {
+		id.VersionName = info.VersionName
+	}
 	return id
 }

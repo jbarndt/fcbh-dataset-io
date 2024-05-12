@@ -272,7 +272,7 @@ func (d *DBAdapter) DeleteWords() {
 	execDDL(d.DB, `DELETE FROM words`)
 }
 
-func (d *DBAdapter) InsertIdent(id *Ident) dataset.Status {
+func (d *DBAdapter) InsertReplaceIdent(id *Ident) dataset.Status {
 	var status dataset.Status
 	query := `REPLACE INTO ident(bible_id, audio_OT_id, audio_NT_id, text_OT_id, text_NT_id,
 		text_source, language_iso, version_code, languge_id, 

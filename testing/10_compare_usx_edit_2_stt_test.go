@@ -45,7 +45,7 @@ func TestCompareUsXTextEdit2STT(t *testing.T) {
 	}
 	fmt.Println("Filename", filename)
 	count := NumHTMLFileLines(filename, t)
-	expected := 18
+	expected := 22
 	if count != expected {
 		t.Error(`expected`, expected, `found`, count)
 	}
