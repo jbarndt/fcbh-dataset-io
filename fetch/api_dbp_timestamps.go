@@ -43,10 +43,10 @@ func (a *APIDBPTimestamps) LoadTimestamps(testament request.Testament) (bool, da
 	var scriptMap = make(map[string]int)
 	for _, scp := range scripts {
 		key := scp.BookId + ` ` + strconv.Itoa(scp.ChapterNum) + `:` + scp.VerseStr
-		_, ok := scriptMap[key]
-		if ok {
-			log.Warn(a.ctx, `Duplicate book, chapter, verse`, key)
-		}
+		//_, _ = scriptMap[key]
+		//if ok {
+		//	log.Warn(a.ctx, `Duplicate book, chapter, verse`, key)
+		//}
 		scriptMap[key] = scp.ScriptId
 	}
 	lastBookId := ``
@@ -116,11 +116,7 @@ type Timestamp struct {
 }
 
 func (t *Timestamp) Key() string {
-	if t.VerseStart == `0` {
-		return t.BookId + ` ` + t.Chapter + `:`
-	} else {
-		return t.BookId + ` ` + t.Chapter + `:` + t.VerseStart
-	}
+	return t.BookId + ` ` + t.Chapter + `:` + t.VerseStart
 }
 
 type TimestampsResp struct {

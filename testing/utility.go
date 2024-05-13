@@ -158,10 +158,10 @@ func identTest(name string, t *testing.T, textType request.MediaType, textOTId s
 		t.Error(`TextNTId expected`, textNTId, `found`, ident.TextNTId)
 	}
 	if ident.AudioOTId != audioOTId {
-		t.Error(`AudioOTId expected`, textOTId, `found`, ident.AudioOTId)
+		t.Error(`AudioOTId expected`, audioOTId, `found`, ident.AudioOTId)
 	}
 	if ident.AudioNTId != audioNTId {
-		t.Error(`AudioNTId expected`, textNTId, `found`, ident.AudioNTId)
+		t.Error(`AudioNTId expected`, audioNTId, `found`, ident.AudioNTId)
 	}
 	if ident.LanguageISO != language {
 		t.Error(`LanguageISO expected`, language, `found`, ident.LanguageISO)
