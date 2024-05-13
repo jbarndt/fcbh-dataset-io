@@ -2,6 +2,7 @@ package testing
 
 import (
 	"dataset/controller"
+	"dataset/request"
 	"fmt"
 	"strings"
 	"testing"
@@ -35,8 +36,8 @@ compare:
 
 func TestComparePlainTextEdit2Script(t *testing.T) {
 	var bibleId = `ATIWBT`
-	var request = strings.Replace(ComparePlainTextEdit2Script, `{bibleId}`, bibleId, 3)
-	var control = controller.NewController([]byte(request))
+	var req = strings.Replace(ComparePlainTextEdit2Script, `{bibleId}`, bibleId, 3)
+	var control = controller.NewController([]byte(req))
 	filename, status := control.Process()
 	if status.IsErr {
 		t.Fatal(status)
@@ -47,4 +48,6 @@ func TestComparePlainTextEdit2Script(t *testing.T) {
 	if count != expected {
 		t.Error(`expected`, expected, `found`, count)
 	}
+	identTest(`ScriptTextScript_`+bibleId, t, request.TextScript, ``,
+		`ATIWBTN2ST`, ``, ``, `ati`)
 }

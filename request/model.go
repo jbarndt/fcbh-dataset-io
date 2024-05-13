@@ -105,19 +105,21 @@ type BibleBrainText struct {
 	TextPlain     bool `yaml:"text_plain,omitempty"`
 }
 
-type TextType string
+type MediaType string
 
 const (
-	TextUSXEdit   TextType = "text_usx_edit"
-	TextPlainEdit TextType = "text_plain_edit"
-	TextPlain     TextType = "text_plain"
-	TextScript    TextType = "text_script"
-	TextSTT       TextType = "text_stt"
-	TextNone      TextType = "text_none"
+	Audio         MediaType = "audio"
+	AudioDrama    MediaType = "audio_drama"
+	TextUSXEdit   MediaType = "text_usx_edit"
+	TextPlainEdit MediaType = "text_plain_edit"
+	TextPlain     MediaType = "text_plain"
+	TextScript    MediaType = "text_script"
+	TextSTT       MediaType = "text_stt"
+	TextNone      MediaType = ""
 )
 
-func (b BibleBrainText) TextType() TextType {
-	var result TextType
+func (b BibleBrainText) TextType() MediaType {
+	var result MediaType
 	if b.TextUSXEdit {
 		result = TextUSXEdit
 	} else if b.TextPlainEdit {
@@ -130,7 +132,7 @@ func (b BibleBrainText) TextType() TextType {
 	return result
 }
 
-func (t TextType) IsFrom(ttype string) bool {
+func (t MediaType) IsFrom(ttype string) bool {
 	var result = false
 	switch t {
 	case TextUSXEdit:

@@ -165,24 +165,20 @@ func (c *Controller) fetchData() (db.Ident, dataset.Status) {
 		return c.ident, status
 	}
 	c.ident = client.UpdateIdent(c.ident, info)
-	status = c.database.InsertReplaceIdent(&c.ident)
+	textType := c.req.TextData.BibleBrain.TextType()
+	if textType != request.TextNone {
+		c.ident.TextSource = textType
+	}
+	status = c.database.InsertReplaceIdent(c.ident)
 	return c.ident, status
 }
 
 func (c *Controller) collectTextInput() ([]input.InputFile, dataset.Status) {
 	var files []input.InputFile
 	var status dataset.Status
-	var textType string
-	if c.req.TextData.BibleBrain.TextUSXEdit {
-		textType = `text_usx`
-	} else if c.req.TextData.BibleBrain.TextPlainEdit {
-		textType = `text_plain`
-	} else if c.req.TextData.BibleBrain.TextPlain {
-		textType = `text_plain`
-	}
-	if textType != `` {
-		bibleId := c.req.BibleId
-		files, status = input.DBPDirectory(c.ctx, bibleId, textType, c.ident.TextOTId,
+	bb := c.req.TextData.BibleBrain
+	if bb.TextPlain || bb.TextPlainEdit || bb.TextUSXEdit {
+		files, status = input.DBPDirectory(c.ctx, c.req.BibleId, c.ident.TextSource, c.ident.TextOTId,
 			c.ident.TextNTId, c.req.Testament)
 	} else if c.req.TextData.File != `` {
 		files, status = input.FileInput(c.ctx, c.req.TextData.File, c.req.Testament)
@@ -200,7 +196,7 @@ func (c *Controller) collectAudioInput() ([]input.InputFile, dataset.Status) {
 	bb := c.req.AudioData.BibleBrain
 	if bb.MP3_64 || bb.MP3_16 || bb.OPUS {
 		bibleId := c.req.BibleId
-		files, status = input.DBPDirectory(c.ctx, bibleId, `audio`, c.ident.AudioOTId,
+		files, status = input.DBPDirectory(c.ctx, bibleId, request.Audio, c.ident.AudioOTId,
 			c.ident.AudioNTId, c.req.Testament)
 	} else if c.req.AudioData.File != `` {
 		files, status = input.FileInput(c.ctx, c.req.AudioData.File, c.req.Testament)
@@ -217,28 +213,25 @@ func (c *Controller) readText(textFiles []input.InputFile) dataset.Status {
 	if len(textFiles) == 0 {
 		return status
 	}
-	//if c.req.TextData.BibleBrain.TextUSXEdit {
-	if textFiles[0].MediaType == `text_usx` {
+	if textFiles[0].MediaType == request.TextUSXEdit {
 		reader := read.NewUSXParser(c.database)
 		status = reader.ProcessFiles(textFiles)
 		if status.IsErr {
 			return status
 		}
-	} else if textFiles[0].MediaType == `text_plain` {
-		if c.req.TextData.BibleBrain.TextPlainEdit {
-			reader := read.NewDBPTextEditReader(c.database, c.req)
-			status = reader.Process()
-			if status.IsErr {
-				return status
-			}
-		} else { //if c.req.TextData.BibleBrain.TextPlain {
-			reader := read.NewDBPTextReader(c.database, c.req.Testament)
-			status = reader.ProcessFiles(textFiles)
-			if status.IsErr {
-				return status
-			}
+	} else if textFiles[0].MediaType == request.TextPlainEdit {
+		reader := read.NewDBPTextEditReader(c.database, c.req)
+		status = reader.Process()
+		if status.IsErr {
+			return status
 		}
-	} else if textFiles[0].MediaType == `text_script` {
+	} else if textFiles[0].MediaType == request.TextPlain {
+		reader := read.NewDBPTextReader(c.database, c.req.Testament)
+		status = reader.ProcessFiles(textFiles)
+		if status.IsErr {
+			return status
+		}
+	} else if textFiles[0].MediaType == request.TextScript { //`text_script` {
 		reader := read.NewScriptReader(c.database)
 		status = reader.ProcessFiles(textFiles)
 		if status.IsErr {
@@ -348,12 +341,10 @@ func (c *Controller) output() (string, dataset.Status) {
 		filename, status = out.WriteCSV(records, meta)
 		if status.IsErr {
 			return filename, status
-			//return c.outputStatus(status)
 		}
 	} else if c.req.OutputFormat.JSON {
 		filename, status = out.WriteJSON(records, meta)
 		if status.IsErr {
-			//return c.outputStatus(status)
 			return filename, status
 		}
 	}

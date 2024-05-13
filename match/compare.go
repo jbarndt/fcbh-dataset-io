@@ -188,7 +188,7 @@ func (c *Compare) consolidateScript(verses []Verse) []Verse {
 		sumInput += len(rec.text)
 	}
 	text := strings.Join(parts, ``)
-	var verseNum = ``
+	var verseNum = `0`
 	var tmpNum []byte
 	var index = 0
 	var state = begin
@@ -289,7 +289,7 @@ func (c *Compare) consolidatePlainEdit(verses []Verse) []Verse {
 	for pos, rec := range verses {
 		if pos == 0 {
 			first = rec
-		} else if rec.verse == `` {
+		} else if rec.verse == `0` {
 			if !strings.HasSuffix(first.text, ` `) && !strings.HasPrefix(rec.text, ` `) {
 				first.text += ` ` + rec.text
 			} else {

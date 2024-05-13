@@ -4,6 +4,7 @@ import (
 	"context"
 	"dataset/controller"
 	"dataset/db"
+	"dataset/request"
 	"fmt"
 	"strings"
 	"testing"
@@ -20,8 +21,8 @@ output_format:
 
 func TestScriptTextScript(t *testing.T) {
 	var bibleId = `ATIWBT`
-	var request = strings.Replace(ScriptTextScript, `{bibleId}`, bibleId, 2)
-	var control = controller.NewController([]byte(request))
+	var req = strings.Replace(ScriptTextScript, `{bibleId}`, bibleId, 2)
+	var control = controller.NewController([]byte(req))
 	filename, status := control.Process()
 	if status.IsErr {
 		t.Fatal(status)
@@ -36,4 +37,6 @@ func TestScriptTextScript(t *testing.T) {
 	if count != expected {
 		t.Error(`Expected `, expected, `records, got`, count)
 	}
+	identTest(`ScriptTextScript_`+bibleId, t, request.TextScript, ``,
+		`ATIWBTN2ST`, ``, ``, `ati`)
 }

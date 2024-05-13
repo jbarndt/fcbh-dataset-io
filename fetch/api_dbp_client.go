@@ -106,7 +106,7 @@ func (d *APIDBPClient) FindFilesets(info *BibleInfoType, audio request.BibleBrai
 	}
 }
 
-func (d *APIDBPClient) searchText(info *BibleInfoType, size string, textType request.TextType) FilesetType {
+func (d *APIDBPClient) searchText(info *BibleInfoType, size string, textType request.MediaType) FilesetType {
 	for _, rec := range info.DbpProd.Filesets {
 		if textType.IsFrom(rec.Type) && rec.Size == size {
 			return rec

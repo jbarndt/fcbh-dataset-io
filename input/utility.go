@@ -35,13 +35,13 @@ func SetMediaType(ctx context.Context, file *InputFile) dataset.Status {
 	var status dataset.Status
 	fN := file.Filename
 	if strings.HasSuffix(fN, `_ET`) || strings.HasSuffix(fN, `_ET.json`) {
-		file.MediaType = `text_plain`
+		file.MediaType = request.TextPlainEdit
 	} else if strings.HasSuffix(fN, `usx`) {
-		file.MediaType = `text_usx`
+		file.MediaType = request.TextUSXEdit
 	} else if (fN[0] == 'A' || fN[0] == 'B') && (fN[1] >= '0' && fN[1] <= '9') {
-		file.MediaType = `audio`
+		file.MediaType = request.Audio
 	} else if strings.HasSuffix(fN, `ST.xlsx`) {
-		file.MediaType = `text_script`
+		file.MediaType = request.TextScript
 	} else {
 		parts := strings.Split(fN, `_`)
 		if len(parts) > 2 {
@@ -59,7 +59,7 @@ func SetMediaType(ctx context.Context, file *InputFile) dataset.Status {
 
 func ParseFilenames(ctx context.Context, file *InputFile) dataset.Status {
 	var status dataset.Status
-	if file.MediaType == `text_plain` {
+	if file.MediaType == request.TextPlain || file.MediaType == request.TextPlainEdit {
 		file.MediaId = strings.Split(file.Filename, `.`)[0]
 		test := file.Filename[6]
 		if test == 'O' {
@@ -68,14 +68,14 @@ func ParseFilenames(ctx context.Context, file *InputFile) dataset.Status {
 			file.Testament = `NT`
 		}
 		file.FileExt = filepath.Ext(file.Filename)
-	} else if file.MediaType == `text_usx` {
+	} else if file.MediaType == request.TextUSXEdit {
 		parts := strings.Split(file.Directory, `/`)
 		file.MediaId = parts[len(parts)-1]
 		file.BookId = file.Filename[3:6]
 		file.BookSeq = file.Filename[0:3]
 		file.Testament = db.Testament(file.BookId)
 		file.FileExt = filepath.Ext(file.Filename)
-	} else if file.MediaType == `text_script` {
+	} else if file.MediaType == request.TextScript {
 		file.MediaId = strings.Split(file.Filename, `.`)[0]
 		test := file.Filename[6]
 		if test == 'O' {
@@ -84,7 +84,7 @@ func ParseFilenames(ctx context.Context, file *InputFile) dataset.Status {
 			file.Testament = `NT`
 		}
 		file.FileExt = filepath.Ext(file.Filename)
-	} else if file.MediaType == `audio` || file.MediaType == `audio_drama` {
+	} else if file.MediaType == request.Audio || file.MediaType == request.AudioDrama {
 		fN := file.Filename
 		if (fN[0] == 'A' || fN[0] == 'B') && (fN[1] >= '0' && fN[1] <= '9') {
 			status = ParseV2AudioFilename(ctx, file)
@@ -95,7 +95,7 @@ func ParseFilenames(ctx context.Context, file *InputFile) dataset.Status {
 			return status
 		}
 	} else {
-		status = log.ErrorNoErr(ctx, 400, `Type must be one of "text_plain", "text_usx", "audio"`)
+		status = log.ErrorNoErr(ctx, 400, `Type must be one of "text_plain", "text_plain_edit", "text_usx", "audio"`)
 	}
 	return status
 }
@@ -186,28 +186,17 @@ func UpdateIdent(conn db.DBAdapter, ident *db.Ident, textFiles []InputFile, audi
 
 func updateIdentText(ident *db.Ident, files []InputFile) bool {
 	var result = false
-	for _, f := range files {
+	//for _, f := range files {
+	if len(files) > 0 {
+		f := files[0]
+		if f.MediaType != request.TextNone {
+			ident.TextSource = f.MediaType
+		}
 		result = true
 		if f.Testament == `OT` {
 			ident.TextOTId = f.MediaId
-			switch f.MediaType {
-			case `text_plain`:
-				ident.TextSource = request.TextPlainEdit
-			case `text_usx`:
-				ident.TextSource = request.TextUSXEdit
-			case `text_script`:
-				ident.TextSource = request.TextScript
-			}
 		} else if f.Testament == `NT` {
 			ident.TextNTId = f.MediaId
-			switch f.MediaType {
-			case `text_plain`:
-				ident.TextSource = request.TextPlainEdit
-			case `text_usx`:
-				ident.TextSource = request.TextUSXEdit
-			case `text_script`:
-				ident.TextSource = request.TextScript
-			}
 		}
 	}
 	return result

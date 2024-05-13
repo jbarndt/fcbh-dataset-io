@@ -20,3 +20,14 @@ func GetDBPUser() (DBPUser, dataset.Status) {
 	u.Email = `gary@shortsands.com`
 	return u, status
 }
+
+func GetTestUser() (DBPUser, dataset.Status) {
+	var status dataset.Status
+	var u DBPUser
+	u.UserId = 99
+	u.Username = `GaryNGriswold`
+	u.FirstName = `Gary`
+	u.LastName = `Griswold`
+	u.Email = `gary@shortsands.com`
+	return u, status
+}

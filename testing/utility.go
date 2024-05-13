@@ -2,6 +2,10 @@ package testing
 
 import (
 	"bytes"
+	"context"
+	"dataset/db"
+	"dataset/fetch"
+	"dataset/request"
 	"encoding/csv"
 	"encoding/json"
 	"io"
@@ -130,4 +134,36 @@ func NumHTMLFileLines(filename string, t *testing.T) int {
 	}
 	records := strings.Split(string(content), "\n")
 	return len(records)
+}
+
+func identTest(name string, t *testing.T, textType request.MediaType, textOTId string,
+	textNTId string, audioOTId string, audioNTId string, language string) {
+	user, _ := fetch.GetTestUser()
+	conn, status := db.NewerDBAdapter(context.TODO(), false, user.Username, name)
+	if status.IsErr {
+		t.Fatal(status)
+	}
+	ident, status := conn.SelectIdent()
+	if status.IsErr {
+		t.Fatal(status)
+	}
+	conn.Close()
+	if ident.TextSource != textType {
+		t.Error(`TextSource expected`, textType, `found`, ident.TextSource)
+	}
+	if ident.TextOTId != textOTId {
+		t.Error(`TextOTId expected`, textOTId, `found`, ident.TextOTId)
+	}
+	if ident.TextNTId != textNTId {
+		t.Error(`TextNTId expected`, textNTId, `found`, ident.TextNTId)
+	}
+	if ident.AudioOTId != audioOTId {
+		t.Error(`AudioOTId expected`, textOTId, `found`, ident.AudioOTId)
+	}
+	if ident.AudioNTId != audioNTId {
+		t.Error(`AudioNTId expected`, textNTId, `found`, ident.AudioNTId)
+	}
+	if ident.LanguageISO != language {
+		t.Error(`LanguageISO expected`, language, `found`, ident.LanguageISO)
+	}
 }

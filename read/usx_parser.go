@@ -71,7 +71,7 @@ func (p *USXParser) decode(ctx context.Context, filename string) ([]db.Script, d
 	var chapterNum = 1
 	var scriptNum = 0
 	var verseNum int
-	var verseStr string
+	var verseStr = `0`
 	var usfmStyle string
 	decoder := xml.NewDecoder(xmlFile)
 	for {
@@ -173,7 +173,7 @@ func (p *USXParser) addChapterHeading(records []db.Script, titles titleDesc) []d
 			var rec2 = rec
 			rec2.VerseNum = 0
 			rec2.UsfmStyle = `para.h`
-			rec2.VerseStr = ``
+			rec2.VerseStr = `0`
 			rec2.ScriptTexts = []string{titles.heading + " " + strconv.Itoa(rec.ChapterNum)}
 			results = append(results, rec2)
 		}

@@ -9,7 +9,7 @@ type Ident struct {
 	AudioNTId    string
 	TextOTId     string
 	TextNTId     string
-	TextSource   request.TextType
+	TextSource   request.MediaType
 	LanguageISO  string
 	VersionCode  string
 	LanguageId   int

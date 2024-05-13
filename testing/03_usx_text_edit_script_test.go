@@ -2,6 +2,7 @@ package testing
 
 import (
 	"dataset/controller"
+	"dataset/request"
 	"fmt"
 	"strings"
 	"testing"
@@ -19,8 +20,8 @@ output_format:
 
 func TestUSXTextEditScriptCLI(t *testing.T) {
 	var bibleId = `ENGWEB`
-	var request = strings.Replace(USXTextEditScript, `{bibleId}`, bibleId, 2)
-	stdout, stderr := CLIExec(request, t)
+	var req = strings.Replace(USXTextEditScript, `{bibleId}`, bibleId, 2)
+	stdout, stderr := CLIExec(req, t)
 	fmt.Println(`STDOUT:`, stdout)
 	fmt.Println(`STDERR:`, stderr)
 	filename := ExtractFilenaame(stdout)
@@ -29,12 +30,14 @@ func TestUSXTextEditScriptCLI(t *testing.T) {
 	if numLines != expected {
 		t.Error(`Expected `, expected, `records, got`, numLines)
 	}
+	identTest(`USX_Text_Edit_Script_`+bibleId, t, request.TextUSXEdit, ``,
+		`ENGWEBN_ET-usx`, ``, ``, `eng`)
 }
 
 func TestUSXTextEditScript(t *testing.T) {
 	var bibleId = `ATIWBT`
-	var request = strings.Replace(USXTextEditScript, `{bibleId}`, bibleId, 2)
-	var control = controller.NewController([]byte(request))
+	var req = strings.Replace(USXTextEditScript, `{bibleId}`, bibleId, 2)
+	var control = controller.NewController([]byte(req))
 	filename, status := control.Process()
 	if status.IsErr {
 		t.Error(status)
@@ -45,4 +48,6 @@ func TestUSXTextEditScript(t *testing.T) {
 	if numLines != count {
 		t.Error(`Expected `, count, `records, got`, numLines)
 	}
+	identTest(`USX_Text_Edit_Script_`+bibleId, t, request.TextUSXEdit, ``,
+		`ATIWBTN_ET-usx`, ``, ``, `ati`)
 }

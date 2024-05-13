@@ -272,26 +272,21 @@ func (d *DBAdapter) DeleteWords() {
 	execDDL(d.DB, `DELETE FROM words`)
 }
 
-func (d *DBAdapter) InsertReplaceIdent(id *Ident) dataset.Status {
+func (d *DBAdapter) InsertReplaceIdent(id Ident) dataset.Status {
 	var status dataset.Status
-	query := `REPLACE INTO ident(bible_id, audio_OT_id, audio_NT_id, text_OT_id, text_NT_id,
+	query := `REPLACE INTO ident(dataset_id, bible_id, audio_OT_id, audio_NT_id, text_OT_id, text_NT_id,
 		text_source, language_iso, version_code, languge_id, 
-		rolv_id, alphabet, language_name, version_name) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`
+		rolv_id, alphabet, language_name, version_name) VALUES (1,?,?,?,?,?,?,?,?,?,?,?,?,?)`
 	stmt, err := d.DB.Prepare(query)
 	defer d.closeDef(stmt, `InsertIdent stmt`)
 	if err != nil {
 		return log.Error(d.Ctx, 500, err, `Error while preparing Ident stmt.`)
 	}
-	var ans sql.Result
-	ans, err = stmt.Exec(id.BibleId, id.AudioOTId, id.AudioNTId, id.TextOTId, id.TextNTId,
+	_, err = stmt.Exec(id.BibleId, id.AudioOTId, id.AudioNTId, id.TextOTId, id.TextNTId,
 		id.TextSource, id.LanguageISO, id.VersionCode, id.LanguageId,
 		id.RolvId, id.Alphabet, id.LanguageName, id.VersionName)
 	if err != nil {
 		return log.Error(d.Ctx, 500, err, `Error while inserting Ident.`)
-	}
-	id.DatasetId, err = ans.LastInsertId()
-	if err != nil {
-		return log.Error(d.Ctx, 500, err, `Error while get dataset_id from insert.`)
 	}
 	return status
 }
@@ -374,6 +369,7 @@ func (d *DBAdapter) prepareDML(query string) (*sql.Tx, *sql.Stmt) {
 
 // ReadNumChapters is used by match.Compare
 // Deprecated -- replaced by book_chapters
+/*
 func (d *DBAdapter) ReadNumChapters() (map[string]int, dataset.Status) {
 	var results = make(map[string]int)
 	var status dataset.Status
@@ -402,6 +398,7 @@ func (d *DBAdapter) ReadNumChapters() (map[string]int, dataset.Status) {
 	}
 	return results, status
 }
+*/
 
 func (d *DBAdapter) SelectIdent() (Ident, dataset.Status) {
 	var results Ident
@@ -698,14 +695,14 @@ func (d *DBAdapter) SelectWordTimestamps(bookId string, chapter int) ([]Timestam
 func (d *DBAdapter) UpdateIdent(ident Ident) dataset.Status {
 	var status dataset.Status
 	query := `UPDATE ident SET audio_OT_id = ?, audio_NT_id = ?, text_OT_id = ?,
-		text_NT_id = ?, text_source = ? WHERE dataset_id = ?`
+		text_NT_id = ?, text_source = ? WHERE dataset_id = 1`
 	stmt, err := d.DB.Prepare(query)
 	defer d.closeDef(stmt, `UpdateIdent stmt`)
 	if err != nil {
 		return log.Error(d.Ctx, 500, err, `Error while preparing Ident stmt.`)
 	}
 	_, err = stmt.Exec(ident.AudioOTId, ident.AudioNTId, ident.TextOTId, ident.TextNTId,
-		ident.TextSource, ident.DatasetId)
+		ident.TextSource)
 	if err != nil {
 		status = log.Error(d.Ctx, 500, err, `Error while updating Ident.`)
 	}

@@ -1,10 +1,13 @@
 package input
 
-import "path/filepath"
+import (
+	"dataset/request"
+	"path/filepath"
+)
 
 type InputFile struct {
 	MediaId    string
-	MediaType  string
+	MediaType  request.MediaType
 	Testament  string
 	BookId     string // not used for text_plain
 	BookSeq    string

@@ -11,7 +11,7 @@ import (
 func TestPlainText1(t *testing.T) {
 	ctx := context.Background()
 	bibleId := `ENGWEB`
-	fsType := `text_plain`
+	fsType := request.TextPlain
 	otFileset := `ENGWEBO_ET`
 	ntFileset := `ENGWEBN_ET`
 	testament := request.Testament{NT: true, OTBooks: []string{`JOB`, `PSA`, `PRO`, `SNG`}}
@@ -34,7 +34,7 @@ func TestPlainText1(t *testing.T) {
 func TestPlainText2(t *testing.T) {
 	ctx := context.Background()
 	bibleId := `ENGWEB`
-	fsType := `text_plain`
+	fsType := request.TextPlain
 	otFileset := ``
 	ntFileset := `ENGWEBN_ET`
 	testament := request.Testament{NT: true}
@@ -57,7 +57,7 @@ func TestPlainText2(t *testing.T) {
 func TestUSXText1(t *testing.T) {
 	ctx := context.Background()
 	bibleId := `ENGWEB`
-	fsType := `text_usx`
+	fsType := request.TextUSXEdit
 	otFileset := `ENGWEBO_ET-usx`
 	ntFileset := `ENGWEBN_ET-usx`
 	testament := request.Testament{NT: true, OTBooks: []string{`JOB`, `PSA`, `PRO`, `SNG`}}
@@ -87,7 +87,7 @@ func TestUSXText1(t *testing.T) {
 func TestUSXText2(t *testing.T) {
 	ctx := context.Background()
 	bibleId := `ENGWEB`
-	fsType := `text_usx`
+	fsType := request.TextUSXEdit
 	otFileset := `ENGWEBO_ET-usx`
 	ntFileset := ``
 	testament := request.Testament{OTBooks: []string{`JOB`, `PSA`, `PRO`, `SNG`}}
@@ -117,7 +117,7 @@ func TestUSXText2(t *testing.T) {
 func TestAudio1(t *testing.T) {
 	ctx := context.Background()
 	bibleId := `ENGWEB`
-	fsType := `audio`
+	fsType := request.Audio //`audio`
 	otFileset := ``
 	ntFileset := `ENGWEBN2DA-mp3-64`
 	testament := request.Testament{NTBooks: []string{`ROM`, `EPH`, `COL`, `HEB`}}
@@ -147,7 +147,7 @@ func TestAudio1(t *testing.T) {
 func TestAudio2(t *testing.T) {
 	ctx := context.Background()
 	bibleId := `ENGWEB`
-	fsType := `audio`
+	fsType := request.Audio
 	otFileset := ``
 	ntFileset := `ENGWEBN2DA-opus16`
 	testament := request.Testament{NT: true, NTBooks: []string{`ROM`, `EPH`, `COL`, `HEB`}}
@@ -187,7 +187,7 @@ func TestAudio2(t *testing.T) {
 func TestIncorrectFileset(t *testing.T) {
 	ctx := context.Background()
 	bibleId := `ENGWEB`
-	fsType := `audio`
+	fsType := request.Audio
 	otFileset := ``
 	ntFileset := `ENGWEBN2DA-opus99`
 	testament := request.Testament{NT: true, NTBooks: []string{`ROM`, `EPH`, `COL`, `HEB`}}
@@ -205,7 +205,7 @@ func TestIncorrectFileset(t *testing.T) {
 func TestIncorrectBibleId(t *testing.T) {
 	ctx := context.Background()
 	bibleId := `ENGBEW22`
-	fsType := `audio`
+	fsType := request.Audio
 	otFileset := ``
 	ntFileset := `ENGWEBN2DA-mp3-64`
 	testament := request.Testament{NT: true, NTBooks: []string{`ROM`, `EPH`, `COL`, `HEB`}}
@@ -223,7 +223,7 @@ func TestIncorrectBibleId(t *testing.T) {
 func TestIncorrectBooks(t *testing.T) {
 	ctx := context.Background()
 	bibleId := `ENGWEB`
-	fsType := `audio`
+	fsType := request.Audio
 	otFileset := ``
 	ntFileset := `ENGWEBN2DA-mp3-64`
 	testament := request.Testament{NTBooks: []string{`RO1`, `EP1`, `CO1`, `HE1`}}

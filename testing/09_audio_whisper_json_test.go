@@ -2,6 +2,7 @@ package testing
 
 import (
 	"dataset/controller"
+	"dataset/request"
 	"fmt"
 	"strings"
 	"testing"
@@ -28,8 +29,8 @@ func TestAudioWhisperJson(t *testing.T) {
 	var bibles = make(map[string]int)
 	bibles[`ENGWEB`] = 68
 	for bibleId, expected := range bibles {
-		var request = strings.Replace(AudioWhisperJson, `{bibleId}`, bibleId, 2)
-		ctrl := controller.NewController([]byte(request))
+		var req = strings.Replace(AudioWhisperJson, `{bibleId}`, bibleId, 2)
+		ctrl := controller.NewController([]byte(req))
 		filename, status := ctrl.Process()
 		fmt.Println("Filename", filename, status)
 		if status.IsErr {
@@ -39,6 +40,8 @@ func TestAudioWhisperJson(t *testing.T) {
 		if numLines != expected {
 			t.Error(`Expected `, expected, `records, got`, numLines)
 		}
+		identTest(`AudioWhisperJson_`+bibleId, t, request.TextSTT, ``,
+			``, ``, `ENGWEBN2DA`, `eng`)
 	}
 }
 

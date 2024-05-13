@@ -66,7 +66,7 @@ func (r ScriptReader) Read(filePath string) dataset.Status {
 			return log.Error(r.ctx, 500, err, "Error: chapter num is not numeric", row[2])
 		}
 		if row[3] == `<<` {
-			rec.VerseStr = ``
+			rec.VerseStr = `0`
 			rec.VerseNum = 0
 		} else {
 			rec.VerseStr = row[3]
@@ -76,7 +76,6 @@ func (r ScriptReader) Read(filePath string) dataset.Status {
 			}
 		}
 		rec.Person = row[4]
-		//rec.Actor = row[5]
 		rec.ScriptNum = row[5]
 		text := row[8]
 		//text = strings.Replace(text,'_x000D_','' ) // remove excel CR

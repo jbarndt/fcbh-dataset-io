@@ -9,8 +9,8 @@ import (
 )
 
 // DBPDirectory 1. Assign pattern for OT, NT.  2. Glob files.  3. Assign book/chapter & Prune
-func DBPDirectory(ctx context.Context, bibleId string, fsType string, otFileset string, ntFileset string,
-	testament request.Testament) ([]InputFile, dataset.Status) {
+func DBPDirectory(ctx context.Context, bibleId string, fsType request.MediaType, otFileset string,
+	ntFileset string, testament request.Testament) ([]InputFile, dataset.Status) {
 	var results []InputFile
 	var files []InputFile
 	var status dataset.Status
@@ -35,18 +35,18 @@ func DBPDirectory(ctx context.Context, bibleId string, fsType string, otFileset 
 	return results, status
 }
 
-func Directory(ctx context.Context, bibleId string, fsType string, filesetId string, tType string,
+func Directory(ctx context.Context, bibleId string, fsType request.MediaType, filesetId string, tType string,
 	testament request.Testament) ([]InputFile, dataset.Status) {
 	var status dataset.Status
 	var directory string
 	var search string
-	if fsType == `text_plain` {
+	if fsType == request.TextPlain || fsType == request.TextPlainEdit {
 		directory = filepath.Join(os.Getenv("FCBH_DATASET_FILES"), bibleId)
 		search = filepath.Join(directory, filesetId+".json")
-	} else if fsType == `text_usx` {
+	} else if fsType == request.TextUSXEdit {
 		directory = filepath.Join(os.Getenv("FCBH_DATASET_FILES"), bibleId, filesetId)
 		search = filepath.Join(directory, "*.usx")
-	} else if fsType == `audio` {
+	} else if fsType == request.Audio || fsType == request.AudioDrama {
 		directory = filepath.Join(os.Getenv("FCBH_DATASET_FILES"), bibleId, filesetId)
 		if tType == `OT` {
 			search = filepath.Join(directory, "A*.*")

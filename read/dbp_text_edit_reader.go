@@ -71,7 +71,7 @@ func (d *DBPTextEditReader) createDBPText(testament request.Testament) (db.DBAda
 	if testament.NT || len(testament.NTBooks) > 0 {
 		ntMediaId = d.bibleId + `N_ET`
 	}
-	files, status := input.DBPDirectory(d.ctx, d.bibleId, `text_plain`, otMediaId,
+	files, status := input.DBPDirectory(d.ctx, d.bibleId, request.TextPlainEdit, otMediaId,
 		ntMediaId, testament)
 	if status.IsErr {
 		return database, status
@@ -85,7 +85,7 @@ func (d *DBPTextEditReader) createDBPText(testament request.Testament) (db.DBAda
 func (d *DBPTextEditReader) createUSXEDITText(testament request.Testament) (db.DBAdapter, dataset.Status) {
 	var database db.DBAdapter
 	var status dataset.Status
-	files, status := input.DBPDirectory(d.ctx, d.bibleId, `text_usx`, d.bibleId+`O_ET-usx`,
+	files, status := input.DBPDirectory(d.ctx, d.bibleId, request.TextUSXEdit, d.bibleId+`O_ET-usx`,
 		d.bibleId+`N_ET-usx`, testament)
 	if status.IsErr {
 		return database, status
@@ -145,7 +145,7 @@ func (d *DBPTextEditReader) combineHeadings(conn db.DBAdapter, bookTitle map[str
 					inp.UsfmStyle = title.UsfmStyle
 					inp.ScriptNum = strconv.Itoa(scriptNum)
 					inp.VerseNum = 0
-					inp.VerseStr = ``
+					inp.VerseStr = `0`
 					inp.ScriptTexts = []string{title.ScriptText}
 					results = append(results, inp)
 				}
@@ -162,7 +162,7 @@ func (d *DBPTextEditReader) combineHeadings(conn db.DBAdapter, bookTitle map[str
 				inp.UsfmStyle = head.UsfmStyle
 				inp.ScriptNum = strconv.Itoa(scriptNum)
 				inp.VerseNum = 0
-				inp.VerseStr = ``
+				inp.VerseStr = `0`
 				inp.ScriptTexts = []string{head.ScriptText}
 				results = append(results, inp)
 			}
