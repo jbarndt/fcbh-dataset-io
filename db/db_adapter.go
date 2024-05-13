@@ -118,7 +118,7 @@ func createDatabase(db *sql.DB) {
 		language_name TEXT NOT NULL,
 		version_name TEXT NOT NULL) STRICT`
 	execDDL(db, query)
-	query = `CREATE INDEX IF NOT EXISTS ident_bible_idx ON ident (bible_id)`
+	query = `CREATE UNIQUE INDEX IF NOT EXISTS ident_bible_idx ON ident (bible_id)`
 	execDDL(db, query)
 	query = `CREATE TABLE IF NOT EXISTS scripts (
 		script_id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -7,7 +7,6 @@ import (
 	log "dataset/logger"
 	"dataset/request"
 	"encoding/json"
-	"fmt"
 	"strconv"
 )
 
@@ -57,7 +56,7 @@ func (a *APIDBPTimestamps) LoadTimestamps(testament request.Testament) (bool, da
 			lastBookId = scp.BookId
 			lastChapter = scp.ChapterNum
 			if testament.HasNT(scp.BookId) || testament.HasOT(scp.BookId) {
-				fmt.Println("Getting Timestamps", scp.BookId, scp.ChapterNum)
+				//fmt.Println("Getting Timestamps", scp.BookId, scp.ChapterNum)
 				timestamp, status := a.Timestamps(scp.BookId, scp.ChapterNum)
 				if status.IsErr {
 					return false, status

@@ -49,10 +49,10 @@
 - [ ] 11 Load Audio from POST, do speech to text, output JSON (OBT use case)
 - [ ] 12 Reuse request with second and third passage, output JSON (OBT use case)
 
-- [ ] Load Project Text with Plain Text Edit, because it is verse aligned.  Load time stamps from BB-API, Output CSV
-- [ ] Load same Text, and timestamp with aeneas, compare the timestamps using gonum/float to find in difference they are equal (float.SubTo, float.Abs, float.Max.  And, I need to look at Sandeep’s method
-- [ ] Load Script and script timestamps, compare with above case where the script is verse aligned.
-- [ ] Output sql script to insert a fileset's timestamp data into DBP (Jon's OBT use case)
+- [ ] 13 Load Project Text with Plain Text Edit, because it is verse aligned.  Load time stamps from BB-API, Output CSV
+- [ ] 14 Load same Text, and timestamp with aeneas, compare the timestamps using gonum/float to find in difference they are equal (float.SubTo, float.Abs, float.Max.  And, I need to look at Sandeep’s method
+- [ ] 15 Load Script and script timestamps, compare with above case where the script is verse aligned.
+- [ ] 16 Output sql script to insert a fileset's timestamp data into DBP (Jon's OBT use case)
 - Note: The comparison code to do this has not yet been written (5/1/24)
 
 - [ ] Load audios and compute timestamps and mfcc.  Verification is limited to record counts. output CSV

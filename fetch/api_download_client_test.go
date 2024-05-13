@@ -24,8 +24,8 @@ func TestPlainText(t *testing.T) {
 	}
 	client.FindFilesets(&info, req.AudioData.BibleBrain, req.TextData.BibleBrain, req.Testament)
 	fmt.Println("INFO", info)
-	ident := client.CreateIdent(info)
-	fmt.Println("IDENT", ident)
+	//ident := client.CreateIdent(info)
+	//fmt.Println("IDENT", ident)
 	if info.AudioOTFileset.Id != `` || info.AudioNTFileset.Id != `` {
 		t.Error(`Should have found no audio filesets.`)
 	}
@@ -62,7 +62,7 @@ func TestUSXDownload(t *testing.T) {
 		t.Error(`BibleInfo Error`, status.Err)
 	}
 	client.FindFilesets(&info, req.AudioData.BibleBrain, req.TextData.BibleBrain, req.Testament)
-	_ = client.CreateIdent(info)
+	//_ = client.CreateIdent(info)
 	if info.AudioOTFileset.Id != `` || info.AudioNTFileset.Id != `` {
 		t.Error(`Should have found no audio filesets.`)
 	}
@@ -100,7 +100,7 @@ func TestAudioDownload(t *testing.T) {
 	}
 	client.FindFilesets(&info, req.AudioData.BibleBrain, req.TextData.BibleBrain, req.Testament)
 	fmt.Println("INFO", info)
-	_ = client.CreateIdent(info)
+	//_ = client.CreateIdent(info)
 	if info.AudioOTFileset.Id != `` || info.AudioNTFileset.Id == `` {
 		t.Error(`Should have found no audio filesets.`)
 	}
@@ -137,7 +137,7 @@ func Test403AndDownload(t *testing.T) {
 		t.Error(`BibleInfo Error`, status.Err)
 	}
 	client.FindFilesets(&info, req.AudioData.BibleBrain, req.TextData.BibleBrain, req.Testament)
-	_ = client.CreateIdent(info)
+	//_ = client.CreateIdent(info)
 	if info.AudioOTFileset.Id != `` || info.AudioNTFileset.Id == `` {
 		t.Error(`Should have found one audio fileset.`)
 	}

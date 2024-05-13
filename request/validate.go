@@ -105,13 +105,6 @@ func checkOutputFormat(req *OutputFormat, fieldName string, msgs *[]string) {
 	}
 }
 
-//func checkCompare(req Compare, msgs *[]string) {
-//	if (req.Project1 != `` && req.Project2 == ``) ||
-//		(req.Project2 != `` && req.Project1 == ``) {
-//		*msgs = append(*msgs, `Compare must have two projects, not one.`)
-//	}
-//}
-
 func checkForOne(structVal reflect.Value, fieldName string, msgs *[]string) int {
 	var errorCount int
 	var wasSet []string
