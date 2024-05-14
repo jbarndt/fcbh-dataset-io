@@ -21,7 +21,8 @@ func TestAPIDBPClient1(t *testing.T) {
 		t.Error(`Failure in BibleInfo`, status)
 	}
 	client.FindFilesets(&info, req.AudioData.BibleBrain, req.TextData.BibleBrain, req.Testament)
-	identRec := client.CreateIdent(info)
+	var identRec db.Ident
+	identRec = client.UpdateIdent(identRec, info)
 	expect := db.Ident{BibleId: `ENGWEB`, AudioOTId: ``, AudioNTId: `ENGWEBN2DA-mp3-64`,
 		TextOTId: `ENGWEBO_ET`, TextNTId: `ENGWEBN_ET`, LanguageISO: `eng`, VersionCode: `WEB`, LanguageId: 6414,
 		RolvId: 0, Alphabet: `Latn`, LanguageName: `English`, VersionName: `World English Bible`}
