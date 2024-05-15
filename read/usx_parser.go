@@ -8,7 +8,6 @@ import (
 	log "dataset/logger"
 	"encoding/xml"
 	"io"
-	_ "modernc.org/sqlite"
 	"os"
 	"path/filepath"
 	"regexp"
