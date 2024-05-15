@@ -55,10 +55,10 @@
 - [ ] 16 Output sql script to insert a fileset's timestamp data into DBP (Jon's OBT use case)
 - Note: The comparison code to do this has not yet been written (5/1/24)
 
-- [ ] Load audios and compute timestamps and mfcc.  Verification is limited to record counts. output CSV
-- [ ] Repeat and output JSON
-- [ ] Load CSV file into Pandas
-- [ ] Load Json file into Pandas
+- [ ] 17 Load audios and compute timestamps and mfcc.  Verification is limited to record counts. output CSV
+- [ ] 18 Repeat and output JSON
+- [ ] 19 Load CSV file into Pandas
+- [ ] 20 Load Json file into Pandas
 
 ## Word level text tests
 

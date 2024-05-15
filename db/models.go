@@ -53,6 +53,7 @@ type Word struct {
 
 type Timestamp struct {
 	Id        int
+	VerseStr  string
 	AudioFile string
 	Text      string
 	BeginTS   float64

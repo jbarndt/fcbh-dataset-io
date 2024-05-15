@@ -599,7 +599,7 @@ func (d *DBAdapter) SelectScriptIds() ([]Script, dataset.Status) {
 }
 
 func (d *DBAdapter) SelectScriptTimestamps(bookId string, chapter int) ([]Timestamp, dataset.Status) {
-	query := `SELECT script_id, script_begin_ts, script_end_ts
+	query := `SELECT script_id, verse_str, script_begin_ts, script_end_ts
 		FROM scripts WHERE book_id = ? AND chapter_num = ? ORDER BY script_id`
 	return d.selectTimestamps(query, bookId, chapter)
 }
@@ -615,7 +615,7 @@ func (d *DBAdapter) selectTimestamps(query string, bookId string, chapter int) (
 	defer d.closeDef(rows, "SelectTimestamps stmt")
 	for rows.Next() {
 		var rec Timestamp
-		err := rows.Scan(&rec.Id, &rec.BeginTS, &rec.EndTS)
+		err := rows.Scan(&rec.Id, &rec.VerseStr, &rec.BeginTS, &rec.EndTS)
 		if err != nil {
 			status = log.Error(d.Ctx, 500, err, "Error during Select Timestamps By Book Chapter.")
 			return results, status
@@ -686,7 +686,7 @@ func (d *DBAdapter) SelectWordsByBookChapter(bookId string, chapter int) ([]Word
 }
 
 func (d *DBAdapter) SelectWordTimestamps(bookId string, chapter int) ([]Timestamp, dataset.Status) {
-	query := `SELECT w.word_id, w.word_begin_ts, w.word_end_ts
+	query := `SELECT w.word_id, s.verse_str, w.word_begin_ts, w.word_end_ts
 		FROM words w JOIN scripts s ON w.script_id = s.script_id
 		WHERE w.ttype = 'W' AND s.book_id = ? AND s.chapter_num = ? ORDER BY w.word_id`
 	return d.selectTimestamps(query, bookId, chapter)

@@ -25,7 +25,7 @@ func TestDBPEditTextReader(t *testing.T) {
 	if status.IsErr {
 		t.Error(status.Message)
 	}
-	if count != 4639 {
-		t.Error(`Expected count to be 4639`, count)
+	if count != 4629 {
+		t.Error(`Expected count to be 4629`, count)
 	}
 }

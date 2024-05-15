@@ -11,7 +11,7 @@ import (
 func TestUSXParser(t *testing.T) {
 	ctx := context.Background()
 	var bibleId = `ENGWEB`
-	fsType := `text_usx`
+	fsType := request.TextUSXEdit
 	otFileset := `ENGWEBO_ET-usx`
 	ntFileset := `ENGWEBN_ET-usx`
 	testament := request.Testament{NTBooks: []string{`MAT`, `MRK`}, OTBooks: []string{`JOB`, `PSA`, `PRO`, `SNG`}}

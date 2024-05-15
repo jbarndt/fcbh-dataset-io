@@ -42,8 +42,8 @@ func TestPlainTextEditScript(t *testing.T) {
 		language string
 	}
 	var tests []test
-	tests = append(tests, test{bibleId: "ENGWEB", expected: 8250, textNtId: "ENGWEBN_ET", language: "eng"})
-	tests = append(tests, test{bibleId: "ATIWBT", expected: 8243, textNtId: "ATIWBTN_ET", language: "ati"})
+	tests = append(tests, test{bibleId: "ENGWEB", expected: 8218, textNtId: "ENGWEBN_ET", language: "eng"})
+	tests = append(tests, test{bibleId: "ATIWBT", expected: 8216, textNtId: "ATIWBTN_ET", language: "ati"})
 	for _, tst := range tests {
 		var req = strings.Replace(PlainTextEditScript, `{bibleId}`, tst.bibleId, 2)
 		var control = controller.NewController([]byte(req))

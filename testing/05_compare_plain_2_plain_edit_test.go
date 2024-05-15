@@ -44,7 +44,7 @@ func TestComparePlain2PlainEditScript(t *testing.T) {
 	}
 	fmt.Println("Filename", filename)
 	count := NumHTMLFileLines(filename, t)
-	expected := 308
+	expected := 276
 	if count != expected {
 		t.Error(`expected`, expected, `found`, count)
 	}

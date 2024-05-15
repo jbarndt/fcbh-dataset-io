@@ -132,38 +132,35 @@ func (d *DBPTextEditReader) combineHeadings(conn db.DBAdapter, bookTitle map[str
 	for _, rec := range records {
 		if d.testament.HasOT(rec.BookId) || d.testament.HasNT(rec.BookId) {
 			if rec.BookId != lastBookId || rec.ChapterNum != lastChapter {
-				scriptNum = 0
-			}
-			if rec.BookId != lastBookId {
-				lastBookId = rec.BookId
-				titleRec := bookTitle[rec.BookId]
-				for _, title := range titleRec {
-					scriptNum++
-					var inp db.Script
-					inp.BookId = rec.BookId
-					inp.ChapterNum = rec.ChapterNum
-					inp.UsfmStyle = title.UsfmStyle
-					inp.ScriptNum = strconv.Itoa(scriptNum)
-					inp.VerseNum = 0
-					inp.VerseStr = `0`
-					inp.ScriptTexts = []string{title.ScriptText}
-					results = append(results, inp)
+				scriptNum = 1
+				var inp db.Script
+				inp.BookId = rec.BookId
+				inp.ChapterNum = rec.ChapterNum
+				inp.ScriptNum = strconv.Itoa(scriptNum)
+				inp.VerseNum = 0
+				inp.VerseStr = `0`
+				if rec.BookId != lastBookId {
+					lastBookId = rec.BookId
+					titleRec := bookTitle[rec.BookId]
+					for _, title := range titleRec {
+						inp.UsfmStyle = title.UsfmStyle
+						if len(inp.ScriptTexts) > 0 {
+							inp.ScriptTexts = append(inp.ScriptTexts, ` `)
+						}
+						inp.ScriptTexts = append(inp.ScriptTexts, title.ScriptText)
+					}
 				}
-				lastChapter = -1
-			}
-			if rec.ChapterNum != lastChapter {
 				lastChapter = rec.ChapterNum
 				key := rec.BookId + `:` + strconv.Itoa(rec.ChapterNum)
 				head := chapTitle[key]
 				scriptNum++
-				var inp db.Script
-				inp.BookId = rec.BookId
-				inp.ChapterNum = rec.ChapterNum
-				inp.UsfmStyle = head.UsfmStyle
-				inp.ScriptNum = strconv.Itoa(scriptNum)
-				inp.VerseNum = 0
-				inp.VerseStr = `0`
-				inp.ScriptTexts = []string{head.ScriptText}
+				if inp.UsfmStyle == `` {
+					inp.UsfmStyle = head.UsfmStyle
+				}
+				if len(inp.ScriptTexts) > 0 {
+					inp.ScriptTexts = append(inp.ScriptTexts, ` `)
+				}
+				inp.ScriptTexts = append(inp.ScriptTexts, head.ScriptText)
 				results = append(results, inp)
 			}
 			scriptNum++

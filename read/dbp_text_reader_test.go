@@ -11,7 +11,7 @@ import (
 func TestDBPTextReader1(t *testing.T) {
 	ctx := context.Background()
 	bibleId := `ENGWEB`
-	fsType := `text_plain`
+	fsType := request.TextPlainEdit
 	otFileset := `ENGWEBO_ET`
 	ntFileset := `ENGWEBN_ET`
 	testament := request.Testament{NTBooks: []string{`MAT`, `MRK`}, OTBooks: []string{`JOB`, `PSA`, `PRO`, `SNG`}}
