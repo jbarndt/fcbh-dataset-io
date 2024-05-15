@@ -34,6 +34,7 @@ func (a *APIDBPTimestamps) LoadTimestamps(testament request.Testament) (bool, da
 	}
 	_, ok := audioIdMap[a.audioId]
 	if !ok {
+		status = log.ErrorNoErr(a.ctx, 400, `There are no timestamps available`)
 		return false, status
 	}
 	scripts, status := a.conn.SelectScriptIds()
