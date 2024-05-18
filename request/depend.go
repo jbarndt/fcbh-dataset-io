@@ -2,7 +2,6 @@ package request
 
 import (
 	"dataset"
-	log "dataset/logger"
 	"path/filepath"
 	"strings"
 )
@@ -28,6 +27,7 @@ func (r *RequestDecoder) mfccPrereq(req *Request) {
 
 func (r *RequestDecoder) setOutputType(req *Request) dataset.Status {
 	var status dataset.Status
+	var msgs []string
 	fType := strings.ToLower(filepath.Ext(req.OutputFile))
 	switch fType {
 	case ".json":
@@ -39,7 +39,8 @@ func (r *RequestDecoder) setOutputType(req *Request) dataset.Status {
 	case ".html":
 		req.OutputFormat.HTML = true
 	default:
-		status = log.ErrorNoErr(r.ctx, 400, `Output file must be .json, .csv, .sqlite, or .html for compare tasks`)
+		msg := `output_file must be .json, .csv, .sqlite, or .html for compare tasks`
+		msgs = append(msgs, msg)
 	}
 	return status
 }

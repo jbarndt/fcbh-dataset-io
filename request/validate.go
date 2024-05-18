@@ -37,7 +37,19 @@ func checkRequired(req *Request, msgs *[]string) {
 		*msgs = append(*msgs, msg)
 	}
 	if req.BibleId == `` {
-		msg := `Required field BibleId is empty`
+		msg := `Required field bible_id: is empty`
+		*msgs = append(*msgs, msg)
+	}
+	if req.Username == `` {
+		msg := `Required field username: is empty`
+		*msgs = append(*msgs, msg)
+	}
+	if req.Email == `` {
+		msg := `Required field email: is empty`
+		*msgs = append(*msgs, msg)
+	}
+	if req.OutputFile == `` {
+		msg := `Required field output_file: is empty`
 		*msgs = append(*msgs, msg)
 	}
 	req.DatasetName = strings.Replace(req.DatasetName, ` `, `_`, -1)
