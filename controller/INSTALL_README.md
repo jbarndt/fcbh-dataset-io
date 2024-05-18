@@ -38,7 +38,19 @@ exit & login dataset
 
 > pip install librosa
 
-> pip install -U openai-whisper ## This did not work
+> pip install -U openai-whisper ## This failed because of memory
+
+Because whisper failed to install, these things were tried
+based on information on the whisper page.
+- sudo apt install rust-all
+- pip install tiktoken
+- export PATH="$HOME/.cargo/bin:$PATH"
+- pip install setuptools-rust
++ It is not clear if they were needed
+
+> pip install torch --no-cache-dir
+
+> pip install -U openai-whisper
 
 > pip install fasttext
 
@@ -77,7 +89,17 @@ add environment variables
 
 > export PYTHON_EXE=/usr/bin/python3
 
-> export WHISPER_EXE=/Users/gary/Library/Python/3.9/bin/whisper
+> export WHISPER_EXE=$HOME/.local/bin/whisper
+
+> cd $HOME/go/src/dataset
+
+> go install dataset/controller/api_server
+
+> cd $HOME
+
+> ./go/bin/api_server &
+
+
 
 https://github.com/readbeyond/aeneas/blob/master/wiki/INSTALL.md
 

@@ -8,7 +8,7 @@ import (
 
 func TestValidate(t *testing.T) {
 	var d = NewRequestDecoder(context.Background())
-	content, err := os.ReadFile(`../controller/client/request_test.yaml`)
+	content, err := os.ReadFile(`../controller/cli/request_test.yaml`)
 	if err != nil {
 		panic(err)
 	}
