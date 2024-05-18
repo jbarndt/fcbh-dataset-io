@@ -18,7 +18,7 @@ func TestValidate(t *testing.T) {
 	req.AudioData.File = `file:///where`
 	req.AudioData.BibleBrain.MP3_64 = true
 	req.AudioData.BibleBrain.OPUS = true
-	req.AudioData.POST = true
+	req.AudioData.POST = `filename`
 	req.TextData.NoText = true
 	req.TextData.BibleBrain.TextPlain = true
 	req.TextData.SpeechToText.Whisper.Model.Medium = true

@@ -1,34 +1,84 @@
 # Installation Instructions for FCBH IO Dataset Server
 
-## Linux Distro -> Centos
+> Create server Ubuntu 20.04 x64
 
-## Utilities to install
+167.99.58.202 ubuntu 20
 
-install sqlite3
+> adduser dataset
 
-Required for Aeneas:
-ffmpeg 
-ffprobe (usually provided by the ffmpeg package)
-espeak 
+> usermod -aG sudo dataset
 
-Make sure python3 is installed
+exit & login dataset
 
-$ sudo pip install numpy
-$ sudo pip install aeneas
+> sudo apt update
 
-$ pip install librosa
+> sudo apt -y upgrade
 
-> $ pip install -U openai-whisper
+> python3 -V
 
-`$ pip install fasttext`
+3.8.10
 
-$ go
-$ rm -rf /usr/local/go && tar -C /usr/local -xzf go1.22.3.linux-amd64.tar.gz
-export PATH=$PATH:/usr/local/go/bin
-go version
+> sudo apt install ffmpeg
 
-$ git
-$ sudo dnf install git-all
+> sudo apt install espeak
 
-Install Application
-> $ git clone https://github.com/garygriswold/fcbh-dataset-io.git
+> sudo apt install python3-pip
+
+> pip install numpy
+
+> source .profile  # needed to add $HOME/.local/bin
+
+> pip install aeneas -> failed
+
+> wget https://raw.githubusercontent.com/readbeyond/aeneas/master/install_dependencies.sh
+
+> bash install_dependencies.sh
+
+> pip install aeneas
+
+> pip install librosa
+
+> pip install -U openai-whisper ## This did not work
+
+> pip install fasttext
+
+> sudo apt install sqlite3
+
+Install go
+> wget https://go.dev/dl/go1.22.3.linux-amd64.tar.gz
+
+> sudo rm -rf /usr/local/go
+
+> sudo tar -C /usr/local -xzf go1.22.3.linux-amd64.tar.gz
+
+> vi .profile
+insert PATH=$PATH:/usr/local/go/bin
+
+Install Application Server
+> cd $HOME/go/src
+
+> git clone https://github.com/garygriswold/fcbh-dataset-io.git
+> 
+> mv fcbh-dataset-io dataset  # Fix this hack
+
+> cd dataset
+
+> go run dataset/controller/api_server
+
+add environment variables
+ 
+> export FCBH_DBP_KEY=b4xxx
+ 
+> export FCBH_DATASET_DB=$HOME/data
+ 
+> export FCBH_DATASET_FILES=$HOME/data/download
+ 
+> export FCBH_DATASET_TMP=$HOME/data/tmp 
+
+> export PYTHON_EXE=/usr/bin/python3
+
+> export WHISPER_EXE=/Users/gary/Library/Python/3.9/bin/whisper
+
+https://github.com/readbeyond/aeneas/blob/master/wiki/INSTALL.md
+
+https://github.com/openai/whisper
