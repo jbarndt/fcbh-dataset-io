@@ -11,11 +11,12 @@ import (
 const USXTextEditScript = `is_new: yes
 dataset_name: USX Text Edit Script_{bibleId}
 bible_id: {bibleId}
+username: GaryNTest
+email: gary@shortsands.com
+output_file: 03__usx_text_edit_script.json
 text_data:
   bible_brain:
     text_usx_edit: yes
-output_format:
-  json: yes
 `
 
 func TestUSXTextEditScriptCLI(t *testing.T) {
