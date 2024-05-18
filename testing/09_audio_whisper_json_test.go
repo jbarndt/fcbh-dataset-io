@@ -41,7 +41,7 @@ func TestAudioWhisperJson(t *testing.T) {
 			t.Error(`Expected `, expected, `records, got`, numLines)
 		}
 		identTest(`AudioWhisperJson_`+bibleId, t, request.TextSTT, ``,
-			``, ``, `ENGWEBN2DA`, `eng`)
+			`ENGWEBN_TT`, ``, `ENGWEBN2DA`, `eng`)
 	}
 }
 

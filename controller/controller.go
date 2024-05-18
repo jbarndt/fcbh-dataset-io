@@ -258,6 +258,12 @@ func (c *Controller) speechToText(audioFiles []input.InputFile) dataset.Status {
 			return status
 		}
 		c.ident.TextSource = request.TextSTT
+		if len(c.ident.AudioOTId) >= 10 {
+			c.ident.TextOTId = c.ident.AudioOTId[:7] + `_TT`
+		}
+		if len(c.ident.AudioNTId) >= 10 {
+			c.ident.TextNTId = c.ident.AudioNTId[:7] + `_TT`
+		}
 		c.database.UpdateIdent(c.ident)
 	}
 	return status
