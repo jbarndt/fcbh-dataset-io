@@ -2,4 +2,9 @@
 *.pyc
 *.log
 .idea/*
+*.csv
+*.json
+*.html
+*.db
+*.sqlite
 
