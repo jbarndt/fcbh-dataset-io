@@ -6,6 +6,9 @@
 is_new: yes # Answer yet to start with a clean project
 dataset_name: Test1_ATIWBT # Use a unique name to keep runs separate, or reuse a name to add to a prior run
 bible_id: ATIWBT
+username: GaryNGriswold
+email: gary@shortsands.com
+output_file: myRun.json # Allowed file types are .json, .csv, .sqlite, and .html for compare tasks
 
 # The remaining configuration choices are all optional, but something must be selected in order for some processing to be done.
 
@@ -29,7 +32,7 @@ audio_data: # Choose one of the following
 
 text_data: # Choose one of the following
   bible_brain: # If Bible Brain put Yes by the desired type
-    text_usx_edit: yes # Mark Yes, for USX with text not in audio removed
+    text_usx_edit: # Mark Yes, for USX with text not in audio removed
     text_plain_edit: # Mark Yes, for plain_text with headings added to match audio
     text_plain: # Mark Yes, for DBP plain_text
   file: # e.g. /{directory}/{mediaId}/*.usx Note: include twice for OT and NT
@@ -66,12 +69,6 @@ text_encoding:
   fast_text:
   no_encoding:
 # Default: no_encoding
-
-output_format: # Put yes by the desired output format.
-  csv:
-  json:
-  sqlite:
-# Default: json
 
 compare: # To do a compare, put the names of the two projects here
   base_dataset:  # Name of dataset to compare to this one

@@ -1,7 +1,8 @@
-package testing
+package main
 
 import (
 	"bytes"
+	testing2 "dataset/testing"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -41,7 +42,7 @@ func SubmitRequestPost(filePath string, yamlPath string, t *testing.T) {
 		t.Fatal(err)
 	}
 	_ = writer.Close()
-	request, err := http.NewRequest("POST", HOST, body)
+	request, err := http.NewRequest("POST", testing2.HOST, body)
 	if err != nil {
 		t.Fatal(err)
 	}

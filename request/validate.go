@@ -16,7 +16,6 @@ func (r *RequestDecoder) Validate(req *Request) dataset.Status {
 	checkTimestamps(&req.Timestamps, `Timestamps`, &msgs)
 	checkAudioEncoding(&req.AudioEncoding, `AudioEncoding`, &msgs)
 	checkTextEncoding(&req.TextEncoding, `TextEncoding`, &msgs)
-	checkOutputFormat(&req.OutputFormat, `OutputFormat`, &msgs)
 	//checkCompare(req.Compare, &msgs)
 	checkForOne(reflect.ValueOf(req.Compare.CompareSettings.DoubleQuotes), `DoubleQuotes`, &msgs)
 	checkForOne(reflect.ValueOf(req.Compare.CompareSettings.Apostrophe), `Apostrophe`, &msgs)
@@ -98,12 +97,12 @@ func checkTextEncoding(req *TextEncoding, fieldName string, msgs *[]string) {
 	}
 }
 
-func checkOutputFormat(req *OutputFormat, fieldName string, msgs *[]string) {
-	count := checkForOne(reflect.ValueOf(*req), fieldName, msgs)
-	if count == 0 {
-		req.JSON = true
-	}
-}
+//func checkOutputFormat(req *OutputFormat, fieldName string, msgs *[]string) {
+//	count := checkForOne(reflect.ValueOf(*req), fieldName, msgs)
+//	if count == 0 {
+//		req.JSON = true
+//	}
+//}
 
 func checkForOne(structVal reflect.Value, fieldName string, msgs *[]string) int {
 	var errorCount int

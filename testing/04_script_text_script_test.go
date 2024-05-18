@@ -13,10 +13,11 @@ import (
 const ScriptTextScript = `is_new: yes
 dataset_name: ScriptTextScript_{bibleId}
 bible_id: {bibleId}
+username: GaryNTest
+email: gary@shortsands.com
+output_file: 04__script_text_script.sqlite
 text_data:
   file: /Users/gary/FCBH2024/download/ATIWBT/ATIWBTN2ST.xlsx
-output_format:
-  sqlite: yes
 `
 
 func TestScriptTextScript(t *testing.T) {

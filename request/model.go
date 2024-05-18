@@ -4,6 +4,9 @@ type Request struct {
 	IsNew         bool          `yaml:"is_new"`
 	DatasetName   string        `yaml:"dataset_name"`
 	BibleId       string        `yaml:"bible_id"`
+	Username      string        `yaml:"username"`
+	Email         string        `yaml:"email"`
+	OutputFile    string        `yaml:"output_file"`
 	Testament     Testament     `yaml:"testament,omitempty"`
 	AudioData     AudioData     `yaml:"audio_data,omitempty"`
 	TextData      TextData      `yaml:"text_data,omitempty"`
@@ -11,9 +14,9 @@ type Request struct {
 	Timestamps    Timestamps    `yaml:"timestamps,omitempty"`
 	AudioEncoding AudioEncoding `yaml:"audio_encoding,omitempty"`
 	TextEncoding  TextEncoding  `yaml:"text_encoding,omitempty"`
-	OutputFormat  OutputFormat  `yaml:"output_format,omitempty"`
-	Compare       Compare       `yaml:"compare,omitempty"`
-	UploadedFile  string        `yaml:"uploaded_filepath,omitempty"`
+	OutputFormat  OutputFormat
+	Compare       Compare `yaml:"compare,omitempty"`
+	UploadedFile  string  `yaml:"uploaded_filepath,omitempty"`
 }
 
 type Testament struct {
@@ -202,9 +205,10 @@ type TextEncoding struct {
 }
 
 type OutputFormat struct {
-	CSV    bool `yaml:"csv,omitempty"`
-	JSON   bool `yaml:"json,omitempty"`
-	Sqlite bool `yaml:"sqlite,omitempty"`
+	CSV    bool
+	JSON   bool
+	Sqlite bool
+	HTML   bool
 }
 
 type Compare struct {

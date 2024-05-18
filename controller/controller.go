@@ -63,7 +63,7 @@ func (c *Controller) processSteps() (string, dataset.Status) {
 	}
 	c.ctx = context.WithValue(context.Background(), `request`, yaml)
 	// Get User
-	c.user, status = fetch.GetDBPUser()
+	c.user, status = fetch.GetDBPUser(c.req)
 	if status.IsErr {
 		return filename, status
 	}

@@ -11,6 +11,9 @@ import (
 const CompareUsXTextEdit2STT = `is_new: no
 dataset_name: AudioWhisperJson_{bibleId}
 bible_id: {bibleId}
+username: GaryNTest
+email: gary@shortsands.com
+output_file: 10__compare_usx_edit_2_stt.html
 testament:
   nt_books: ['TIT']
 compare:
@@ -51,5 +54,5 @@ func TestCompareUsXTextEdit2STT(t *testing.T) {
 		t.Error(`expected`, expected, `found`, count)
 	}
 	identTest(`AudioWhisperJson_`+bibleId, t, request.TextSTT, ``,
-		``, ``, `ENGWEBN2DA`, `eng`)
+		`ENGWEBN_TT`, ``, `ENGWEBN2DA`, `eng`)
 }

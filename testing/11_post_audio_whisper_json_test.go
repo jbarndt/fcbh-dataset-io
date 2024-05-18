@@ -13,6 +13,9 @@ import (
 const PostAudioWhisperJson = `is_new: yes
 dataset_name: PostAudioWhisperJson_{bibleId}
 bible_id: {bibleId}
+username: GaryNTest
+email: gary@shortsands.com
+output_file: 11__post_audio_whisper.json
 audio_data:
   post: {namev4}
 text_data:
@@ -20,8 +23,6 @@ text_data:
     whisper:
       model:
         tiny: yes
-output_format:
-  json: yes
 `
 
 /*

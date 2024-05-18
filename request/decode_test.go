@@ -14,8 +14,13 @@ func TestRequestYamlFile(t *testing.T) {
 		panic(err)
 	}
 	req, status := d.Decode(content)
-	fmt.Println(`Status:`, status)
+	if status.IsErr {
+		t.Fatal(status)
+	}
 	yaml, status := d.Encode(req)
+	if status.IsErr {
+		t.Fatal(status)
+	}
 	fmt.Println(yaml)
 }
 
@@ -23,6 +28,9 @@ func TestParser(t *testing.T) {
 	var test1 = `is_new: Yes
 dataset_name: Test1  # should be a unique name
 bible_id: ENGWEB
+username: GaryNGriswold
+email: gary@gmail.com
+output_file: myfile.json
 testament:
   ot: 
   ot_books: [GEN,EXO,LEV,NUM,DEU]
@@ -67,10 +75,6 @@ audio_encoding:
 text_encoding:
   fast_text: yes
   no_encoding: yes
-output_format:
-  csv: yes
-  json: yes
-  sqlite: yes
 compare:
   base_dataset: UseProject1
   compare_settings:
@@ -94,7 +98,9 @@ compare:
       normalize_nfkd: yes`
 	var r = NewRequestDecoder(context.Background())
 	req, status := r.Decode([]byte(test1))
-	fmt.Println(`Status:`, status)
+	if status.IsErr {
+		t.Fatal(status)
+	}
 	if !req.TextEncoding.FastText {
 		t.Error("FastText should be true")
 	}
@@ -124,9 +130,9 @@ compare:
 		req.AudioEncoding.NoEncoding,
 		req.TextEncoding.FastText,
 		req.TextEncoding.NoEncoding,
-		req.OutputFormat.CSV,
-		req.OutputFormat.JSON,
-		req.OutputFormat.Sqlite,
+		//req.OutputFormat.CSV,
+		//req.OutputFormat.JSON,
+		//req.OutputFormat.Sqlite,
 		req.Compare.CompareSettings.LowerCase,
 		req.Compare.CompareSettings.RemovePromptChars,
 		req.Compare.CompareSettings.RemovePunctuation,
@@ -148,6 +154,9 @@ compare:
 	}
 	var strs = []string{req.DatasetName,
 		req.BibleId,
+		req.Username,
+		req.Email,
+		req.OutputFile,
 		req.AudioData.File,
 		req.AudioData.AWSS3,
 		req.TextData.File,

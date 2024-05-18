@@ -11,6 +11,9 @@ import (
 const AudioWhisperJson = `is_new: yes
 dataset_name: AudioWhisperJson_{bibleId}
 bible_id: {bibleId}
+username: GaryNTest
+email: gary@shortsands.com
+output_file: 09__audio_whisper_json.json
 testament: # Choose one or both
   nt_books: ["TIT"]
 audio_data:
@@ -21,8 +24,6 @@ text_data:
     whisper:
       model:
         tiny: yes
-output_format:
-  json: yes
 `
 
 func TestAudioWhisperJson(t *testing.T) {

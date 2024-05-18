@@ -11,24 +11,25 @@ import (
 const PlainTextEditScript = `is_new: yes
 dataset_name: PlainTextEditScript_{bibleId}
 bible_id: {bibleId}
+username: GaryNTest
+email: gary@shortsands.com
+output_file: 02__plain_text_edit_script.json
 text_data:
   bible_brain:
     text_plain_edit: yes
-output_format:
-  json: yes
 `
 
 func TestPlainTextEditScriptCLI(t *testing.T) {
 	var bibleId = `ENGWEB`
+	var expected = 8218
 	var req = strings.Replace(PlainTextEditScript, `{bibleId}`, bibleId, 2)
 	stdout, stderr := CLIExec(req, t)
 	fmt.Println(`STDOUT:`, stdout)
 	fmt.Println(`STDERR:`, stderr)
 	filename := ExtractFilenaame(stdout)
 	numLines := NumJSONFileLines(filename, t)
-	count := 8250
-	if numLines != count {
-		t.Error(`Expected `, count, `records, got`, numLines)
+	if numLines != expected {
+		t.Error(`Expected `, expected, `records, got`, numLines)
 	}
 	identTest(`PlainTextEditScript_`+bibleId, t, request.TextPlainEdit, ``,
 		`ENGWEBN_ET`, ``, ``, `eng`)

@@ -2,14 +2,17 @@ package request
 
 import (
 	"dataset"
+	log "dataset/logger"
+	"path/filepath"
 	"strings"
 )
 
 func (r *RequestDecoder) Prereq(req *Request) {
-	mfccPrereq(req)
+	r.mfccPrereq(req)
+	r.setOutputType(req)
 }
 
-func mfccPrereq(req *Request) {
+func (r *RequestDecoder) mfccPrereq(req *Request) {
 	if req.AudioEncoding.MFCC {
 		if req.Timestamps.NoTimestamps {
 			if !req.AudioData.NoAudio {
@@ -21,6 +24,24 @@ func mfccPrereq(req *Request) {
 			}
 		}
 	}
+}
+
+func (r *RequestDecoder) setOutputType(req *Request) dataset.Status {
+	var status dataset.Status
+	fType := strings.ToLower(filepath.Ext(req.OutputFile))
+	switch fType {
+	case ".json":
+		req.OutputFormat.JSON = true
+	case ".csv":
+		req.OutputFormat.CSV = true
+	case ".sqlite":
+		req.OutputFormat.Sqlite = true
+	case ".html":
+		req.OutputFormat.HTML = true
+	default:
+		status = log.ErrorNoErr(r.ctx, 400, `Output file must be .json, .csv, .sqlite, or .html for compare tasks`)
+	}
+	return status
 }
 
 func (r *RequestDecoder) Depend(req Request) dataset.Status {

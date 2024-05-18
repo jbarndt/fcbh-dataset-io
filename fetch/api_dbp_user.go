@@ -1,33 +1,27 @@
 package fetch
 
-import "dataset"
+import (
+	"dataset"
+	"dataset/request"
+)
 
 type DBPUser struct {
-	UserId    int    `json:"user_id"`
-	Username  string `json:"username"`
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
-	Email     string `json:"email"`
+	Username string `json:"username"`
+	Email    string `json:"email"`
 }
 
-func GetDBPUser() (DBPUser, dataset.Status) {
+func GetDBPUser(req request.Request) (DBPUser, dataset.Status) {
 	var status dataset.Status
 	var u DBPUser
-	u.UserId = 99
-	u.Username = `GaryNGriswold`
-	u.FirstName = `Gary`
-	u.LastName = `Griswold`
-	u.Email = `gary@shortsands.com`
+	u.Username = req.Username
+	u.Email = req.Email
 	return u, status
 }
 
 func GetTestUser() (DBPUser, dataset.Status) {
 	var status dataset.Status
 	var u DBPUser
-	u.UserId = 99
-	u.Username = `GaryNGriswold`
-	u.FirstName = `Gary`
-	u.LastName = `Griswold`
+	u.Username = `GaryNTest`
 	u.Email = `gary@shortsands.com`
 	return u, status
 }

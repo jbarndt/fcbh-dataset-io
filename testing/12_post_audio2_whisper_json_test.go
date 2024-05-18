@@ -11,6 +11,9 @@ import (
 const PostAudio2WhisperJson = `is_new: no
 dataset_name: PostAudioWhisperJson_{bibleId}
 bible_id: {bibleId}
+username: GaryNTest
+email: gary@shortsands.com
+output_file: 12__post_audio2_whisper.json
 audio_data:
   post: {namev4}
 text_data:
@@ -18,8 +21,6 @@ text_data:
     whisper:
       model:
         tiny: yes
-output_format:
-  json: yes
 `
 
 func TestPostAudio2WhisperJsonAPI(t *testing.T) {

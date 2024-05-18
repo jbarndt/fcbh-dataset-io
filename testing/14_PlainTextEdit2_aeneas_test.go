@@ -15,6 +15,9 @@ import (
 const PlainTextEdit2AeneasScript = `is_new: yes
 dataset_name: PlainTextEditScript2_{bibleId}
 bible_id: {bibleId}
+username: GaryNTest
+email: gary@shortsands.com
+output_file: 14__plain_text_edit2_aeneas.csv
 text_data:
   bible_brain:
     text_plain_edit: yes
@@ -23,8 +26,6 @@ audio_data:
     mp3_64: yes
 timestamps: 
   aeneas: yes
-output_format:
-  csv: yes
 `
 
 func TestPlainTextEdit2AeneasScript(t *testing.T) {

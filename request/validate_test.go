@@ -16,17 +16,20 @@ func TestValidate(t *testing.T) {
 	req.IsNew = true
 	req.BibleId = `EBGESV`
 	req.AudioData.File = `file:///where`
-	req.AudioData.BibleBrain.MP3_64 = true
-	req.AudioData.BibleBrain.OPUS = true
-	req.AudioData.POST = `filename`
-	req.TextData.NoText = true
-	req.TextData.BibleBrain.TextPlain = true
+	req.AudioData.BibleBrain.MP3_64 = false
+	req.AudioData.BibleBrain.OPUS = false
+	req.AudioData.POST = `` //`filename`
+	req.TextData.NoText = false
+	req.TextData.BibleBrain.TextPlain = false
 	req.TextData.SpeechToText.Whisper.Model.Medium = true
 	req.AudioEncoding.MFCC = true
-	req.AudioEncoding.NoEncoding = true
+	req.AudioEncoding.NoEncoding = false
 	req.Compare.CompareSettings.Apostrophe.Normalize = true
-	req.Compare.CompareSettings.Apostrophe.Remove = true
-	d.Validate(&req)
+	req.Compare.CompareSettings.Apostrophe.Remove = false
+	status := d.Validate(&req)
+	if status.IsErr {
+		t.Fatal(status)
+	}
 }
 
 // I should have a test with multiple error

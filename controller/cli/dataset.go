@@ -4,6 +4,7 @@ import (
 	"dataset/controller"
 	"fmt"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -24,5 +25,21 @@ func main() {
 		fmt.Fprintln(os.Stderr, `Error File:`, filename)
 		os.Exit(1)
 	}
-	fmt.Fprintln(os.Stdout, `Success:`, filename)
+	//fmt.Fprintln(os.Stdout, `Success:`, filename)
+	outputFile := findOutputFilename(content)
+	err = os.Rename(filename, outputFile)
+	if err != nil {
+		fmt.Fprintln(os.Stdout, `Success:`, filename)
+	} else {
+		fmt.Fprintln(os.Stdout, `Success:`, outputFile)
+	}
+}
+
+func findOutputFilename(request []byte) string {
+	var result string
+	req := string(request)
+	start := strings.Index(req, `output_file:`) + 12
+	end := strings.Index(req[start:], "\n")
+	result = req[start : start+end]
+	return result
 }

@@ -11,6 +11,9 @@ import (
 const ComparePlain2PlainEditScript = `is_new: no
 dataset_name: PlainTextScript_{bibleId}
 bible_id: {bibleId}
+username: GaryNTest
+email: gary@shortsands.com
+output_file: 05__compare_plain_2_edit.html
 compare:
   base_dataset: PlainTextEditScript_{bibleId}
   compare_settings: # Mark yes, all settings that apply

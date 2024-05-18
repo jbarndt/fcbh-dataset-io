@@ -10,11 +10,12 @@ import (
 const PlainTextScript = `is_new: yes
 dataset_name: PlainTextScript_{bibleId}
 bible_id: {bibleId}
+username: GaryNTest
+email: gary@shortsands.com
+output_file: 01__plain_text_script.csv
 text_data:
   bible_brain:
     text_plain: yes
-output_format:
-  csv: yes
 `
 
 func TestPlainTextScriptAPI(t *testing.T) {
