@@ -1,7 +1,6 @@
 package request
 
 import (
-	"dataset"
 	"path/filepath"
 	"strings"
 )
@@ -25,9 +24,7 @@ func (r *RequestDecoder) mfccPrereq(req *Request) {
 	}
 }
 
-func (r *RequestDecoder) setOutputType(req *Request) dataset.Status {
-	var status dataset.Status
-	var msgs []string
+func (r *RequestDecoder) setOutputType(req *Request) {
 	fType := strings.ToLower(filepath.Ext(req.OutputFile))
 	switch fType {
 	case ".json":
@@ -40,36 +37,24 @@ func (r *RequestDecoder) setOutputType(req *Request) dataset.Status {
 		req.OutputFormat.HTML = true
 	default:
 		msg := `output_file must be .json, .csv, .sqlite, or .html for compare tasks`
-		msgs = append(msgs, msg)
+		r.errors = append(r.errors, msg)
 	}
-	return status
 }
 
-func (r *RequestDecoder) Depend(req Request) dataset.Status {
-	var status dataset.Status
-	var msgs []string
+func (r *RequestDecoder) Depend(req Request) {
 	if !req.Timestamps.NoTimestamps {
 		if req.AudioData.NoAudio {
-			msg := `Timestamps are requested, but there is no audio`
-			msgs = append(msgs, msg)
+			r.errors = append(r.errors, `Timestamps are requested, but there is no audio`)
 		}
 	}
 	if req.Timestamps.Aeneas {
 		if req.TextData.NoText {
-			msg := `Aeneas requested, but there is no text data`
-			msgs = append(msgs, msg)
+			r.errors = append(r.errors, `Aeneas requested, but there is no text data`)
 		}
 	}
 	if !req.TextEncoding.NoEncoding {
 		if req.TextData.NoText {
-			msg := `Text encoding requested, but there is no text data`
-			msgs = append(msgs, msg)
+			r.errors = append(r.errors, `Text encoding requested, but there is no text data`)
 		}
 	}
-	if len(msgs) > 0 {
-		status.IsErr = true
-		status.Status = 400
-		status.Message = strings.Join(msgs, "\n")
-	}
-	return status
 }

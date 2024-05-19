@@ -1,56 +1,41 @@
 package request
 
 import (
-	"dataset"
 	"reflect"
 	"strings"
 )
 
-func (r *RequestDecoder) Validate(req *Request) dataset.Status {
-	var msgs []string
-	checkRequired(req, &msgs)
-	checkTestament(&req.Testament)
-	checkAudioData(&req.AudioData, `AudioData`, &msgs)
-	checkTextData(&req.TextData, `TextData`, &msgs)
-	checkDetail(&req.Detail)
-	checkTimestamps(&req.Timestamps, `Timestamps`, &msgs)
-	checkAudioEncoding(&req.AudioEncoding, `AudioEncoding`, &msgs)
-	checkTextEncoding(&req.TextEncoding, `TextEncoding`, &msgs)
+func (r *RequestDecoder) Validate(req *Request) {
+	r.checkRequired(req)
+	r.checkTestament(&req.Testament)
+	r.checkAudioData(&req.AudioData, `AudioData`)
+	r.checkTextData(&req.TextData, `TextData`)
+	r.checkDetail(&req.Detail)
+	r.checkTimestamps(&req.Timestamps, `Timestamps`)
+	r.checkAudioEncoding(&req.AudioEncoding, `AudioEncoding`)
+	r.checkTextEncoding(&req.TextEncoding, `TextEncoding`)
 	//checkCompare(req.Compare, &msgs)
-	checkForOne(reflect.ValueOf(req.Compare.CompareSettings.DoubleQuotes), `DoubleQuotes`, &msgs)
-	checkForOne(reflect.ValueOf(req.Compare.CompareSettings.Apostrophe), `Apostrophe`, &msgs)
-	checkForOne(reflect.ValueOf(req.Compare.CompareSettings.Hyphen), `Hyphen`, &msgs)
-	checkForOne(reflect.ValueOf(req.Compare.CompareSettings.DiacriticalMarks), `DiscriticalMarks`, &msgs)
-	var status dataset.Status
-	if len(msgs) > 0 {
-		status.Status = 400
-		status.IsErr = true
-		status.Message = strings.Join(msgs, "\n")
-		//status.Request =
-	}
-	return status
+	r.checkForOne(reflect.ValueOf(req.Compare.CompareSettings.DoubleQuotes), `DoubleQuotes`)
+	r.checkForOne(reflect.ValueOf(req.Compare.CompareSettings.Apostrophe), `Apostrophe`)
+	r.checkForOne(reflect.ValueOf(req.Compare.CompareSettings.Hyphen), `Hyphen`)
+	r.checkForOne(reflect.ValueOf(req.Compare.CompareSettings.DiacriticalMarks), `DiscriticalMarks`)
 }
 
-func checkRequired(req *Request, msgs *[]string) {
+func (r *RequestDecoder) checkRequired(req *Request) {
 	if req.DatasetName == `` {
-		msg := `Required field RequestName is empty`
-		*msgs = append(*msgs, msg)
+		r.errors = append(r.errors, `Required field dataset_name is empty`)
 	}
 	if req.BibleId == `` {
-		msg := `Required field bible_id: is empty`
-		*msgs = append(*msgs, msg)
+		r.errors = append(r.errors, `Required field bible_id: is empty`)
 	}
 	if req.Username == `` {
-		msg := `Required field username: is empty`
-		*msgs = append(*msgs, msg)
+		r.errors = append(r.errors, `Required field username: is empty`)
 	}
 	if req.Email == `` {
-		msg := `Required field email: is empty`
-		*msgs = append(*msgs, msg)
+		r.errors = append(r.errors, `Required field email: is empty`)
 	}
 	if req.OutputFile == `` {
-		msg := `Required field output_file: is empty`
-		*msgs = append(*msgs, msg)
+		r.errors = append(r.errors, `Required field output_file: is empty`)
 	}
 	req.DatasetName = strings.Replace(req.DatasetName, ` `, `_`, -1)
 	if req.Compare.BaseDataset != `` {
@@ -58,7 +43,7 @@ func checkRequired(req *Request, msgs *[]string) {
 	}
 }
 
-func checkTestament(req *Testament) {
+func (r *RequestDecoder) checkTestament(req *Testament) {
 	if !req.OT && !req.NT && len(req.NTBooks) == 0 && len(req.OTBooks) == 0 {
 		req.NT = true
 	}
@@ -66,8 +51,8 @@ func checkTestament(req *Testament) {
 
 // checkAudioData Is checking that no more than one item is selected.
 // if none are selected, it will set the default: NoAudio
-func checkAudioData(req *AudioData, fieldName string, msgs *[]string) {
-	count := checkForOne(reflect.ValueOf(*req), fieldName, msgs)
+func (r *RequestDecoder) checkAudioData(req *AudioData, fieldName string) {
+	count := r.checkForOne(reflect.ValueOf(*req), fieldName)
 	if count == 0 {
 		req.NoAudio = true
 	}
@@ -75,60 +60,53 @@ func checkAudioData(req *AudioData, fieldName string, msgs *[]string) {
 
 // checkTextData Is checking that no more than one item is selected.
 // if none are selected, it will set the default: NoAudio
-func checkTextData(req *TextData, fieldName string, msgs *[]string) {
-	count := checkForOne(reflect.ValueOf(*req), fieldName, msgs)
+func (r *RequestDecoder) checkTextData(req *TextData, fieldName string) {
+	count := r.checkForOne(reflect.ValueOf(*req), fieldName)
 	if count == 0 {
 		req.NoText = true
 	}
 }
 
-func checkDetail(req *Detail) {
+func (r *RequestDecoder) checkDetail(req *Detail) {
 	if !req.Lines && !req.Words {
 		req.Lines = true
 	}
 }
 
-func checkTimestamps(req *Timestamps, fieldName string, msgs *[]string) {
-	count := checkForOne(reflect.ValueOf(*req), fieldName, msgs)
+func (r *RequestDecoder) checkTimestamps(req *Timestamps, fieldName string) {
+	count := r.checkForOne(reflect.ValueOf(*req), fieldName)
 	if count == 0 {
 		req.NoTimestamps = true
 	}
 }
 
-func checkAudioEncoding(req *AudioEncoding, fieldName string, msgs *[]string) {
-	count := checkForOne(reflect.ValueOf(*req), fieldName, msgs)
+func (r *RequestDecoder) checkAudioEncoding(req *AudioEncoding, fieldName string) {
+	count := r.checkForOne(reflect.ValueOf(*req), fieldName)
 	if count == 0 {
 		req.NoEncoding = true
 	}
 }
 
-func checkTextEncoding(req *TextEncoding, fieldName string, msgs *[]string) {
-	count := checkForOne(reflect.ValueOf(*req), fieldName, msgs)
+func (r *RequestDecoder) checkTextEncoding(req *TextEncoding, fieldName string) {
+	count := r.checkForOne(reflect.ValueOf(*req), fieldName)
 	if count == 0 {
 		req.NoEncoding = true
 	}
 }
 
-//func checkOutputFormat(req *OutputFormat, fieldName string, msgs *[]string) {
-//	count := checkForOne(reflect.ValueOf(*req), fieldName, msgs)
-//	if count == 0 {
-//		req.JSON = true
-//	}
-//}
-
-func checkForOne(structVal reflect.Value, fieldName string, msgs *[]string) int {
+func (r *RequestDecoder) checkForOne(structVal reflect.Value, fieldName string) int {
 	var errorCount int
 	var wasSet []string
-	checkForOneRecursive(structVal, &wasSet)
+	r.checkForOneRecursive(structVal, &wasSet)
 	errorCount += len(wasSet)
 	if len(wasSet) > 1 {
 		msg := `Only 1 field can be set on ` + fieldName + `: ` + strings.Join(wasSet, `,`)
-		*msgs = append(*msgs, msg)
+		r.errors = append(r.errors, msg)
 	}
 	return errorCount
 }
 
-func checkForOneRecursive(sVal reflect.Value, wasSet *[]string) {
+func (r *RequestDecoder) checkForOneRecursive(sVal reflect.Value, wasSet *[]string) {
 	for i := 0; i < sVal.NumField(); i++ {
 		field := sVal.Field(i)
 		if field.Kind() == reflect.String {
@@ -140,10 +118,10 @@ func checkForOneRecursive(sVal reflect.Value, wasSet *[]string) {
 				*wasSet = append(*wasSet, sVal.Type().Field(i).Name)
 			}
 		} else if field.Kind() == reflect.Struct {
-			checkForOneRecursive(field, wasSet)
+			r.checkForOneRecursive(field, wasSet)
 		} else {
 			msg := sVal.Type().Field(i).Name + ` has unexpected type ` + field.Type().Name()
-			panic(msg)
+			r.errors = append(r.errors, msg)
 		}
 	}
 }

@@ -6,10 +6,12 @@ import (
 	"dataset"
 	log "dataset/logger"
 	"gopkg.in/yaml.v3"
+	"strings"
 )
 
 type RequestDecoder struct {
-	ctx context.Context
+	ctx    context.Context
+	errors []string
 }
 
 func NewRequestDecoder(ctx context.Context) RequestDecoder {
@@ -25,12 +27,14 @@ func (r *RequestDecoder) Process(yamlRequest []byte) (Request, dataset.Status) {
 	if status.IsErr {
 		return request, status
 	}
-	status = r.Validate(&request)
-	if status.IsErr {
-		return request, status
-	}
+	r.Validate(&request)
 	r.Prereq(&request)
-	status = r.Depend(request)
+	r.Depend(request)
+	if len(r.errors) > 0 {
+		status.IsErr = true
+		status.Status = 400
+		status.Message = strings.Join(r.errors, "\n")
+	}
 	return request, status
 }
 

@@ -3,6 +3,7 @@ package request
 import (
 	"context"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -26,9 +27,11 @@ func TestValidate(t *testing.T) {
 	req.AudioEncoding.NoEncoding = false
 	req.Compare.CompareSettings.Apostrophe.Normalize = true
 	req.Compare.CompareSettings.Apostrophe.Remove = false
-	status := d.Validate(&req)
-	if status.IsErr {
-		t.Fatal(status)
+	d.Validate(&req)
+	d.Prereq(&req)
+	d.Depend(req)
+	if len(d.errors) > 0 {
+		t.Fatal(strings.Join(d.errors, "\n"))
 	}
 }
 
