@@ -1,0 +1,13 @@
+is_new: yes
+dataset_name: Client_Test_POST
+bible_id: ENGWEB
+username: GaryNTest
+email: gary@shortsands.com
+output_file: /Users/gary/Desktop/client_post_test.json
+audio_data:
+  file: /Users/gary/FCBH2024/download/ENGWEB/ENGWEBN2DA/ENGWEBN2DA_B23_1JN_001.mp3
+text_data:
+  speech_to_text:
+    whisper:
+      model:
+        tiny: yes

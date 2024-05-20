@@ -7,25 +7,22 @@ import (
 	"dataset/request"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"strings"
 )
 
 const (
-	HOST = `http://localhost:8080/`
-	//HOST       = `http:// 167.99.58.202:8080/`
-	UPLOADHOST = `http://167.99.58.202:8080/upload`
+	HOST       = `http://localhost:8080/`
+	UPLOADHOST = `http://localhost:8080/upload`
+	//HOST       = `http://167.99.58.202:8080/`
+	//UPLOADHOST = `http://167.99.58.202:8080/upload`
 )
 
-type Arguments struct {
-	yamlPath  string
-	audioPath string
-}
-
 func main() {
-	arg := GetArguments()
-	yamlRequest, err := os.ReadFile(arg.yamlPath)
+	yamlPath := GetArguments()
+	yamlRequest, err := os.ReadFile(yamlPath)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -38,40 +35,73 @@ func main() {
 		os.Exit(1)
 	}
 	var httpReq *http.Request
-	httpReq = HttpPost(yamlRequest) // handle upload case ??
+	if request.AudioData.POST != `` {
+		httpReq = HttpMultiPost(yamlRequest, request.AudioData.POST, "audio")
+	} else if request.TextData.POST != `` {
+		httpReq = HttpMultiPost(yamlRequest, request.TextData.POST, "text")
+	} else {
+		httpReq = HttpPost(yamlRequest)
+	}
 	statusCode := Response(request.OutputFile, httpReq)
 	DisplayOutput(request.OutputFile)
 	fmt.Println(statusCode)
 }
 
-func GetArguments() Arguments {
-	var a Arguments
+func GetArguments() string {
 	if len(os.Args) < 2 {
-		fmt.Println("Usage: client  filename.Yaml  [audioFile]")
+		fmt.Println("Usage: client  filename.yaml")
 		os.Exit(1)
 	}
-	a.yamlPath = os.Args[1]
-	if len(os.Args) > 3 {
-		a.audioPath = os.Args[2]
-	}
-	return a
+	return os.Args[1]
 }
 
 func HttpPost(request []byte) *http.Request {
-	//req, err := http.NewRequest("POST", HOST, bytes.NewReader(request))
 	req, err := http.NewRequest("POST", HOST, bytes.NewBuffer(request))
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 	req.Header.Set("Content-Type", "application/x-yaml")
-	//req.Header.Set("Accept", "attachment; filename=\""+os.Args[1]+"\"")
 	return req
 }
 
-func HttpPostFile(request string, audioPath string) *http.Request {
-	req := http.Request{}
-	return &req
+func HttpMultiPost(yamlRequest []byte, filePath string, fType string) *http.Request {
+	body := new(bytes.Buffer)
+	writer := multipart.NewWriter(body)
+	file, err := os.Open(filePath)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	defer file.Close()
+	filePart, err := writer.CreateFormFile(fType, filePath)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	_, err = io.Copy(filePart, file)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	yamlPart, err := writer.CreateFormFile("yaml", "request.yaml")
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	_, err = io.Copy(yamlPart, bytes.NewBuffer(yamlRequest))
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	_ = writer.Close()
+	req, err := http.NewRequest("POST", UPLOADHOST, body)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	return req
 }
 
 func Response(outPath string, req *http.Request) string {
