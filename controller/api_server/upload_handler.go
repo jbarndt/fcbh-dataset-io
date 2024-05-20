@@ -6,7 +6,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 )
 
@@ -47,13 +46,6 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		errorResponse(w, http.StatusInternalServerError, err, "Unable to read YAML file")
 		return
 	}
-	// Append filepath to request
-	reqStr := string(request)
-	if !strings.HasSuffix(reqStr, "\n") {
-		reqStr += "\n"
-	}
-	reqStr += `uploaded_filepath: ` + audioDst.Name() + "\n"
-	request = []byte(reqStr)
 	log.Info(context.TODO(), "Files uploaded successfully:", audioHeader.Filename, yamlHeader.Filename)
 	responder(w, request)
 	log.Info(context.TODO(), time.Since(start))

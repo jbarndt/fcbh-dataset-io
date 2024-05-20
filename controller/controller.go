@@ -185,7 +185,7 @@ func (c *Controller) collectTextInput() ([]input.InputFile, dataset.Status) {
 	} else if c.req.TextData.AWSS3 != `` {
 		files, status = input.AWSS3Input(c.ctx, c.req.TextData.AWSS3, c.req.Testament)
 	} else if c.req.TextData.POST != `` {
-		files, status = input.PostInput(c.ctx, c.req.UploadedFile, c.req.TextData.POST, c.req.Testament)
+		files, status = input.FileInput(c.ctx, c.req.TextData.POST, c.req.Testament)
 	}
 	return files, status
 }
@@ -203,7 +203,7 @@ func (c *Controller) collectAudioInput() ([]input.InputFile, dataset.Status) {
 	} else if c.req.AudioData.AWSS3 != `` {
 		files, status = input.AWSS3Input(c.ctx, c.req.AudioData.AWSS3, c.req.Testament)
 	} else if c.req.AudioData.POST != `` {
-		files, status = input.PostInput(c.ctx, c.req.UploadedFile, c.req.AudioData.POST, c.req.Testament)
+		files, status = input.FileInput(c.ctx, c.req.AudioData.POST, c.req.Testament)
 	}
 	return files, status
 }

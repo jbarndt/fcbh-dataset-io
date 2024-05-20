@@ -3,6 +3,7 @@ package testing
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -44,18 +45,39 @@ func TestPostAudioWhisperJsonAPI(t *testing.T) {
 	}
 	var a try
 	a.bibleId = `ENGWEB`
-	a.filePath = filepath.Join(os.Getenv(`FCBH_DATASET_FILES`), `ENGWEB/ENGWEBN2DA/B23___01_1John_______ENGWEBN2DA.mp3`)
+	a.filePath = `ENGWEB/ENGWEBN2DA/B23___01_1John_______ENGWEBN2DA.mp3`
 	a.namev4 = `ENGWEBN2DA_B23_1JN_001.mp3`
+	destFile := CopyAudio(a.namev4, a.filePath, t)
 	a.expected = 15
 	var request = strings.Replace(PostAudioWhisperJson, `{bibleId}`, a.bibleId, 2)
-	request = strings.Replace(request, `{namev4}`, a.namev4, 1)
-	stdout, stderr := CurlExec(request, a.filePath, t)
+	request = strings.Replace(request, `{namev4}`, destFile, 1)
+	stdout, stderr := CurlExec(request, destFile, t)
 	fmt.Println(`STDOUT`, stdout)
 	fmt.Println(`STDERR`, stderr)
 	count := countRecords(stdout)
 	if count != a.expected {
 		t.Error(`expected,`, a.expected, `found`, count)
 	}
+}
+
+func CopyAudio(dest string, source string, t *testing.T) string {
+	srcPath := filepath.Join(os.Getenv(`FCBH_DATASET_FILES`), source)
+	srcFile, err := os.Open(srcPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	destPath := filepath.Join(os.Getenv(`FCBH_DATASET_TMP`), dest)
+	destFile, err := os.Create(destPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = io.Copy(destFile, srcFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = srcFile.Close()
+	_ = destFile.Close()
+	return destPath
 }
 
 func CurlExec(requestYaml string, filePath string, t *testing.T) (string, string) {

@@ -2,8 +2,6 @@ package testing
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -32,12 +30,13 @@ func TestPostAudio2WhisperJsonAPI(t *testing.T) {
 	}
 	var a try
 	a.bibleId = `ENGWEB`
-	a.filePath = filepath.Join(os.Getenv(`FCBH_DATASET_FILES`), `ENGWEB/ENGWEBN2DA/B23___02_1John_______ENGWEBN2DA.mp3`)
+	a.filePath = `ENGWEB/ENGWEBN2DA/B23___02_1John_______ENGWEBN2DA.mp3`
 	a.namev4 = `ENGWEBN2DA_B23_1JN_002.mp3`
+	destFile := CopyAudio(a.namev4, a.filePath, t)
 	a.expected = 72
 	var request = strings.Replace(PostAudio2WhisperJson, `{bibleId}`, a.bibleId, 2)
-	request = strings.Replace(request, `{namev4}`, a.namev4, 1)
-	stdout, stderr := CurlExec(request, a.filePath, t)
+	request = strings.Replace(request, `{namev4}`, destFile, 1)
+	stdout, stderr := CurlExec(request, destFile, t)
 	fmt.Println(`STDOUT`, stdout)
 	fmt.Println(`STDERR`, stderr)
 	count := countRecords(stdout)

@@ -16,7 +16,6 @@ type Request struct {
 	TextEncoding  TextEncoding  `yaml:"text_encoding,omitempty"`
 	OutputFormat  OutputFormat  `yaml:"output_format,omitempty"` // Set by request.Depend, not user
 	Compare       Compare       `yaml:"compare,omitempty"`
-	UploadedFile  string        `yaml:"uploaded_filepath,omitempty"`
 }
 
 type Testament struct {

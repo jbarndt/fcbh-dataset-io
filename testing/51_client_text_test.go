@@ -13,12 +13,12 @@ import (
 const ClientTextTest = `is_new: yes
 dataset_name: ClientUSXText_{bibleId}
 bible_id: {bibleId}
+username: GaryGTest
+email: gary@shortsands.com
+output_file: 51__client_usx_text.json
 text_data:
   bible_brain:
     text_usx_edit: yes
-output_format:
-  json: {json}
-  csv: {csv}
 `
 
 func TestClientText(t *testing.T) {
