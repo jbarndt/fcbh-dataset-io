@@ -18,15 +18,13 @@ func (o *Output) JSONStatus(status dataset.Status, debug bool) (string, dataset.
 		return filename, errStatus
 	}
 	filename = file.Name()
-	//var result string
 	if !debug {
 		status.Trace = ``
 	}
-	bytes, err := json.Marshal(status)
+	bytes, err := json.MarshalIndent(status, "", "   ")
 	if err != nil {
 		errStatus = log.Error(o.ctx, 500, err, status.Err)
 		return filename, errStatus
-		//result = status.String() + `, ` + status2.String()
 	}
 	_, _ = file.Write(bytes)
 	_ = file.Close()

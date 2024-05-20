@@ -1,11 +1,15 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
+	"context"
+	"dataset/request"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
+	"strings"
 )
 
 const (
@@ -17,61 +21,51 @@ const (
 type Arguments struct {
 	yamlPath  string
 	audioPath string
-	outPath   string
 }
 
 func main() {
 	arg := GetArguments()
-	// read yaml file
-	yamlFile, err := os.ReadFile(arg.yamlPath)
+	yamlRequest, err := os.ReadFile(arg.yamlPath)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	var req *http.Request
-	if arg.audioPath == `` {
-		req = HttpPost(yamlFile)
-	} else {
-
+	ctx := context.Background()
+	reqDecoder := request.NewRequestDecoder(ctx)
+	request, status := reqDecoder.Process(yamlRequest)
+	if status.IsErr {
+		fmt.Println(status)
+		os.Exit(1)
 	}
-	// get arguments
-	// decide if typical or post audio
-	// call correct http routine
-	// receive
-	status := Response(arg.outPath, req)
-	fmt.Println(status)
+	var httpReq *http.Request
+	httpReq = HttpPost(yamlRequest) // handle upload case ??
+	statusCode := Response(request.OutputFile, httpReq)
+	DisplayOutput(request.OutputFile)
+	fmt.Println(statusCode)
 }
 
 func GetArguments() Arguments {
 	var a Arguments
-	if len(os.Args) < 3 {
-		fmt.Println("Usage: client  filename.Yaml  [audioFile]  outputFile")
+	if len(os.Args) < 2 {
+		fmt.Println("Usage: client  filename.Yaml  [audioFile]")
 		os.Exit(1)
 	}
 	a.yamlPath = os.Args[1]
 	if len(os.Args) > 3 {
 		a.audioPath = os.Args[2]
-		a.outPath = os.Args[3]
-	} else {
-		a.outPath = os.Args[2]
 	}
 	return a
 }
 
-// read the command line
-// first parameter is yaml file
-// next paramter can be audio file
-// last parameter is outout filepath
-
 func HttpPost(request []byte) *http.Request {
-
-	req, err := http.NewRequest("POST", HOST, bytes.NewReader(request))
+	//req, err := http.NewRequest("POST", HOST, bytes.NewReader(request))
+	req, err := http.NewRequest("POST", HOST, bytes.NewBuffer(request))
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
-		//return body, statusCode
 	}
 	req.Header.Set("Content-Type", "application/x-yaml")
+	//req.Header.Set("Accept", "attachment; filename=\""+os.Args[1]+"\"")
 	return req
 }
 
@@ -87,7 +81,6 @@ func Response(outPath string, req *http.Request) string {
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
-		//return body, statusCode
 	}
 	status = resp.Status
 	defer resp.Body.Close()
@@ -103,4 +96,24 @@ func Response(outPath string, req *http.Request) string {
 	}
 	_ = file.Close()
 	return status
+}
+
+func DisplayOutput(filename string) {
+	if strings.HasSuffix(filename, ".sqlite") {
+		return
+	}
+	file, err := os.Open(filename)
+	if err != nil {
+		return
+	}
+	defer file.Close()
+	scanner := bufio.NewScanner(file)
+	lineCount := 0
+	for scanner.Scan() {
+		lineCount++
+		fmt.Println(scanner.Text())
+		if lineCount == 20 {
+			break
+		}
+	}
 }

@@ -1,0 +1,8 @@
+dataset_name: Client_Test_USX
+bible_id: ENGWEB
+username: GaryNTest
+email: gary@shortsands.com
+output_file: /Users/gary/Desktop/client_test.json
+text_data:
+  bible_brain:
+    text_usx_edit: yes

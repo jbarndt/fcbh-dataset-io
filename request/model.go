@@ -14,9 +14,9 @@ type Request struct {
 	Timestamps    Timestamps    `yaml:"timestamps,omitempty"`
 	AudioEncoding AudioEncoding `yaml:"audio_encoding,omitempty"`
 	TextEncoding  TextEncoding  `yaml:"text_encoding,omitempty"`
-	OutputFormat  OutputFormat
-	Compare       Compare `yaml:"compare,omitempty"`
-	UploadedFile  string  `yaml:"uploaded_filepath,omitempty"`
+	OutputFormat  OutputFormat  `yaml:"output_format,omitempty"` // Set by request.Depend, not user
+	Compare       Compare       `yaml:"compare,omitempty"`
+	UploadedFile  string        `yaml:"uploaded_filepath,omitempty"`
 }
 
 type Testament struct {
@@ -205,10 +205,10 @@ type TextEncoding struct {
 }
 
 type OutputFormat struct {
-	CSV    bool
-	JSON   bool
-	Sqlite bool
-	HTML   bool
+	CSV    bool `yaml:"csv,omitempty"`
+	JSON   bool `yaml:"json,omitempty"`
+	Sqlite bool `yaml:"sqlite,omitempty"`
+	HTML   bool `yaml:"html,omitempty"`
 }
 
 type Compare struct {

@@ -53,11 +53,13 @@ func (r *RequestDecoder) Decode(requestYaml []byte) (Request, dataset.Status) {
 }
 
 func (r *RequestDecoder) Encode(req Request) (string, dataset.Status) {
+	var result string
 	var status dataset.Status
 	d, err := yaml.Marshal(&req)
 	if err != nil {
 		status = log.Error(r.ctx, 500, err, `Error encoding request to YAML`)
-		return ``, status
+		return result, status
 	}
-	return string(d), status
+	result = string(d)
+	return result, status
 }
