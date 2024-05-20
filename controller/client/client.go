@@ -44,7 +44,7 @@ func main() {
 	}
 	statusCode := Response(request.OutputFile, httpReq)
 	DisplayOutput(request.OutputFile)
-	fmt.Println(statusCode)
+	fmt.Println(statusCode, request.OutputFile)
 }
 
 func GetArguments() string {
