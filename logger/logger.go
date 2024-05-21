@@ -68,8 +68,15 @@ func setFile(file *os.File) {
 }
 
 // SetLevel set an error reporting level. The logger will process messages of this level and higher.
-func SetLevel(level LogLevel) {
-	logLevel = level
+func SetLevel(level string) {
+	switch strings.ToLower(level) {
+	case "debug":
+		logLevel = LOGDEBUG
+	case "info":
+		logLevel = LOGINFO
+	case "warn":
+		logLevel = LOGWARN
+	}
 }
 
 func SetDumpSkipLines(lines int) {

@@ -13,6 +13,7 @@ import (
 	"dataset/read"
 	"dataset/request"
 	"dataset/speech_to_text"
+	"os"
 	"time"
 )
 
@@ -34,8 +35,18 @@ func NewController(yamlContent []byte) Controller {
 
 func (c *Controller) Process() (string, dataset.Status) {
 	var start = time.Now()
-	log.SetLevel(log.LOGDEBUG)
-	log.SetOutput(c.ctx, `stderr`)
+	logLevel := os.Getenv("FCBH_DATASET_LOG_LEVEL")
+	if logLevel != `` {
+		log.SetLevel(logLevel)
+	} else {
+		log.SetLevel(`INFO`)
+	}
+	logFile := os.Getenv("FCBH_DATASET_LOG_FILE")
+	if logFile != `` {
+		log.SetOutput(c.ctx, logFile)
+	} else {
+		log.SetOutput(c.ctx, `stderr`)
+	}
 	log.Debug(c.ctx)
 	var filename, status = c.processSteps()
 	if status.IsErr {

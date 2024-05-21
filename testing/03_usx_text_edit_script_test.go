@@ -25,7 +25,7 @@ func TestUSXTextEditScriptCLI(t *testing.T) {
 	stdout, stderr := CLIExec(req, t)
 	fmt.Println(`STDOUT:`, stdout)
 	fmt.Println(`STDERR:`, stderr)
-	filename := ExtractFilenaame(stdout)
+	filename := ExtractFilenaame(req)
 	numLines := NumJSONFileLines(filename, t)
 	expected := 9588
 	if numLines != expected {

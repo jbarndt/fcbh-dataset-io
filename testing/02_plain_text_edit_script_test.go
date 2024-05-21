@@ -26,7 +26,7 @@ func TestPlainTextEditScriptCLI(t *testing.T) {
 	stdout, stderr := CLIExec(req, t)
 	fmt.Println(`STDOUT:`, stdout)
 	fmt.Println(`STDERR:`, stderr)
-	filename := ExtractFilenaame(stdout)
+	filename := ExtractFilenaame(req)
 	numLines := NumJSONFileLines(filename, t)
 	if numLines != expected {
 		t.Error(`Expected `, expected, `records, got`, numLines)

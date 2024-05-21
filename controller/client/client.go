@@ -14,10 +14,8 @@ import (
 )
 
 const (
-	HOST       = `http://localhost:8080/`
-	UPLOADHOST = `http://localhost:8080/upload`
+	HOST = `http://localhost:8080/`
 	//HOST       = `http://167.99.58.202:8080/`
-	//UPLOADHOST = `http://167.99.58.202:8080/upload`
 )
 
 func main() {
@@ -95,7 +93,7 @@ func HttpMultiPost(yamlRequest []byte, filePath string, fType string) *http.Requ
 		os.Exit(1)
 	}
 	_ = writer.Close()
-	req, err := http.NewRequest("POST", UPLOADHOST, body)
+	req, err := http.NewRequest("POST", HOST+`/upload`, body)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
