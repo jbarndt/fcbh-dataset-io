@@ -1,0 +1,22 @@
+[Unit]
+Description=API Server
+After=network.target
+
+[Service]
+Type=simple
+User=dataset
+ExecStart=/home/dataset/go/bin/api_server
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+
+# Put file at: /etc/systemd/system/api_server.service
+
+# sudo systemctl start api_server
+# sudo systemctl stop api_server
+# sudo systemctl restart api_server
+# sudo systemctl reload api_server
+# sudo systemctl status api_server

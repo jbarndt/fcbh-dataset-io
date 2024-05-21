@@ -70,7 +70,7 @@ Install Application Server
 > cd $HOME/go/src
 
 > git clone https://github.com/garygriswold/fcbh-dataset-io.git
-> 
+
 > mv fcbh-dataset-io dataset  # Fix this hack
 
 > cd dataset
@@ -99,7 +99,21 @@ add environment variables
 
 > ./go/bin/api_server &
 
+To Update go code
 
+> cd $HOME/go/src/dataset
+
+> get pull origin main
+
+> go install dataset/controller/api_server
+
+> sudo vi /etc/systemd/system/api_server.service
+
+insert: dataset/controller/api_server/api_server.service
+
+> sudo systemctl start api_server
+
+> sudo systemctl status api_server
 
 https://github.com/readbeyond/aeneas/blob/master/wiki/INSTALL.md
 
