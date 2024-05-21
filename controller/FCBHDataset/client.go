@@ -13,12 +13,8 @@ import (
 	"strings"
 )
 
-const (
-	HOST = `http://localhost:8080/`
-	//HOST       = `http://167.99.58.202:8080/`
-)
-
 func main() {
+	cfg := GetConfig()
 	yamlPath := GetArguments()
 	yamlRequest, err := os.ReadFile(yamlPath)
 	if err != nil {
@@ -34,11 +30,11 @@ func main() {
 	}
 	var httpReq *http.Request
 	if request.AudioData.POST != `` {
-		httpReq = HttpMultiPost(yamlRequest, request.AudioData.POST, "audio")
+		httpReq = HttpMultiPost(cfg, yamlRequest, request.AudioData.POST, "audio")
 	} else if request.TextData.POST != `` {
-		httpReq = HttpMultiPost(yamlRequest, request.TextData.POST, "text")
+		httpReq = HttpMultiPost(cfg, yamlRequest, request.TextData.POST, "text")
 	} else {
-		httpReq = HttpPost(yamlRequest)
+		httpReq = HttpPost(cfg, yamlRequest)
 	}
 	statusCode := Response(request.OutputFile, httpReq)
 	DisplayOutput(request.OutputFile)
@@ -47,14 +43,14 @@ func main() {
 
 func GetArguments() string {
 	if len(os.Args) < 2 {
-		fmt.Println("Usage: client  filename.yaml")
+		fmt.Println("Usage: FCBHDataset  filename.yaml")
 		os.Exit(1)
 	}
 	return os.Args[1]
 }
 
-func HttpPost(request []byte) *http.Request {
-	req, err := http.NewRequest("POST", HOST, bytes.NewBuffer(request))
+func HttpPost(cfg Config, request []byte) *http.Request {
+	req, err := http.NewRequest("POST", cfg.Host, bytes.NewBuffer(request))
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -63,7 +59,7 @@ func HttpPost(request []byte) *http.Request {
 	return req
 }
 
-func HttpMultiPost(yamlRequest []byte, filePath string, fType string) *http.Request {
+func HttpMultiPost(cfg Config, yamlRequest []byte, filePath string, fType string) *http.Request {
 	body := new(bytes.Buffer)
 	writer := multipart.NewWriter(body)
 	file, err := os.Open(filePath)
@@ -93,7 +89,7 @@ func HttpMultiPost(yamlRequest []byte, filePath string, fType string) *http.Requ
 		os.Exit(1)
 	}
 	_ = writer.Close()
-	req, err := http.NewRequest("POST", HOST+`/upload`, body)
+	req, err := http.NewRequest("POST", cfg.Host+`/upload`, body)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -143,5 +139,12 @@ func DisplayOutput(filename string) {
 		if lineCount == 20 {
 			break
 		}
+	}
+}
+
+func Catch(err error) {
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
 	}
 }
