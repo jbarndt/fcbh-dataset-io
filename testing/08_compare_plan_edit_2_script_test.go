@@ -1,6 +1,7 @@
 package testing
 
 import (
+	"context"
 	"dataset/controller"
 	"dataset/request"
 	"fmt"
@@ -39,8 +40,9 @@ compare:
 
 func TestComparePlainTextEdit2Script(t *testing.T) {
 	var bibleId = `ATIWBT`
+	ctx := context.Background()
 	var req = strings.Replace(ComparePlainTextEdit2Script, `{bibleId}`, bibleId, 3)
-	var control = controller.NewController([]byte(req))
+	var control = controller.NewController(ctx, []byte(req))
 	filename, status := control.Process()
 	if status.IsErr {
 		t.Fatal(status)

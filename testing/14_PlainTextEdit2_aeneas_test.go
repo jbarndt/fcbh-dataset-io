@@ -39,9 +39,10 @@ func TestPlainTextEdit2AeneasScript(t *testing.T) {
 	var tests []try
 	tests = append(tests, try{bibleId: `ENGWEB`, textNtId: `ENGWEBN_ET`, audioNTId: `ENGWEBN2DA`,
 		language: `eng`, expected: 8219})
+	ctx := context.Background()
 	for _, tst := range tests {
 		var req = strings.Replace(PlainTextEdit2AeneasScript, `{bibleId}`, tst.bibleId, 2)
-		var control = controller.NewController([]byte(req))
+		var control = controller.NewController(ctx, []byte(req))
 		filename, status := control.Process()
 		if status.IsErr {
 			t.Error(status)

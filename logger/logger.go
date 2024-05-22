@@ -92,10 +92,11 @@ func Panic(ctx context.Context, param ...any) {
 func Fatal(ctx context.Context, param ...any) {
 	fatalLog.Println(param, requestInfo(ctx))
 	fatalLog.Println(dumpLines())
-	if ctx == context.Background() {
-		os.Exit(1)
-	} else {
+	runType := ctx.Value(`runType`)
+	if runType == `server` {
 		runtime.Goexit()
+	} else {
+		os.Exit(1)
 	}
 }
 

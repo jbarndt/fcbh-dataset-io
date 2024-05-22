@@ -1,6 +1,7 @@
 package testing
 
 import (
+	"context"
 	"dataset/controller"
 	"dataset/request"
 	"fmt"
@@ -41,8 +42,9 @@ compare:
 
 func TestCompareUsXTextEdit2STT(t *testing.T) {
 	var bibleId = `ENGWEB`
+	ctx := context.Background()
 	var req = strings.Replace(CompareUsXTextEdit2STT, `{bibleId}`, bibleId, 3)
-	var control = controller.NewController([]byte(req))
+	var control = controller.NewController(ctx, []byte(req))
 	filename, status := control.Process()
 	if status.IsErr {
 		t.Fatal(status)

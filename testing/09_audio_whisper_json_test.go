@@ -1,6 +1,7 @@
 package testing
 
 import (
+	"context"
 	"dataset/controller"
 	"dataset/request"
 	"fmt"
@@ -29,9 +30,10 @@ text_data:
 func TestAudioWhisperJson(t *testing.T) {
 	var bibles = make(map[string]int)
 	bibles[`ENGWEB`] = 68
+	ctx := context.Background()
 	for bibleId, expected := range bibles {
 		var req = strings.Replace(AudioWhisperJson, `{bibleId}`, bibleId, 2)
-		ctrl := controller.NewController([]byte(req))
+		ctrl := controller.NewController(ctx, []byte(req))
 		filename, status := ctrl.Process()
 		fmt.Println("Filename", filename, status)
 		if status.IsErr {

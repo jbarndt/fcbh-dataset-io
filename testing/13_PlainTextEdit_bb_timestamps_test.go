@@ -1,6 +1,7 @@
 package testing
 
 import (
+	"context"
 	"dataset/controller"
 	"dataset/request"
 	"fmt"
@@ -37,9 +38,10 @@ func TestPlainTextBBTimestampsScript(t *testing.T) {
 		language: "eng"})
 	//tests = append(tests, try{bibleId: "ATIWBT", expected: 7, textNtId: "ATIWBTN_ET", audioNTId: "ATIWBTN1DA",
 	//	language: "ati"}) // There are no timestamps
+	ctx := context.Background()
 	for _, tst := range tests {
 		var req = strings.Replace(PlainTextEditBBTimestampsScript, `{bibleId}`, tst.bibleId, 2)
-		var control = controller.NewController([]byte(req))
+		var control = controller.NewController(ctx, []byte(req))
 		filename, status := control.Process()
 		if status.IsErr {
 			t.Error(status)

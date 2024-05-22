@@ -76,7 +76,8 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func responder(w http.ResponseWriter, request []byte) {
-	var control = controller.NewController(request)
+	var ctx = context.WithValue(context.Background(), `runType`, `server`)
+	var control = controller.NewController(ctx, request)
 	var filename, status = control.Process()
 	if status.IsErr {
 		w.WriteHeader(status.Status)

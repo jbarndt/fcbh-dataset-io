@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"dataset/controller"
 	"fmt"
 	"os"
@@ -18,7 +19,8 @@ func main() {
 		_, _ = fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	var control = controller.NewController(content)
+	var ctx = context.WithValue(context.Background(), `runType`, `cli`)
+	var control = controller.NewController(ctx, content)
 	filename, status := control.Process()
 	if status.IsErr {
 		_, _ = fmt.Fprintln(os.Stderr, status.String())

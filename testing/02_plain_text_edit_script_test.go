@@ -1,6 +1,7 @@
 package testing
 
 import (
+	"context"
 	"dataset/controller"
 	"dataset/request"
 	"fmt"
@@ -45,9 +46,10 @@ func TestPlainTextEditScript(t *testing.T) {
 	var tests []test
 	tests = append(tests, test{bibleId: "ENGWEB", expected: 8218, textNtId: "ENGWEBN_ET", language: "eng"})
 	tests = append(tests, test{bibleId: "ATIWBT", expected: 8216, textNtId: "ATIWBTN_ET", language: "ati"})
+	ctx := context.Background()
 	for _, tst := range tests {
 		var req = strings.Replace(PlainTextEditScript, `{bibleId}`, tst.bibleId, 2)
-		var control = controller.NewController([]byte(req))
+		var control = controller.NewController(ctx, []byte(req))
 		filename, status := control.Process()
 		if status.IsErr {
 			t.Error(status)

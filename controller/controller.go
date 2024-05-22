@@ -26,9 +26,9 @@ type Controller struct {
 	database    db.DBAdapter
 }
 
-func NewController(yamlContent []byte) Controller {
+func NewController(ctx context.Context, yamlContent []byte) Controller {
 	var c Controller
-	c.ctx = context.Background()
+	c.ctx = ctx
 	c.yamlRequest = yamlContent
 	return c
 }
@@ -72,7 +72,7 @@ func (c *Controller) processSteps() (string, dataset.Status) {
 	if status.IsErr {
 		return filename, status
 	}
-	c.ctx = context.WithValue(context.Background(), `request`, yaml)
+	c.ctx = context.WithValue(c.ctx, `request`, yaml)
 	// Get User
 	c.user, status = fetch.GetDBPUser(c.req)
 	if status.IsErr {
