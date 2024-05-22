@@ -36,7 +36,8 @@ func TestPostAudio2WhisperJsonAPI(t *testing.T) {
 	a.expected = 72
 	var request = strings.Replace(PostAudio2WhisperJson, `{bibleId}`, a.bibleId, 2)
 	request = strings.Replace(request, `{namev4}`, destFile, 1)
-	stdout, stderr := CurlExec(request, destFile, t)
+	//stdout, stderr := CurlExec(request, destFile, t)
+	stdout, stderr := FCBHDatasetExec(request, t)
 	fmt.Println(`STDOUT`, stdout)
 	fmt.Println(`STDERR`, stderr)
 	count := countRecords(stdout)

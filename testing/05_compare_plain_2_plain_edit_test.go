@@ -38,6 +38,34 @@ compare:
       normalize_nfkd:
 `
 
+func TestComparePlain2PlainEditScriptAPI(t *testing.T) {
+	var bibleId = `ENGWEB`
+	var req = strings.Replace(ComparePlain2PlainEditScript, `{bibleId}`, bibleId, 3)
+	stdout, stderr := FCBHDatasetExec(req, t)
+	fmt.Println(`STDOUT:`, stdout)
+	fmt.Println(`STDERR:`, stderr)
+	filename := ExtractFilenaame(req)
+	count := NumHTMLFileLines(filename, t)
+	expected := 276
+	if count != expected {
+		t.Error(`expected`, expected, `found`, count)
+	}
+}
+
+func TestComparePlain2PlainEditScriptCLI(t *testing.T) {
+	var bibleId = `ENGWEB`
+	var req = strings.Replace(ComparePlain2PlainEditScript, `{bibleId}`, bibleId, 3)
+	stdout, stderr := CLIExec(req, t)
+	fmt.Println(`STDOUT:`, stdout)
+	fmt.Println(`STDERR:`, stderr)
+	filename := ExtractFilenaame(req)
+	count := NumHTMLFileLines(filename, t)
+	expected := 276
+	if count != expected {
+		t.Error(`expected`, expected, `found`, count)
+	}
+}
+
 func TestComparePlain2PlainEditScript(t *testing.T) {
 	var bibleId = `ENGWEB`
 	ctx := context.Background()

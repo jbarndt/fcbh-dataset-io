@@ -20,6 +20,20 @@ text_data:
     text_usx_edit: yes
 `
 
+func TestUSXTextEditScriptAPI(t *testing.T) {
+	var bibleId = `ENGWEB`
+	var req = strings.Replace(USXTextEditScript, `{bibleId}`, bibleId, 2)
+	stdout, stderr := FCBHDatasetExec(req, t)
+	fmt.Println(`STDOUT:`, stdout)
+	fmt.Println(`STDERR:`, stderr)
+	filename := ExtractFilenaame(req)
+	numLines := NumJSONFileLines(filename, t)
+	expected := 9588
+	if numLines != expected {
+		t.Error(`Expected `, expected, `records, got`, numLines)
+	}
+}
+
 func TestUSXTextEditScriptCLI(t *testing.T) {
 	var bibleId = `ENGWEB`
 	var req = strings.Replace(USXTextEditScript, `{bibleId}`, bibleId, 2)

@@ -20,6 +20,20 @@ text_data:
     text_plain_edit: yes
 `
 
+func TestPlainTextEditScriptAPI(t *testing.T) {
+	var bibleId = `ENGWEB`
+	var expected = 8218
+	var req = strings.Replace(PlainTextEditScript, `{bibleId}`, bibleId, 2)
+	stdout, stderr := FCBHDatasetExec(req, t)
+	fmt.Println(`STDOUT:`, stdout)
+	fmt.Println(`STDERR:`, stderr)
+	filename := ExtractFilenaame(req)
+	numLines := NumJSONFileLines(filename, t)
+	if numLines != expected {
+		t.Error(`Expected `, expected, `records, got`, numLines)
+	}
+}
+
 func TestPlainTextEditScriptCLI(t *testing.T) {
 	var bibleId = `ENGWEB`
 	var expected = 8218
