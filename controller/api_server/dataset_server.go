@@ -14,9 +14,9 @@ import (
 func main() {
 	var ctx = context.Background()
 	http.HandleFunc("/upload", uploadHandler)
-	http.HandleFunc("/", handler)
-	log.Info(ctx, "Server starting on port 8080...")
-	err := http.ListenAndServe(":8080", nil)
+	http.HandleFunc("/request", handler)
+	log.Info(ctx, "Server starting on port 7777...")
+	err := http.ListenAndServe(":7777", nil)
 	if err != nil {
 		log.Panic(ctx, "Error starting server: ", err)
 	}
@@ -24,6 +24,9 @@ func main() {
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	var start = time.Now()
+	if r.Method != `POST` {
+		errorResponse(w, http.StatusMethodNotAllowed, nil, `Only POST method is allowed`)
+	}
 	request, err := io.ReadAll(r.Body)
 	if err != nil {
 		errorResponse(w, http.StatusInternalServerError, err, `Error reading request to server`)
@@ -35,6 +38,9 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	var start = time.Now()
+	if r.Method != `POST` {
+		errorResponse(w, http.StatusMethodNotAllowed, nil, `Only POST method is allowed`)
+	}
 	// Parse the multipart form with a max memory of 10 MiB
 	err := r.ParseMultipartForm(10 << 20)
 	if err != nil {

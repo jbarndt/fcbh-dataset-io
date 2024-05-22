@@ -52,7 +52,7 @@ func GetArguments() string {
 }
 
 func HttpPost(cfg Config, request []byte) *http.Request {
-	req, err := http.NewRequest("POST", cfg.Host, bytes.NewBuffer(request))
+	req, err := http.NewRequest("POST", cfg.Host+`/request`, bytes.NewBuffer(request))
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
