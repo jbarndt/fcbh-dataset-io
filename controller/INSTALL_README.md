@@ -107,9 +107,11 @@ To Update go code
 
 > go install dataset/controller/api_server
 
-> sudo vi /etc/systemd/system/api_server.service
+> sudo vi /etc/systemd/user/api_server.service
 
 insert: dataset/controller/api_server/api_server.service
+
+> sudo systemctl enable api_server
 
 > sudo systemctl start api_server
 

@@ -1,10 +1,18 @@
 [Unit]
-Description=API Server
+Description=FCBH Dataset API Server
 After=network.target
 
 [Service]
 Type=simple
 User=dataset
+Environment="FCBH_DBP_KEY=b4715786-9b8e-4fbe-a9b9-ff448449b81b"
+Environment="FCBH_DATASET_DB=/home/dataset/data"
+Environment="FCBH_DATASET_FILES=/home/dataset/data/download"
+Environment="FCBH_DATASET_TMP=/home/dataset/data/tmp"
+Environment="PYTHON_EXE=/usr/bin/python3"
+Environment="WHISPER_EXE=/home/dataset/.local/bin/whisper"
+Environment="FCBH_DATASET_LOG_FILE=/home/dataset/dataset.log"
+Environment="FCBH_DATASET_LOG_LEVEL=DEBUG"
 ExecStart=/home/dataset/go/bin/api_server
 ExecReload=/bin/kill -HUP $MAINPID
 Restart=always
@@ -15,8 +23,12 @@ WantedBy=multi-user.target
 
 # Put file at: /etc/systemd/system/api_server.service
 
+# sudo systemctl daemon-reload
+
+# sudo systemctl enable api_server
 # sudo systemctl start api_server
 # sudo systemctl stop api_server
 # sudo systemctl restart api_server
 # sudo systemctl reload api_server
 # sudo systemctl status api_server
+# sudo systemctl disable api_server

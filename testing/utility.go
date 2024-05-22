@@ -23,6 +23,7 @@ const (
 	OUTPUT     = `/Users/gary/FCBH2024/systemtest/`
 )
 
+// HttpPost is deprecated
 func HttpPost(request string, name string, t *testing.T) ([]byte, int) {
 	client := &http.Client{}
 	req, err := http.NewRequest("POST", HOST, bytes.NewReader([]byte(request)))
@@ -61,6 +62,25 @@ func CLIExec(requestYaml string, t *testing.T) (string, string) {
 	_, _ = file.Write([]byte(requestYaml))
 	_ = file.Close()
 	var cmd = exec.Command(`go`, `run`, `../controller/cli/dataset.go`, file.Name())
+	var stdoutBuf, stderrBuf bytes.Buffer
+	cmd.Stdout = &stdoutBuf
+	cmd.Stderr = &stderrBuf
+	err = cmd.Run()
+	if err != nil {
+		t.Error(err.Error())
+	}
+	_ = os.Remove(file.Name())
+	return stdoutBuf.String(), stderrBuf.String()
+}
+
+func FCBHDatasetExec(requestYaml string, t *testing.T) (string, string) {
+	file, err := os.CreateTemp(os.Getenv(`FCBH_DATASET_TMP`), `request`+"_*.yaml")
+	if err != nil {
+		t.Error(err)
+	}
+	_, _ = file.Write([]byte(requestYaml))
+	_ = file.Close()
+	var cmd = exec.Command(`go`, `run`, `../controller/FCBHDataset`, file.Name())
 	var stdoutBuf, stderrBuf bytes.Buffer
 	cmd.Stdout = &stdoutBuf
 	cmd.Stderr = &stderrBuf
