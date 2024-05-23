@@ -21,17 +21,10 @@ text_data:
 `
 
 func TestPlainTextEditScriptAPI(t *testing.T) {
-	var bibleId = `ENGWEB`
-	var expected = 8218
-	var req = strings.Replace(PlainTextEditScript, `{bibleId}`, bibleId, 2)
-	stdout, stderr := FCBHDatasetExec(req, t)
-	fmt.Println(`STDOUT:`, stdout)
-	fmt.Println(`STDERR:`, stderr)
-	filename := ExtractFilenaame(req)
-	numLines := NumJSONFileLines(filename, t)
-	if numLines != expected {
-		t.Error(`Expected `, expected, `records, got`, numLines)
-	}
+	var cases []APITest
+	cases = append(cases, APITest{BibleId: `ENGWEB`, Expected: 8218})
+	cases = append(cases, APITest{BibleId: `ATIWBT`, Expected: 8216})
+	APITestUtility(PlainTextEditScript, cases, t)
 }
 
 func TestPlainTextEditScriptCLI(t *testing.T) {

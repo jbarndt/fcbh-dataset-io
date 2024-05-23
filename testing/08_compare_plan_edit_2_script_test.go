@@ -38,6 +38,12 @@ compare:
       normalize_nfkd:
 `
 
+func TestComparePlainTextEdit2ScriptAPI(t *testing.T) {
+	var cases []APITest
+	cases = append(cases, APITest{BibleId: `ATIWBT`, Expected: 18})
+	APITestUtility(ComparePlainTextEdit2Script, cases, t)
+}
+
 func TestComparePlainTextEdit2Script(t *testing.T) {
 	var bibleId = `ATIWBT`
 	ctx := context.Background()

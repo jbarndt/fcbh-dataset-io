@@ -16,7 +16,7 @@ username: GaryNTest
 email: gary@shortsands.com
 output_file: 09__audio_whisper_json.json
 testament: # Choose one or both
-  nt_books: ["TIT"]
+  nt_books: ["PHM"]
 audio_data:
   bible_brain:
     mp3_64: yes
@@ -28,19 +28,9 @@ text_data:
 `
 
 func TestAudioWhisperJsonAPI(t *testing.T) {
-	var bibles = make(map[string]int)
-	bibles[`ENGWEB`] = 68
-	for bibleId, expected := range bibles {
-		var request = strings.Replace(AudioWhisperJson, `{bibleId}`, bibleId, 2)
-		stdout, stderr := FCBHDatasetExec(request, t)
-		fmt.Println(`STDOUT:`, stdout)
-		fmt.Println(`STDERR:`, stderr)
-		filename := ExtractFilenaame(request)
-		numLines := NumJSONFileLines(filename, t)
-		if numLines != expected {
-			t.Error(`Expected `, expected, `records, got`, numLines)
-		}
-	}
+	var cases []APITest
+	cases = append(cases, APITest{BibleId: `ENGWEB`, Expected: 35, Diff: 5})
+	APITestUtility(AudioWhisperJson, cases, t)
 }
 
 func TestAudioWhisperJson(t *testing.T) {

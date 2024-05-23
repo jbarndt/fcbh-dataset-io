@@ -19,19 +19,9 @@ text_data:
 `
 
 func TestPlainTextScriptAPI(t *testing.T) {
-	var cases = make(map[string]int)
-	cases[`ENGWEB`] = 7959
-	for bibleId, count := range cases {
-		var req = strings.Replace(PlainTextScript, `{bibleId}`, bibleId, 2)
-		stdout, stderr := FCBHDatasetExec(req, t)
-		fmt.Println(`STDOUT:`, stdout)
-		fmt.Println(`STDERR:`, stderr)
-		filename := ExtractFilenaame(req)
-		numLines := NumCVSFileLines(filename, t)
-		if numLines != count {
-			t.Error(`Expected `, count, `records, got`, numLines)
-		}
-	}
+	var cases []APITest
+	cases = append(cases, APITest{BibleId: `ENGWEB`, Expected: 7959, Diff: 0})
+	APITestUtility(PlainTextScript, cases, t)
 }
 
 func TestPlainTextScriptCLI(t *testing.T) {

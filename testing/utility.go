@@ -19,7 +19,7 @@ import (
 
 const (
 	HOST       = `http://localhost:8080/`
-	UPLOADHOST = `http://localhost:8080/upload`
+	UPLOADHOST = `http://localhost:7777/upload`
 	OUTPUT     = `/Users/gary/FCBH2024/systemtest/`
 )
 
@@ -73,25 +73,11 @@ func CLIExec(requestYaml string, t *testing.T) (string, string) {
 	return stdoutBuf.String(), stderrBuf.String()
 }
 
-func FCBHDatasetExec(requestYaml string, t *testing.T) (string, string) {
-	file, err := os.CreateTemp(os.Getenv(`FCBH_DATASET_TMP`), `request`+"_*.yaml")
-	if err != nil {
-		t.Error(err)
-	}
-	_, _ = file.Write([]byte(requestYaml))
-	_ = file.Close()
-	var cmd = exec.Command(`go`, `run`, `../controller/FCBHDataset`, file.Name())
-	var stdoutBuf, stderrBuf bytes.Buffer
-	cmd.Stdout = &stdoutBuf
-	cmd.Stderr = &stderrBuf
-	err = cmd.Run()
-	if err != nil {
-		t.Error(err.Error())
-	}
-	_ = os.Remove(file.Name())
-	return stdoutBuf.String(), stderrBuf.String()
+func ExtractFilename(yaml string) string {
+	return ExtractFilenaame(yaml)
 }
 
+// Deprecated
 func ExtractFilenaame(yaml string) string {
 	start := strings.Index(yaml, `output_file:`) + 12
 	end := strings.Index(yaml[start:], "\n")

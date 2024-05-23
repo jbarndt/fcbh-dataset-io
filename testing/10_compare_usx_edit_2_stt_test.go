@@ -41,18 +41,9 @@ compare:
 `
 
 func TestCompareUsXTextEdit2STTAPI(t *testing.T) {
-	var bibleId = `ENGWEB`
-	var req = strings.Replace(CompareUsXTextEdit2STT, `{bibleId}`, bibleId, 3)
-	stdout, stderr := FCBHDatasetExec(req, t)
-	fmt.Println(`STDOUT:`, stdout)
-	fmt.Println(`STDERR:`, stderr)
-	filename := ExtractFilenaame(req)
-	fmt.Println("Filename", filename)
-	count := NumHTMLFileLines(filename, t)
-	expected := 22
-	if count != expected {
-		t.Error(`expected`, expected, `found`, count)
-	}
+	var cases []APITest
+	cases = append(cases, APITest{BibleId: `ENGWEB`, Expected: 22, Diff: 0})
+	APITestUtility(CompareUsXTextEdit2STT, cases, t)
 }
 
 func TestCompareUsXTextEdit2STT(t *testing.T) {

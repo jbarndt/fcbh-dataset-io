@@ -2,7 +2,7 @@
 
 > Create server Ubuntu 20.04 x64
 
-167.99.58.202 ubuntu 20
+167.99.58.202 ubuntu 20.04
 
 > adduser dataset
 

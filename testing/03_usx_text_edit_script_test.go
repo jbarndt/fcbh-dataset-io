@@ -21,17 +21,10 @@ text_data:
 `
 
 func TestUSXTextEditScriptAPI(t *testing.T) {
-	var bibleId = `ENGWEB`
-	var req = strings.Replace(USXTextEditScript, `{bibleId}`, bibleId, 2)
-	stdout, stderr := FCBHDatasetExec(req, t)
-	fmt.Println(`STDOUT:`, stdout)
-	fmt.Println(`STDERR:`, stderr)
-	filename := ExtractFilenaame(req)
-	numLines := NumJSONFileLines(filename, t)
-	expected := 9588
-	if numLines != expected {
-		t.Error(`Expected `, expected, `records, got`, numLines)
-	}
+	var cases []APITest
+	cases = append(cases, APITest{BibleId: `ENGWEB`, Expected: 9588})
+	cases = append(cases, APITest{BibleId: `ATIWBT`, Expected: 8254})
+	APITestUtility(USXTextEditScript, cases, t)
 }
 
 func TestUSXTextEditScriptCLI(t *testing.T) {
