@@ -1,7 +1,11 @@
 package testing
 
 import (
+	"context"
+	"dataset/controller"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -43,5 +47,34 @@ func TestPostAudio2WhisperJsonAPI(t *testing.T) {
 	count := countRecords(stdout)
 	if count != a.expected {
 		t.Error(`expected,`, a.expected, `found`, count)
+	}
+}
+
+func TestPostAudio2WhisperJson(t *testing.T) {
+	type try struct {
+		bibleId  string
+		filePath string
+		namev4   string
+		expected int
+	}
+	var a try
+	a.bibleId = `ENGWEB`
+	a.filePath = `ENGWEB/ENGWEBN2DA/B23___02_1John_______ENGWEBN2DA.mp3`
+	a.namev4 = `ENGWEBN2DA_B23_1JN_002.mp3`
+	//destFile := CopyAudio(a.namev4, a.filePath, t)
+	destFile := filepath.Join(os.Getenv(`FCBH_DATASET_FILES`), a.filePath)
+	a.expected = 72
+	ctx := context.Background()
+	var request = strings.Replace(PostAudio2WhisperJson, `{bibleId}`, a.bibleId, 2)
+	request = strings.Replace(request, `{namev4}`, destFile, 1)
+	var control = controller.NewController(ctx, []byte(request))
+	filename, status := control.Process()
+	if status.IsErr {
+		t.Error(status)
+	}
+	fmt.Println(filename)
+	numLines := NumJSONFileLines(filename, t)
+	if numLines != a.expected {
+		t.Error(`expected,`, a.expected, `found`, numLines)
 	}
 }

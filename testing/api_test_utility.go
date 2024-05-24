@@ -45,6 +45,7 @@ func FCBHDatasetExec(requestYaml string, t *testing.T) (string, string) {
 	cmd.Stderr = &stderrBuf
 	err = cmd.Run()
 	if err != nil {
+		fmt.Println(stderrBuf.String())
 		t.Fatal(err.Error())
 	}
 	_ = os.Remove(file.Name())

@@ -2,7 +2,7 @@
 ## tab characters are NOT allowed.
 ## It is best to always include a languageISO or bibleId in the dataset_name
 
-# These three fields are required
+# These six fields are required
 is_new: yes # Answer yet to start with a clean project
 dataset_name: Test1_ATIWBT # Use a unique name to keep runs separate, or reuse a name to add to a prior run
 bible_id: ATIWBT
