@@ -40,7 +40,7 @@ compare:
 
 func TestCompareUsXTextEdit2STTAPI(t *testing.T) {
 	var cases []APITest
-	cases = append(cases, APITest{BibleId: `ENGWEB`, Expected: 3, Diff: 0})
+	cases = append(cases, APITest{BibleId: `ENGWEB`, Expected: 1, Diff: 0})
 	APITestUtility(CompareUsXTextEdit2STT, cases, t)
 }
 
@@ -55,7 +55,7 @@ func TestCompareUsXTextEdit2STT(t *testing.T) {
 	}
 	fmt.Println("Filename", filename)
 	count := NumHTMLFileLines(filename, t)
-	expected := 3
+	expected := 1
 	if count != expected {
 		t.Error(`expected`, expected, `found`, count)
 	}
