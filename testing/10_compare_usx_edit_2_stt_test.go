@@ -15,8 +15,6 @@ bible_id: {bibleId}
 username: GaryNTest
 email: gary@shortsands.com
 output_file: 10__compare_usx_edit_2_stt.html
-testament:
-  nt_books: ['TIT']
 compare:
   base_dataset: USX Text Edit Script_{bibleId}
   compare_settings: # Mark yes, all settings that apply
@@ -42,7 +40,7 @@ compare:
 
 func TestCompareUsXTextEdit2STTAPI(t *testing.T) {
 	var cases []APITest
-	cases = append(cases, APITest{BibleId: `ENGWEB`, Expected: 22, Diff: 0})
+	cases = append(cases, APITest{BibleId: `ENGWEB`, Expected: 3, Diff: 0})
 	APITestUtility(CompareUsXTextEdit2STT, cases, t)
 }
 
@@ -57,7 +55,7 @@ func TestCompareUsXTextEdit2STT(t *testing.T) {
 	}
 	fmt.Println("Filename", filename)
 	count := NumHTMLFileLines(filename, t)
-	expected := 22
+	expected := 3
 	if count != expected {
 		t.Error(`expected`, expected, `found`, count)
 	}

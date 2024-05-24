@@ -7,13 +7,9 @@ import (
 	"dataset/fetch"
 	log "dataset/logger"
 	"dataset/request"
-	"fmt"
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"golang.org/x/text/unicode/norm"
-	"os"
-	"strconv"
 	"strings"
-	"time"
 )
 
 type Compare struct {
@@ -61,16 +57,11 @@ func (c *Compare) Process() (string, dataset.Status) {
 	if status.IsErr {
 		return filename, status
 	}
-	output, status := c.openOutput(c.baseDataset, c.dataset)
-	if status.IsErr {
-		return filename, status
-	}
 	c.writer, status = NewHTMLWriter(c.ctx, c.dataset)
 	if status.IsErr {
 		return filename, status
 	}
-	c.writer.WriteHeading(c.baseDataset)
-	filename = output.Name()
+	filename = c.writer.WriteHeading(c.baseDataset)
 	for _, bookId := range db.RequestedBooks(c.testament) {
 		var chapInBook, _ = db.BookChapterMap[bookId] // Need to check OK, because bookId could be in error?
 		var chapter = 1
@@ -84,65 +75,13 @@ func (c *Compare) Process() (string, dataset.Status) {
 			if status.IsErr {
 				return filename, status
 			}
-			c.diff(output, lines1, lines2)
+			c.diff(lines1, lines2)
 			chapter++
 		}
 	}
 	c.baseDb.Close()
-	c.endReport(output)
 	c.writer.WriteEnd(c.insertSum, c.deleteSum, c.diffCount)
 	return filename, status
-}
-
-func (c *Compare) openOutput(database1 string, database2 string) (*os.File, dataset.Status) {
-	var status dataset.Status
-	output, err := os.CreateTemp(os.Getenv(`FCBH_DATASET_TMP`), c.dataset+"_*diff.html")
-	if err != nil {
-		status = log.Error(c.ctx, 500, err, `Error creating output file for diff`)
-		return output, status
-	}
-	head := `<DOCTYPE html>
-<html>
- <head>
-  <meta charset="utf-8">
-  <title>File Difference</title>
-  <style>
-p { margin: 20px 40px; }
-  </style>
- </head>
- <body>`
-	_, _ = output.WriteString(head)
-	_, _ = output.WriteString(`<h2 style="text-align:center">Compare `)
-	_, _ = output.WriteString(database1)
-	_, _ = output.WriteString(` to `)
-	_, _ = output.WriteString(database2)
-	_, _ = output.WriteString("</h2>\n")
-	_, _ = output.WriteString(`<h3 style="text-align:center">`)
-	_, _ = output.WriteString(time.Now().Format(`Mon Jan 2 2006 03:04:05 pm MST`))
-	_, _ = output.WriteString("</h3>\n")
-	_, _ = output.WriteString(`<h3 style="text-align:center">RED characters are those in `)
-	_, _ = output.WriteString(database1)
-	_, _ = output.WriteString(` only, while GREEN characters are in `)
-	_, _ = output.WriteString(database2)
-	_, _ = output.WriteString(" only</h3>\n")
-	return output, status
-}
-
-func (c *Compare) endReport(output *os.File) {
-	fmt.Println("Num Diff", c.diffCount)
-	_, _ = output.WriteString(`<p>Total Inserted Chars `)
-	_, _ = output.WriteString(strconv.Itoa(c.insertSum))
-	_, _ = output.WriteString(`, Total Deleted Chars `)
-	_, _ = output.WriteString(strconv.Itoa(c.deleteSum))
-	_, _ = output.WriteString("</p>\n")
-	_, _ = output.WriteString(`<p>`)
-	_, _ = output.WriteString("Total Difference Count: ")
-	_, _ = output.WriteString(strconv.Itoa(c.diffCount))
-	_, _ = output.WriteString("</p>\n")
-	end := ` </body>
-</html>`
-	_, _ = output.WriteString(end)
-	_ = output.Close()
 }
 
 func (c *Compare) process(conn db.DBAdapter, bookId string, chapterNum int) ([]Verse, dataset.Status) {
@@ -445,7 +384,7 @@ type pair struct {
 }
 
 /* This diff method assumes one chapter at a time */
-func (c *Compare) diff(output *os.File, verses1 []Verse, verses2 []Verse) {
+func (c *Compare) diff(verses1 []Verse, verses2 []Verse) {
 
 	// Put the second data in a map
 	var verse2Map = make(map[string]Verse)
@@ -483,22 +422,8 @@ func (c *Compare) diff(output *os.File, verses1 []Verse, verses2 []Verse) {
 				inserts, deletes := c.measure(diffs)
 				c.insertSum += inserts
 				c.deleteSum += deletes
-				c.writer.WriteVerseDiff(pair, inserts, deletes, diffMatch.DiffPrettyHtml(diffs))
-				ref := pair.bookId + " " + strconv.Itoa(pair.chapter) + ":" + pair.num + ` `
-				//fmt.Println(ref, diffMatch.DiffPrettyText(diffs))
-				//fmt.Println("=============")
-				_, _ = output.WriteString(`<p>`)
-				_, _ = output.WriteString(ref)
-				_, _ = output.WriteString(` +`)
-				_, _ = output.WriteString(strconv.Itoa(inserts))
-				_, _ = output.WriteString(` -`)
-				_, _ = output.WriteString(strconv.Itoa(deletes))
-				_, _ = output.WriteString(` `)
-				_, _ = output.WriteString(diffMatch.DiffPrettyHtml(diffs))
-				_, _ = output.WriteString("</p>\n")
-				//_, _ = output.WriteString(`<p>`)
-				//_, _ = output.WriteString(fmt.Sprint(diffs))
-				//_, _ = output.WriteString("</p>\n")
+				errPct := float64((inserts+deletes)*100) / float64(len(pair.text1))
+				c.writer.WriteVerseDiff(pair, inserts, deletes, errPct, diffMatch.DiffPrettyHtml(diffs))
 				c.diffCount++
 			}
 		}

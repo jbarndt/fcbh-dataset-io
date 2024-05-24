@@ -40,7 +40,7 @@ compare:
 
 func TestComparePlainEdit2USXEditScriptAPI(t *testing.T) {
 	var cases []APITest
-	cases = append(cases, APITest{BibleId: `ENGWEB`, Expected: 16})
+	cases = append(cases, APITest{BibleId: `ENGWEB`, Expected: 0})
 	APITestUtility(ComparePlainEdit2USXEditScript, cases, t)
 }
 
@@ -55,7 +55,7 @@ func TestComparePlainEdit2USXEditScript(t *testing.T) {
 	}
 	fmt.Println("Filename", filename)
 	count := NumHTMLFileLines(filename, t)
-	expected := 16
+	expected := 0
 	if count != expected {
 		t.Error(`expected`, expected, `found`, count)
 	}

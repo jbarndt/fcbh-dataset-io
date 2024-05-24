@@ -138,8 +138,8 @@ func NumHTMLFileLines(filename string, t *testing.T) int {
 	if err != nil {
 		t.Fatal(err)
 	}
-	records := strings.Split(string(content), "\n")
-	return len(records)
+	records := strings.Split(string(content), "<tr>")
+	return len(records) - 2
 }
 
 func identTest(name string, t *testing.T, textType request.MediaType, textOTId string,

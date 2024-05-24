@@ -367,38 +367,31 @@ func (d *DBAdapter) prepareDML(query string) (*sql.Tx, *sql.Stmt) {
 	return tx, stmt
 }
 
-// ReadNumChapters is used by match.Compare
-// Deprecated -- replaced by book_chapters
-/*
-func (d *DBAdapter) ReadNumChapters() (map[string]int, dataset.Status) {
-	var results = make(map[string]int)
+func (d *DBAdapter) SelectBookChapter() ([]Script, dataset.Status) {
+	var results []Script
 	var status dataset.Status
-	query := `SELECT book_id, max(chapter_num) FROM scripts GROUP BY book_id`
+	query := `SELECT distinct book_id, chapter_num FROM scripts`
 	rows, err := d.DB.Query(query)
 	if err != nil {
-		status = log.Error(d.Ctx, 500, err, `Could not query ReadNumChapters query`)
+		status = log.Error(d.Ctx, 500, err, `Error reading rows in SelectBookChapter`)
 		return results, status
 	}
-	type rec struct {
-		bookId      string
-		numChapters int
-	}
+	defer d.closeDef(rows, `SelectBookChapter`)
 	for rows.Next() {
-		var tmp rec
-		err = rows.Scan(&tmp.bookId, &tmp.numChapters)
+		var scp Script
+		err = rows.Scan(&scp.BookId, &scp.ChapterNum)
 		if err != nil {
-			status = log.Error(d.Ctx, 500, err, `Error reading rows in ReadNumChapters`)
+			status = log.Error(d.Ctx, 500, err, `Error scanning in SelectBookChapter`)
 			return results, status
 		}
-		results[tmp.bookId] = tmp.numChapters
+		results = append(results, scp)
 	}
 	err = rows.Err()
 	if err != nil {
-		status = log.Error(d.Ctx, 500, err, `Error at end of reading rows in ReadNumChapters`)
+		status = log.Error(d.Ctx, 500, err, `Error at end of rows in SelectBookChapter`)
 	}
 	return results, status
 }
-*/
 
 func (d *DBAdapter) SelectIdent() (Ident, dataset.Status) {
 	var results Ident
