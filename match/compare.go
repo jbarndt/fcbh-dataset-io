@@ -26,6 +26,7 @@ type Compare struct {
 	testament   request.Testament
 	settings    request.CompareSettings
 	replacer    *strings.Replacer
+	writer      HTMLWriter
 	diffCount   int
 	insertSum   int
 	deleteSum   int
@@ -64,6 +65,11 @@ func (c *Compare) Process() (string, dataset.Status) {
 	if status.IsErr {
 		return filename, status
 	}
+	c.writer, status = NewHTMLWriter(c.ctx, c.dataset)
+	if status.IsErr {
+		return filename, status
+	}
+	c.writer.WriteHeading(c.baseDataset)
 	filename = output.Name()
 	for _, bookId := range db.RequestedBooks(c.testament) {
 		var chapInBook, _ = db.BookChapterMap[bookId] // Need to check OK, because bookId could be in error?
@@ -84,6 +90,7 @@ func (c *Compare) Process() (string, dataset.Status) {
 	}
 	c.baseDb.Close()
 	c.endReport(output)
+	c.writer.WriteEnd(c.insertSum, c.deleteSum, c.diffCount)
 	return filename, status
 }
 
@@ -429,15 +436,17 @@ func (c *Compare) cleanup(text string) string {
 	return text
 }
 
+type pair struct {
+	bookId  string
+	chapter int
+	num     string
+	text1   string
+	text2   string
+}
+
 /* This diff method assumes one chapter at a time */
 func (c *Compare) diff(output *os.File, verses1 []Verse, verses2 []Verse) {
-	type pair struct {
-		bookId  string
-		chapter int
-		num     string
-		text1   string
-		text2   string
-	}
+
 	// Put the second data in a map
 	var verse2Map = make(map[string]Verse)
 	for _, vs2 := range verses2 {
@@ -474,6 +483,7 @@ func (c *Compare) diff(output *os.File, verses1 []Verse, verses2 []Verse) {
 				inserts, deletes := c.measure(diffs)
 				c.insertSum += inserts
 				c.deleteSum += deletes
+				c.writer.WriteVerseDiff(pair, inserts, deletes, diffMatch.DiffPrettyHtml(diffs))
 				ref := pair.bookId + " " + strconv.Itoa(pair.chapter) + ":" + pair.num + ` `
 				//fmt.Println(ref, diffMatch.DiffPrettyText(diffs))
 				//fmt.Println("=============")

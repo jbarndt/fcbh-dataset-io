@@ -69,6 +69,7 @@ func (c *Compare) chapterDiff(output *os.File, bookId string, chapter int, baseT
 		inserts, deletes := c.measure(diffs)
 		c.insertSum += inserts
 		c.deleteSum += deletes
+		c.writer.WriteChapterDiff(bookId, chapter, inserts, deletes, diffMatch.DiffPrettyHtml(diffs))
 		_, _ = output.WriteString(`<h3 style="padding-left:50px;">`)
 		_, _ = output.WriteString(bookId)
 		_, _ = output.WriteString(" ")
