@@ -34,7 +34,7 @@ func (d *APIDBPClient) DownloadList() (map[string]DownloadListType, dataset.Stat
 	var response DownloadListResp
 	err := json.Unmarshal(body, &response)
 	if err != nil {
-		status := log.Error(d.ctx, 500, err, "Error decoding DBP API /bibles JSON")
+		status = log.Error(d.ctx, 500, err, "Error decoding DBP API /bibles JSON")
 		return result, status
 	}
 	for _, item := range response.Data {

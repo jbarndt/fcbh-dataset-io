@@ -41,9 +41,6 @@ func (o *Output) CSVStatus(status dataset.Status, debug bool) (string, dataset.S
 	}
 	filename = file.Name()
 	writer := csv.NewWriter(file)
-	//var result string
-	//var buffer = bytes.NewBufferString("")
-	//writer := csv.NewWriter(buffer)
 	_ = writer.Write([]string{`Name`, `Value`})
 	_ = writer.Write([]string{`is_error`, strconv.FormatBool(status.IsErr)})
 	_ = writer.Write([]string{`status`, strconv.Itoa(status.Status)})
@@ -57,10 +54,7 @@ func (o *Output) CSVStatus(status dataset.Status, debug bool) (string, dataset.S
 	err = writer.Error()
 	if err != nil {
 		errStatus = log.Error(o.ctx, 500, err, status.Err)
-		//result = status.String() + `, ` + status2.String()
-		//return filename, errStatus
 	}
-	//result = buffer.String()
-	//return []byte(`[` + result + `]`)
+	_ = file.Close()
 	return filename, errStatus
 }

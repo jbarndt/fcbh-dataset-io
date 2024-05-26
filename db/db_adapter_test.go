@@ -7,7 +7,10 @@ import (
 
 func TestNewerDBAdapter(t *testing.T) {
 	ctx := context.Background()
-	conn := NewerDBAdapter(ctx, true, `GaryG`, `TestNewerDBAdapter`)
+	conn, status1 := NewerDBAdapter(ctx, true, `GaryG`, `TestNewerDBAdapter`)
+	if status1.IsErr {
+		t.Fatal(status1)
+	}
 	count, status := conn.CountScriptRows()
 	if status.IsErr {
 		t.Fatal(status)
