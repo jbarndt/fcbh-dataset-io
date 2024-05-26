@@ -41,8 +41,8 @@ func (p *USXParser) ProcessFiles(inputFiles []input.InputFile) dataset.Status {
 		var records []db.Script
 		records, status = p.decode(p.ctx, filename) // Also edits out non-script elements
 		if !status.IsErr {
-			titleDesc := p.extractTitles(records)
-			records = p.addChapterHeading(records, titleDesc)
+			titles := p.extractTitles(records)
+			records = p.addChapterHeading(records, titles)
 			records = p.correctScriptNum(records)
 			status = p.conn.InsertScripts(records)
 			if status.IsErr {
