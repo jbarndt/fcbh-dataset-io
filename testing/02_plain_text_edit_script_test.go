@@ -9,15 +9,15 @@ import (
 	"testing"
 )
 
-const PlainTextEditScript = `is_new: yes
+const PlainTextEditScript = `is_new: no
 dataset_name: PlainTextEditScript_{bibleId}
 bible_id: {bibleId}
 username: GaryNTest
 email: gary@shortsands.com
 output_file: 02__plain_text_edit_script.json
-text_data:
-  bible_brain:
-    text_plain_edit: yes
+#text_data:
+#  bible_brain:
+#    text_plain_edit: yes
 `
 
 func TestPlainTextEditScriptAPI(t *testing.T) {
@@ -34,7 +34,7 @@ func TestPlainTextEditScriptCLI(t *testing.T) {
 	stdout, stderr := CLIExec(req, t)
 	fmt.Println(`STDOUT:`, stdout)
 	fmt.Println(`STDERR:`, stderr)
-	filename := ExtractFilenaame(req)
+	filename := ExtractFilename(req)
 	numLines := NumJSONFileLines(filename, t)
 	if numLines != expected {
 		t.Error(`Expected `, expected, `records, got`, numLines)
