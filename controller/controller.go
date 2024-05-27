@@ -365,6 +365,7 @@ func (c *Controller) output() (string, dataset.Status) {
 			return filename, status
 		}
 	}
+	records = nil
 	return filename, status
 }
 

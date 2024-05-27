@@ -148,8 +148,8 @@ func Debug(ctx context.Context, param ...any) {
 		runtime.ReadMemStats(&m)
 		var msg []string
 		msg = append(msg, fmt.Sprintf("Alloc = %v mb,", bToMb(m.Alloc)))
-		msg = append(msg, fmt.Sprintf("TotalAlloc = %v mb,", bToMb(m.TotalAlloc)))
-		msg = append(msg, fmt.Sprintf("Sys = %v mb,", bToMb(m.Sys)))
+		msg = append(msg, fmt.Sprintf("Malloca = %v mb,", bToMb(m.Mallocs)))
+		msg = append(msg, fmt.Sprintf("Frees = %v mb,", bToMb(m.Frees)))
 		msg = append(msg, fmt.Sprintf("NumGC = %v", m.NumGC))
 		param = append(param, strings.Join(msg, " "))
 		debugLog.Println(param)
