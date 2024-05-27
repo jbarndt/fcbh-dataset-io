@@ -82,6 +82,7 @@ func (o *Output) ConvertScriptsAny(structs []Script) []any {
 	for _, str := range structs {
 		results = append(results, str)
 	}
+	structs = nil
 	return results
 }
 
