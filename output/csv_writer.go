@@ -61,7 +61,10 @@ func (o *Output) WriteCSV(structs []any, meta []Meta) (string, dataset.Status) {
 	if err != nil {
 		status = log.Error(o.ctx, 500, err, `failed to flush csv file`)
 	}
-	_ = file.Close()
+	err = file.Close()
+	if err != nil {
+		status = log.Error(o.ctx, 500, err, `error closing json file`)
+	}
 	return filename, status
 }
 

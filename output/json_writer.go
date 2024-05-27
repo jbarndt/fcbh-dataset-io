@@ -69,7 +69,10 @@ func (o *Output) WriteJSON(structs []any, meta []Meta) (string, dataset.Status) 
 	if err != nil {
 		status = log.Error(o.ctx, 500, err, `failed to flush json response`)
 	}
-	_ = file.Close()
+	err = file.Close()
+	if err != nil {
+		status = log.Error(o.ctx, 500, err, `error closing json file`)
+	}
 	return filename, status
 }
 
