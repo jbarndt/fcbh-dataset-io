@@ -15,9 +15,9 @@ bible_id: {bibleId}
 username: GaryNTest
 email: gary@shortsands.com
 output_file: 02__plain_text_edit_script.json
-#text_data:
-#  bible_brain:
-#    text_plain_edit: yes
+text_data:
+  bible_brain:
+    text_plain_edit: yes
 `
 
 func TestPlainTextEditScriptAPI(t *testing.T) {
