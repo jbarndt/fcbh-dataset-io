@@ -28,7 +28,7 @@ func (o *Output) LoadScriptStruct(d db.DBAdapter) ([]Script, dataset.Status) {
 		var mfccRows sql.NullInt64
 		var mfccCols sql.NullInt64
 		var mfccJson sql.NullString
-		err := rows.Scan(&sc.ScriptId, &sc.BookId, &sc.ChapterNum, &sc.ChapterEnd, &sc.AudioFile,
+		err = rows.Scan(&sc.ScriptId, &sc.BookId, &sc.ChapterNum, &sc.ChapterEnd, &sc.AudioFile,
 			&sc.ScriptNum, &sc.UsfmStyle, &sc.Person, &sc.Actor, &sc.VerseStr, &sc.VerseEnd,
 			&sc.ScriptText, &sc.ScriptBeginTS, &sc.ScriptEndTS, &mfccRows, &mfccCols, &mfccJson)
 		if err != nil {
@@ -76,7 +76,7 @@ func (o *Output) LoadWordStruct(d db.DBAdapter) ([]Word, dataset.Status) {
 		var mfccCols sql.NullInt64
 		var mfccJson sql.NullString
 		var wordJson sql.NullString
-		err := rows.Scan(&wd.WordId, &wd.ScriptId, &wd.BookId, &wd.ChapterNum, &wd.ChapterEnd,
+		err = rows.Scan(&wd.WordId, &wd.ScriptId, &wd.BookId, &wd.ChapterNum, &wd.ChapterEnd,
 			&wd.VerseStr, &wd.VerseEnd, &wd.VerseNum, &wd.UsfmStyle, &wd.Person, &wd.Actor,
 			&wd.WordSeq, &wd.Word, &wd.WordBeginTS, &wd.WordEndTS,
 			&wordJson, &mfccRows, &mfccCols, &mfccJson)
