@@ -14,6 +14,10 @@ const (
 	HOST = "https://4.dbt.io/api/"
 )
 
+func HttpGet(ctx context.Context, url string, desc string) ([]byte, dataset.Status) {
+	return httpGet(ctx, url, false, desc)
+}
+
 func httpGet(ctx context.Context, url string, ok403 bool, desc string) ([]byte, dataset.Status) {
 	var body []byte
 	var status dataset.Status
