@@ -11,23 +11,9 @@ import (
 )
 
 /*
-Write method to do /download/list
-
-Write a program that reads Sandeeps bucket in sequence,
-
-1. Timestamps by script
-2. Timestamps by verse
-3. Script
-
-If useful /timestamps find those with timestamps
-
-Produce a file of those that have all resources, with path for each thing.
-Possibly json or csv output.
+This go file reads the /download/list endpoint, and accumulates all of the
+audio filesets in []TSData
 */
-
-type TSData struct {
-	MediaId string `json:"media_id"`
-}
 
 type DownloadList struct {
 	TType     string `json:"type"`
@@ -47,11 +33,6 @@ type Pagination1 struct {
 type DownloadResp struct {
 	Data []DownloadList `json:"data"`
 	Meta Pagination1    `json:"meta"`
-}
-
-func main() {
-	downloadList := downloadFilestList()
-	fmt.Println(downloadList)
 }
 
 func downloadFilestList() []TSData {
