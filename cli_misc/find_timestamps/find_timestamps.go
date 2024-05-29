@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -146,6 +145,6 @@ func checkExists(client *s3.Client, prefix string) int {
 		//Delimiter: aws.String("/"),
 	})
 	catchErr(err)
-	fmt.Println(list.Contents)
+	//fmt.Println(list.Contents)
 	return len(list.Contents)
 }
