@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"dataset/cli_misc"
 	"encoding/json"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -34,21 +35,12 @@ const (
 	VerseAeneas = `aeneas_verse_timings/`
 )
 
-type TSData struct {
-	MediaId      string `json:"media_id"`
-	ScriptPath   string `json:"script_path"`
-	ScriptTSPath string `json:"script_ts_path"`
-	LineTSPath   string `json:"line_ts_path"`
-	VerseTSPath  string `json:"verse_ts_path"`
-	Count        int    `json:"count"`
-}
-
 func main() {
 	//downloadList := downloadFilestList()
 	tsMap := readTSData()
 	//fmt.Println(tsMap)
 	awsFind(&tsMap)
-	var results []TSData
+	var results []cli_misc.TSData
 	for _, ts := range tsMap {
 		if ts.ScriptPath != `` &&
 			ts.ScriptTSPath != `` &&
@@ -62,21 +54,21 @@ func main() {
 	err = os.WriteFile(`cli_misc/find_timestamps/TestFilesetList.json`, content, 0644)
 }
 
-func readTSData() map[string]TSData {
+func readTSData() map[string]cli_misc.TSData {
 	content, err := os.ReadFile(`cli_misc/find_timestamps/FilesetList.json`)
 	catchErr(err)
-	var results []TSData
+	var results []cli_misc.TSData
 	err = json.Unmarshal(content, &results)
 	catchErr(err)
 	//fmt.Println(results)
-	var resultMap = make(map[string]TSData)
+	var resultMap = make(map[string]cli_misc.TSData)
 	for _, rec := range results {
 		resultMap[rec.MediaId] = rec
 	}
 	return resultMap
 }
 
-func awsFind(tsMap *map[string]TSData) {
+func awsFind(tsMap *map[string]cli_misc.TSData) {
 	ctx := context.Background()
 	cfg, err := config.LoadDefaultConfig(ctx)
 	catchErr(err)
@@ -113,7 +105,7 @@ func listObjects(ctx context.Context, client *s3.Client, prefix string) []string
 	return results
 }
 
-func findData(client *s3.Client, prefix string, mediaId string, ts *TSData) {
+func findData(client *s3.Client, prefix string, mediaId string, ts *cli_misc.TSData) {
 	newPrefix := prefix + mediaId + "/" + Script
 	count := checkExists(client, newPrefix)
 	if count > 0 {

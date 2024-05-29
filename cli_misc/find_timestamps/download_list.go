@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"dataset"
+	"dataset/cli_misc"
 	"dataset/fetch"
 	"encoding/json"
 	"fmt"
@@ -35,8 +36,8 @@ type DownloadResp struct {
 	Meta Pagination1    `json:"meta"`
 }
 
-func downloadFilestList() []TSData {
-	var results []TSData
+func downloadFilestList() []cli_misc.TSData {
+	var results []cli_misc.TSData
 	ctx := context.Background()
 	var page = 0
 	for {
@@ -51,7 +52,7 @@ func downloadFilestList() []TSData {
 		fmt.Println(list.Meta)
 		for _, item := range list.Data {
 			if item.TType == `audio` || item.TType == `audio_drama` {
-				var rec TSData
+				var rec cli_misc.TSData
 				rec.MediaId = item.FilesetId
 				results = append(results, rec)
 			}
