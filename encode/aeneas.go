@@ -133,14 +133,13 @@ func (a *Aeneas) createFile(bookId string, chapter int, texts []db.Timestamp) (s
 }
 
 func (a *Aeneas) executeAeneas(language string, audioFile string, textFile string) (string, dataset.Status) {
-	var result string
 	var status dataset.Status
 	fname := filepath.Base(audioFile)
 	fname = strings.Split(fname, `.`)[0]
 	var output, err = os.CreateTemp(os.Getenv(`FCBH_DATASET_TMP`), fname+`_`)
 	if err != nil {
 		status = log.Error(a.ctx, 500, err, `Error creating temp output file in Aeneas`)
-		return result, status
+		return "", status
 	}
 	pythonPath := os.Getenv(`PYTHON_EXE`)
 	cmd := exec.Command(pythonPath, `-m`, `aeneas.tools.execute_task`,
@@ -154,11 +153,8 @@ func (a *Aeneas) executeAeneas(language string, audioFile string, textFile strin
 	cmd.Stderr = &stderrBuf
 	err = cmd.Run()
 	if err != nil {
-		status = log.Error(a.ctx, 500, err, `Error executing Aeneas`)
-		// do not return here, STDOUT contains info
-	}
-	if stderrBuf.Len() > 0 {
-		fmt.Println("STDERR", stderrBuf.String())
+		status = log.Error(a.ctx, 500, err, stdoutBuf.String())
+		return output.Name(), status
 	}
 	if stdoutBuf.Len() > 0 {
 		fmt.Println("STDOUT", stdoutBuf.String())

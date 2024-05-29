@@ -2,22 +2,20 @@ package testing
 
 import (
 	"context"
-	"dataset/controller"
 	"dataset/db"
 	"dataset/fetch"
 	"dataset/request"
 	"fmt"
 	"gonum.org/v1/gonum/stat"
-	"strings"
 	"testing"
 )
 
-const PlainTextEdit2AeneasScript = `is_new: yes
-dataset_name: PlainTextEditScript2_{bibleId}
+const PlainTextEditTSBBScript = `is_new: yes
+dataset_name: PlainTextEditTSBBScript_{bibleId}
 bible_id: {bibleId}
 username: GaryNTest
 email: gary@shortsands.com
-output_file: 14__plain_text_edit2_aeneas.csv
+output_file: 14__plain_text_edit_bb.csv
 text_data:
   bible_brain:
     text_plain_edit: yes
@@ -25,36 +23,16 @@ audio_data:
   bible_brain:
     mp3_64: yes
 timestamps: 
-  aeneas: yes
+  bible_brain: yes
 `
 
-func TestPlainTextEdit2AeneasScript(t *testing.T) {
-	type try struct {
-		bibleId   string
-		textNtId  string
-		audioNTId string
-		language  string
-		expected  int
-	}
-	var tests []try
-	tests = append(tests, try{bibleId: `ENGWEB`, textNtId: `ENGWEBN_ET`, audioNTId: `ENGWEBN2DA`,
-		language: `eng`, expected: 8219})
-	ctx := context.Background()
-	for _, tst := range tests {
-		var req = strings.Replace(PlainTextEdit2AeneasScript, `{bibleId}`, tst.bibleId, 2)
-		var control = controller.NewController(ctx, []byte(req))
-		filename, status := control.Process()
-		if status.IsErr {
-			t.Error(status)
-		}
-		fmt.Println(filename)
-		numLines := NumCVSFileLines(filename, t)
-		if numLines != tst.expected {
-			t.Error(`Expected `, tst.expected, `records, got`, numLines)
-		}
-		identTest(`PlainTextEditScript2_`+tst.bibleId, t, request.TextPlainEdit, ``,
-			tst.textNtId, ``, tst.audioNTId, tst.language)
-	}
+func TestPlainTextBBTimestampsScript(t *testing.T) {
+	var tests []CtlTest
+	tests = append(tests, CtlTest{BibleId: "ENGWEB", Expected: 8219, TextNtId: "ENGWEBN_ET",
+		AudioNTId: "ENGWEBN2DA", Language: "eng"})
+	//tests = append(tests, try{bibleId: "ATIWBT", expected: 7, textNtId: "ATIWBTN_ET", audioNTId: "ATIWBTN1DA",
+	//	language: "ati"}) // There are no timestamps
+	DirectTestUtility(PlainTextEditTSBBScript, tests, t)
 }
 
 func TestCompareTimestamps(t *testing.T) {
