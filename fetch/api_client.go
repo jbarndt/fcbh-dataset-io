@@ -25,11 +25,11 @@ func httpGet(ctx context.Context, url string, ok403 bool, desc string) ([]byte, 
 		url += `&limit=100000&key=` + os.Getenv(`FCBH_DBP_KEY`)
 	}
 	resp, err := http.Get(url)
-	defer resp.Body.Close()
 	if err != nil {
 		status = log.Error(ctx, resp.StatusCode, err, "Error in DBP API request for:", desc)
 		return body, status
 	}
+	defer resp.Body.Close()
 	if ok403 && resp.StatusCode == 403 {
 		status.IsErr = true
 		status.Status = 403
