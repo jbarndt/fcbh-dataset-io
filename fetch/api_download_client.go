@@ -57,7 +57,8 @@ func (d *APIDownloadClient) Download(info BibleInfoType) dataset.Status {
 				return status
 			}
 		} else {
-			locations, status := d.downloadLocation(rec.Id)
+			var locations []LocationRec
+			locations, status = d.downloadLocation(rec.Id)
 			if status.IsErr {
 				if status.Status == 403 {
 					locations, status = d.downloadEachLocation(rec)
@@ -72,8 +73,8 @@ func (d *APIDownloadClient) Download(info BibleInfoType) dataset.Status {
 			if status.IsErr {
 				return status
 			}
-			directory = filepath.Join(directory, rec.Id)
-			status = d.downloadFiles(directory, locations)
+			directory2 := filepath.Join(directory, rec.Id)
+			status = d.downloadFiles(directory2, locations)
 			if status.IsErr {
 				return status
 			}
