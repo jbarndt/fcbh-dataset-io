@@ -1,16 +1,13 @@
 package fetch
 
-import (
-	"dataset"
-	log "dataset/logger"
-	"encoding/json"
-)
-
 /*
 This is not being used, because it does not recognize the limit parameter.
 So, it would take 102 queries to get the entire list.
+
+A corrected class is in dataset/cli_misc/find_timestamps/download_list.go
 */
 
+/*
 type DownloadListType struct {
 	Type         string `json:"type"`
 	LanguageName string `json:"language"`
@@ -42,3 +39,6 @@ func (d *APIDBPClient) DownloadList() (map[string]DownloadListType, dataset.Stat
 	}
 	return result, status
 }
+
+
+*/

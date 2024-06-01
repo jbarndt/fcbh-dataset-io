@@ -1,11 +1,6 @@
 package fetch
 
-import (
-	"context"
-	"fmt"
-	"testing"
-)
-
+/*
 func TestAPIDownloadList(t *testing.T) {
 	ctx := context.Background()
 	bibleId := ``
@@ -19,3 +14,5 @@ func TestAPIDownloadList(t *testing.T) {
 	}
 	fmt.Println(len(list))
 }
+
+*/
