@@ -36,6 +36,23 @@ func DestroyDatabase(database string) {
 	}
 }
 
+func DatabaseExists(username string, project string) bool {
+	database := project + `.db`
+	baseDir := os.Getenv(`FCBH_DATASET_DB`)
+	if baseDir == `` {
+		baseDir = os.Getenv(`HOME`)
+	}
+	directory := filepath.Join(baseDir, username)
+	_, err := os.Stat(directory)
+	if os.IsNotExist(err) {
+		_ = os.MkdirAll(directory, os.ModePerm)
+	}
+	databasePath := filepath.Join(directory, database)
+	_, err = os.Stat(databasePath)
+	doesExist := !os.IsNotExist(err)
+	return doesExist
+}
+
 type DBAdapter struct {
 	Ctx          context.Context
 	User         string

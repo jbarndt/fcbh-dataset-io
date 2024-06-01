@@ -2,17 +2,13 @@ package testing
 
 import (
 	"context"
-	"dataset/cli_misc"
+	"dataset/controller"
 	"dataset/db"
-	"dataset/fetch"
+	"dataset/input"
 	"dataset/request"
-	"encoding/json"
 	"fmt"
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"gonum.org/v1/gonum/stat"
-	"os"
+	"strings"
 	"testing"
 )
 
@@ -30,6 +26,8 @@ audio_data:
     mp3_64: yes
 timestamps:
   aeneas: yes
+testament:
+  nt_books: ['1JN']
 `
 
 func TestPlainTextAeneasTimestampsScript(t *testing.T) {
@@ -42,65 +40,56 @@ func TestPlainTextAeneasTimestampsScript(t *testing.T) {
 }
 
 func TestCompareTimestamps(t *testing.T) {
-	type testCase struct {
-		dataset string
-		audioId string
-	}
-	var tests []testCase
-	var test = testCase{dataset: `PlainTextEditTSScript_ENGWEB`, audioId: `ENGWEBN2DA`}
-	tests = append(tests, test)
 	ctx := context.Background()
-	client := openAwsS3(ctx, t)
-	content, err := os.ReadFile("../cli_misc/find_timestamps/TestFilesetList.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	var tsData []cli_misc.TSData
-	err = json.Unmarshal(content, &tsData)
-	if err != nil {
-		t.Fatal(err)
-	}
-	var tsMap = make(map[string]cli_misc.TSData)
-	for _, ts := range tsData {
-		tsMap[ts.MediaId] = ts
-	}
-	for _, tst := range tests {
-		conn := openDatabase(tst.dataset, t)
+	aws := input.NewTSBucket(ctx)
+	tsData := aws.GetTSData()
+	count := 0
+	for _, tst := range tsData {
+		if count > 0 {
+			break
+		}
+		count++
+		var req = strings.Replace(PlainTextEditBBTimestampsScript, `{bibleId}`, tst.MediaId[:6], 2)
+		username, datasetName := extractKeyFields(ctx, req)
+		if !db.DatabaseExists(username, datasetName) {
+			var control = controller.NewController(ctx, []byte(req))
+			filename, status := control.Process()
+			if status.IsErr {
+				t.Fatal(status)
+			}
+			fmt.Println(filename)
+			//numLines := NumFileLines(filename, t)
+		}
+		conn, status := db.NewerDBAdapter(ctx, false, username, datasetName)
+		if status.IsErr {
+			t.Fatal(status)
+		}
 		var totalDiffs []float64
 		for _, bookId := range db.RequestedBooks(request.Testament{NTBooks: []string{"1JN"}}) {
 			lastChapter, _ := db.BookChapterMap[bookId]
 			for chap := 1; chap <= lastChapter; chap++ {
-				//var diffs []float64
+				var diffs []float64
+				timestamps := aws.GetTimestamps(input.VerseAeneas, tst.MediaId, bookId, chap)
+				var baseMap = make(map[string]float64)
+				for _, ts := range timestamps {
+					baseMap[ts.VerseStr] = ts.BeginTS
+				}
 				datasetTS, status := conn.SelectScriptTimestamps(bookId, chap)
 				if status.IsErr {
 					t.Fatal(status)
 				}
-				var datasetMap = make(map[string]float64)
 				for _, ts := range datasetTS {
-					datasetMap[ts.VerseStr] = ts.BeginTS
+					baseTS, ok := baseMap[ts.VerseStr]
+					if !ok {
+						t.Error(ts.VerseStr + ` is not found in baseTS`)
+					}
+					diff := ts.BeginTS - baseTS
+					fmt.Println("verse:", ts.VerseStr, "Base:", baseTS, "Dataset:", ts.BeginTS, "diff:", diff)
+					diffs = append(diffs, diff)
 				}
-				ts, ok := tsMap[tst.audioId]
-				if !ok {
-					t.Fatal(tst.audioId + ` is not found.`)
-				}
-
-				keys := listFiles(client, `dbp-aeneas-staging`, ts.ScriptTSPath, t)
-				for _, obj := range keys {
-					fmt.Println(obj)
-				}
-
-				//for _, ts := range aenTimestamps {
-				//	bbTS, ok := bbMap[ts.VerseStr]
-				//	if !ok {
-				//		t.Error(ts.VerseStr)
-				//	}
-				//	diff := ts.BeginTS - bbTS
-				//	fmt.Println("verse:", ts.VerseStr, "AEN:", ts.BeginTS, "BB:", bbTS, "diff:", diff)
-				//	diffs = append(diffs, diff)
-				//}
-				//mean, stddev := stat.MeanStdDev(diffs, nil)
-				//fmt.Println(bookId, chap, mean, stddev)
-				//totalDiffs = append(totalDiffs, diffs...)
+				mean, stddev := stat.MeanStdDev(diffs, nil)
+				fmt.Println(bookId, chap, mean, stddev)
+				totalDiffs = append(totalDiffs, diffs...)
 			}
 		}
 		mean, stddev := stat.MeanStdDev(totalDiffs, nil)
@@ -108,40 +97,11 @@ func TestCompareTimestamps(t *testing.T) {
 	}
 }
 
-func openDatabase(datasetName string, t *testing.T) db.DBAdapter {
-	ctx := context.Background()
-	user, _ := fetch.GetTestUser()
-	conn, status := db.NewerDBAdapter(ctx, false, user.Username, datasetName)
+func extractKeyFields(ctx context.Context, requestYaml string) (string, string) {
+	decoder := request.NewRequestDecoder(ctx)
+	req, status := decoder.Decode([]byte(requestYaml))
 	if status.IsErr {
-		t.Fatal(status)
+		panic(status)
 	}
-	return conn
-}
-
-func openAwsS3(ctx context.Context, t *testing.T) *s3.Client {
-	cfg, err := config.LoadDefaultConfig(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	client := s3.NewFromConfig(cfg, func(o *s3.Options) {
-		o.Region = "us-west-2"
-	})
-	return client
-}
-
-func listFiles(client *s3.Client, bucket string, prefix string, t *testing.T) []string {
-	ctx := context.Background()
-	list, err := client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
-		Bucket: aws.String(bucket),
-		Prefix: aws.String(prefix),
-		//Delimiter: aws.String("/"),
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	var results []string
-	for _, obj := range list.Contents {
-		results = append(results, *obj.Key)
-	}
-	return results
+	return req.Username, req.DatasetName
 }

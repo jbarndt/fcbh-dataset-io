@@ -45,7 +45,7 @@ func FCBHDatasetExec(requestYaml string, t *testing.T) (string, string) {
 	cmd.Stderr = &stderrBuf
 	err = cmd.Run()
 	if err != nil {
-		fmt.Println(stderrBuf.String()) // Bug FCBHDataset is putting errors on stdout
+		fmt.Println(stdoutBuf.String()) // Bug FCBHDataset is putting errors on stdout
 		fmt.Println(stderrBuf.String())
 		t.Fatal(err.Error())
 	}
