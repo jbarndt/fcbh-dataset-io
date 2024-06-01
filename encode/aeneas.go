@@ -141,6 +141,7 @@ func (a *Aeneas) executeAeneas(language string, audioFile string, textFile strin
 		status = log.Error(a.ctx, 500, err, `Error creating temp output file in Aeneas`)
 		return "", status
 	}
+	language = `epo` // Esperanto - This should only be used when a language is not supported
 	pythonPath := os.Getenv(`PYTHON_EXE`)
 	cmd := exec.Command(pythonPath, `-m`, `aeneas.tools.execute_task`,
 		audioFile,
