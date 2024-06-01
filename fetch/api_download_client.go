@@ -44,11 +44,17 @@ func (d *APIDownloadClient) Download(info BibleInfoType) dataset.Status {
 	if info.AudioNTFileset.Id != `` {
 		download = append(download, info.AudioNTFileset)
 	}
-	if info.TextOTFileset.Id != `` {
-		download = append(download, info.TextOTFileset)
+	if info.TextOTPlainFileset.Id != `` {
+		download = append(download, info.TextOTPlainFileset)
 	}
-	if info.TextNTFileset.Id != `` {
-		download = append(download, info.TextNTFileset)
+	if info.TextNTPlainFileset.Id != `` {
+		download = append(download, info.TextNTPlainFileset)
+	}
+	if info.TextOTUSXFileset.Id != `` {
+		download = append(download, info.TextOTUSXFileset)
+	}
+	if info.TextNTUSXFileset.Id != `` {
+		download = append(download, info.TextNTUSXFileset)
 	}
 	for _, rec := range download {
 		if rec.Type == `text_plain` {

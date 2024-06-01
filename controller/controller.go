@@ -175,11 +175,7 @@ func (c *Controller) fetchData() (db.Ident, dataset.Status) {
 	if status.IsErr {
 		return c.ident, status
 	}
-	c.ident = client.UpdateIdent(c.ident, info)
-	textType := c.req.TextData.BibleBrain.TextType()
-	if textType != request.TextNone {
-		c.ident.TextSource = textType
-	}
+	c.ident = client.UpdateIdent(c.ident, info, c.req.TextData.BibleBrain.TextType())
 	status = c.database.InsertReplaceIdent(c.ident)
 	return c.ident, status
 }

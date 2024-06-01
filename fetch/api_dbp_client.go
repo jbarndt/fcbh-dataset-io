@@ -44,21 +44,23 @@ type AlphabetType struct {
 	Alphabet string `json:"script"`
 }
 type BibleInfoType struct {
-	BibleId        string       `json:"abbr"`
-	LanguageISO    string       `json:"iso"`
-	LanguageId     int          `json:"language_id"`
-	RolvId         int          `json:"language_rolv_code"`
-	LanguageName   string       `json:"language"`
-	VersionName    string       `json:"name"`
-	Alphabet       AlphabetType `json:"alphabet"` // alphabet.script
-	Copyright      string       `json:"mark"`
-	Books          []BooksType  `json:"books"`
-	DbpProd        DbpProdType  `json:"filesets"`
-	VersionCode    string
-	AudioOTFileset FilesetType
-	AudioNTFileset FilesetType
-	TextOTFileset  FilesetType
-	TextNTFileset  FilesetType
+	BibleId            string       `json:"abbr"`
+	LanguageISO        string       `json:"iso"`
+	LanguageId         int          `json:"language_id"`
+	RolvId             int          `json:"language_rolv_code"`
+	LanguageName       string       `json:"language"`
+	VersionName        string       `json:"name"`
+	Alphabet           AlphabetType `json:"alphabet"` // alphabet.script
+	Copyright          string       `json:"mark"`
+	Books              []BooksType  `json:"books"`
+	DbpProd            DbpProdType  `json:"filesets"`
+	VersionCode        string
+	AudioOTFileset     FilesetType
+	AudioNTFileset     FilesetType
+	TextOTPlainFileset FilesetType
+	TextNTPlainFileset FilesetType
+	TextOTUSXFileset   FilesetType
+	TextNTUSXFileset   FilesetType
 }
 type BibleInfoRespType struct {
 	Data BibleInfoType `json:"data"`
@@ -89,7 +91,8 @@ func (d *APIDBPClient) FindFilesets(info *BibleInfoType, audio request.BibleBrai
 	textType := text.TextType()
 	codec, bitrate := audio.AudioType()
 	if testament.OT || len(testament.OTBooks) > 0 {
-		info.TextOTFileset = d.searchText(info, `OT`, textType)
+		info.TextOTPlainFileset = d.searchPlainText(info, `OT`, textType)
+		info.TextOTUSXFileset = d.searchUSXText(info, `OT`, textType)
 		info.AudioOTFileset = d.searchAudio(info, `OT`, `audio_drama`, codec, bitrate)
 		tmpAudio := d.searchAudio(info, `OT`, `audio`, codec, bitrate)
 		if tmpAudio.Id != `` {
@@ -97,7 +100,8 @@ func (d *APIDBPClient) FindFilesets(info *BibleInfoType, audio request.BibleBrai
 		}
 	}
 	if testament.NT || len(testament.NTBooks) > 0 {
-		info.TextNTFileset = d.searchText(info, `NT`, textType)
+		info.TextNTPlainFileset = d.searchPlainText(info, `NT`, textType)
+		info.TextNTUSXFileset = d.searchUSXText(info, `NT`, textType)
 		info.AudioNTFileset = d.searchAudio(info, `NT`, `audio_drama`, codec, bitrate)
 		tmpAudio := d.searchAudio(info, `NT`, `audio`, codec, bitrate)
 		if tmpAudio.Id != `` {
@@ -106,10 +110,23 @@ func (d *APIDBPClient) FindFilesets(info *BibleInfoType, audio request.BibleBrai
 	}
 }
 
-func (d *APIDBPClient) searchText(info *BibleInfoType, size string, textType request.MediaType) FilesetType {
+func (d *APIDBPClient) searchPlainText(info *BibleInfoType, size string, textType request.MediaType) FilesetType {
 	for _, rec := range info.DbpProd.Filesets {
-		if textType.IsFrom(rec.Type) && rec.Size == size {
-			return rec
+		if rec.Type == `text_plain` && rec.Size == size {
+			if textType == request.TextPlain || textType == request.TextPlainEdit {
+				return rec
+			}
+		}
+	}
+	return FilesetType{}
+}
+
+func (d *APIDBPClient) searchUSXText(info *BibleInfoType, size string, textType request.MediaType) FilesetType {
+	for _, rec := range info.DbpProd.Filesets {
+		if rec.Type == `text_usx` && rec.Size == size {
+			if textType == request.TextUSXEdit || textType == request.TextPlainEdit {
+				return rec
+			}
 		}
 	}
 	return FilesetType{}
@@ -137,7 +154,7 @@ func (d *APIDBPClient) searchAudio(info *BibleInfoType, size string, audioType s
 	return FilesetType{}
 }
 
-func (d *APIDBPClient) UpdateIdent(id db.Ident, info BibleInfoType) db.Ident {
+func (d *APIDBPClient) UpdateIdent(id db.Ident, info BibleInfoType, textType request.MediaType) db.Ident {
 	id.BibleId = info.BibleId
 	if info.AudioOTFileset.Id != `` {
 		id.AudioOTId = info.AudioOTFileset.Id
@@ -145,11 +162,20 @@ func (d *APIDBPClient) UpdateIdent(id db.Ident, info BibleInfoType) db.Ident {
 	if info.AudioNTFileset.Id != `` {
 		id.AudioNTId = info.AudioNTFileset.Id
 	}
-	if info.TextOTFileset.Id != `` {
-		id.TextOTId = info.TextOTFileset.Id
-	}
-	if info.TextNTFileset.Id != `` {
-		id.TextNTId = info.TextNTFileset.Id
+	if textType == request.TextPlain || textType == request.TextPlainEdit {
+		if info.TextOTPlainFileset.Id != `` {
+			id.TextOTId = info.TextOTPlainFileset.Id
+		}
+		if info.TextNTPlainFileset.Id != `` {
+			id.TextNTId = info.TextNTPlainFileset.Id
+		}
+	} else if textType == request.TextUSXEdit {
+		if info.TextOTUSXFileset.Id != `` {
+			id.TextOTId = info.TextOTUSXFileset.Id
+		}
+		if info.TextNTUSXFileset.Id != `` {
+			id.TextNTId = info.TextNTUSXFileset.Id
+		}
 	}
 	if info.LanguageISO != `` {
 		id.LanguageISO = info.LanguageISO
@@ -171,6 +197,9 @@ func (d *APIDBPClient) UpdateIdent(id db.Ident, info BibleInfoType) db.Ident {
 	}
 	if info.VersionName != `` {
 		id.VersionName = info.VersionName
+	}
+	if textType != request.TextNone {
+		id.TextSource = textType
 	}
 	return id
 }
