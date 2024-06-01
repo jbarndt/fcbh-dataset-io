@@ -34,7 +34,9 @@ type TSBucket struct {
 }
 
 type TSData struct {
+	MediaType    string `json:"media_type"`
 	MediaId      string `json:"media_id"`
+	PlainText    string `json:"plain_text"`
 	ScriptPath   string `json:"script_path"`
 	ScriptTSPath string `json:"script_ts_path"`
 	LineTSPath   string `json:"line_ts_path"`
@@ -71,6 +73,23 @@ func (t *TSBucket) ListObjects(bucket, prefix string) []string {
 	return results
 }
 
+func (t *TSBucket) GetTimestamps(tsType string, mediaId string, bookId string, chapterNum int) []db.Timestamp {
+	var results []db.Timestamp
+	key := t.GetKey(tsType, mediaId, bookId, chapterNum)
+	object := t.GetObject(TSBucketName, key)
+	for _, row := range strings.Split(string(object), "\n") {
+		var ts db.Timestamp
+		parts := strings.Split(row, "\t")
+		if len(parts) >= 3 {
+			ts.BeginTS, _ = strconv.ParseFloat(parts[0], 64)
+			ts.EndTS, _ = strconv.ParseFloat(parts[1], 64)
+			ts.VerseStr = parts[2]
+			results = append(results, ts)
+		}
+	}
+	return results
+}
+
 func (t *TSBucket) GetObject(bucket string, key string) []byte {
 	response, err := t.client.GetObject(t.ctx, &s3.GetObjectInput{
 		Bucket: aws.String(bucket),
@@ -87,7 +106,7 @@ func (t *TSBucket) GetObject(bucket string, key string) []byte {
 	return body
 }
 
-func (t *TSBucket) GetTSData() map[string]TSData {
+func (t *TSBucket) GetTSData() []TSData {
 	content, err := os.ReadFile("../cli_misc/find_timestamps/TestFilesetList.json")
 	if err != nil {
 		panic(err)
@@ -97,11 +116,7 @@ func (t *TSBucket) GetTSData() map[string]TSData {
 	if err != nil {
 		panic(err)
 	}
-	var tsMap = make(map[string]TSData)
-	for _, ts := range tsData {
-		tsMap[ts.MediaId] = ts
-	}
-	return tsMap
+	return tsData
 }
 
 func (t *TSBucket) GetKey(tsType string, mediaId string, bookId string, chapterNum int) string {

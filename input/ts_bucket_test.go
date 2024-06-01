@@ -13,4 +13,8 @@ func TestTSBucket(t *testing.T) {
 	fmt.Println(key)
 	object := ts.GetObject(TSBucketName, key)
 	fmt.Println(string(object))
+	timestamps := ts.GetTimestamps(ScriptTS, `ENGWEBN2DA`, `REV`, 22)
+	for _, time := range timestamps {
+		fmt.Println(time)
+	}
 }
