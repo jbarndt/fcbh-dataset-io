@@ -1,6 +1,7 @@
 package testing
 
 import (
+	"dataset/request"
 	"testing"
 )
 
@@ -23,7 +24,7 @@ timestamps:
 func TestPlainTextBBTimestampsScript(t *testing.T) {
 	var tests []CtlTest
 	tests = append(tests, CtlTest{BibleId: "ENGWEB", Expected: 8219, TextNtId: "ENGWEBN_ET",
-		AudioNTId: "ENGWEBN2DA", Language: "eng"})
+		TextType: request.TextPlainEdit, AudioNTId: "ENGWEBN2DA", Language: "eng"})
 	//tests = append(tests, try{bibleId: "ATIWBT", expected: 7, textNtId: "ATIWBTN_ET", audioNTId: "ATIWBTN1DA",
 	//	language: "ati"}) // There are no timestamps
 	DirectTestUtility(PlainTextEditTSBBScript, tests, t)

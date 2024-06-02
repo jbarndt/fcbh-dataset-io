@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-const PlainTextEditScript = `is_new: no
+const PlainTextEditScript = `is_new: yes
 dataset_name: PlainTextEditScript_{bibleId}
 bible_id: {bibleId}
 username: GaryNTest

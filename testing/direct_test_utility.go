@@ -14,6 +14,7 @@ type CtlTest struct {
 	Name      string
 	TextNtId  string
 	AudioNTId string
+	TextType  request.MediaType
 	Language  string
 	Expected  int
 }
@@ -21,7 +22,7 @@ type CtlTest struct {
 func DirectTestUtility(requestYaml string, tests []CtlTest, t *testing.T) {
 	ctx := context.Background()
 	for _, tst := range tests {
-		var req = strings.Replace(requestYaml, `{bibleId}`, tst.BibleId, 2)
+		var req = strings.Replace(requestYaml, `{bibleId}`, tst.BibleId, 3)
 		var control = controller.NewController(ctx, []byte(req))
 		filename, status := control.Process()
 		if status.IsErr {
@@ -37,7 +38,7 @@ func DirectTestUtility(requestYaml string, tests []CtlTest, t *testing.T) {
 		if status.IsErr {
 			t.Fatal(status)
 		}
-		identTest(reqObj.DatasetName, t, request.TextPlainEdit, ``,
+		identTest(reqObj.DatasetName, t, tst.TextType, ``,
 			tst.TextNtId, ``, tst.AudioNTId, tst.Language)
 	}
 }

@@ -65,6 +65,8 @@ func NumFileLines(filename string, t *testing.T) int {
 		numLines = NumHTMLFileLines(filename, t)
 	case ".sqlite":
 		numLines = -1
+	case ".db":
+		numLines = -1
 	default:
 		t.Fatal("Unexpected output_file type:", extension)
 	}
