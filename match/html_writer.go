@@ -30,7 +30,7 @@ func NewHTMLWriter(ctx context.Context, datasetName string) (HTMLWriter, dataset
 }
 
 func (h *HTMLWriter) WriteHeading(baseDataset string) string {
-	head := `<DOCTYPE html>
+	head := `<!DOCTYPE html>
 <html>
  <head>
   <meta charset="utf-8">

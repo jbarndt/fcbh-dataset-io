@@ -45,7 +45,7 @@ func TestCompareTimestamps(t *testing.T) {
 	tsData := aws.GetTSData()
 	count := 0
 	for _, tst := range tsData {
-		if count > 0 {
+		if count > 4 {
 			break
 		}
 		count++
