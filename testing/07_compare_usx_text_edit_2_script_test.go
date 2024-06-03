@@ -1,22 +1,49 @@
 package testing
 
 import (
-	"context"
-	"dataset/controller"
 	"dataset/request"
-	"fmt"
-	"strings"
 	"testing"
 )
 
-const CompareUsXTextEdit2Script = `is_new: no
-dataset_name: ScriptTextScript_{bibleId}
+const TextUSXEdit07 = `is_new: yes
+dataset_name: 07_USXTextEditScript_{bibleId}
+bible_id: {bibleId}
+username: GaryNTest
+email: gary@shortsands.com
+output_file: 07__usx_text_edit_script.json
+text_data:
+  bible_brain:
+    text_usx_edit: yes
+`
+
+const TextScript07 = `is_new: yes
+dataset_name: 07_ScriptTextScript_{bibleId}
+bible_id: {bibleId}
+username: GaryNTest
+email: gary@shortsands.com
+output_file: 07__script_text_script.csv
+text_data:
+  file: /Users/gary/FCBH2024/download/ATIWBT/ATIWBTN2ST.xlsx
+`
+
+const TextScript07BGGWFW = `is_new: yes
+dataset_name: 07_ScriptTextScript_{bibleId}
+bible_id: {bibleId}
+username: GaryNTest
+email: gary@shortsands.com
+output_file: 07__script_text_script.csv
+text_data:
+  file: /Users/gary/FCBH2024/download/BGGWFW/BGGWFWN2ST.xlsx
+`
+
+const CompareUsXTextEdit2Script07 = `is_new: no
+dataset_name: 07_ScriptTextScript_{bibleId}
 bible_id: {bibleId}
 username: GaryNTest
 email: gary@shortsands.com
 output_file: 07__compare_usx_text_edit_2_script.html
 compare:
-  base_dataset: USX Text Edit Script_{bibleId}
+  base_dataset: 07_USXTextEditScript_{bibleId}
   compare_settings: # Mark yes, all settings that apply
     lower_case: n
     remove_prompt_chars: y
@@ -41,24 +68,28 @@ compare:
 func TestCompareUsXTextEdit2ScriptAPI(t *testing.T) {
 	var cases []APITest
 	cases = append(cases, APITest{BibleId: `ATIWBT`, Expected: 2})
-	APITestUtility(CompareUsXTextEdit2Script, cases, t)
+	APITestUtility(CompareUsXTextEdit2Script07, cases, t)
 }
 
 func TestCompareUsXTextEdit2Script(t *testing.T) {
-	var bibleId = `ATIWBT`
-	ctx := context.Background()
-	var req = strings.Replace(CompareUsXTextEdit2Script, `{bibleId}`, bibleId, 3)
-	var control = controller.NewController(ctx, []byte(req))
-	filename, status := control.Process()
-	if status.IsErr {
-		t.Fatal(status)
-	}
-	fmt.Println("Filename", filename)
-	count := NumHTMLFileLines(filename, t)
-	expected := 2
-	if count != expected {
-		t.Error(`expected`, expected, `found`, count)
-	}
-	identTest(`ScriptTextScript_`+bibleId, t, request.TextScript, ``,
-		`ATIWBTN2ST`, ``, ``, `ati`)
+	var tests []CtlTest
+	tests = append(tests, CtlTest{BibleId: "ATIWBT", Expected: 8254, TextNtId: "ATIWBTN_ET-usx",
+		TextType: request.TextUSXEdit, Language: "ati"})
+	tests = append(tests, CtlTest{BibleId: "BGGWFW", Expected: 8765, TextNtId: "BGGWFWN_ET-usx",
+		TextType: request.TextUSXEdit, Language: "bgg"})
+	DirectTestUtility(TextUSXEdit07, tests, t)
+	tests = nil
+	tests = append(tests, CtlTest{BibleId: "ATIWBT", Expected: 9748, TextNtId: "ATIWBTN2ST",
+		TextType: request.TextScript, Language: "ati"})
+	DirectTestUtility(TextScript07, tests, t)
+	tests = nil
+	tests = append(tests, CtlTest{BibleId: "BGGWFW", Expected: 7881, TextNtId: "BGGWFWN2ST",
+		TextType: request.TextScript, Language: "bgg"})
+	DirectTestUtility(TextScript07BGGWFW, tests, t)
+	tests = nil
+	tests = append(tests, CtlTest{BibleId: "ATIWBT", Expected: 2, TextNtId: "ATIWBTN2ST",
+		TextType: request.TextScript, Language: "ati"})
+	tests = append(tests, CtlTest{BibleId: "BGGWFW", Expected: 1019, TextNtId: "BGGWFWN2ST",
+		TextType: request.TextScript, Language: "bgg"})
+	DirectTestUtility(CompareUsXTextEdit2Script07, tests, t)
 }
