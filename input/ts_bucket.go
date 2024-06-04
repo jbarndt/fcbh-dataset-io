@@ -16,6 +16,7 @@ import (
 /*
 This file was written to support testing.
 It provides methods to access Sandeep's bucket of timestamp data
+If moved to production, there is significant error handling to be done.
 */
 
 const (
@@ -73,6 +74,23 @@ func (t *TSBucket) ListObjects(bucket, prefix string) []string {
 	return results
 }
 
+func (t *TSBucket) ListPrefix(bucket, prefix string) []string {
+	var results []string
+	list, err := t.client.ListObjectsV2(t.ctx, &s3.ListObjectsV2Input{
+		Bucket:    aws.String(bucket),
+		Prefix:    aws.String(prefix),
+		Delimiter: aws.String(`/`),
+	})
+	if err != nil {
+		panic(err)
+	}
+	for _, obj := range list.CommonPrefixes {
+		pref := aws.ToString(obj.Prefix)
+		results = append(results, pref)
+	}
+	return results
+}
+
 func (t *TSBucket) GetTimestamps(tsType string, mediaId string, bookId string, chapterNum int) []db.Timestamp {
 	var results []db.Timestamp
 	key := t.GetKey(tsType, mediaId, bookId, chapterNum)
@@ -106,6 +124,14 @@ func (t *TSBucket) GetObject(bucket string, key string) []byte {
 	return body
 }
 
+func (t *TSBucket) DownloadObject(bucket string, key string, path string) {
+	content := t.GetObject(bucket, key)
+	err := os.WriteFile(path, content, 0644)
+	if err != nil {
+		panic(err)
+	}
+}
+
 func (t *TSBucket) GetTSData() []TSData {
 	content, err := os.ReadFile("../cli_misc/find_timestamps/TestFilesetList.json")
 	if err != nil {
@@ -137,7 +163,15 @@ func (t *TSBucket) GetKey(tsType string, mediaId string, bookId string, chapterN
 		result = append(result, t.GetAeneasKey(bookId, chapterNum))
 	case ScriptTS:
 		result = append(result, ScriptTS)
-		result = append(result, t.GetScriptKey(mediaId, bookId, chapterNum))
+		result = append(result, t.GetScriptTSKey(mediaId, bookId, chapterNum))
+	case Script:
+		result = append(result, Script)
+		prefix := strings.Join(result, "")
+		list := t.ListObjects(TSBucketName, prefix)
+		if len(list) != 1 {
+			panic(`There should be 1 script file, but there are ` + strconv.Itoa(len(list)))
+		}
+		result = []string{list[0]}
 	}
 	return strings.Join(result, "")
 }
@@ -161,7 +195,7 @@ func (t *TSBucket) GetAeneasKey(bookId string, chapterNum int) string {
 	return strings.Join(result, `-`)
 }
 
-func (t *TSBucket) GetScriptKey(mediaId string, bookId string, chapterNum int) string {
+func (t *TSBucket) GetScriptTSKey(mediaId string, bookId string, chapterNum int) string {
 	var result []string
 	result = append(result, mediaId[6:8])
 	result = append(result, mediaId[3:6])
