@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // 1. Load the script into a memory database
@@ -30,7 +31,16 @@ func NewAeneasExperiment(ctx context.Context) AeneasExperiment {
 
 func (a *AeneasExperiment) Process() {
 	script := a.loadScript(`APFCMUN2DA`)
-	fmt.Println(len(script))
+	a.DumpScript(script, "script.txt")
+	fmt.Println(`script lines`, len(script))
+	grouped := a.GroupScriptByVerse(script)
+	a.DumpScript(grouped, "grouped.txt")
+	fmt.Println(`grouped lines`, len(grouped))
+	origChars := a.CountChars(script)
+	groupedChars := a.CountChars(grouped)
+	//var grpConn = db.NewDBAdapter(a.ctx, ":memory:")
+	//grpConn.InsertScripts(grouped)
+	fmt.Println(`grouped chars`, origChars, groupedChars)
 }
 
 func (a *AeneasExperiment) loadScript(mediaId string) []db.Script {
@@ -52,6 +62,51 @@ func (a *AeneasExperiment) loadScript(mediaId string) []db.Script {
 	conn.Close()
 	fmt.Println(`count:`, len(results))
 	return results
+}
+
+func (a *AeneasExperiment) GroupScriptByVerse(scripts []db.Script) []db.Script {
+	var results = make([]db.Script, 0, len(scripts))
+	var rec db.Script
+	for _, scp := range scripts {
+		trimmed := strings.TrimSpace(scp.ScriptText)
+		if trimmed[0] == '{' || scp.VerseStr == `0` {
+			if rec.BookId != `` {
+				results = append(results, rec)
+			}
+			rec = scp
+		}
+		rec.ScriptTexts = append(rec.ScriptTexts, scp.ScriptText)
+	}
+	if rec.BookId != `` {
+		results = append(results, rec)
+	}
+	for i, scp := range results {
+		results[i].ScriptText = strings.Join(scp.ScriptTexts, "")
+	}
+	return results
+}
+
+func (a *AeneasExperiment) CountChars(scripts []db.Script) int {
+	var results int
+	for _, scp := range scripts {
+		results += len(scp.ScriptText)
+	}
+	return results
+}
+
+func (AeneasExperiment) DumpScript(scripts []db.Script, filename string) {
+	file, err := os.Create(filename)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+	for _, scp := range scripts {
+		//_, err = fmt.Fprintln(file, scp.BookId, scp.ChapterNum, scp.VerseStr, scp.ScriptNum, scp.ScriptText)
+		_, err = fmt.Fprintln(file, scp.ScriptText)
+		if err != nil {
+			panic(err)
+		}
+	}
 }
 
 func (a *AeneasExperiment) loadPlainTextEdit(filePath string) db.DBAdapter {
