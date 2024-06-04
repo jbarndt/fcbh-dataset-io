@@ -58,7 +58,7 @@ func TestScriptHeaders(t *testing.T) {
 			fmt.Print(col, `:`, cell, ` `)
 		}
 		fmt.Print("\n")
-		file.Close()
-		os.Remove(filePath)
+		_ = file.Close()
+		_ = os.Remove(filePath)
 	}
 }
