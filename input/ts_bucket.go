@@ -196,10 +196,11 @@ func (t *TSBucket) GetAeneasKey(bookId string, chapterNum int) string {
 }
 
 func (t *TSBucket) GetScriptTSKey(mediaId string, bookId string, chapterNum int) string {
+	//N2_APF_CMU_001_MAT_01_cue_info.txt
 	var result []string
 	result = append(result, mediaId[6:8])
-	result = append(result, mediaId[3:6])
 	result = append(result, mediaId[0:3])
+	result = append(result, mediaId[3:6])
 	sequence := t.chapterSeq(bookId, chapterNum)
 	seqStr := strconv.Itoa(sequence)
 	if len(seqStr) < 2 {
@@ -214,7 +215,8 @@ func (t *TSBucket) GetScriptTSKey(mediaId string, bookId string, chapterNum int)
 		chapStr = "0" + chapStr
 	}
 	result = append(result, chapStr)
-	result = append(result, `VOX.clt_cue_info.txt`)
+	//result = append(result, `VOX.clt_cue_info.txt`)
+	result = append(result, `cue_info.txt`)
 	return strings.Join(result, `_`)
 }
 

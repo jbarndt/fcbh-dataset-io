@@ -22,7 +22,7 @@ type DBPTextEditReader struct {
 	ctx       context.Context
 	bibleId   string
 	conn      db.DBAdapter
-	req       request.Request
+	req       request.Request // This is not needed
 	testament request.Testament
 }
 
