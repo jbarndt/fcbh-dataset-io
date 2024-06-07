@@ -3,6 +3,7 @@ package input
 import (
 	"context"
 	"dataset/db"
+	log "dataset/logger"
 	"encoding/json"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -101,7 +102,7 @@ func (t *TSBucket) GetTimestamps(tsType string, mediaId string, bookId string, c
 		if len(parts) >= 3 {
 			ts.BeginTS, _ = strconv.ParseFloat(parts[0], 64)
 			ts.EndTS, _ = strconv.ParseFloat(parts[1], 64)
-			ts.VerseStr = parts[2]
+			ts.VerseStr = strings.TrimLeft(parts[2], `0`)
 			results = append(results, ts)
 		}
 	}
@@ -114,7 +115,8 @@ func (t *TSBucket) GetObject(bucket string, key string) []byte {
 		Key:    aws.String(key),
 	})
 	if err != nil {
-		panic(err)
+		log.Warn(t.ctx, err)
+		return []byte{}
 	}
 	defer response.Body.Close()
 	body, err := io.ReadAll(response.Body)

@@ -7,6 +7,6 @@ import (
 
 func TestAeneasExperiment(t *testing.T) {
 	ctx := context.Background()
-	aen := NewAeneasExperiment(ctx)
+	aen := NewAeneasExperiment(ctx, `APFCMUN2DA`, `apf`)
 	aen.Process()
 }

@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -28,32 +29,56 @@ import (
 // 11. Update plain_text_edit timestamps
 
 type AeneasExperiment struct {
-	ctx context.Context
-	ts  input.TSBucket
+	ctx          context.Context
+	ts           input.TSBucket
+	bibleId      string
+	audioMediaId string
+	languageISO  string
+	textConn     db.DBAdapter
+	//scriptIdMap  map[string]int
+	audioFiles map[string]string
 }
 
-func NewAeneasExperiment(ctx context.Context) AeneasExperiment {
+func NewAeneasExperiment(ctx context.Context, audioMediaId string, language string) AeneasExperiment {
 	var a AeneasExperiment
 	a.ctx = ctx
 	a.ts = input.NewTSBucket(a.ctx)
+	a.bibleId = audioMediaId[:6]
+	a.audioMediaId = audioMediaId
+	a.languageISO = language
 	return a
 }
 
 func (a *AeneasExperiment) Process() {
-	audioMediaId := `APFCMUN2DA`
-	script := a.LoadScript(audioMediaId)
+	a.audioFiles = a.FindAudioFiles()
+	script := a.LoadScript()
 	fmt.Println(`script lines`, len(script))
-	textConn := a.LoadPlainTextEdit(audioMediaId)
-	a.ProcessByChapter(audioMediaId, script, textConn)
+	a.textConn = a.LoadPlainTextEdit()
+	a.ProcessByChapter(script)
 }
 
-func (a *AeneasExperiment) LoadScript(mediaId string) []db.Script {
+func (a *AeneasExperiment) FindAudioFiles() map[string]string {
+	filePath := filepath.Join(os.Getenv(`FCBH_DATASET_FILES`), a.bibleId, a.audioMediaId, `*.mp3`)
+	testament := request.Testament{NT: true}
+	files, status := input.FileInput(a.ctx, filePath, testament)
+	if status.IsErr {
+		panic(status)
+	}
+	var result = make(map[string]string)
+	for _, file := range files {
+		key := file.BookId + strconv.Itoa(file.Chapter)
+		result[key] = file.FilePath()
+	}
+	return result
+}
+
+func (a *AeneasExperiment) LoadScript() []db.Script {
 	var results []db.Script
 	var status dataset.Status
 	//ts := input.NewTSBucket(a.ctx)
-	key := a.ts.GetKey(input.Script, mediaId, ``, 0)
+	key := a.ts.GetKey(input.Script, a.audioMediaId, ``, 0)
 	fmt.Println(`key:`, key)
-	filePath := filepath.Join(os.Getenv(`FCBH_DATASET_FILES`), mediaId[:6], mediaId[:8]+`ST.xlsx`)
+	filePath := filepath.Join(os.Getenv(`FCBH_DATASET_FILES`), a.bibleId, a.audioMediaId[:8]+`ST.xlsx`)
 	a.ts.DownloadObject(input.TSBucketName, key, filePath)
 	fmt.Println(`path`, filePath)
 	var conn = db.NewDBAdapter(a.ctx, ":memory:")
@@ -63,36 +88,39 @@ func (a *AeneasExperiment) LoadScript(mediaId string) []db.Script {
 	if status.IsErr {
 		panic(status)
 	}
+	//a.scriptIdMap, status = conn.SelectScriptIdScriptNum()
+	//if status.IsErr {
+	//	panic(status)
+	//}
 	conn.Close()
 	fmt.Println(`count:`, len(results))
 	return results
 }
 
-func (a *AeneasExperiment) LoadPlainTextEdit(audioMediaId string) db.DBAdapter {
+func (a *AeneasExperiment) LoadPlainTextEdit() db.DBAdapter {
 	user, _ := fetch.GetTestUser()
-	bibleId := audioMediaId[:6]
-	conn, status := db.NewerDBAdapter(a.ctx, true, user.Username, `Plain_Text_Edit_`+bibleId)
+	conn, status := db.NewerDBAdapter(a.ctx, true, user.Username, `Plain_Text_Edit_`+a.bibleId)
 	if status.IsErr {
 		panic(status)
 	}
 	var req request.Request
-	req.BibleId = bibleId
+	req.BibleId = a.bibleId
 	req.Testament = request.Testament{NT: true}
 	reader := read.NewDBPTextEditReader(conn, req)
 	reader.Process()
 	return conn
 }
 
-func (a *AeneasExperiment) ProcessByChapter(audioId string, scripts []db.Script, conn db.DBAdapter) {
+func (a *AeneasExperiment) ProcessByChapter(scripts []db.Script) {
 	var results []db.Script
 	var lastBookId = ``
 	var lastChapter = -1
 	for _, scp := range scripts {
 		if scp.BookId != lastBookId || scp.ChapterNum != lastChapter {
 			if len(results) > 0 {
+				results = a.GetTimestamps(a.audioMediaId, results)
 				grouped := a.GroupScriptByVerse(results)
-				grouped = a.GetTimestamps(audioId, grouped)
-				a.GetPlainTextEdit(conn, grouped)
+				a.GetPlainTextEdit(a.textConn, grouped)
 			}
 			results = nil
 			lastBookId = scp.BookId
@@ -100,6 +128,45 @@ func (a *AeneasExperiment) ProcessByChapter(audioId string, scripts []db.Script,
 		}
 		results = append(results, scp)
 	}
+	if len(results) > 0 {
+		results = a.GetTimestamps(a.audioMediaId, results)
+		grouped := a.GroupScriptByVerse(results)
+		a.GetPlainTextEdit(a.textConn, grouped)
+	}
+}
+
+func (a *AeneasExperiment) GetTimestamps(audioId string, scripts []db.Script) []db.Script {
+	timestamps := a.ts.GetTimestamps(input.ScriptTS, audioId, scripts[0].BookId, scripts[0].ChapterNum)
+	//fmt.Println(`timestamps:`, timestamps)
+	var timeMap = make(map[string]db.Timestamp)
+	for _, t := range timestamps {
+		timeMap[t.VerseStr] = t
+	}
+	for i, scp := range scripts {
+		scripts[i].ScriptBeginTS = -1
+		scripts[i].ScriptEndTS = -1
+		ts, ok := timeMap[scp.ScriptNum]
+		if ok {
+			scripts[i].ScriptBeginTS = ts.BeginTS
+			scripts[i].ScriptEndTS = ts.EndTS
+		}
+	}
+	// Repair missing timestamps where possible
+	for i, _ := range scripts {
+		if scripts[i].ScriptBeginTS == -1 && i > 0 {
+			scripts[i].ScriptBeginTS = scripts[i-1].ScriptEndTS
+		}
+		if scripts[i].ScriptEndTS == -1 && i < len(scripts)-1 {
+			scripts[i].ScriptEndTS = scripts[i+1].ScriptBeginTS
+		}
+	}
+	for _, scp := range scripts {
+		if scp.ScriptBeginTS == -1 || scp.ScriptEndTS == -1 {
+			ref := scp.BookId + ` ` + strconv.Itoa(scp.ChapterNum) + `:` + scp.VerseStr + ` (` + scp.ScriptNum + `)`
+			log.Warn(a.ctx, `No timestamp found for verse `, ref)
+		}
+	}
+	return scripts
 }
 
 func (a *AeneasExperiment) GroupScriptByVerse(scripts []db.Script) []db.Script {
@@ -113,8 +180,8 @@ func (a *AeneasExperiment) GroupScriptByVerse(scripts []db.Script) []db.Script {
 			}
 			rec = scp
 		}
-		rec.ScriptNum = scp.ScriptNum
 		rec.VerseEnd = scp.VerseStr
+		rec.ScriptEndTS = scp.ScriptEndTS
 		rec.ScriptTexts = append(rec.ScriptTexts, scp.ScriptText)
 	}
 	if rec.BookId != `` {
@@ -126,31 +193,8 @@ func (a *AeneasExperiment) GroupScriptByVerse(scripts []db.Script) []db.Script {
 	return results
 }
 
-func (a *AeneasExperiment) GetTimestamps(audioId string, scripts []db.Script) []db.Script {
-	timestamps := a.ts.GetTimestamps(input.ScriptTS, audioId, scripts[0].BookId, scripts[0].ChapterNum)
-	fmt.Println(`timestamps:`, timestamps)
-	var timeMap = make(map[string]db.Timestamp)
-	for _, t := range timestamps {
-		timeMap[t.VerseStr] = t
-	}
-	for i, scp := range scripts {
-		ts, ok := timeMap[scp.VerseStr]
-		if ok {
-			scripts[i].ScriptBeginTS = ts.BeginTS
-		} else {
-			log.Warn(a.ctx, `No timestamp found for verse `, scp.BookId, scp.ChapterNum, scp.VerseStr)
-		}
-		ts, ok = timeMap[scp.VerseEnd]
-		if ok {
-			scripts[i].ScriptEndTS = ts.EndTS
-		} else {
-			log.Warn(a.ctx, `No timestamp found for verse `, scp.BookId, scp.ChapterNum, scp.VerseEnd)
-		}
-	}
-	return scripts
-}
-
 func (a *AeneasExperiment) GetPlainTextEdit(conn db.DBAdapter, groups []db.Script) {
+	// scripts here is missing script_id do I need it?
 	scripts, status := conn.SelectScriptsByChapter(groups[0].BookId, groups[0].ChapterNum)
 	if status.IsErr {
 		panic(status)
@@ -173,22 +217,124 @@ func (a *AeneasExperiment) GetPlainTextEdit(conn db.DBAdapter, groups []db.Scrip
 			scripts[i].ScriptEndTS = ts
 		}
 	}
+	var allAeneas []db.Timestamp
 	for _, part := range groups {
 		if part.VerseStr != part.VerseEnd {
+			verseStr := a.SafeAtoi(part.VerseStr)
+			verseEnd := a.SafeAtoi(part.VerseEnd)
 			var recs []db.Script
 			for _, scp := range scripts {
-				if scp.VerseStr >= part.VerseStr && scp.VerseEnd <= part.VerseEnd {
+				verseNum := a.SafeAtoi(scp.VerseStr)
+				if verseNum >= verseStr && verseNum <= verseEnd {
 					recs = append(recs, scp)
 				}
 			}
-			a.ProcessAeneas(recs)
+			if len(recs) > 0 {
+				aeneasTS := a.ProcessAeneas(recs)
+				allAeneas = append(allAeneas, aeneasTS...)
+				recs = nil
+			}
 		}
 	}
+	a.MergeTimestamps(scripts, allAeneas)
 }
 
-func (a *AeneasExperiment) ProcessAeneas(recs []db.Script) {
-	for _, scp := range recs {
-		fmt.Println(`Process in Aeneas`, scp)
+func (a *AeneasExperiment) SafeAtoi(number string) int {
+	var result []rune
+	for _, chr := range number {
+		if chr >= '0' && chr <= '9' {
+			result = append(result, chr)
+		}
+	}
+	num, _ := strconv.Atoi(string(result))
+	return num
+}
+
+func (a *AeneasExperiment) ProcessAeneas(recs []db.Script) []db.Timestamp {
+	ref := recs[0].BookId + ` ` + strconv.Itoa(recs[0].ChapterNum) + `_*.txt`
+	var fp, err = os.CreateTemp(os.Getenv(`FCBH_DATASET_TMP`), ref)
+	if err != nil {
+		panic(err)
+	}
+	for _, rec := range recs {
+		_, _ = fp.WriteString(rec.VerseStr)
+		_, _ = fp.WriteString("|")
+		_, _ = fp.WriteString(rec.ScriptText)
+		if !strings.HasSuffix(rec.ScriptText, "\n") {
+			_, _ = fp.WriteString("\n")
+		}
+	}
+	_ = fp.Close()
+	content, _ := os.ReadFile(fp.Name())
+	fmt.Println(string(content))
+	aeneas := NewAeneas(a.ctx, a.textConn, a.bibleId, `epo`, request.Detail{Lines: true})
+	key := recs[0].BookId + strconv.Itoa(recs[0].ChapterNum)
+	audioFile, ok := a.audioFiles[key]
+	if !ok {
+		panic("audio file not found")
+	}
+	filename, status := aeneas.executeAeneas(a.languageISO, audioFile, fp.Name())
+	if status.IsErr {
+		panic(status)
+	}
+	timestamps, status := aeneas.parseResponse(filename, audioFile)
+	if status.IsErr {
+		panic(status)
+	}
+	for i, _ := range timestamps {
+		timestamps[i].VerseStr = strconv.Itoa(timestamps[i].Id)
+	}
+	return timestamps
+}
+
+func (a *AeneasExperiment) MergeTimestamps(scripts []db.Script, aeneasTS []db.Timestamp) {
+	var results []db.Script
+	var scrIdx = 0
+	var aenIdx = 0
+	var beginTS = 0.0
+	for {
+		if scrIdx >= len(scripts) && aenIdx >= len(aeneasTS) {
+			break
+		}
+		var script db.Script
+		var aeneas db.Timestamp
+		var scrVerse = 10000
+		var aenVerse = 10000
+		if scrIdx < len(scripts) {
+			script = scripts[scrIdx]
+			scrVerse = a.SafeAtoi(script.VerseStr)
+		}
+		if aenIdx < len(aeneasTS) {
+			aeneas = aeneasTS[aenIdx]
+			aenVerse = a.SafeAtoi(aeneas.VerseStr)
+		}
+		if scrVerse < aenVerse {
+			results = append(results, script)
+			beginTS = script.ScriptEndTS
+			scrIdx++
+		} else if scrVerse > aenVerse {
+			var aen db.Script
+			aen.VerseStr = aeneas.VerseStr
+			aen.ScriptBeginTS = aeneas.BeginTS + beginTS
+			aen.ScriptEndTS = aeneas.EndTS + beginTS
+			results = append(results, aen)
+			beginTS = aen.ScriptEndTS
+			aenIdx++
+		} else { // Are equal
+			if script.ScriptBeginTS == -1 {
+				script.ScriptBeginTS = aeneas.BeginTS + beginTS
+			}
+			if script.ScriptEndTS == -1 {
+				script.ScriptEndTS = aeneas.EndTS + beginTS
+			}
+			results = append(results, script)
+			beginTS = script.ScriptEndTS
+			scrIdx++
+			aenIdx++
+		}
+	}
+	for _, ts := range results {
+		fmt.Println(ts)
 	}
 }
 
