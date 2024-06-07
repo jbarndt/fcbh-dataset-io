@@ -497,7 +497,7 @@ func (d *DBAdapter) SelectScalarInt(sql string) (int, dataset.Status) {
 func (d *DBAdapter) SelectScripts() ([]Script, dataset.Status) {
 	var results []Script
 	var status dataset.Status
-	query := `SELECT script_id, book_id, chapter_num, verse_num, verse_str, script_text 
+	query := `SELECT script_id, book_id, chapter_num, script_num, verse_num, verse_str, script_text 
 		FROM scripts ORDER BY script_id`
 	rows, err := d.DB.Query(query)
 	if err != nil {
@@ -507,12 +507,13 @@ func (d *DBAdapter) SelectScripts() ([]Script, dataset.Status) {
 	defer d.closeDef(rows, "SelectScripts stmt")
 	for rows.Next() {
 		var rec Script
-		err = rows.Scan(&rec.ScriptId, &rec.BookId, &rec.ChapterNum, &rec.VerseNum,
-			&rec.VerseStr, &rec.ScriptText)
+		err = rows.Scan(&rec.ScriptId, &rec.BookId, &rec.ChapterNum, &rec.ScriptNum,
+			&rec.VerseNum, &rec.VerseStr, &rec.ScriptText)
 		if err != nil {
 			status = log.Error(d.Ctx, 500, err, "Error in SelectScripts.")
 			return results, status
 		}
+		rec.ScriptNum = strings.TrimLeft(rec.ScriptNum, "0")
 		results = append(results, rec)
 	}
 	err = rows.Err()

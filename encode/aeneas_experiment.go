@@ -16,6 +16,15 @@ import (
 	"strings"
 )
 
+// This class is not yet finished.  It cannot be deployed as part of this service
+// because there is no consistent repository of the audio data.
+// In order to get the aeneas to work, I would need to use start stop
+// start_time = 10.0  # Start aligning from 10 seconds
+// stop_time = 30.0  # Stop aligning at 30 seconds
+// # Prepare the path for Aeneas to work with the files
+// config_string =f"task_language=eng|os_task_file_code=path/to/output/path|is_text_file=true|start={start_time}|stop={stop_time}"
+// config = aeneas.tools.prepare_path(config_string)
+
 // 1. Load the script into a memory database
 // 2. Parsing the script, find those script lines that begin a verse.
 // 3. Break the script up into parts that contain 1 or more whole verse
