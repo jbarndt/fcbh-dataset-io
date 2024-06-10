@@ -7,6 +7,7 @@ import (
 	log "dataset/logger"
 	"dataset/request"
 	"encoding/json"
+	"strconv"
 	"strings"
 )
 
@@ -47,7 +48,7 @@ type BibleInfoType struct {
 	BibleId            string       `json:"abbr"`
 	LanguageISO        string       `json:"iso"`
 	LanguageId         int          `json:"language_id"`
-	RolvId             int          `json:"language_rolv_code"`
+	RolvId             string       `json:"language_rolv_code"`
 	LanguageName       string       `json:"language"`
 	VersionName        string       `json:"name"`
 	Alphabet           AlphabetType `json:"alphabet"` // alphabet.script
@@ -186,8 +187,11 @@ func (d *APIDBPClient) UpdateIdent(id db.Ident, info BibleInfoType, textType req
 	if info.LanguageId != 0 {
 		id.LanguageId = info.LanguageId
 	}
-	if info.RolvId != 0 {
-		id.RolvId = info.RolvId
+	if info.RolvId != `` {
+		tmp, err := strconv.Atoi(info.RolvId)
+		if err == nil {
+			id.RolvId = tmp
+		}
 	}
 	if info.Alphabet.Alphabet != `` {
 		id.Alphabet = info.Alphabet.Alphabet

@@ -253,6 +253,8 @@ func (a *AeneasExperiment) SafeAtoi(number string) int {
 	for _, chr := range number {
 		if chr >= '0' && chr <= '9' {
 			result = append(result, chr)
+		} else {
+			break
 		}
 	}
 	num, _ := strconv.Atoi(string(result))
