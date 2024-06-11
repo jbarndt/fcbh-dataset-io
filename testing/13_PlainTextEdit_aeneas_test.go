@@ -30,9 +30,15 @@ testament:
   nt_books: ['1JN']
 `
 
+func TestPlainTextAeneasTimestampsScriptAPI(t *testing.T) {
+	var tests []APITest
+	tests = append(tests, APITest{BibleId: `ENGWEB`, Expected: 111, Diff: 0})
+	tests = append(tests, APITest{BibleId: `ATIWBT`, Expected: 111, Diff: 0})
+	APITestUtility(PlainTextEditBBTimestampsScript, tests, t)
+}
 func TestPlainTextAeneasTimestampsScript(t *testing.T) {
 	var tests []CtlTest
-	tests = append(tests, CtlTest{BibleId: "ENGWEB", Expected: 8219, TextNtId: "ENGWEBN_ET",
+	tests = append(tests, CtlTest{BibleId: "ENGWEB", Expected: 111, TextNtId: "ENGWEBN_ET",
 		TextType: request.TextPlainEdit, AudioNTId: "ENGWEBN2DA", Language: "eng"})
 	//tests = append(tests, try{bibleId: "ATIWBT", expected: 7, textNtId: "ATIWBTN_ET", audioNTId: "ATIWBTN1DA",
 	//	language: "ati"}) // There are no timestamps
