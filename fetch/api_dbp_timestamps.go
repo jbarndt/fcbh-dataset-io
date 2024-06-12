@@ -8,6 +8,7 @@ import (
 	"dataset/request"
 	"encoding/json"
 	"strconv"
+	"strings"
 )
 
 type APIDBPTimestamps struct {
@@ -32,7 +33,8 @@ func (a *APIDBPTimestamps) LoadTimestamps(testament request.Testament) (bool, da
 	if status.IsErr {
 		return false, status
 	}
-	_, ok := audioIdMap[a.audioId]
+	coreId := strings.Split(a.audioId, "-")[0]
+	_, ok := audioIdMap[coreId]
 	if !ok {
 		status = log.ErrorNoErr(a.ctx, 400, `There are no timestamps available`)
 		return false, status
@@ -128,7 +130,8 @@ func (a *APIDBPTimestamps) Timestamps(bookId string, chapter int) ([]Timestamp, 
 	var result []Timestamp
 	var status dataset.Status
 	chapterStr := strconv.Itoa(chapter)
-	var get = `https://4.dbt.io/api/timestamps/` + a.audioId + `/` + bookId + `/` + chapterStr + `?v=4`
+	coreId := strings.Split(a.audioId, "-")[0]
+	var get = `https://4.dbt.io/api/timestamps/` + coreId + `/` + bookId + `/` + chapterStr + `?v=4`
 	body, status := httpGet(a.ctx, get, false, `timestamps`)
 	if status.IsErr {
 		return result, status
