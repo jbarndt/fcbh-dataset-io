@@ -25,15 +25,15 @@ Executable:
 /Users/gary/Library/Python/3.9/bin/whisper
 */
 
-type Whisper_v2 struct {
+type WhisperVs struct {
 	ctx     context.Context
 	conn    db.DBAdapter
 	bibleId string
 	model   string
 }
 
-func NewWhisper_v2(bibleId string, conn db.DBAdapter, model string) Whisper_v2 {
-	var w Whisper_v2
+func NewWhisperVs(bibleId string, conn db.DBAdapter, model string) WhisperVs {
+	var w WhisperVs
 	w.ctx = conn.Ctx
 	w.conn = conn
 	w.bibleId = bibleId
@@ -41,7 +41,7 @@ func NewWhisper_v2(bibleId string, conn db.DBAdapter, model string) Whisper_v2 {
 	return w
 }
 
-func (w *Whisper_v2) ProcessFiles(files []input.InputFile) dataset.Status {
+func (w *WhisperVs) ProcessFiles(files []input.InputFile) dataset.Status {
 	var status dataset.Status
 	var outputFile string
 	for _, file := range files {
@@ -64,7 +64,7 @@ func (w *Whisper_v2) ProcessFiles(files []input.InputFile) dataset.Status {
 	return status
 }
 
-func (w *Whisper_v2) ChopByTimestamp(audioFile input.InputFile) ([]db.Timestamp, dataset.Status) {
+func (w *WhisperVs) ChopByTimestamp(audioFile input.InputFile) ([]db.Timestamp, dataset.Status) {
 	var results []db.Timestamp
 	var status dataset.Status
 	timestamps, status := w.conn.SelectScriptTimestamps(audioFile.BookId, audioFile.Chapter)
@@ -102,7 +102,7 @@ func (w *Whisper_v2) ChopByTimestamp(audioFile input.InputFile) ([]db.Timestamp,
 	return results, status
 }
 
-func (w *Whisper_v2) RunWhisper(audio db.Timestamp) (string, dataset.Status) {
+func (w *WhisperVs) RunWhisper(audio db.Timestamp) (string, dataset.Status) {
 	var status dataset.Status
 	outputDir := os.Getenv(`FCBH_DATASET_TMP`)
 	//var outputDir, status = w.ensureOutputDir(audio.AudioFile)
@@ -134,7 +134,7 @@ func (w *Whisper_v2) RunWhisper(audio db.Timestamp) (string, dataset.Status) {
 }
 
 // Should this be a user directory under tmp??
-func (w *Whisper_v2) ensureOutputDir(audioFile string) (string, dataset.Status) {
+func (w *WhisperVs) ensureOutputDir(audioFile string) (string, dataset.Status) {
 	var status dataset.Status
 	var outputDir = filepath.Dir(audioFile) + `_WHISPER`
 	//var outputDir = audioFile.Directory + `_WHISPER`
@@ -147,7 +147,7 @@ func (w *Whisper_v2) ensureOutputDir(audioFile string) (string, dataset.Status) 
 	return outputDir, status
 }
 
-func (w *Whisper_v2) loadWhisperOutput(outputFile string, file input.InputFile,
+func (w *WhisperVs) loadWhisperOutput(outputFile string, file input.InputFile,
 	pieceNum int, piece db.Timestamp) dataset.Status {
 	var status dataset.Status
 	type WhisperSegmentType struct {

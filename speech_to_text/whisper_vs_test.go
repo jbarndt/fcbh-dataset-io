@@ -12,7 +12,7 @@ import (
 	"testing"
 )
 
-func TestWhisper_v2(t *testing.T) {
+func TestWhisperVs(t *testing.T) {
 	ctx := context.Background()
 	var bibleId = `ENGWEB`
 	var filesetId = `ENGWEBN2DA-mp3-64`
@@ -32,13 +32,13 @@ func TestWhisper_v2(t *testing.T) {
 	if status.IsErr {
 		t.Fatal(status)
 	}
-	var whisp = NewWhisper_v2(bibleId, newConn, `tiny`)
+	var whisp = NewWhisperVs(bibleId, newConn, `tiny`)
 	status = whisp.ProcessFiles(files)
 	if status.IsErr {
 		t.Fatal(status)
 	}
 	count, status := newConn.CountScriptRows()
-	if count != 121 {
+	if count != 90 {
 		t.Error(`CountScriptRows count != 90`, count)
 	}
 	newConn.Close()
