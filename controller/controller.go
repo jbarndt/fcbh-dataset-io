@@ -111,13 +111,13 @@ func (c *Controller) processSteps() (string, dataset.Status) {
 	if status.IsErr {
 		return filename, status
 	}
-	// Speech to Text
-	status = c.speechToText(audioFiles)
+	// Timestamps
+	status = c.timestamps(audioFiles)
 	if status.IsErr {
 		return filename, status
 	}
-	// Timestamps
-	status = c.timestamps(audioFiles)
+	// Speech to Text
+	status = c.speechToText(audioFiles)
 	if status.IsErr {
 		return filename, status
 	}
@@ -254,28 +254,6 @@ func (c *Controller) readText(textFiles []input.InputFile) dataset.Status {
 	return status
 }
 
-func (c *Controller) speechToText(audioFiles []input.InputFile) dataset.Status {
-	var status dataset.Status
-	bibleId := c.req.BibleId
-	var whisperModel = c.req.TextData.SpeechToText.Whisper.Model.String()
-	if whisperModel != `` {
-		var whisper = speech_to_text.NewWhisper(bibleId, c.database, whisperModel)
-		status = whisper.ProcessFiles(audioFiles)
-		if status.IsErr {
-			return status
-		}
-		c.ident.TextSource = request.TextSTT
-		if len(c.ident.AudioOTId) >= 10 {
-			c.ident.TextOTId = c.ident.AudioOTId[:7] + `_TT`
-		}
-		if len(c.ident.AudioNTId) >= 10 {
-			c.ident.TextNTId = c.ident.AudioNTId[:7] + `_TT`
-		}
-		c.database.UpdateIdent(c.ident)
-	}
-	return status
-}
-
 func (c *Controller) timestamps(audioFiles []input.InputFile) dataset.Status {
 	var status dataset.Status
 	if c.req.Timestamps.BibleBrain {
@@ -301,6 +279,28 @@ func (c *Controller) timestamps(audioFiles []input.InputFile) dataset.Status {
 		if status.IsErr {
 			return status
 		}
+	}
+	return status
+}
+
+func (c *Controller) speechToText(audioFiles []input.InputFile) dataset.Status {
+	var status dataset.Status
+	bibleId := c.req.BibleId
+	var whisperModel = c.req.TextData.SpeechToText.Whisper.Model.String()
+	if whisperModel != `` {
+		var whisper = speech_to_text.NewWhisper(bibleId, c.database, whisperModel)
+		status = whisper.ProcessFiles(audioFiles)
+		if status.IsErr {
+			return status
+		}
+		c.ident.TextSource = request.TextSTT
+		if len(c.ident.AudioOTId) >= 10 {
+			c.ident.TextOTId = c.ident.AudioOTId[:7] + `_TT`
+		}
+		if len(c.ident.AudioNTId) >= 10 {
+			c.ident.TextNTId = c.ident.AudioNTId[:7] + `_TT`
+		}
+		c.database.UpdateIdent(c.ident)
 	}
 	return status
 }
