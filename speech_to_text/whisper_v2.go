@@ -45,6 +45,7 @@ func (w *Whisper_v2) ProcessFiles(files []input.InputFile) dataset.Status {
 	var status dataset.Status
 	var outputFile string
 	for _, file := range files {
+		fmt.Println(`INPUT FILE:`, file)
 		var pieces []db.Timestamp
 		pieces, status = w.ChopByTimestamp(file)
 		if status.IsErr {
@@ -55,7 +56,7 @@ func (w *Whisper_v2) ProcessFiles(files []input.InputFile) dataset.Status {
 			return status
 		}
 		for pieceNum, piece := range pieces {
-			fmt.Println(piece)
+			fmt.Println(`VERSE PIECE:`, piece)
 			outputFile, status = w.RunWhisper(piece)
 			status = w.loadWhisperOutput(outputFile, file, pieceNum, piece)
 		}
@@ -97,12 +98,6 @@ func (w *Whisper_v2) ChopByTimestamp(audioFile input.InputFile) ([]db.Timestamp,
 			return results, status
 		}
 		results = append(results, ts)
-		stderrStr := stderrBuf.String()
-		if stderrStr != `` {
-			log.Warn(w.ctx, `ffmpeg Stderr:`, stderrStr)
-		}
-		fmt.Println(`FFMPEG STDOUT:`, stdoutBuf.String())
-		fmt.Println(`FFMPEG STDERR:`, stderrStr)
 	}
 	return results, status
 }
@@ -134,8 +129,6 @@ func (w *Whisper_v2) RunWhisper(audio db.Timestamp) (string, dataset.Status) {
 		log.Warn(w.ctx, `Whisper Stderr:`, stderrStr)
 	}
 	fileType := filepath.Ext(audio.AudioFile)
-	//outputPath := filepath.Join(outputDir, fileType+`.mp3`)
-	//outputFile := filepath.Join(outputDir, audio.AudioFile[:len(audio.AudioFile)-len(fileType)]) + `.json`
 	outputFile := audio.AudioFile[:len(audio.AudioFile)-len(fileType)] + `.json`
 	return outputFile, status
 }
@@ -198,7 +191,6 @@ func (w *Whisper_v2) loadWhisperOutput(outputFile string, file input.InputFile,
 		rec.ScriptEndTS = seg.End + piece.BeginTS
 	}
 	records = append(records, rec)
-	fmt.Println("INSERT", rec)
 	status = w.conn.InsertScripts(records)
 	return status
 }

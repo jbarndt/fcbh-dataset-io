@@ -16,8 +16,8 @@ func TestWhisper_v2(t *testing.T) {
 	ctx := context.Background()
 	var bibleId = `ENGWEB`
 	var filesetId = `ENGWEBN2DA-mp3-64`
-	//testament := request.Testament{NTBooks: []string{`TIT`, `PHM`, `3JN`}}
-	testament := request.Testament{NTBooks: []string{`3JN`}}
+	testament := request.Testament{NTBooks: []string{`TIT`, `PHM`, `3JN`}}
+	//testament := request.Testament{NTBooks: []string{`3JN`}}
 	testament.BuildBookMaps()
 	files, status := input.DBPDirectory(ctx, bibleId, `audio`, ``, filesetId, testament)
 	if status.IsErr {
@@ -39,7 +39,7 @@ func TestWhisper_v2(t *testing.T) {
 	}
 	count, status := newConn.CountScriptRows()
 	if count != 121 {
-		t.Error(`CountScriptRows count != 121`, count)
+		t.Error(`CountScriptRows count != 90`, count)
 	}
 	newConn.Close()
 }
