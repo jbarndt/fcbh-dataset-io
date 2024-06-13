@@ -31,7 +31,7 @@ func DestroyDatabase(database string) {
 	var databasePath = GetDBPath(database)
 	_, err := os.Stat(databasePath)
 	if !os.IsNotExist(err) {
-		os.Remove(databasePath)
+		_ = os.Remove(databasePath)
 	}
 }
 

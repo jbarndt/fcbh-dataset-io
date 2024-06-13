@@ -26,7 +26,7 @@ func TestWhisper_v2(t *testing.T) {
 	var database = bibleId + `_WHISPER.db`
 	db.DestroyDatabase(database)
 	conn := db.NewDBAdapter(ctx, database)
-	loadPlainText(ctx, bibleId, conn, testament, t)
+	loadPlainText(bibleId, conn, testament, t)
 	loadTimestamps(filesetId, conn, testament, t)
 	newConn, status := conn.CopyDatabase(`_STT`)
 	if status.IsErr {
@@ -44,7 +44,7 @@ func TestWhisper_v2(t *testing.T) {
 	newConn.Close()
 }
 
-func loadPlainText(ctx context.Context, bibleId string, conn db.DBAdapter,
+func loadPlainText(bibleId string, conn db.DBAdapter,
 	testament request.Testament, t *testing.T) {
 	var status dataset.Status
 	req := request.Request{}

@@ -29,3 +29,16 @@ func (e *Status) String() string {
 	result = append(result, ` "error": "`+e.Err+`" }`)
 	return strings.Join(result, ",")
 }
+
+func SafeVerseNum(number string) int {
+	var result []rune
+	for _, chr := range number {
+		if chr >= '0' && chr <= '9' {
+			result = append(result, chr)
+		} else {
+			break
+		}
+	}
+	num, _ := strconv.Atoi(string(result))
+	return num
+}
