@@ -55,7 +55,7 @@ detail: # Choose word or both
 # Default: lines
 
 timestamps: # If timestamps are needed, mark Yes by source
-  bible_brain:
+  bible_brain: # Use is not recommended, because the last verse has no ending timestamp.
   aeneas: yes
   no_timestamps:
 # Default: no_timestamps
