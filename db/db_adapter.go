@@ -6,9 +6,8 @@ import (
 	"dataset"
 	log "dataset/logger"
 	"encoding/json"
-	"io"
-	//_ "modernc.org/sqlite"
 	_ "github.com/mattn/go-sqlite3"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -193,6 +192,46 @@ func createDatabase(db *sql.DB) {
 		mfcc_json TEXT NOT NULL,
 		FOREIGN KEY (word_id) REFERENCES words(word_id)) STRICT`
 	execDDL(db, query)
+}
+
+// CopyDatabase copies a database, closes it and return a connection to the copy
+func (d *DBAdapter) CopyDatabase(suffix string) (DBAdapter, dataset.Status) {
+	var result DBAdapter
+	var status dataset.Status
+	ext := filepath.Ext(d.DatabasePath)
+	endName := len(d.DatabasePath) - len(ext)
+	targetPath := d.DatabasePath[:endName] + suffix + ext
+	d.Close()
+	source, err := os.Open(d.DatabasePath)
+	if err != nil {
+		status = log.Error(d.Ctx, 500, err, `Error Copying Database step 1`)
+		return result, status
+	}
+	destination, err := os.Create(targetPath)
+	if err != nil {
+		status = log.Error(d.Ctx, 500, err, `Error Copying Database step 2`)
+		return result, status
+	}
+	_, err = io.Copy(destination, source)
+	if err != nil {
+		status = log.Error(d.Ctx, 500, err, `Error Copying Database step 3`)
+		return result, status
+	}
+	_ = destination.Close()
+	_ = source.Close()
+	result = *d
+	result.DatabasePath = targetPath
+	result.Database = filepath.Base(targetPath)
+	ext = filepath.Ext(result.Database)
+	endName = len(result.Database) - len(ext)
+	result.Project = result.Database[:endName]
+	result.DB, err = sql.Open("sqlite3", result.DatabasePath)
+	if err != nil {
+		status = log.Error(d.Ctx, 500, err, `Error Copying Database step 4`, result.DatabasePath)
+		return result, status
+	}
+	log.Info(d.Ctx, "DB Copied", d.DatabasePath, "to", targetPath)
+	return result, status
 }
 
 func (d *DBAdapter) EraseDatabase() {
