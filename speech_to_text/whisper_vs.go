@@ -30,6 +30,7 @@ type WhisperVs struct {
 	conn    db.DBAdapter
 	bibleId string
 	model   string
+	tempDir string
 }
 
 func NewWhisperVs(bibleId string, conn db.DBAdapter, model string) WhisperVs {
@@ -44,6 +45,12 @@ func NewWhisperVs(bibleId string, conn db.DBAdapter, model string) WhisperVs {
 func (w *WhisperVs) ProcessFiles(files []input.InputFile) dataset.Status {
 	var status dataset.Status
 	var outputFile string
+	var err error
+	w.tempDir, err = os.MkdirTemp(os.Getenv(`FCBH_DATASET_TMP`), "WhisperVs_")
+	if err != nil {
+		return log.Error(w.ctx, 500, err, `Error creating temp dir`)
+	}
+	defer os.RemoveAll(w.tempDir)
 	for _, file := range files {
 		fmt.Println(`INPUT FILE:`, file)
 		var pieces []db.Timestamp
@@ -55,11 +62,16 @@ func (w *WhisperVs) ProcessFiles(files []input.InputFile) dataset.Status {
 		if status.IsErr {
 			return status
 		}
+		var records []db.Script
 		for pieceNum, piece := range pieces {
 			fmt.Println(`VERSE PIECE:`, piece)
 			outputFile, status = w.RunWhisper(piece)
-			status = w.loadWhisperOutput(outputFile, file, pieceNum, piece)
+			var rec db.Script
+			rec, status = w.loadWhisperOutput(outputFile, file, pieceNum, piece)
+			records = append(records, rec)
 		}
+		w.conn.InsertScripts(records)
+		records = nil
 	}
 	return status
 }
@@ -79,15 +91,15 @@ func (w *WhisperVs) ChopByTimestamp(audioFile input.InputFile) ([]db.Timestamp, 
 		var cmd *exec.Cmd
 		beginTS := strconv.FormatFloat(ts.BeginTS, 'g', -1, 64)
 		endTS := strconv.FormatFloat(ts.EndTS, 'g', -1, 64)
-
-		outputFile := fmt.Sprintf("output_%v_%v.mp3", ts.BeginTS, ts.EndTS)
-		ts.AudioFile = filepath.Join(os.Getenv(`FCBH_DATASET_TMP`), outputFile)
+		ts.AudioFile = fmt.Sprintf("verse_%s_%d_%s_%s_%s.mp3",
+			audioFile.BookId, audioFile.Chapter, ts.VerseStr, beginTS, endTS)
+		outputPath := filepath.Join(w.tempDir, ts.AudioFile)
 		if ts.EndTS != 0.0 {
 			cmd = exec.Command(ffMpegPath, `-y`, `-i`, audioFile.FilePath(),
-				`-ss`, beginTS, `-to`, endTS, `-c`, `copy`, ts.AudioFile)
+				`-ss`, beginTS, `-to`, endTS, `-c`, `copy`, outputPath)
 		} else {
 			cmd = exec.Command(ffMpegPath, `-y`, `-i`, audioFile.FilePath(),
-				`-ss`, beginTS, `-c`, `copy`, ts.AudioFile)
+				`-ss`, beginTS, `-c`, `copy`, outputPath)
 		}
 		var stdoutBuf, stderrBuf bytes.Buffer
 		cmd.Stdout = &stdoutBuf
@@ -104,17 +116,13 @@ func (w *WhisperVs) ChopByTimestamp(audioFile input.InputFile) ([]db.Timestamp, 
 
 func (w *WhisperVs) RunWhisper(audio db.Timestamp) (string, dataset.Status) {
 	var status dataset.Status
-	outputDir := os.Getenv(`FCBH_DATASET_TMP`)
-	//var outputDir, status = w.ensureOutputDir(audio.AudioFile)
-	//if status.IsErr {
-	//	return outputDir, status
-	//}
 	whisperPath := os.Getenv(`WHISPER_EXE`)
-	cmd := exec.Command(whisperPath, audio.AudioFile,
+	cmd := exec.Command(whisperPath,
+		filepath.Join(w.tempDir, audio.AudioFile),
 		`--model`, w.model,
 		`--output_format`, `json`,
 		`--fp16`, `False`,
-		`--output_dir`, outputDir)
+		`--output_dir`, w.tempDir)
 	// --language is another option
 	var stdoutBuf, stderrBuf bytes.Buffer
 	cmd.Stdout = &stdoutBuf
@@ -133,22 +141,9 @@ func (w *WhisperVs) RunWhisper(audio db.Timestamp) (string, dataset.Status) {
 	return outputFile, status
 }
 
-// Should this be a user directory under tmp??
-func (w *WhisperVs) ensureOutputDir(audioFile string) (string, dataset.Status) {
-	var status dataset.Status
-	var outputDir = filepath.Dir(audioFile) + `_WHISPER`
-	//var outputDir = audioFile.Directory + `_WHISPER`
-	_, err := os.Stat(outputDir)
-	if os.IsNotExist(err) {
-		err = os.Mkdir(outputDir, 0777)
-	} else if err != nil {
-		status = log.Error(w.ctx, 500, err, `Error creating whisper output directory`)
-	}
-	return outputDir, status
-}
-
 func (w *WhisperVs) loadWhisperOutput(outputFile string, file input.InputFile,
-	pieceNum int, piece db.Timestamp) dataset.Status {
+	pieceNum int, piece db.Timestamp) (db.Script, dataset.Status) {
+	var rec db.Script
 	var status dataset.Status
 	type WhisperSegmentType struct {
 		Id               int     `json:"id"`
@@ -166,17 +161,15 @@ func (w *WhisperVs) loadWhisperOutput(outputFile string, file input.InputFile,
 		Segments []WhisperSegmentType `json:"segments"`
 		Language string               `json:"language"`
 	}
-	var records = make([]db.Script, 0, 100)
-	content, err := os.ReadFile(outputFile)
+	content, err := os.ReadFile(filepath.Join(w.tempDir, outputFile))
 	if err != nil {
-		return log.Error(w.ctx, 500, err, `Error reading file`)
+		return rec, log.Error(w.ctx, 500, err, `Error reading file`)
 	}
 	var response WhisperOutputType
 	err = json.Unmarshal(content, &response)
 	if err != nil {
-		return log.Error(w.ctx, 500, err, "Error decoding Whisper JSON")
+		return rec, log.Error(w.ctx, 500, err, "Error decoding Whisper JSON")
 	}
-	var rec db.Script
 	rec.BookId = file.BookId
 	rec.ChapterNum = file.Chapter
 	rec.AudioFile = file.Filename
@@ -190,7 +183,5 @@ func (w *WhisperVs) loadWhisperOutput(outputFile string, file input.InputFile,
 		}
 		rec.ScriptEndTS = seg.End + piece.BeginTS
 	}
-	records = append(records, rec)
-	status = w.conn.InsertScripts(records)
-	return status
+	return rec, status
 }
