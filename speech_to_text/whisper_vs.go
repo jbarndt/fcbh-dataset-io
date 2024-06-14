@@ -54,7 +54,7 @@ func (w *WhisperVs) ProcessFiles(files []input.InputFile) dataset.Status {
 	for _, file := range files {
 		fmt.Println(`INPUT FILE:`, file)
 		var pieces []db.Timestamp
-		pieces, status = w.ChopByTimestamp(file)
+		pieces, status = w.CopyByTimestamp(file)
 		if status.IsErr {
 			return status
 		}
@@ -76,40 +76,41 @@ func (w *WhisperVs) ProcessFiles(files []input.InputFile) dataset.Status {
 	return status
 }
 
-func (w *WhisperVs) ChopByTimestamp(audioFile input.InputFile) ([]db.Timestamp, dataset.Status) {
+func (w *WhisperVs) CopyByTimestamp(file input.InputFile) ([]db.Timestamp, dataset.Status) {
 	var results []db.Timestamp
 	var status dataset.Status
-	timestamps, status := w.conn.SelectScriptTimestamps(audioFile.BookId, audioFile.Chapter)
+	timestamps, status := w.conn.SelectScriptTimestamps(file.BookId, file.Chapter)
 	if status.IsErr {
 		return results, status
 	}
-	ffMpegPath := `ffmpeg`
+	var command []string
+	command = append(command, `-i`, file.FilePath())
+	command = append(command, `-codec:a`, `copy`)
+	command = append(command, `-y`)
 	for _, ts := range timestamps {
 		if ts.BeginTS == 0.0 && ts.EndTS == 0.0 {
 			continue
 		}
-		var cmd *exec.Cmd
-		beginTS := strconv.FormatFloat(ts.BeginTS, 'g', -1, 64)
-		endTS := strconv.FormatFloat(ts.EndTS, 'g', -1, 64)
-		ts.AudioFile = fmt.Sprintf("verse_%s_%d_%s_%s_%s.mp3",
-			audioFile.BookId, audioFile.Chapter, ts.VerseStr, beginTS, endTS)
-		outputPath := filepath.Join(w.tempDir, ts.AudioFile)
+		beginTS := strconv.FormatFloat(ts.BeginTS, 'f', 2, 64)
+		command = append(command, `-ss`, beginTS)
 		if ts.EndTS != 0.0 {
-			cmd = exec.Command(ffMpegPath, `-y`, `-i`, audioFile.FilePath(),
-				`-ss`, beginTS, `-to`, endTS, `-c`, `copy`, outputPath)
-		} else {
-			cmd = exec.Command(ffMpegPath, `-y`, `-i`, audioFile.FilePath(),
-				`-ss`, beginTS, `-c`, `copy`, outputPath)
+			endTS := strconv.FormatFloat(ts.EndTS, 'f', 2, 64)
+			command = append(command, `-to`, endTS)
 		}
-		var stdoutBuf, stderrBuf bytes.Buffer
-		cmd.Stdout = &stdoutBuf
-		cmd.Stderr = &stderrBuf
-		err := cmd.Run()
-		if err != nil {
-			status = log.Error(w.ctx, 500, err, stderrBuf.String())
-			return results, status
-		}
+		ts.AudioFile = fmt.Sprintf("verse_%s_%d_%s_%s.mp3",
+			file.BookId, file.Chapter, ts.VerseStr, beginTS)
+		outputPath := filepath.Join(w.tempDir, ts.AudioFile)
+		command = append(command, `-c`, `copy`, outputPath)
 		results = append(results, ts)
+	}
+	ffMpegPath := `ffmpeg`
+	cmd := exec.Command(ffMpegPath, command...)
+	var stdoutBuf, stderrBuf bytes.Buffer
+	cmd.Stdout = &stdoutBuf
+	cmd.Stderr = &stderrBuf
+	err := cmd.Run()
+	if err != nil {
+		status = log.Error(w.ctx, 500, err, stderrBuf.String())
 	}
 	return results, status
 }
