@@ -30,15 +30,17 @@ type WhisperVs struct {
 	conn    db.DBAdapter
 	bibleId string
 	model   string
+	lang2   string // 2 char language code
 	tempDir string
 }
 
-func NewWhisperVs(bibleId string, conn db.DBAdapter, model string) WhisperVs {
+func NewWhisperVs(bibleId string, conn db.DBAdapter, model string, lang2 string) WhisperVs {
 	var w WhisperVs
 	w.ctx = conn.Ctx
 	w.conn = conn
 	w.bibleId = bibleId
 	w.model = model
+	w.lang2 = lang2
 	return w
 }
 
@@ -123,8 +125,8 @@ func (w *WhisperVs) RunWhisper(audio db.Timestamp) (string, dataset.Status) {
 		`--model`, w.model,
 		`--output_format`, `json`,
 		`--fp16`, `False`,
+		`--language`, w.lang2,
 		`--output_dir`, w.tempDir)
-	// --language is another option
 	var stdoutBuf, stderrBuf bytes.Buffer
 	cmd.Stdout = &stdoutBuf
 	cmd.Stderr = &stderrBuf
