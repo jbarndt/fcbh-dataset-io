@@ -11,7 +11,7 @@ import (
 
 type Sil639 struct {
 	Lang3 string
-	Lang1 string
+	Lang2 string
 	Name  string
 }
 
@@ -27,7 +27,7 @@ func FindWhisperCompatibility(ctx context.Context, iso3 string) (Sil639, dataset
 	}
 	defer conn.Close()
 	iso639, status = SelectOnPart1(ctx, conn, iso3)
-	if iso639.Lang1 != `` || status.IsErr {
+	if iso639.Lang2 != `` || status.IsErr {
 		return iso639, status
 	}
 	iso639, status = SelectOnMacro(ctx, conn, iso3)
@@ -61,7 +61,7 @@ func genericLangQuery(ctx context.Context, conn *sql.DB, iso3 string, query stri
 	}
 	defer rows.Close()
 	for rows.Next() {
-		err = rows.Scan(&iso639.Lang1, &iso639.Lang3, &iso639.Name)
+		err = rows.Scan(&iso639.Lang2, &iso639.Lang3, &iso639.Name)
 		if err != nil {
 			status = log.Error(ctx, 500, err, query)
 			return iso639, status

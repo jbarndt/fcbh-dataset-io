@@ -22,7 +22,7 @@ type TSData struct {
 }
 
 func TestSIL639(t *testing.T) {
-	filePath := filepath.Join(os.Getenv(`GOPATH`), `dataset/cli_misc/find_timestamps/FilesetList.json`)
+	filePath := filepath.Join(os.Getenv(`GOPATH`), `dataset/cli_misc/find_timestamps/TestFilesetList.json`)
 	content, err := os.ReadFile(filePath)
 	if err != nil {
 		t.Fatal(err)
@@ -42,7 +42,7 @@ func TestSIL639(t *testing.T) {
 			if status.IsErr {
 				t.Fatal(status)
 			}
-			if lang.Lang1 != `` {
+			if lang.Lang2 != `` {
 				fmt.Println(ts.MediaId, iso3, lang)
 			}
 		}
