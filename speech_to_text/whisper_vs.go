@@ -85,6 +85,10 @@ func (w *WhisperVs) CopyByTimestamp(file input.InputFile) ([]db.Timestamp, datas
 	if status.IsErr {
 		return results, status
 	}
+	if len(timestamps) == 0 {
+		status = log.ErrorNoErr(w.ctx, 400, `No timestamps found for`, file.BookId, file.Chapter)
+		return results, status
+	}
 	var command []string
 	command = append(command, `-i`, file.FilePath())
 	command = append(command, `-codec:a`, `copy`)

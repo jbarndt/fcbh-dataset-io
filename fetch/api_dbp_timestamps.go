@@ -43,13 +43,13 @@ func (a *APIDBPTimestamps) LoadTimestamps(testament request.Testament) (bool, da
 	if status.IsErr {
 		return false, status
 	}
+	if len(scripts) == 0 {
+		status = log.ErrorNoErr(a.ctx, 400, `There is no script text in dataset for`, a.audioId)
+		return false, status
+	}
 	var scriptMap = make(map[string]int)
 	for _, scp := range scripts {
 		key := scp.BookId + ` ` + strconv.Itoa(scp.ChapterNum) + `:` + scp.VerseStr
-		//_, _ = scriptMap[key]
-		//if ok {
-		//	log.Warn(a.ctx, `Duplicate book, chapter, verse`, key)
-		//}
 		scriptMap[key] = scp.ScriptId
 	}
 	lastBookId := ``

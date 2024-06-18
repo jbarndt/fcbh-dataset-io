@@ -5,6 +5,7 @@ import (
 	"dataset"
 	"dataset/db"
 	log "dataset/logger"
+	"dataset/request"
 	"encoding/json"
 	"fmt"
 	"net/url"
@@ -16,14 +17,16 @@ import (
 )
 
 type APIDownloadClient struct {
-	ctx     context.Context
-	bibleId string
+	ctx       context.Context
+	bibleId   string
+	testament request.Testament
 }
 
-func NewAPIDownloadClient(ctx context.Context, bibleId string) APIDownloadClient {
+func NewAPIDownloadClient(ctx context.Context, bibleId string, testament request.Testament) APIDownloadClient {
 	var d APIDownloadClient
 	d.ctx = ctx
 	d.bibleId = bibleId
+	d.testament = testament
 	return d
 }
 
@@ -149,13 +152,14 @@ func (d *APIDownloadClient) downloadLocation(filesetId string) ([]LocationRec, d
 func (d *APIDownloadClient) downloadEachLocation(fileset FilesetType) ([]LocationRec, dataset.Status) {
 	var result []LocationRec
 	var status dataset.Status
-	var books []string
-	if fileset.Size == `OT` || fileset.Size == `C` {
-		books = append(books, db.BookOT...)
-	}
-	if fileset.Size == `NT` || fileset.Size == `C` {
-		books = append(books, db.BookNT...)
-	}
+	//var books []string
+	var books = db.RequestedBooks(d.testament)
+	//if fileset.Size == `OT` || fileset.Size == `C` {
+	//	books = append(books, db.BookOT...)
+	//}
+	//if fileset.Size == `NT` || fileset.Size == `C` {
+	//	books = append(books, db.BookNT...)
+	//}
 	for _, book := range books {
 		maxChapter, _ := db.BookChapterMap[book]
 		for ch := 1; ch <= maxChapter; ch++ {
@@ -208,17 +212,19 @@ func (d *APIDownloadClient) downloadFiles(directory string, locations []Location
 		}
 	}
 	for _, loc := range locations {
-		filePath := filepath.Join(directory, loc.Filename)
-		file, err := os.Stat(filePath)
-		if os.IsNotExist(err) || file.Size() != int64(loc.FileSize) {
-			fmt.Println("Downloading", loc.Filename)
-			var content []byte
-			content, status = httpGet(d.ctx, loc.URL, false, loc.Filename)
-			if !status.IsErr {
-				if len(content) != loc.FileSize {
-					log.Warn(d.ctx, "Warning for", loc.Filename, "has an expected size of", loc.FileSize, "but, actual size is", len(content))
+		if loc.BookId == `` || d.testament.HasNT(loc.BookId) || d.testament.HasOT(loc.BookId) {
+			filePath := filepath.Join(directory, loc.Filename)
+			file, err := os.Stat(filePath)
+			if os.IsNotExist(err) || file.Size() != int64(loc.FileSize) {
+				fmt.Println("Downloading", loc.Filename)
+				var content []byte
+				content, status = httpGet(d.ctx, loc.URL, false, loc.Filename)
+				if !status.IsErr {
+					if len(content) != loc.FileSize {
+						log.Warn(d.ctx, "Warning for", loc.Filename, "has an expected size of", loc.FileSize, "but, actual size is", len(content))
+					}
+					status = d.saveFile(filePath, content)
 				}
-				status = d.saveFile(filePath, content)
 			}
 		}
 	}

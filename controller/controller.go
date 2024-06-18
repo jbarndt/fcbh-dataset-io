@@ -155,22 +155,11 @@ func (c *Controller) fetchData() (db.Ident, dataset.Status) {
 		return c.ident, status
 	}
 	client.FindFilesets(&info, c.req.AudioData.BibleBrain, c.req.TextData.BibleBrain, c.req.Testament)
-	download := fetch.NewAPIDownloadClient(c.ctx, c.req.BibleId)
+	download := fetch.NewAPIDownloadClient(c.ctx, c.req.BibleId, c.req.Testament)
 	status = download.Download(info)
 	if status.IsErr {
 		return c.ident, status
 	}
-	//} else {
-	//	var msg = make([]string, 0, 10)
-	//	msg = append(msg, "Requested Fileset is not available")
-	//	for _, rec := range info.DbpProd.Filesets {
-	//		msg = append(msg, fmt.Sprintf("%+v", rec))
-	//	}
-	//	status.IsErr = true
-	//	status.Status = 400
-	//	status.Message = strings.Join(msg, "\n")
-	//	return info, status
-	//}
 	c.ident, status = c.database.SelectIdent()
 	if status.IsErr {
 		return c.ident, status
@@ -183,6 +172,7 @@ func (c *Controller) fetchData() (db.Ident, dataset.Status) {
 func (c *Controller) collectTextInput() ([]input.InputFile, dataset.Status) {
 	var files []input.InputFile
 	var status dataset.Status
+	var expectFiles = true
 	bb := c.req.TextData.BibleBrain
 	if bb.TextPlain || bb.TextPlainEdit || bb.TextUSXEdit {
 		files, status = input.DBPDirectory(c.ctx, c.req.BibleId, c.ident.TextSource, c.ident.TextOTId,
@@ -193,6 +183,11 @@ func (c *Controller) collectTextInput() ([]input.InputFile, dataset.Status) {
 		files, status = input.AWSS3Input(c.ctx, c.req.TextData.AWSS3, c.req.Testament)
 	} else if c.req.TextData.POST != `` {
 		files, status = input.FileInput(c.ctx, c.req.TextData.POST, c.req.Testament)
+	} else {
+		expectFiles = false
+	}
+	if expectFiles && len(files) == 0 {
+		status = log.ErrorNoErr(c.ctx, 400, `No text files found for`, c.ident.TextSource)
 	}
 	return files, status
 }
@@ -200,6 +195,7 @@ func (c *Controller) collectTextInput() ([]input.InputFile, dataset.Status) {
 func (c *Controller) collectAudioInput() ([]input.InputFile, dataset.Status) {
 	var files []input.InputFile
 	var status dataset.Status
+	var expectFiles = true
 	bb := c.req.AudioData.BibleBrain
 	if bb.MP3_64 || bb.MP3_16 || bb.OPUS {
 		bibleId := c.req.BibleId
@@ -211,6 +207,11 @@ func (c *Controller) collectAudioInput() ([]input.InputFile, dataset.Status) {
 		files, status = input.AWSS3Input(c.ctx, c.req.AudioData.AWSS3, c.req.Testament)
 	} else if c.req.AudioData.POST != `` {
 		files, status = input.FileInput(c.ctx, c.req.AudioData.POST, c.req.Testament)
+	} else {
+		expectFiles = false
+	}
+	if expectFiles && len(files) == 0 {
+		status = log.ErrorNoErr(c.ctx, 400, `No audio files found for`, c.ident.AudioNTId)
 	}
 	return files, status
 }

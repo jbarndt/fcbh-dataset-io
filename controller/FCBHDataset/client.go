@@ -128,6 +128,10 @@ func DisplayOutput(filename string) {
 	if strings.HasSuffix(filename, ".sqlite") {
 		return
 	}
+	if strings.HasSuffix(filename, ".db") {
+		filename = strings.Replace(filename, ".db", ".sqlite", 1)
+		return
+	}
 	file, err := os.Open(filename)
 	if err != nil {
 		return
