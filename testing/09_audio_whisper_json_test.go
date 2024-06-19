@@ -20,11 +20,10 @@ testament: # Choose one or both
 audio_data:
   bible_brain:
     mp3_64: yes
-text_data:
-  speech_to_text:
-    whisper:
-      model:
-        tiny: yes
+speech_to_text:
+  whisper:
+    model:
+      tiny: yes
 `
 
 func TestAudioWhisperJsonAPI(t *testing.T) {

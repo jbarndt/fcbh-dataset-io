@@ -39,7 +39,8 @@ func TestPostAudio2WhisperJsonAPI(t *testing.T) {
 	stdout, stderr := FCBHDatasetExec(request, t)
 	fmt.Println(`STDOUT`, stdout)
 	fmt.Println(`STDERR`, stderr)
-	count := countRecords(stdout)
+	filename := ExtractFilename(request)
+	count := NumFileLines(filename, t)
 	if count != a.expected {
 		t.Error(`expected,`, a.expected, `found`, count)
 	}
