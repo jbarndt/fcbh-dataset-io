@@ -50,18 +50,20 @@ text_data:
     text_usx_edit: Yes
     text_plain_edit: Yes
     text_plain: Yes
-  speech_to_text: 
-    whisper: 
-      model: 
-        large: Yes
-        medium: Yes
-        small: Yes
-        base: Yes
-        tiny: Yes
   file: /Users/who/where.mp3
   aws_s3: http://west1/path
   post: Yes
   no_text: Yes
+speech_to_text:
+  language: en
+  whisper:
+    model: 
+      large: Yes
+      medium: Yes
+      small: Yes
+      base: Yes
+      tiny: Yes
+  no_speech_to_text: Yes
 detail:
   lines: yes
   words: yes
@@ -115,12 +117,13 @@ compare:
 		req.TextData.BibleBrain.TextUSXEdit,
 		req.TextData.BibleBrain.TextPlainEdit,
 		req.TextData.BibleBrain.TextPlain,
-		req.TextData.SpeechToText.Whisper.Model.Large,
-		req.TextData.SpeechToText.Whisper.Model.Medium,
-		req.TextData.SpeechToText.Whisper.Model.Small,
-		req.TextData.SpeechToText.Whisper.Model.Base,
-		req.TextData.SpeechToText.Whisper.Model.Tiny,
 		req.TextData.NoText,
+		req.SpeechToText.Whisper.Model.Large,
+		req.SpeechToText.Whisper.Model.Medium,
+		req.SpeechToText.Whisper.Model.Small,
+		req.SpeechToText.Whisper.Model.Base,
+		req.SpeechToText.Whisper.Model.Tiny,
+		req.SpeechToText.NoSpeechToText,
 		req.Detail.Lines,
 		req.Detail.Words,
 		req.Timestamps.BibleBrain,

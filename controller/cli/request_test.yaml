@@ -38,27 +38,31 @@ text_data: # Choose one of the following
   file: # e.g. /{directory}/{mediaId}/*.usx Note: include twice for OT and NT
   aws_s3: # e.g. s3://{bucket}/text/{bibleId}/{mediaId}/*.usx  Note: include twice for OT and NT
   post: # {mediaId}_{A/Bseq}_{book}_{chapter}_{verse}-{chapter_end}_{verse_end}, use detail as needed
-  speech_to_text: # If STT is source Yes by desired type
-    whisper: # This is OpenAI’s STT model
-      model: # If using Whisper, choose one of the model sizes by marking it Yes
-        large:
-        medium:
-        small:
-        base:
-        tiny:
   no_text: # If there is no text yes here
 # Default: no_text
-
-detail: # Choose word or both
-  lines: # Mark yes to process script lines
-  words: # Mark yes to process individual words
-# Default: lines
 
 timestamps: # If timestamps are needed, mark Yes by source
   bible_brain: # Use is not recommended, because the last verse has no ending timestamp.
   aeneas: yes
   no_timestamps:
 # Default: no_timestamps
+
+speech_to_text: # If STT is source Yes by desired type
+  language: # STT language. If left blank, STT will use language of bibleId, but may fail if it is not known
+  whisper: # This is OpenAI’s STT model
+    model: # If using Whisper, choose one of the model sizes by marking it Yes
+      large:
+      medium:
+      small:
+      base:
+      tiny:
+  no_speech_to_text: #
+# Default: no_speech_to_text
+
+detail: # Choose word or both
+  lines: # Mark yes to process script lines
+  words: # Mark yes to process individual words
+# Default: lines
 
 audio_encoding: # If audio encoding is needed, mark Yes by the method
   mfcc:

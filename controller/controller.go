@@ -116,6 +116,17 @@ func (c *Controller) processSteps() (string, dataset.Status) {
 	if status.IsErr {
 		return filename, status
 	}
+	// Copy for STT Compare
+	if c.req.OutputFormat.HTML &&
+		c.req.Compare.BaseDataset == `` &&
+		!c.req.SpeechToText.NoSpeechToText {
+		c.req.Compare.BaseDataset = c.database.Project
+		// This makes a copy of database, and closes it.  Names the new database *_STT, and returns new
+		c.database, status = c.database.CopyDatabase(`_STT`)
+		if status.IsErr {
+			return filename, status
+		}
+	}
 	// Speech to Text
 	status = c.speechToText(audioFiles)
 	if status.IsErr {
@@ -132,7 +143,7 @@ func (c *Controller) processSteps() (string, dataset.Status) {
 		return filename, status
 	}
 	// Compare
-	if c.req.Compare.BaseDataset != `` {
+	if c.req.Compare.BaseDataset != `` || c.req.OutputFormat.HTML {
 		filename, status = c.matchText()
 		return filename, status // return whether success or not
 	}
@@ -287,9 +298,10 @@ func (c *Controller) timestamps(audioFiles []input.InputFile) dataset.Status {
 func (c *Controller) speechToText(audioFiles []input.InputFile) dataset.Status {
 	var status dataset.Status
 	bibleId := c.req.BibleId
-	var whisperModel = c.req.TextData.SpeechToText.Whisper.Model.String()
+	var whisperModel = c.req.SpeechToText.Whisper.Model.String()
 	if whisperModel != `` {
-		var whisper = speech_to_text.NewWhisper(bibleId, c.database, whisperModel)
+		var lang2 = c.req.SpeechToText.Language
+		var whisper = speech_to_text.NewWhisper(bibleId, c.database, whisperModel, lang2)
 		status = whisper.ProcessFiles(audioFiles)
 		if status.IsErr {
 			return status
@@ -332,10 +344,15 @@ func (c *Controller) matchText() (string, dataset.Status) {
 	var filename string
 	var status dataset.Status
 	compare := match.NewCompare(c.ctx, c.user, c.req.Compare.BaseDataset, c.database, c.req.Testament, c.req.Compare.CompareSettings)
-	if c.ident.TextSource == request.TextSTT {
-		filename, status = compare.CompareChapters()
-	} else {
+	var avgLen int
+	avgLen, status = c.database.SelectVerseLength()
+	if status.IsErr {
+		return filename, status
+	}
+	if avgLen > 0 {
 		filename, status = compare.Process()
+	} else {
+		filename, status = compare.CompareChapters()
 	}
 	return filename, status
 }

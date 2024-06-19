@@ -11,7 +11,7 @@ import (
 func TestWhisper(t *testing.T) {
 	ctx := context.Background()
 	var bibleId = `ENGWEB`
-	var filesetId = `ENGWEBN2DA-opus16`
+	var filesetId = `ENGWEBN2DA-mp3-64`
 	testament := request.Testament{NTBooks: []string{`TIT`, `PHM`, `3JN`}}
 	testament.BuildBookMaps()
 	files, status := input.DBPDirectory(ctx, bibleId, `audio`, ``, filesetId, testament)
@@ -21,7 +21,7 @@ func TestWhisper(t *testing.T) {
 	var database = bibleId + `_WHISPER.db`
 	db.DestroyDatabase(database)
 	conn := db.NewDBAdapter(ctx, database)
-	var whisp = NewWhisper(bibleId, conn, `tiny`)
+	var whisp = NewWhisper(bibleId, conn, `tiny`, `en`)
 	status = whisp.ProcessFiles(files)
 
 	if status.IsErr {

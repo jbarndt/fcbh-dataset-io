@@ -19,11 +19,10 @@ email: gary@shortsands.com
 output_file: 11__post_audio_whisper.json
 audio_data:
   post: {namev4}
-text_data:
-  speech_to_text:
-    whisper:
-      model:
-        tiny: yes
+speech_to_text:
+  whisper:
+    model:
+      tiny: yes
 `
 
 /*
@@ -45,7 +44,7 @@ func TestPostAudioWhisperJsonAPI(t *testing.T) {
 	}
 	var a try
 	a.bibleId = `ENGWEB`
-	a.filePath = `ENGWEB/ENGWEBN2DA/B23___01_1John_______ENGWEBN2DA.mp3`
+	a.filePath = `ENGWEB/ENGWEBN2DA-mp3-64/B23___01_1John_______ENGWEBN2DA.mp3`
 	a.namev4 = `ENGWEBN2DA_B23_1JN_001.mp3`
 	destFile := CopyAudio(a.namev4, a.filePath, t)
 	a.expected = 15

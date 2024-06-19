@@ -57,12 +57,12 @@ func TestWhisperVs(t *testing.T) {
 		expect  int
 	}
 	var tests []testCase
-	//tests = append(tests, testCase{bibleId: `ENGWEB`, mediaId: `ENGWEBN2DA-mp3-64`, expect: 90})
+	tests = append(tests, testCase{bibleId: `ENGWEB`, mediaId: `ENGWEBN2DA-mp3-64`, expect: 90})
 	//tests = append(tests, testCase{bibleId: `APFCMU`, mediaId: `APFCMUN2DA`, expect: 90})
 	//tests = append(tests, testCase{bibleId: `DYIIBS`, mediaId: `DYIIBSN2DA`, expect: 90})
 	//NO TS tests = append(tests, testCase{bibleId: "ASMDPI", mediaId: "ASMDPIN1DA-mp3-64", lang2: "as", expect: 90})
 	//NO TS tests = append(tests, testCase{bibleId: "BENDPI", mediaId: "BENDPIN1DA-mp3-64", lang2: "bn", expect: 90})
-	tests = append(tests, testCase{bibleId: "ENGKJV", mediaId: "ENGKJVN1DA-opus16", lang2: "en", expect: 90})
+	//tests = append(tests, testCase{bibleId: "ENGKJV", mediaId: "ENGKJVN1DA-opus16", lang2: "en", expect: 90})
 	for _, tst := range tests {
 		ctx := context.Background()
 		testament := request.Testament{NTBooks: []string{`TIT`, `PHM`, `3JN`}}
@@ -72,7 +72,7 @@ func TestWhisperVs(t *testing.T) {
 		if status.IsErr {
 			t.Fatal(status)
 		}
-		var database = tst.bibleId + `_WHISPER.db`
+		var database = tst.bibleId + `_WHISPER_VS.db`
 		db.DestroyDatabase(database)
 		conn := db.NewDBAdapter(ctx, database)
 		loadPlainText(tst.bibleId, conn, testament, t)
@@ -81,7 +81,7 @@ func TestWhisperVs(t *testing.T) {
 		if status.IsErr {
 			t.Fatal(status)
 		}
-		var whisp = NewWhisperVs(tst.bibleId, newConn, `tiny`, tst.lang2)
+		var whisp = NewWhisper(tst.bibleId, newConn, `tiny`, tst.lang2)
 		status = whisp.ProcessFiles(files)
 		if status.IsErr {
 			t.Fatal(status)

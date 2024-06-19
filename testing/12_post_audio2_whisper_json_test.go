@@ -1,11 +1,7 @@
 package testing
 
 import (
-	"context"
-	"dataset/controller"
 	"fmt"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -18,11 +14,10 @@ email: gary@shortsands.com
 output_file: 12__post_audio2_whisper.json
 audio_data:
   post: {namev4}
-text_data:
-  speech_to_text:
-    whisper:
-      model:
-        tiny: yes
+speech_to_text:
+  whisper:
+    model:
+      tiny: yes
 `
 
 func TestPostAudio2WhisperJsonAPI(t *testing.T) {
@@ -34,7 +29,7 @@ func TestPostAudio2WhisperJsonAPI(t *testing.T) {
 	}
 	var a try
 	a.bibleId = `ENGWEB`
-	a.filePath = `ENGWEB/ENGWEBN2DA/B23___02_1John_______ENGWEBN2DA.mp3`
+	a.filePath = `ENGWEB/ENGWEBN2DA-mp3-64/B23___02_1John_______ENGWEBN2DA.mp3`
 	a.namev4 = `ENGWEBN2DA_B23_1JN_002.mp3`
 	destFile := CopyAudio(a.namev4, a.filePath, t)
 	a.expected = 72
@@ -50,6 +45,9 @@ func TestPostAudio2WhisperJsonAPI(t *testing.T) {
 	}
 }
 
+/*
+This test is a post, but this test does not support posting.
+I think it should be deleted.
 func TestPostAudio2WhisperJson(t *testing.T) {
 	type try struct {
 		bibleId  string
@@ -59,7 +57,7 @@ func TestPostAudio2WhisperJson(t *testing.T) {
 	}
 	var a try
 	a.bibleId = `ENGWEB`
-	a.filePath = `ENGWEB/ENGWEBN2DA/B23___02_1John_______ENGWEBN2DA.mp3`
+	a.filePath = `ENGWEB/ENGWEBN2DA-mp3-64/B23___02_1John_______ENGWEBN2DA.mp3`
 	a.namev4 = `ENGWEBN2DA_B23_1JN_002.mp3`
 	//destFile := CopyAudio(a.namev4, a.filePath, t)
 	destFile := filepath.Join(os.Getenv(`FCBH_DATASET_FILES`), a.filePath)
@@ -78,3 +76,4 @@ func TestPostAudio2WhisperJson(t *testing.T) {
 		t.Error(`expected,`, a.expected, `found`, numLines)
 	}
 }
+*/

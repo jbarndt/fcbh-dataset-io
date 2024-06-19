@@ -679,6 +679,11 @@ func (d *DBAdapter) selectTimestamps(query string, bookId string, chapter int) (
 	return results, status
 }
 
+func (d *DBAdapter) SelectVerseLength() (int, dataset.Status) {
+	var query = `SELECT CAST(AVG(LENGTH(verse_str)) AS INT) FROM scripts;`
+	return d.SelectScalarInt(query)
+}
+
 // SelectWords is used by encode.FastText
 func (d *DBAdapter) SelectWords() ([]Word, dataset.Status) {
 	var results []Word

@@ -10,6 +10,7 @@ type Request struct {
 	Testament     Testament     `yaml:"testament,omitempty"`
 	AudioData     AudioData     `yaml:"audio_data,omitempty"`
 	TextData      TextData      `yaml:"text_data,omitempty"`
+	SpeechToText  SpeechToText  `yaml:"speech_to_text,omitempty"`
 	Detail        Detail        `yaml:"detail,omitempty"`
 	Timestamps    Timestamps    `yaml:"timestamps,omitempty"`
 	AudioEncoding AudioEncoding `yaml:"audio_encoding,omitempty"`
@@ -93,12 +94,11 @@ func (b BibleBrainAudio) AudioType() (string, string) {
 }
 
 type TextData struct {
-	BibleBrain   BibleBrainText `yaml:"bible_brain,omitempty"`
-	SpeechToText SpeechToText   `yaml:"speech_to_text,omitempty"`
-	File         string         `yaml:"file,omitempty"`
-	AWSS3        string         `yaml:"aws_s3,omitempty"`
-	POST         string         `yaml:"post,omitempty"`
-	NoText       bool           `yaml:"no_text,omitempty"`
+	BibleBrain BibleBrainText `yaml:"bible_brain,omitempty"`
+	File       string         `yaml:"file,omitempty"`
+	AWSS3      string         `yaml:"aws_s3,omitempty"`
+	POST       string         `yaml:"post,omitempty"`
+	NoText     bool           `yaml:"no_text,omitempty"`
 }
 
 type BibleBrainText struct {
@@ -152,7 +152,9 @@ func (t MediaType) IsFrom(ttype string) bool {
 }
 
 type SpeechToText struct {
-	Whisper Whisper `yaml:"whisper,omitempty"`
+	Language       string  `yaml:"language,omitempty"`
+	Whisper        Whisper `yaml:"whisper,omitempty"`
+	NoSpeechToText bool    `yaml:"no_speech_to_text,omitempty"`
 }
 
 type Whisper struct {

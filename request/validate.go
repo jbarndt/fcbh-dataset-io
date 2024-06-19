@@ -10,6 +10,7 @@ func (r *RequestDecoder) Validate(req *Request) {
 	r.checkTestament(&req.Testament)
 	r.checkAudioData(&req.AudioData, `AudioData`)
 	r.checkTextData(&req.TextData, `TextData`)
+	r.checkSpeechToText(&req.SpeechToText, `SpeechToText`)
 	r.checkDetail(&req.Detail)
 	r.checkTimestamps(&req.Timestamps, `Timestamps`)
 	r.checkAudioEncoding(&req.AudioEncoding, `AudioEncoding`)
@@ -64,6 +65,14 @@ func (r *RequestDecoder) checkTextData(req *TextData, fieldName string) {
 	count := r.checkForOne(reflect.ValueOf(*req), fieldName)
 	if count == 0 {
 		req.NoText = true
+	}
+}
+
+func (r *RequestDecoder) checkSpeechToText(req *SpeechToText, fieldName string) {
+	whisper := req.Whisper
+	count := r.checkForOne(reflect.ValueOf(whisper), fieldName)
+	if count == 0 {
+		req.NoSpeechToText = true
 	}
 }
 
