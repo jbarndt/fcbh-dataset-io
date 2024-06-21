@@ -72,7 +72,7 @@ The Word is a normalized table that contains one record for each word of an audi
 
 **text_NT_id** - The text NT media_id if needed
 
-**text_source** - This code defines the source of the text data collected.  Possible values include: script, text_plain, text_plain_edit, usx_edit
+**text_source** - This code defines the source of the text data collected.  Possible values include: script, text_plain, text_plain_edit, text_usx_edit.
 
 **language_iso** - The ISO language code using the ISO 639-3 standard.
 
@@ -100,7 +100,10 @@ The Word is a normalized table that contains one record for each word of an audi
 
 **chapter_end** - The end chapter of a piece text, almost always the same as chapter_num.
 
-**script_num** - An integer that defines the script line that this word is part of when the chapter has been parsed into script segments.  The three fields (book_id, chapter_num, script_num) together uniquely identify a script in *any language*.
+**script_num** - An integer that defines the line of a script.
+For non-script text, like USX or plain text, it is a unique identifier that
+uniquely identifies a line within a chapter.
+The three fields (book_id, chapter_num, script_num) together uniquely identify a script line.
 
 **usfm_style** - The USFM style code of the text. It is essential for identifying non-verse text, such as headings, titles, footnotes, cross references, and more.  Also, some AI researchers might consider the style information to be a useful source for their AI model.  Note: I think that the style codes being collected are solely the USFM paragraph codes, and not the USFM character codes, but this has not been verified.  Is it really certain there is only one of these for a script segment?
 
