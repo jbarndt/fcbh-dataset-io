@@ -11,6 +11,7 @@ The FCBH audio production process breaks text Bible chapters into script
 segments (called lines) that are often a sentence long, but always include one speaker.
 The audio is recorded from these scripts into chapter files with timestamps 
 that mark the beginning and end of each script segment.
+Text is also sourced from plain_text and USX data sources.
 
 Sqlite is the data store to hold the text, and encodings.
 It is much higher performance than any server based relational database
@@ -45,7 +46,7 @@ and Sentence Piece.
 
 The MFCC data for each word, and the corresponding multilingual word encoding 
 of both the language and the source language are used to create a tensor 
-as a timeseries with the corresponding MFCC, target language encoding.
+as a timeseries with the corresponding MFCC, and target language encoding.
 
 Then the MFCC encoded word data is normalized and padded to be the same length in the
 time dimension to prepare it for use by a neural net.
