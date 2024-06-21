@@ -48,17 +48,9 @@ into DBP to simplify access.  AI researchers will expect all of the data
 required for the analysis of a language to be in one "dataset", often a 
 zip file.
 
-## Data Sources
-
-This design proposes loading an AI model with records of audio and text data one word at a time.  For an AI model to produce good results, it will be essential that the text words and the audio are perfectly aligned, that is, each record must contain the text and the audio of the same word.  
-
-In order to produce an audio, the text is first parsed into sentence/voice segments, and then the audio of that text is recorded by an actor speaking.  These audio and text segments are later checked and rechecked by people to ensure the correctness of the audio, and then repaired or re-recorded when necessary.  This appears to be the best source, although at this moment, it is unclear what data will be gotten from Context, and what data will be gotten from the Vessel system, or the older Excel spreadsheet.
-
-It is also essential that the input source includes usfm style codes, because these codes identify many different kinds of titles, section heading, and cross references which are not part of the scripture canon, and are not be included in all language translations.  It is not possible to correctly align script segments from one language to the next without identifying these non-verse text segments.
-
 ## Database Structure
 
-The data is organized into three tables.  An Ident table, which has only a single row in a Sqlite3 database.  
+The data is organized into three tables.  An Ident table, which has only a single row in a Sqlite3 database.
 This is a denormalized table that contains important identifying information about the data collected for one Bible.
 
 The Script is a normalized table that contains one record for each script line of an audio recording,
