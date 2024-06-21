@@ -8,26 +8,26 @@ This seems to describe a contingency on our Lord's coming, that the gospel has b
 ## Methodology
 
 The FCBH audio production process breaks text Bible chapters into script 
-segments (called lines) that are often a sentence long, but always include one speaker.  
+segments (called lines) that are often a sentence long, but always include one speaker.
 The audio is recorded from these scripts into chapter files with timestamps 
 that mark the beginning and end of each script segment.
 
-sing the python module Aeneas, we process each chapter to obtain a list of
-timestamps that mark the beginning and end of each word.
+Using the python module Aeneas, we process each chapter to obtain a list of
+timestamps that mark the beginning and end of each script line, verse, or word.
 
 Using a speech to text module for the language being processed, 
 the generated text is used to test the correctness of the audio.
 
 The audio data is converted into Mel-Frequency Cepstral Coefficients (MFCCs) 
-using the python module librosa.  This output is then broken up into word 
-length segments using the timestamps found by Aeneas.  
+using the python module librosa.  This output is then broken up into script line length,
+or verse length, or word length segments using the timestamps found by Aeneas.  
 
 FastText from Meta is used to create a word encoding of all of the available 
 text in each language to be processed.  BERT and Word2Vect are two other tools 
 that could also be used.  
 Using a lexicon that provides equivalent meanings in each language, 
 and other languages, these language encodings are used to create a 
-single multilingual encoding that will be used for both languages.  
+single multilingual encoding that will be used for both languages.
 There are a few possible solutions to Facebook's MUSE, Google's mBERT, 
 Google's Universal Sentence Encoder (USE), or Byte Pair Encoding (BPE) 
 and Sentence Piece.
