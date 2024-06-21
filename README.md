@@ -12,23 +12,34 @@ segments (called lines) that are often a sentence long, but always include one s
 The audio is recorded from these scripts into chapter files with timestamps 
 that mark the beginning and end of each script segment.
 
-Using the python module Aeneas, we process each chapter to obtain a list of
+Sqlite is the data store to hold the text, and encodings.
+It is much higher performance than any server based relational database
+as long a multiple concurrent writes are not needed.
+And they are not because each project has its own database.
+
+Using the python module **Aeneas**, we process each chapter to obtain a list of
 timestamps that mark the beginning and end of each script line, verse, or word.
 
 Using a speech to text module for the language being processed, 
 the generated text is used to test the correctness of the audio.
+Possible speech to text tools include: **Whisper** - from OpenAI and
+**MMS** - from Meta.
+
+Comparison of source text to generated speech to text is done using
+**Diff-Match-Patch** from Google.
 
 The audio data is converted into Mel-Frequency Cepstral Coefficients (MFCCs) 
-using the python module librosa.  This output is then broken up into script line length,
-or verse length, or word length segments using the timestamps found by Aeneas.  
+using the python module **librosa**.  This output is then broken up into script line length,
+or verse length, or word length segments using the timestamps found by Aeneas.
 
-FastText from Meta is used to create a word encoding of all of the available 
-text in each language to be processed.  BERT and Word2Vect are two other tools 
-that could also be used.  
+**FastText** from Meta is used to create a word encoding of all of the available 
+text in each language to be processed. **BERT** from Google and
+**Word2Vec** from Gemsys are two other tools that could also be used.
+
 Using a lexicon that provides equivalent meanings in each language, 
-and other languages, these language encodings are used to create a 
+and other languages, multiple language encodings will be used to create a 
 single multilingual encoding that will be used for both languages.
-There are a few possible solutions to Facebook's MUSE, Google's mBERT, 
+There are a few possible solutions to Facebook's **MUSE**, Google's **mBERT**, 
 Google's Universal Sentence Encoder (USE), or Byte Pair Encoding (BPE) 
 and Sentence Piece.
 
@@ -39,14 +50,10 @@ as a timeseries with the corresponding MFCC, target language encoding.
 Then the MFCC encoded word data is normalized and padded to be the same length in the
 time dimension to prepare it for use by a neural net.
 
-The tensor is loaded into a LLM (Large Language Model) or 
+The tensor containing MFCC data, and encoded text, or multilingual encoded text
+is loaded into a LLM (Large Language Model) or 
 Recurrent Neural Net (RNN), or Natural Language Processor (NLP). 
-It is likely the model would be designed to predict the next audio word.  
-
-Once the utility of this process has been proven, the data could be loaded 
-into DBP to simplify access.  AI researchers will expect all of the data 
-required for the analysis of a language to be in one "dataset", often a 
-zip file.
+It is likely the model would be designed to predict the next audio word.
 
 ## Database Structure
 
@@ -101,15 +108,15 @@ The Word is a normalized table that contains one record for each word of an audi
 **chapter_end** - The end chapter of a piece text, almost always the same as chapter_num.
 
 **script_num** - An integer that defines the line of a script.
-For non-script text, like USX or plain text, it is a unique identifier that
+For non-script text, like USX or plain text, it is an identifier that
 uniquely identifies a line within a chapter.
 The three fields (book_id, chapter_num, script_num) together uniquely identify a script line.
 
-**usfm_style** - The USFM style code of the text. It is essential for identifying non-verse text, such as headings, titles, footnotes, cross references, and more.  Also, some AI researchers might consider the style information to be a useful source for their AI model.  Note: I think that the style codes being collected are solely the USFM paragraph codes, and not the USFM character codes, but this has not been verified.  Is it really certain there is only one of these for a script segment?
+**usfm_style** - The USFM style code of the text is available for text loaded from USX. Some AI researchers might consider the style information to be a useful input for their AI model.
 
-**person** - This is the person or character who is speaking in a script segment. Narrator is the most frequent person.  This data item is an attribute of a script segment, and is the same for each language.  It is included here because some AI researchers might find this information useful for the analysis of text language, since different people have different grammars and styles of speech.
+**person** - This is the person or character who is speaking in a script segment. It is available from text loaded from audio scripts. Narrator is the most frequent person.  It is included here because some AI researchers might find this information useful for the analysis of text language, since different people have different grammars and styles of speech.
 
-**actor** - This is a number that identifies the actor who is speaking this script segment.  Since the Bible has more persons speaking than the number of actors available to record a Bible, actors will need to play many parts.  This data item is included because some AI researchers might find this information useful for the analysis of audio data.
+**actor** - This is a number that identifies the actor who is speaking this script segment.  It is available from text loaded from audio scripts.  Since the Bible has more persons speaking than the number of actors available to record a Bible, actors will need to play many parts.  This data item is included because some AI researchers might find this information useful for the analysis of audio data.
 
 **verse_str** - The starting verse number (string) of this piece of text.
 
@@ -125,13 +132,13 @@ The three fields (book_id, chapter_num, script_num) together uniquely identify a
 
 ### Word Record
 
-**word_id** - A surrogate primary key.  It is an integer that begins with 1 for the first record, and increments for each record inserted.  It is present primarily to make table updates efficient, and make it easy to update.
+**word_id** - A surrogate primary key.  It is an integer that begins with 1 for the first record, and increments for each record inserted.  It is present primarily to make table updates efficient.
 
-**script_id** - A foreign key to the script attributes
+**script_id** - A foreign key to the script table.
 
 **word_seq** - An integer that defines the position of a word in the specific script line that it belongs to.  The columns (script_id, word_seq) are a unique index.
 
-**verse_num** - This is typically a number, but can be a value like 2a. This column will be empty when the word is part of a heading, reference, note, or other non-verse text. When a script segment crosses a verse boundary, the Context system can provide information about which word marks the beginning of a new verse.  Vessel and Excel cannot.  This data item belongs to a Word Attribute only if when a script crosses a verse boundary, we are able to identify the word where the new verse starts.
+**verse_num** - This is typically a number, but can be a value like 2a. This column will be '0' when the word is part of a heading, reference, note, or other non-verse text.
 
 **ttype** - A code that identifies the type of data in word. It values are (W, S, P) meaning (Word, Space, Punctuation)
 
@@ -165,80 +172,3 @@ a text type of "text_plain_edit", which is text_plain with book and chapter
 headings added.
 
 Both text_plain_edit, and text_usx_edit formats will compare well with a script.
-
-## Data Preparation Pipeline
-
-There are a number of steps required to prepare the data for loading into
-a LLM (Large Language Model) or other Neural Net model.
-
-### Starting a project
-
-**Sqlite** is used as the data store to hold the text, audio, and encodings.
-It is much higher performance than any server based relational database
-as long a multiple concurrent writes are not needed.  And they are not
-because each project has its own database.
-
-### Read Chapter of Scripts
-
-The text is read into the data store using either a script, plain text, 
-or USX as a data source.  Optionally, it is parsed into individual words
-such that audio cut into word pieces can be labeled with the associated text.
-
-### Checking Audio
-
-Speech to text of the audio and comparison of that text with text
-from another source is an important means to checking the correctness
-of the audio.  Possible speech to text tools include:
-**Whisper** - from OpenAI
-**MMS** - from Meta
-
-### Locating Each Word in Audio
-
-**Aeneas** is used to find the beginning and ending of each script line, verse, 
-or word of the audio.
-
-### Generate Mel-Frequency Cepstral Coefficients (MFCC)
-
-**librosa** is used to generate MFCC data of the audio that is to be used.
-as the encoded input to a neural net.
-
-### Prepare word encoding for the text
-
-To prepare text code for loading into a neural net it will need to be encoded.  
-Possible methods include:
-
-**Word2Vec** - from Gensim
-
-**FastText** - from Meta
-
-### Prepare multilingual encoding
-
-The next step is to use a glossary file that describes the related words of 
-multiple languages to generate a common encoding for the two languages.  
-Possible tools for doing this would include:
-
-**mBERT** - from Google
-
-**MUSE** - Multilingual Unsupervised or Supervised Word Embedding - from Meta
-
-### Final Preparation of encoded data
-
-After the MFCC's have been generated and stored for the entire document
-some additional processing is done to prepare it from use by the neural net.  
-The data should be normalized and the data should be padded to be of equal
-length.
-
-## Tensor Design
-
-The tensor will include normalized and padded MFCC's of each audio script line or word, 
-and multilingual encoding of each text word.  There are other attributes, such as USFM, person, and actor that an AI researcher might also find useful.
-
-**label** - The associated text line or word
-
-**mfccs_norm** - Each audio of a script line or word is replaced with a 
-MFCC (Mel-Frequency Cepstral Coefficients) of the word, that has been normalized and padded so that all MFCC's are the same length.
-
-**word_multi_enc** - The script line or word of text after being multilingual encoded. 
-Each word of text is replaced by a numeric encoding that was created using Facebook MUSE or some other method.
-
-
