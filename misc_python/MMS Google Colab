@@ -1,0 +1,29 @@
+
+
+https://colab.research.google.com/drive/1F14c6EM_H39eDpqGtFKVZ0e_NIbwrbpo?usp=sharing#scrollTo=fgNJM3MMRA8F
+
+
+import os
+
+!apt install ffmpeg
+!apt install sox
+!pip install -U --pre torchaudio --index-url https://download.pytorch.org/whl/nightly/cu118
+!git clone https://github.com/pytorch/fairseq
+os.chdir('fairseq')
+!pip install -e .
+os.environ["PYTHONPATH"] = "."
+!pip install git+https://github.com/abdeladim-s/easymms
+
+Download:
+mms1b_fl102
+
+!wget -P ./audio_samples/ https://github.com/deepanshu88/Datasets/raw/master/Audio/audio_file_test.wav
+files = ['./audio_samples/audio_file_test.wav']
+
+from easymms.models.asr import ASRModel
+asr = ASRModel(model=f'./models/{model}.pt')
+transcriptions = asr.transcribe(files, lang='eng', align=False)
+for i, transcription in enumerate(transcriptions):
+    print(f">>> file {files[i]}")
+    print(transcription)
+
