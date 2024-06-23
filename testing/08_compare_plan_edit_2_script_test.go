@@ -38,6 +38,7 @@ compare:
       normalize_nfkd:
 `
 
+// Danger: This test is dependent on test 4 to create the script file.
 func TestComparePlainTextEdit2ScriptAPI(t *testing.T) {
 	var cases []APITest
 	cases = append(cases, APITest{BibleId: `ATIWBT`, Expected: 2})

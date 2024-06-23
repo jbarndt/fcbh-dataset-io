@@ -38,6 +38,8 @@ compare:
       normalize_nfkd:
 `
 
+// Danger: depends on test 09 and 03
+
 func TestCompareUsXTextEdit2STTAPI(t *testing.T) {
 	var cases []APITest
 	cases = append(cases, APITest{BibleId: `ENGWEB`, Expected: 1, Diff: 0})
