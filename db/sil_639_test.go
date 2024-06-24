@@ -35,8 +35,8 @@ func TestSIL639(t *testing.T) {
 	ctx := context.Background()
 	for _, ts := range response {
 		if ts.MediaType == "audio" || ts.MediaType == "audio_drama" {
-			//fmt.Println(ts.MediaId)
-			//fmt.Println(strings.ToLower(ts.MediaId[:3]))
+			fmt.Println(ts.MediaId)
+			fmt.Println(strings.ToLower(ts.MediaId[:3]))
 			iso3 := strings.ToLower(ts.MediaId[:3])
 			lang, status := FindWhisperCompatibility(ctx, iso3)
 			if status.IsErr {
