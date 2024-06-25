@@ -2,8 +2,8 @@ package read
 
 import (
 	"context"
+	"dataset/cli_misc"
 	"dataset/db"
-	"dataset/input"
 	"fmt"
 	"github.com/xuri/excelize/v2"
 	"os"
@@ -30,20 +30,20 @@ func TestScriptReader(t *testing.T) {
 // TestScriptHeaders is to investigate the format of script columns for position of items
 func TestScriptHeaders(t *testing.T) {
 	ctx := context.Background()
-	ts := input.NewTSBucket(ctx)
-	list := ts.ListPrefix(input.TSBucketName, input.LatinN2)
+	ts := cli_misc.NewTSBucket(ctx)
+	list := ts.ListPrefix(cli_misc.TSBucketName, cli_misc.LatinN2)
 	for count, item := range list {
 		if count > 400 {
 			break
 		}
 		//fmt.Println(item)
-		objs := ts.ListObjects(input.TSBucketName, item+input.Script)
+		objs := ts.ListObjects(cli_misc.TSBucketName, item+cli_misc.Script)
 		key := objs[0]
 		//fmt.Println(key)
 		filename := filepath.Base(key)
 		filePath := filepath.Join(os.Getenv(`FCBH_DATASET_TMP`), filename)
 		//fmt.Println(filePath)
-		ts.DownloadObject(input.TSBucketName, key, filePath)
+		ts.DownloadObject(cli_misc.TSBucketName, key, filePath)
 		file, err := excelize.OpenFile(filePath)
 		if err != nil {
 			t.Fatal(err)

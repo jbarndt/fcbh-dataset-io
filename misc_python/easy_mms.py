@@ -34,3 +34,7 @@ for i, transcription in enumerate(transcriptions):
 # /usr/bin/pip3 install --upgrade fairseq
 
 # /usr/bin/pip3 install --upgrade pytorch
+
+# cd /path/to/fairseq-py/
+# python examples/mms/asr/infer/mms_infer.py --model "/path/to/asr/model" --lang lang_code \
+#  --audio "/path/to/audio_1.wav" "/path/to/audio_2.wav" "/path/to/audio_3.wav"
