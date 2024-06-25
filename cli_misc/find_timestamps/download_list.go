@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"dataset"
+	"dataset/cli_misc"
 	"dataset/fetch"
-	"dataset/input"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -36,8 +36,8 @@ type DownloadResp struct {
 	Meta Pagination1    `json:"meta"`
 }
 
-func downloadFilestList() []input.TSData {
-	var results []input.TSData
+func downloadFilestList() []cli_misc.TSData {
+	var results []cli_misc.TSData
 	ctx := context.Background()
 	var page = 0
 	for {
@@ -51,7 +51,7 @@ func downloadFilestList() []input.TSData {
 		catchErr(err)
 		fmt.Println(list.Meta)
 		for _, item := range list.Data {
-			var rec input.TSData
+			var rec cli_misc.TSData
 			rec.MediaType = item.TType
 			rec.MediaId = item.FilesetId
 			results = append(results, rec)

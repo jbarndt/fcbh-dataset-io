@@ -29,19 +29,20 @@ func TestPlainText(t *testing.T) {
 	if info.AudioOTFileset.Id != `` || info.AudioNTFileset.Id != `` {
 		t.Error(`Should have found no audio filesets.`)
 	}
-	if info.TextNTFileset.Id == `` || info.TextOTFileset.Id == `` {
+	if info.TextNTUSXFileset.Id == `` || info.TextOTUSXFileset.Id == `` ||
+		info.TextNTPlainFileset.Id == `` || info.TextOTPlainFileset.Id == `` {
 		t.Error(`Should have found two text filesets`)
 	}
-	err := deleteFile(info.BibleId, info.TextOTFileset)
+	err := deleteFile(info.BibleId, info.TextOTPlainFileset)
 	if err != nil {
 		t.Error(`Did not delete file.`)
 	}
-	download := NewAPIDownloadClient(ctx, info.BibleId)
+	download := NewAPIDownloadClient(ctx, info.BibleId, req.Testament)
 	status = download.Download(info)
 	if status.IsErr {
 		t.Error("Unexpected Error", status.Message)
 	}
-	count, err := countFiles(info.BibleId, info.TextOTFileset)
+	count, err := countFiles(info.BibleId, info.TextOTPlainFileset)
 	if err != nil {
 		t.Error(`Download err was not expected`, err)
 	}
@@ -66,19 +67,20 @@ func TestUSXDownload(t *testing.T) {
 	if info.AudioOTFileset.Id != `` || info.AudioNTFileset.Id != `` {
 		t.Error(`Should have found no audio filesets.`)
 	}
-	if info.TextOTFileset.Id != `` || info.TextNTFileset.Id == `` {
+	if info.TextNTUSXFileset.Id == `` || info.TextOTUSXFileset.Id == `` ||
+		info.TextNTPlainFileset.Id == `` || info.TextOTPlainFileset.Id == `` {
 		t.Error(`Should have found one text fileset`)
 	}
-	err := deleteFile(info.BibleId, info.TextNTFileset)
+	err := deleteFile(info.BibleId, info.TextNTUSXFileset)
 	if err != nil {
 		t.Error(`Did not delete file.`)
 	}
-	download := NewAPIDownloadClient(ctx, info.BibleId)
+	download := NewAPIDownloadClient(ctx, info.BibleId, req.Testament)
 	status = download.Download(info)
 	if status.IsErr {
 		t.Error(`Download Err is unexpected`, status.Message)
 	}
-	count, err := countFiles(info.BibleId, info.TextNTFileset)
+	count, err := countFiles(info.BibleId, info.TextNTUSXFileset)
 	if count != 27 {
 		t.Error("27 books in NT are expected, found:", count)
 	}
@@ -104,14 +106,15 @@ func TestAudioDownload(t *testing.T) {
 	if info.AudioOTFileset.Id != `` || info.AudioNTFileset.Id == `` {
 		t.Error(`Should have found no audio filesets.`)
 	}
-	if info.TextOTFileset.Id != `` || info.TextNTFileset.Id != `` {
+	if info.TextNTUSXFileset.Id == `` || info.TextOTUSXFileset.Id == `` ||
+		info.TextNTPlainFileset.Id == `` || info.TextOTPlainFileset.Id == `` {
 		t.Error(`Should have found no text fileset`)
 	}
 	err := deleteFile(info.BibleId, info.AudioNTFileset)
 	if err != nil {
 		t.Error(`Did not delete file.`)
 	}
-	download := NewAPIDownloadClient(ctx, info.BibleId)
+	download := NewAPIDownloadClient(ctx, info.BibleId, req.Testament)
 	status = download.Download(info)
 	if status.IsErr {
 		t.Error(`Download Err is unexpected`, status.Message)
@@ -141,14 +144,15 @@ func Test403AndDownload(t *testing.T) {
 	if info.AudioOTFileset.Id != `` || info.AudioNTFileset.Id == `` {
 		t.Error(`Should have found one audio fileset.`)
 	}
-	if info.TextOTFileset.Id != `` || info.TextNTFileset.Id != `` {
+	if info.TextNTUSXFileset.Id == `` || info.TextOTUSXFileset.Id == `` ||
+		info.TextNTPlainFileset.Id == `` || info.TextOTPlainFileset.Id == `` {
 		t.Error(`Should have found no text fileset`)
 	}
 	err := deleteFile(info.BibleId, info.AudioNTFileset)
 	if err != nil {
 		t.Error(`Did not delete file.`)
 	}
-	download := NewAPIDownloadClient(ctx, info.BibleId)
+	download := NewAPIDownloadClient(ctx, info.BibleId, req.Testament)
 	status = download.Download(info)
 	if status.IsErr {
 		t.Error(`Download error is unexpected`, status)

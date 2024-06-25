@@ -3,6 +3,7 @@ package encode
 import (
 	"context"
 	"dataset"
+	"dataset/cli_misc"
 	"dataset/db"
 	"dataset/fetch"
 	"dataset/input"
@@ -39,7 +40,7 @@ import (
 
 type AeneasExperiment struct {
 	ctx          context.Context
-	ts           input.TSBucket
+	ts           cli_misc.TSBucket
 	bibleId      string
 	audioMediaId string
 	languageISO  string
@@ -51,7 +52,7 @@ type AeneasExperiment struct {
 func NewAeneasExperiment(ctx context.Context, audioMediaId string, language string) AeneasExperiment {
 	var a AeneasExperiment
 	a.ctx = ctx
-	a.ts = input.NewTSBucket(a.ctx)
+	a.ts = cli_misc.NewTSBucket(a.ctx)
 	a.bibleId = audioMediaId[:6]
 	a.audioMediaId = audioMediaId
 	a.languageISO = language
@@ -85,10 +86,10 @@ func (a *AeneasExperiment) LoadScript() []db.Script {
 	var results []db.Script
 	var status dataset.Status
 	//ts := input.NewTSBucket(a.ctx)
-	key := a.ts.GetKey(input.Script, a.audioMediaId, ``, 0)
+	key := a.ts.GetKey(cli_misc.Script, a.audioMediaId, ``, 0)
 	fmt.Println(`key:`, key)
 	filePath := filepath.Join(os.Getenv(`FCBH_DATASET_FILES`), a.bibleId, a.audioMediaId[:8]+`ST.xlsx`)
-	a.ts.DownloadObject(input.TSBucketName, key, filePath)
+	a.ts.DownloadObject(cli_misc.TSBucketName, key, filePath)
 	fmt.Println(`path`, filePath)
 	var conn = db.NewDBAdapter(a.ctx, ":memory:")
 	reader := read.NewScriptReader(conn)
@@ -145,7 +146,7 @@ func (a *AeneasExperiment) ProcessByChapter(scripts []db.Script) {
 }
 
 func (a *AeneasExperiment) GetTimestamps(audioId string, scripts []db.Script) []db.Script {
-	timestamps := a.ts.GetTimestamps(input.ScriptTS, audioId, scripts[0].BookId, scripts[0].ChapterNum)
+	timestamps := a.ts.GetTimestamps(cli_misc.ScriptTS, audioId, scripts[0].BookId, scripts[0].ChapterNum)
 	//fmt.Println(`timestamps:`, timestamps)
 	var timeMap = make(map[string]db.Timestamp)
 	for _, t := range timestamps {
