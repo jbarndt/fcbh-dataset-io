@@ -49,17 +49,25 @@ func (w *Whisper) ChopByTimestamp(file input.InputFile, timestamps []db.Timestam
 	return results, status
 }
 
+type WhisperWord struct {
+	Word  string  `json:"word"`
+	Start float64 `json:"start"`
+	End   float64 `json:"end"`
+	Prob  float64 `json:"probability"`
+}
+
 type WhisperSegmentType struct {
-	Id               int     `json:"id"`
-	Seek             float64 `json:"seek"`
-	Start            float64 `json:"start"`
-	End              float64 `json:"end"`
-	Text             string  `json:"text"`
-	Tokens           []int   `json:"tokens"`
-	Temperature      float32 `json:"temperature"`
-	AvgLogProb       float64 `json:"avg_logprob"`
-	CompressionRatio float64 `json:"compression_ratio"`
-	NoSpeechProb     float64 `json:"no_speech_prob"`
+	Id               int           `json:"id"`
+	Seek             float64       `json:"seek"`
+	Start            float64       `json:"start"`
+	End              float64       `json:"end"`
+	Text             string        `json:"text"`
+	Tokens           []int         `json:"tokens"`
+	Temperature      float32       `json:"temperature"`
+	AvgLogProb       float64       `json:"avg_logprob"`
+	CompressionRatio float64       `json:"compression_ratio"`
+	NoSpeechProb     float64       `json:"no_speech_prob"`
+	Words            []WhisperWord `json:"words"`
 }
 type WhisperOutputType struct {
 	Segments []WhisperSegmentType `json:"segments"`

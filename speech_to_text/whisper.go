@@ -102,6 +102,7 @@ func (w *Whisper) RunWhisper(audioFile string) (string, dataset.Status) {
 		`--output_format`, `json`,
 		`--fp16`, `False`,
 		`--language`, w.lang2,
+		`--word_timestamps`, `True`, // Runs about 10% faster with this off.  Should it be conditional?
 		`--output_dir`, w.tempDir)
 	var stdoutBuf, stderrBuf bytes.Buffer
 	cmd.Stdout = &stdoutBuf
