@@ -6,6 +6,10 @@ https://github.com/omry/omegaconf/issues/758
 
 https://github.com/abdeladim-s/easymms/blob/main/README.md
 
+> apt install ffmpeg
+
+> apt install sox
+
 > cd $HOME
 
 > mkdir python_env
@@ -17,6 +21,8 @@ https://github.com/abdeladim-s/easymms/blob/main/README.md
 > source pytorch_venv/bin/activate
 
 Did not update pip despite request, using pip 21.2.4
+
+
 
 > pip install hydra-core==1.0.7 # needed to fix fairseq bug
 
@@ -31,4 +37,13 @@ Did not update pip despite request, using pip 21.2.4
 > deactivate
 
 > export PYTORCH_EXE=$HOME/python_env/pytorch_venv/bin/python3
+> 
+> $PYTORCH_EXE easy_mms.py
+> 
+
+!pip install librosa==0.8.0
+!pip install phonemizer==2.2.1
+!pip install -U --pre torchaudio --index-url https://download.pytorch.org/whl/nightly/cu118
+!pip install git+https://github.com/abdeladim-s/easymms
+
 

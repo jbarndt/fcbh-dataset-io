@@ -12,10 +12,14 @@
 # /usr/bin/pip3 install tensorboardX
 import os
 from easymms.models.asr import ASRModel
+import locale
+
+locale.getpreferredencoding = lambda: "UTF-8"
 
 data = os.environ['FCBH_DATASET_DB']
 
-model = data + '/easy_mms/models/mms1b_all.pt'
+#model = data + '/easy_mms/models/mms1b_all.pt'
+model = data + '/easy_mms/models/mms1b_fl102.pt'
 print("model", model)
 file1 = data + '/download/ENGWEB/ENGWEBN2DA-mp3-64/B25___01_3John_______ENGWEBN2DA.mp3'
 print("file", file1)
