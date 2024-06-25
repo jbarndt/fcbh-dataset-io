@@ -1,4 +1,4 @@
-package input
+package cli_misc
 
 import (
 	"context"

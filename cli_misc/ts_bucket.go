@@ -1,4 +1,4 @@
-package input
+package cli_misc
 
 import (
 	"context"
@@ -134,8 +134,9 @@ func (t *TSBucket) DownloadObject(bucket string, key string, path string) {
 	}
 }
 
-func (t *TSBucket) GetTSData() []TSData {
-	content, err := os.ReadFile("../cli_misc/find_timestamps/TestFilesetList.json")
+func (t *TSBucket) GetTSData(filePath string) []TSData {
+	//content, err := os.ReadFile("../cli_misc/find_timestamps/TestFilesetList.json")
+	content, err := os.ReadFile(filePath)
 	if err != nil {
 		panic(err)
 	}
