@@ -17,6 +17,13 @@ import (
 	"strings"
 )
 
+// This unfinished code was an attempt to organize scripts by verse in order
+// to use the script timestamps.  Then the remaining verses whose timestamp
+// had not be set by the script, were to be given a timestamps from Aeneas.
+// Sandeep thought this seemed like a good idea.  Jon thought the audio was too
+// subject to revision for the script timestamps to be trusted.
+//
+//
 // This class is not yet finished.  It cannot be deployed as part of this service
 // because there is no consistent repository of the audio data.
 // In order to get the aeneas to work, I would need to use start stop
