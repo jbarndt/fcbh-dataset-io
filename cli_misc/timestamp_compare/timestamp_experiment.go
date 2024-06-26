@@ -4,95 +4,155 @@ import (
 	"context"
 	"dataset"
 	"dataset/cli_misc"
+	"dataset/controller"
 	"dataset/db"
 	"dataset/fetch"
 	"dataset/request"
 	"fmt"
 	"gonum.org/v1/gonum/stat"
+	"strings"
 )
 
+// This needs to be written so that it could work with newly created datasets,
+// or datasets that are prexisting.
+// where should I store datasets that are to be reused.
+
 type TSCompare struct {
+	ctx       context.Context
+	bibleId   string
 	mediaId   string
 	testament request.Testament
-	apiTS     fetch.APIDBPTimestamps
-	cliMisc   cli_misc.TSBucket
+	baseConn  db.DBAdapter
+	conn      db.DBAdapter
 }
 
 func main() {
 	ctx := context.Background()
 	cliMisc := cli_misc.NewTSBucket(ctx)
-	//var testament = request.Testament{NTBooks: []string{"3JN"}}
-	var testament = request.Testament{NT: true}
+	ntBooks := "3JN"
+	var testament = request.Testament{NTBooks: []string{ntBooks}}
 	tsDataPath := "cli_misc/find_timestamps/TestFilesetList.json"
 	tsData := cliMisc.GetTSData(tsDataPath)
 	var totalDiffs []float64
-	for _, data := range tsData {
-		diffs := CompareBB2Sandeep(cliMisc, data.MediaId, testament)
-		totalDiffs = append(totalDiffs, diffs...)
+	for i, data := range tsData {
+		if i > 200 {
+			break
+		}
+		fmt.Println("Doing", data.MediaId)
+		var status dataset.Status
+		var t TSCompare
+		t.ctx = ctx
+		t.bibleId = data.MediaId[:6]
+		t.mediaId = data.MediaId
+		t.testament = testament
+		if t.HasTextAudio() {
+			t.baseConn, status = t.LazyDataset(BBTS, ntBooks)
+			if status.IsErr {
+				fmt.Println(status)
+				continue
+			}
+			t.conn, status = t.LazyDataset(Aeneas1, ntBooks)
+			if status.IsErr {
+				fmt.Println(status)
+				continue
+			}
+			var diffs []float64
+			diffs, status = t.CompareFileset()
+			if status.IsErr {
+				fmt.Println(status)
+				continue
+			}
+			totalDiffs = append(totalDiffs, diffs...)
+		} else {
+			fmt.Println("Skip", data.MediaId)
+		}
 	}
 	mean, stddev := stat.MeanStdDev(totalDiffs, nil)
 	fmt.Println("Final", mean, stddev)
 }
 
-func CompareBB2Sandeep(cliMisc cli_misc.TSBucket, mediaId string, testament request.Testament) []float64 {
-	tsCompare := TSCompare{}
-	tsCompare.mediaId = mediaId
-	tsCompare.testament = testament
-	tsCompare.apiTS = fetch.NewAPIDBPTimestamps(db.DBAdapter{}, mediaId)
-	tsCompare.cliMisc = cliMisc
-	return CompareFileset(tsCompare)
+func (t *TSCompare) HasTextAudio() bool {
+	client := fetch.NewAPIDBPClient(t.ctx, t.bibleId)
+	info, status := client.BibleInfo()
+	if status.IsErr {
+		return false
+	}
+	var req request.Request
+	req.TextData.BibleBrain.TextPlainEdit = true
+	req.AudioData.BibleBrain.MP3_64 = true // try also 16 for better STT
+	req.Testament.NT = true
+	client.FindFilesets(&info, req.AudioData.BibleBrain, req.TextData.BibleBrain, req.Testament)
+	return info.TextNTUSXFileset.Id != `` && info.TextNTPlainFileset.Id != `` && info.AudioNTFileset.Id != ``
 }
 
-func CompareFileset(compare TSCompare) []float64 {
+// LazyDataset is a lazy dataset creation method. Create if it does not exist.
+// The user name and the database name define it.
+func (t *TSCompare) LazyDataset(yaml string, books string) (db.DBAdapter, dataset.Status) {
+	var conn db.DBAdapter
+	ctx := context.Background()
+	var req = strings.Replace(yaml, `{bibleId}`, t.bibleId, 3)
+	req2 := strings.Replace(req, "{books}", books, 1)
+	reqBytes := []byte(req2)
+	decoder := request.NewRequestDecoder(ctx)
+	rq, status := decoder.Decode(reqBytes)
+	if status.IsErr {
+		return conn, status
+	}
+	if !db.DatabaseExists(rq.Username, rq.DatasetName) {
+		var control = controller.NewController(ctx, reqBytes)
+		filename, status := control.Process()
+		if status.IsErr {
+			return conn, status
+		}
+		fmt.Println("Created", filename)
+	}
+	return db.NewerDBAdapter(ctx, false, rq.Username, rq.DatasetName)
+}
+
+func (t *TSCompare) CompareFileset() ([]float64, dataset.Status) {
 	var totalDiffs []float64
-	for _, bookId := range db.RequestedBooks(compare.testament) {
+	var status dataset.Status
+	for _, bookId := range db.RequestedBooks(t.testament) {
 		lastChapter, _ := db.BookChapterMap[bookId]
 		for chap := 1; chap <= lastChapter; chap++ {
-			timestamps1 := compare.cliMisc.GetTimestamps(cli_misc.VerseAeneas, compare.mediaId, bookId, chap)
-			apiTS, status := compare.apiTS.Timestamps(bookId, chap)
-			timestamps2 := ConvertAPI2DBTimestamp(apiTS)
+			var diffs []float64
+			diffs, status = t.CompareChapter(bookId, chap)
 			if status.IsErr {
-				panic(status)
+				return totalDiffs, status
 			}
-			diffs := CompareChapter(compare.mediaId, bookId, chap, timestamps1, timestamps2)
 			mean, stddev := stat.MeanStdDev(diffs, nil)
-			fmt.Println(compare.mediaId, bookId, chap, mean, stddev)
+			fmt.Println(t.mediaId, bookId, chap, mean, stddev)
 			totalDiffs = append(totalDiffs, diffs...)
 		}
 	}
 	mean, stddev := stat.MeanStdDev(totalDiffs, nil)
-	fmt.Println("Total", compare.mediaId, mean, stddev)
-	return totalDiffs
+	fmt.Println("Total", t.mediaId, mean, stddev)
+	return totalDiffs, status
 }
 
-func CompareChapter(mediaId string, bookId string, chapter int, times1 []db.Timestamp, times2 []db.Timestamp) []float64 {
-	ts1Map := make(map[int]db.Timestamp)
-	for _, ts := range times1 {
-		ts1Map[dataset.SafeVerseNum(ts.VerseStr)] = ts
-	}
+func (t *TSCompare) CompareChapter(bookId string, chapter int) ([]float64, dataset.Status) {
 	var diffs []float64
-	for _, ts2 := range times2 {
-		ts1, ok := ts1Map[dataset.SafeVerseNum(ts2.VerseStr)]
-		if !ok && ts2.VerseStr != `0` {
-			fmt.Println("Not found ", mediaId, bookId, chapter, ts2.VerseStr)
-			fmt.Println("times1", times1)
-			fmt.Println("times2", times2)
+	var baseTS, status = t.baseConn.SelectScriptTimestamps(bookId, chapter)
+	if status.IsErr {
+		return diffs, status
+	}
+	baseMap := make(map[int]db.Timestamp)
+	for _, ts := range baseTS {
+		baseMap[dataset.SafeVerseNum(ts.VerseStr)] = ts
+	}
+	var compTS []db.Timestamp
+	compTS, status = t.conn.SelectScriptTimestamps(bookId, chapter)
+	for _, cts := range compTS {
+		bts, ok := baseMap[dataset.SafeVerseNum(cts.VerseStr)]
+		if !ok && bts.VerseStr != `0` {
+			fmt.Println("Not found ", t.mediaId, bookId, chapter, bts.VerseStr)
+			fmt.Println("baseTS", baseTS)
+			fmt.Println("compTS", compTS)
 		} else {
-			diff := ts2.BeginTS - ts1.BeginTS
-			//fmt.Println("verse:", ts2.VerseStr, "Base:", ts1.BeginTS, "Compare:", ts2.BeginTS, "diff:", diff)
+			diff := bts.BeginTS - cts.BeginTS
+			fmt.Println("verse:", cts.VerseStr, "Base:", bts.BeginTS, "Compare:", cts.BeginTS, "diff:", diff)
 			diffs = append(diffs, diff)
 		}
 	}
-	return diffs
-}
-
-func ConvertAPI2DBTimestamp(ts []fetch.Timestamp) []db.Timestamp {
-	var results []db.Timestamp
-	for _, t := range ts {
-		var dbTS db.Timestamp
-		dbTS.VerseStr = t.VerseStart
-		dbTS.BeginTS = t.Timestamp
-		results = append(results, dbTS)
-	}
-	return results
+	return diffs, status
 }
