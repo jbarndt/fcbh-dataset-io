@@ -42,8 +42,8 @@ func TestSIL639(t *testing.T) {
 			if status.IsErr {
 				t.Fatal(status)
 			}
-			if lang.Lang2 != `` {
-				fmt.Println(ts.MediaId, iso3, lang)
+			if len(lang) > 0 {
+				fmt.Println(ts.MediaId, iso3, lang[0])
 			}
 		}
 	}
