@@ -53,10 +53,14 @@ func (w *Whisper) ProcessFiles(files []input.InputFile) dataset.Status {
 	}
 	defer os.RemoveAll(w.tempDir)
 	if w.lang2 == `` {
-		var iso639 db.Sil639
+		var iso639 []db.Sil639
 		iso639, status = db.FindWhisperCompatibility(w.ctx, strings.ToLower(w.bibleId[:3]))
-		w.lang2 = iso639.Lang2
-		log.Info(w.ctx, `Using language`, w.lang2, iso639.Name)
+		if len(iso639) > 0 {
+			w.lang2 = iso639[0].Lang2
+			log.Info(w.ctx, `Using language`, w.lang2, iso639[0].Name)
+		} else {
+			return log.ErrorNoErr(w.ctx, 400, `No compatible language code was found for`, w.bibleId)
+		}
 	}
 	for _, file := range files {
 		fmt.Println(`INPUT FILE:`, file)

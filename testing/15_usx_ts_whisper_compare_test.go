@@ -20,9 +20,8 @@ audio_data:
 timestamps:
   aeneas: yes
 testament:
-  nt_books: ['TIT']
+  nt_books: ['3JN']
 speech_to_text:
-  language: en
   whisper:
     model:
       tiny: yes
@@ -43,8 +42,10 @@ compare:
 
 func TestUSXTSWhisperCompare(t *testing.T) {
 	var tests []CtlTest
-	tests = append(tests, CtlTest{BibleId: "ENGWEB", Expected: 27, TextNtId: "ENGWEBN_ET-usx",
-		TextType: request.TextUSXEdit, AudioNTId: "ENGWEBN2DA-mp3-16", Language: "eng"})
+	//tests = append(tests, CtlTest{BibleId: "ENGWEB", Expected: 27, TextNtId: "ENGWEBN_ET-usx",
+	//	TextType: request.TextUSXEdit, AudioNTId: "ENGWEBN2DA-mp3-16", Language: "eng"})
+	tests = append(tests, CtlTest{BibleId: "APFCMU", Expected: 16, TextNtId: "APFCMUN_ET-usx",
+		TextType: request.TextUSXEdit, Language: "apf"})
 	//tests = append(tests, try{bibleId: "ATIWBT", expected: 7, textNtId: "ATIWBTN_ET", audioNTId: "ATIWBTN1DA",
 	//	language: "ati"}) // There are no timestamps
 	DirectTestUtility(USXTSWhisperCompare, tests, t)
@@ -89,3 +90,35 @@ compare:
 	//	language: "ati"}) // There are no timestamps
 	DirectTestUtility(PlainTSWhisperCompare, tests, t)
 }
+
+/*
+
+AGNWPSN2DA agn {tgl tl PH} no USX
+ALPWBTN1DA alp {ind id ID} no USX
+AMKWBTN1DA amk {ind id ID} no USX text_plain fileset is AMKWBT
+APFCMUN1DA apf {tgl tl PH}
+BKVWYIN2DA bkv {hau ha NG}
+BNOWBTN1DA bno {tgl tl PH}
+BPSWPSN2DA bps {tgl tl PH}
+CGCTBLN1DA cgc {tgl tl PH}
+DSHBTLN1DA dsh {amh am ET}
+DWRTBLN2DA dwr {amh am ET}
+EKAWYIN1DA eka {hau ha NG}
+ENGWEBN2DA eng {eng en English}
+IFAWBTN1DA ifa {tgl tl PH}
+IFBTBLN2DA ifb {tgl tl PH}
+IFUWPSN2DA ifu {tgl tl PH}
+IFYWBTN2DA ify {tgl tl PH}
+IRIWYIN1DA iri {hau ha NG}
+KCGWBTN1DA kcg {hau ha NG}
+KNETBLN1DA kne {tgl tl PH}
+KQETBLN1DA kqe {tgl tl PH}
+LEXWBTN1DA lex {ind id ID}
+MBTWBTN2DA mbt {tgl tl PH}
+MNBTBLN2DA mnb {ind id ID}
+MTJTBLN1DA mtj {ind id ID}
+NINWYIN1DA nin {hau ha NG}
+PCMTSCN2DA pcm {hau ha NG}
+RMORAMN2DA rmo {deu de DE}
+SGBTBLN2DA sgb {tgl tl PH}
+*/

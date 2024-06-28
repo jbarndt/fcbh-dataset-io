@@ -38,3 +38,9 @@ and the results are usually off by -0.3 seconds.  But, there were a
 number of cases where the BB has a zero timestamp for the last record
 throwing the statistics off considerably.  It might be better to do
 the same test using Sandeep's Aeneas numbers.
+
+### June 26, 2024
+
+Using the sil database created from their public information there are no
+filesets that I can access which have compatibility to Whisper, except
+ENGWEB.  So, any testing involving Whisper is not possible.
