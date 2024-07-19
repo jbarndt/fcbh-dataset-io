@@ -250,8 +250,14 @@ func (c *Controller) readText(textFiles []input.InputFile) dataset.Status {
 		if status.IsErr {
 			return status
 		}
-	} else if textFiles[0].MediaType == request.TextScript { //`text_script` {
+	} else if textFiles[0].MediaType == request.TextScript {
 		reader := read.NewScriptReader(c.database)
+		status = reader.ProcessFiles(textFiles)
+		if status.IsErr {
+			return status
+		}
+	} else if textFiles[0].MediaType == request.TextCSV {
+		reader := read.NewCSVReader(c.database)
 		status = reader.ProcessFiles(textFiles)
 		if status.IsErr {
 			return status

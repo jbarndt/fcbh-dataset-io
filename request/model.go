@@ -116,6 +116,7 @@ const (
 	TextPlainEdit MediaType = "text_plain_edit"
 	TextPlain     MediaType = "text_plain"
 	TextScript    MediaType = "text_script"
+	TextCSV       MediaType = "text_csv"
 	TextSTT       MediaType = "text_stt"
 	TextNone      MediaType = ""
 )

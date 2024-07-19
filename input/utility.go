@@ -42,6 +42,8 @@ func SetMediaType(ctx context.Context, file *InputFile) dataset.Status {
 		file.MediaType = request.Audio
 	} else if strings.HasSuffix(fN, `ST.xlsx`) {
 		file.MediaType = request.TextScript
+	} else if strings.HasSuffix(fN, `.csv`) {
+		file.MediaType = request.TextCSV
 	} else {
 		parts := strings.Split(fN, `_`)
 		if len(parts) > 2 {
@@ -59,7 +61,8 @@ func SetMediaType(ctx context.Context, file *InputFile) dataset.Status {
 
 func ParseFilenames(ctx context.Context, file *InputFile) dataset.Status {
 	var status dataset.Status
-	if file.MediaType == request.TextPlain || file.MediaType == request.TextPlainEdit {
+	if file.MediaType == request.TextPlain || file.MediaType == request.TextPlainEdit ||
+		file.MediaType == request.TextCSV {
 		file.MediaId = strings.Split(file.Filename, `.`)[0]
 		test := file.Filename[6]
 		if test == 'O' {
