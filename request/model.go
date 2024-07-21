@@ -71,6 +71,10 @@ type AudioData struct {
 	NoAudio    bool            `yaml:"no_audio,omitempty"`
 }
 
+func (a AudioData) AnyBibleBrain() bool {
+	return a.BibleBrain.MP3_64 || a.BibleBrain.MP3_16 || a.BibleBrain.OPUS
+}
+
 type BibleBrainAudio struct {
 	MP3_64 bool `yaml:"mp3_64,omitempty"`
 	MP3_16 bool `yaml:"mp3_16,omitempty"`
@@ -99,6 +103,10 @@ type TextData struct {
 	AWSS3      string         `yaml:"aws_s3,omitempty"`
 	POST       string         `yaml:"post,omitempty"`
 	NoText     bool           `yaml:"no_text,omitempty"`
+}
+
+func (t TextData) AnyBibleBrain() bool {
+	return t.BibleBrain.TextUSXEdit || t.BibleBrain.TextPlainEdit || t.BibleBrain.TextPlain
 }
 
 type BibleBrainText struct {

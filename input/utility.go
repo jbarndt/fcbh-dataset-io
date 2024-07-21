@@ -179,17 +179,14 @@ func PruneBooksByRequest(files []InputFile, testament request.Testament) []Input
 
 func UpdateIdent(conn db.DBAdapter, ident *db.Ident, textFiles []InputFile, audioFiles []InputFile) dataset.Status {
 	var status dataset.Status
-	textUpdates := updateIdentText(ident, textFiles)
-	audioUpdates := updateIdentAudio(ident, audioFiles)
-	if textUpdates || audioUpdates {
-		status = conn.UpdateIdent(*ident)
-	}
+	_ = updateIdentText(ident, textFiles)
+	_ = updateIdentAudio(ident, audioFiles)
+	status = conn.InsertReplaceIdent(*ident)
 	return status
 }
 
 func updateIdentText(ident *db.Ident, files []InputFile) bool {
 	var result = false
-	//for _, f := range files {
 	if len(files) > 0 {
 		f := files[0]
 		if f.MediaType != request.TextNone {
@@ -198,8 +195,10 @@ func updateIdentText(ident *db.Ident, files []InputFile) bool {
 		result = true
 		if f.Testament == `OT` {
 			ident.TextOTId = f.MediaId
+			ident.LanguageISO = strings.ToLower(ident.TextOTId[:3])
 		} else if f.Testament == `NT` {
 			ident.TextNTId = f.MediaId
+			ident.LanguageISO = strings.ToLower(ident.TextNTId[:3])
 		}
 	}
 	return result
@@ -211,8 +210,10 @@ func updateIdentAudio(ident *db.Ident, files []InputFile) bool {
 		result = true
 		if f.Testament == `OT` {
 			ident.AudioOTId = f.MediaId
+			ident.LanguageISO = strings.ToLower(ident.AudioOTId[:3])
 		} else if f.Testament == `NT` {
 			ident.AudioNTId = f.MediaId
+			ident.LanguageISO = strings.ToLower(ident.AudioNTId[:3])
 		}
 	}
 	return result

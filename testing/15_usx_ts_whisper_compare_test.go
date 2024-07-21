@@ -45,7 +45,7 @@ func TestUSXTSWhisperCompare(t *testing.T) {
 	//tests = append(tests, CtlTest{BibleId: "ENGWEB", Expected: 27, TextNtId: "ENGWEBN_ET-usx",
 	//	TextType: request.TextUSXEdit, AudioNTId: "ENGWEBN2DA-mp3-16", Language: "eng"})
 	tests = append(tests, CtlTest{BibleId: "APFCMU", Expected: 16, TextNtId: "APFCMUN_ET-usx",
-		TextType: request.TextUSXEdit, Language: "apf"})
+		AudioNTId: `APFCMUN1DA`, TextType: request.TextUSXEdit, Language: "apf"})
 	//tests = append(tests, try{bibleId: "ATIWBT", expected: 7, textNtId: "ATIWBTN_ET", audioNTId: "ATIWBTN1DA",
 	//	language: "ati"}) // There are no timestamps
 	DirectTestUtility(USXTSWhisperCompare, tests, t)
@@ -85,7 +85,7 @@ compare:
 `
 	var tests []CtlTest
 	tests = append(tests, CtlTest{BibleId: "ENGWEB", Expected: 27, TextNtId: "ENGWEBN_ET",
-		TextType: request.TextPlainEdit, Language: "eng"})
+		AudioNTId: `ENGWEBN2DA`, TextType: request.TextPlainEdit, Language: "eng"})
 	//tests = append(tests, try{bibleId: "ATIWBT", expected: 7, textNtId: "ATIWBTN_ET", audioNTId: "ATIWBTN1DA",
 	//	language: "ati"}) // There are no timestamps
 	DirectTestUtility(PlainTSWhisperCompare, tests, t)

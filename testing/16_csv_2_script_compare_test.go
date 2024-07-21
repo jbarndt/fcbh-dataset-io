@@ -18,7 +18,7 @@ text_data:
 
 func TestCSV2ScriptCompare(t *testing.T) {
 	var tests []CtlTest
-	tests = append(tests, CtlTest{BibleId: "ENGWEB", Expected: 788, TextNtId: "TUJNTMN2TT", // bibleId TUJNTM
+	tests = append(tests, CtlTest{BibleId: "TUJNTM", Expected: 788, TextNtId: "TUJNTMN2TT", // bibleId TUJNTM
 		TextType: request.TextCSV, AudioNTId: "", Language: "tuj"})
 	DirectTestUtility(CSV2ScriptCompare, tests, t)
 }

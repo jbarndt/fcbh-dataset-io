@@ -84,10 +84,17 @@ func (c *Controller) processSteps() (string, dataset.Status) {
 		return filename, status
 	}
 	defer c.database.Close()
-	// Fetch Ident Data from DBP
-	c.ident, status = c.fetchData()
+	// Fetch Ident Data from Ident
+	c.ident, status = c.database.SelectIdent()
 	if status.IsErr {
 		return filename, status
+	}
+	// Update Ident Data from DBP
+	c.ident, status = c.fetchData()
+	if status.IsErr {
+		if c.req.TextData.AnyBibleBrain() || c.req.AudioData.AnyBibleBrain() {
+			return filename, status
+		}
 	}
 	// Collect Text Input
 	var textFiles []input.InputFile
@@ -157,7 +164,6 @@ func (c *Controller) processSteps() (string, dataset.Status) {
 }
 
 func (c *Controller) fetchData() (db.Ident, dataset.Status) {
-	//var ident db.Ident
 	var status dataset.Status
 	var info fetch.BibleInfoType
 	client := fetch.NewAPIDBPClient(c.ctx, c.req.BibleId)
@@ -171,12 +177,7 @@ func (c *Controller) fetchData() (db.Ident, dataset.Status) {
 	if status.IsErr {
 		return c.ident, status
 	}
-	c.ident, status = c.database.SelectIdent()
-	if status.IsErr {
-		return c.ident, status
-	}
 	c.ident = client.UpdateIdent(c.ident, info, c.req.TextData.BibleBrain.TextType())
-	status = c.database.InsertReplaceIdent(c.ident)
 	return c.ident, status
 }
 
