@@ -107,13 +107,13 @@ func (r ScriptReader) FindColIndexes(heading []string) (ColIndex, dataset.Status
 	var c ColIndex
 	for col, head := range heading {
 		switch strings.ToLower(head) {
-		case `book`:
+		case `book`, `bk`:
 			c.BookCol = col
-		case `chapter`:
+		case `chapter`, `cp`:
 			c.ChapterCol = col
 		case `verse`, `verse_number`:
 			c.VerseCol = col
-		case `line_number`, `line id:`:
+		case `line_number`, `line id`, `line`:
 			c.LineCol = col
 		case `characters1`, `character`:
 			c.CharacterCol = col
