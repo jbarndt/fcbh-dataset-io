@@ -99,7 +99,8 @@ func (a *AeneasExperiment) LoadScript() []db.Script {
 	a.ts.DownloadObject(cli_misc.TSBucketName, key, filePath)
 	fmt.Println(`path`, filePath)
 	var conn = db.NewDBAdapter(a.ctx, ":memory:")
-	reader := read.NewScriptReader(conn)
+	testament := request.Testament{OT: true, NT: true}
+	reader := read.NewScriptReader(conn, testament)
 	reader.Read(filePath)
 	results, status = conn.SelectScripts()
 	if status.IsErr {

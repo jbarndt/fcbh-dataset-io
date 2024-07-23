@@ -252,7 +252,7 @@ func (c *Controller) readText(textFiles []input.InputFile) dataset.Status {
 			return status
 		}
 	} else if textFiles[0].MediaType == request.TextScript {
-		reader := read.NewScriptReader(c.database)
+		reader := read.NewScriptReader(c.database, c.req.Testament)
 		status = reader.ProcessFiles(textFiles)
 		if status.IsErr {
 			return status

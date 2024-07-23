@@ -6,6 +6,7 @@ import (
 	"dataset/db"
 	"dataset/input"
 	log "dataset/logger"
+	"dataset/request"
 	"github.com/xuri/excelize/v2"
 	"strconv"
 	"strings"
@@ -14,14 +15,16 @@ import (
 // This program will read Excel data and load the audio_scripts table
 
 type ScriptReader struct {
-	ctx context.Context
-	db  db.DBAdapter
+	ctx       context.Context
+	db        db.DBAdapter
+	testament request.Testament
 }
 
-func NewScriptReader(db db.DBAdapter) ScriptReader {
+func NewScriptReader(db db.DBAdapter, testament request.Testament) ScriptReader {
 	var d ScriptReader
 	d.ctx = db.Ctx
 	d.db = db
+	d.testament = testament
 	return d
 }
 
@@ -67,27 +70,29 @@ func (r ScriptReader) Read(filePath string) dataset.Status {
 		default:
 			rec.BookId = row[col.BookCol]
 		}
-		rec.ChapterNum, err = strconv.Atoi(row[col.ChapterCol])
-		if err != nil {
-			return log.Error(r.ctx, 500, err, "Error: chapter num is not numeric", row[col.ChapterCol])
-		}
-		if row[col.VerseCol] == `<<` {
-			rec.VerseStr = `0`
-			rec.VerseNum = 0
-		} else {
-			rec.VerseStr = row[col.VerseCol]
-			rec.VerseNum, err = strconv.Atoi(row[col.VerseCol])
+		if r.testament.HasNT(rec.BookId) || r.testament.HasOT(rec.BookId) {
+			rec.ChapterNum, err = strconv.Atoi(row[col.ChapterCol])
 			if err != nil {
-				return log.Error(r.ctx, 500, err, `Error: verse num is not numeric`, row[3])
+				return log.Error(r.ctx, 500, err, "Error: chapter num is not numeric", row[col.ChapterCol])
 			}
-		}
-		rec.Person = row[col.CharacterCol]
-		rec.ScriptNum = row[col.LineCol]
-		text := row[col.TextCol]
-		//text = strings.Replace(text,'_x000D_','' ) // remove excel CR
-		rec.ScriptTexts = append(rec.ScriptTexts, text)
-		if rec.ScriptNum[len(rec.ScriptNum)-1] != 'r' {
-			records = append(records, rec)
+			if col.VerseCol == 0 || row[col.VerseCol] == `<<` {
+				rec.VerseStr = `0`
+				rec.VerseNum = 0
+			} else {
+				rec.VerseStr = row[col.VerseCol]
+				rec.VerseNum, err = strconv.Atoi(row[col.VerseCol])
+				if err != nil {
+					return log.Error(r.ctx, 500, err, `Error: verse num is not numeric`, row[3])
+				}
+			}
+			rec.Person = row[col.CharacterCol]
+			rec.ScriptNum = row[col.LineCol]
+			text := row[col.TextCol]
+			//text = strings.Replace(text,'_x000D_','' ) // remove excel CR
+			rec.ScriptTexts = append(rec.ScriptTexts, text)
+			if rec.ScriptNum[len(rec.ScriptNum)-1] != 'r' {
+				records = append(records, rec)
+			}
 		}
 	}
 	status = r.db.InsertScripts(records)
@@ -113,7 +118,7 @@ func (r ScriptReader) FindColIndexes(heading []string) (ColIndex, dataset.Status
 			c.ChapterCol = col
 		case `verse`, `verse_number`:
 			c.VerseCol = col
-		case `line_number`, `line id`, `line`:
+		case `line_number`, `line id:`, `line`:
 			c.LineCol = col
 		case `characters1`, `character`:
 			c.CharacterCol = col
@@ -127,9 +132,6 @@ func (r ScriptReader) FindColIndexes(heading []string) (ColIndex, dataset.Status
 	}
 	if c.ChapterCol == 0 {
 		msgs = append(msgs, `Chapter column was not found`)
-	}
-	if c.VerseCol == 0 {
-		msgs = append(msgs, `Verse column was not found`)
 	}
 	if c.LineCol == 0 {
 		msgs = append(msgs, `Line column was not found`)

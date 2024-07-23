@@ -4,6 +4,7 @@ import (
 	"context"
 	"dataset/cli_misc"
 	"dataset/db"
+	"dataset/request"
 	"fmt"
 	"github.com/xuri/excelize/v2"
 	"os"
@@ -16,7 +17,8 @@ func TestScriptReader(t *testing.T) {
 	database := bibleId + "_SCRIPT.db"
 	db.DestroyDatabase(database)
 	conn := db.NewDBAdapter(context.Background(), database)
-	script := NewScriptReader(conn)
+	testament := request.Testament{OT: true, NT: true}
+	script := NewScriptReader(conn, testament)
 	filename := filepath.Join(os.Getenv(`FCBH_DATASET_FILES`), bibleId, bibleId+`N2ST.xlsx`)
 	fmt.Println(`Filename:`, filename)
 	status := script.Read(filename)
