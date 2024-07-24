@@ -351,16 +351,7 @@ func (c *Controller) matchText() (string, dataset.Status) {
 	var filename string
 	var status dataset.Status
 	compare := match.NewCompare(c.ctx, c.user, c.req.Compare.BaseDataset, c.database, c.req.Testament, c.req.Compare.CompareSettings)
-	var avgLen int
-	avgLen, status = c.database.SelectVerseLength()
-	if status.IsErr {
-		return filename, status
-	}
-	if avgLen > 0 {
-		filename, status = compare.Process()
-	} else {
-		filename, status = compare.CompareChapters()
-	}
+	filename, status = compare.Process()
 	return filename, status
 }
 

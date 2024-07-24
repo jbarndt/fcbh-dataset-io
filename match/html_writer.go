@@ -94,6 +94,18 @@ func (h *HTMLWriter) WriteChapterDiff(bookId string, chapter int, inserts int, d
 	_, _ = h.out.WriteString("</tr>\n")
 }
 
+func (h *HTMLWriter) WriteScriptLineDiff(bookId string, chapter int, line string, inserts int, deletes int, errPct float64, diffHtml string) {
+	_, _ = h.out.WriteString("<tr>\n")
+	h.writeCell(line)
+	h.writeCell(strconv.FormatFloat(errPct, 'f', 0, 64))
+	errors := `+` + strconv.Itoa(inserts) + ` -` + strconv.Itoa(deletes)
+	h.writeCell(errors)
+	ref := bookId + ` ` + strconv.Itoa(chapter)
+	h.writeCell(ref)
+	h.writeCell(diffHtml)
+	_, _ = h.out.WriteString("</tr>\n")
+}
+
 func (h *HTMLWriter) writeCell(content string) {
 	_, _ = h.out.WriteString(`<td>`)
 	_, _ = h.out.WriteString(content)

@@ -10,14 +10,6 @@ import (
 func (c *Compare) CompareChapters() (string, dataset.Status) {
 	var filename string
 	var status dataset.Status
-	c.baseDb, status = db.NewerDBAdapter(c.ctx, false, c.user.Username, c.baseDataset)
-	if status.IsErr {
-		return filename, status
-	}
-	c.writer, status = NewHTMLWriter(c.ctx, c.dataset)
-	if status.IsErr {
-		return filename, status
-	}
 	filename = c.writer.WriteHeading(c.baseDataset)
 	var scripts []db.Script
 	scripts, status = c.database.SelectBookChapter()

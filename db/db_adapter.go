@@ -679,6 +679,11 @@ func (d *DBAdapter) selectTimestamps(query string, bookId string, chapter int) (
 	return results, status
 }
 
+func (d *DBAdapter) SelectScriptLineLength() (int, dataset.Status) {
+	var query = `SELECT IFNULL(CAST(AVG(LENGTH(script_num)) AS INT),0) FROM scripts;`
+	return d.SelectScalarInt(query)
+}
+
 func (d *DBAdapter) SelectVerseLength() (int, dataset.Status) {
 	var query = `SELECT IFNULL(CAST(AVG(LENGTH(verse_str)) AS INT),0) FROM scripts;`
 	return d.SelectScalarInt(query)

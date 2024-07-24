@@ -9,6 +9,7 @@ import (
 	"dataset/request"
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"golang.org/x/text/unicode/norm"
+	"regexp"
 	"strings"
 )
 
@@ -19,9 +20,12 @@ type Compare struct {
 	dataset     string
 	baseDb      db.DBAdapter
 	database    db.DBAdapter
+	baseIdent   db.Ident
+	compIdent   db.Ident
 	testament   request.Testament
 	settings    request.CompareSettings
 	replacer    *strings.Replacer
+	verseRm     *regexp.Regexp
 	writer      HTMLWriter
 	diffCount   int
 	insertSum   int
@@ -47,6 +51,7 @@ func NewCompare(ctx context.Context, user fetch.DBPUser, baseDSet string, db db.
 	c.testament = testament
 	c.settings = settings
 	c.replacer = c.cleanUpSetup()
+	c.verseRm = regexp.MustCompile(`\{[0-9\-\,]+\}\s?`) // used by compareScriptLine
 	return c
 }
 
@@ -61,6 +66,50 @@ func (c *Compare) Process() (string, dataset.Status) {
 	if status.IsErr {
 		return filename, status
 	}
+	var compHasVerse, compHasLine, baseHasVerse, baseHasLine bool
+	compHasVerse, compHasLine, c.compIdent, status = c.hasVerseLine(c.database)
+	if status.IsErr {
+		return filename, status
+	}
+	baseHasVerse, baseHasLine, c.baseIdent, status = c.hasVerseLine(c.baseDb)
+	if status.IsErr {
+		return filename, status
+	}
+	if compHasVerse && baseHasVerse {
+		filename, status = c.CompareVerses()
+	} else if compHasLine && baseHasLine {
+		filename, status = c.CompareScriptLines()
+	} else {
+		filename, status = c.CompareChapters()
+	}
+	return filename, status
+}
+
+func (c *Compare) hasVerseLine(conn db.DBAdapter) (bool, bool, db.Ident, dataset.Status) {
+	var hasVerse bool
+	var hasLine bool
+	var ident db.Ident
+	var status dataset.Status
+	ident, status = conn.SelectIdent()
+	if status.IsErr {
+		return hasVerse, hasLine, ident, status
+	}
+	verseColLen, status := conn.SelectVerseLength()
+	if status.IsErr {
+		return hasVerse, hasLine, ident, status
+	}
+	hasVerse = verseColLen > 0 || ident.TextSource == request.TextScript
+	lineColLen, status := conn.SelectScriptLineLength()
+	if status.IsErr {
+		return hasVerse, hasLine, ident, status
+	}
+	hasLine = lineColLen > 0 && (ident.TextSource == request.TextScript || ident.TextSource == request.TextCSV)
+	return hasVerse, hasLine, ident, status
+}
+
+func (c *Compare) CompareVerses() (string, dataset.Status) {
+	var filename string
+	var status dataset.Status
 	filename = c.writer.WriteHeading(c.baseDataset)
 	for _, bookId := range db.RequestedBooks(c.testament) {
 		var chapInBook, _ = db.BookChapterMap[bookId] // Need to check OK, because bookId could be in error?
