@@ -2,6 +2,7 @@ package testing
 
 import (
 	"dataset/request"
+	"strings"
 	"testing"
 )
 
@@ -46,11 +47,13 @@ compare:
 
 func TestCSV2ScriptCompare(t *testing.T) {
 	var tests []CtlTest
-	//tests = append(tests, CtlTest{BibleId: "TUJNTM", Expected: 788, TextNtId: "TUJNTMN2ST",
-	//	TextType: request.TextScript, AudioNTId: "", Language: "tuj"})
-	//DirectTestUtility(LoadBaseScript, tests, t)
-	//tests = nil
+	tests = append(tests, CtlTest{BibleId: "TUJNTM", Expected: 788, TextNtId: "TUJNTMN2ST",
+		TextType: request.TextScript, AudioNTId: "", Language: "tuj"})
+	yaml := strings.Replace(LoadBaseScript, `  file:`, `  post:`, 1)
+	DirectTestUtility(yaml, tests, t)
+	tests = nil
 	tests = append(tests, CtlTest{BibleId: "TUJNTM", Expected: 788, TextNtId: "TUJNTMN2TT", // bibleId TUJNTM
 		TextType: request.TextCSV, AudioNTId: "", Language: "tuj"})
-	DirectTestUtility(CSV2ScriptCompare, tests, t)
+	yaml = strings.Replace(CSV2ScriptCompare, `  file:`, `  post:`, 1)
+	DirectTestUtility(yaml, tests, t)
 }
