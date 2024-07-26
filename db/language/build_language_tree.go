@@ -4,6 +4,7 @@ import (
 	"dataset/db"
 	"encoding/csv"
 	"encoding/json"
+	"fmt"
 	"io"
 	"os"
 	"strconv"
@@ -11,6 +12,8 @@ import (
 
 func main() {
 	languages := loadGlottoLanguoid()
+	languages = loadIso6393(languages)
+	languages = loadWhisper(languages)
 	outputJSON(languages)
 }
 
@@ -24,6 +27,7 @@ func loadGlottoLanguoid() []db.Language {
 	reader := csv.NewReader(file)
 	first := true
 	var record []string
+	var count6393 = 0
 	for {
 		record, err = reader.Read()
 		if err == io.EOF {
@@ -46,8 +50,89 @@ func loadGlottoLanguoid() []db.Language {
 		}
 		lang.Level = record[5]
 		lang.Iso6393 = record[8]
+		if lang.Iso6393 != "" {
+			count6393++
+		}
 		lang.CountryIds = record[14]
 		languages = append(languages, lang)
+	}
+	fmt.Println("Num iso639-3", count6393)
+	return languages
+}
+
+func loadIso6393(languages []db.Language) []db.Language {
+	var part1Map = make(map[string]string)
+	file, err := os.Open("db/language/iso-639-3.tab")
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+	reader := csv.NewReader(file)
+	reader.Comma = '\t'
+	first := true
+	var record []string
+	for {
+		record, err = reader.Read()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			panic(err)
+		}
+		if first {
+			first = false
+			continue
+		}
+		iso6393 := record[0]
+		iso6391 := record[3]
+		if iso6391 != "" {
+			part1Map[iso6393] = iso6391
+		}
+	}
+	var missing = make(map[string]int)
+	for i := range languages {
+		iso6393 := languages[i].Iso6393
+		if iso6393 != "" {
+			iso6391, ok := part1Map[iso6393]
+			if ok {
+				languages[i].Iso6391 = iso6391
+			}
+		}
+	}
+	for iso, cnt := range missing {
+		fmt.Println("missing", iso, cnt)
+	}
+	fmt.Println(len(missing))
+	//fmt.Println("number of mismatch iso639-3", missing)
+	return languages
+}
+
+func loadWhisper(languages []db.Language) []db.Language {
+	var isoMap = make(map[string]bool)
+	file, err := os.Open("db/language/whisper.tab")
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+	reader := csv.NewReader(file)
+	var record []string
+	for {
+		record, err = reader.Read()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			panic(err)
+		}
+		isoMap[record[0]] = true
+	}
+	for i := range languages {
+		_, ok := isoMap[languages[i].Iso6393]
+		if ok {
+			languages[i].Whisper = true
+		}
+		_, ok = isoMap[languages[i].Iso6391]
+		if ok {
+			languages[i].Whisper = true
+		}
 	}
 	return languages
 }
