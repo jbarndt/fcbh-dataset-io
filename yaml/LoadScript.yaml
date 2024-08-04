@@ -1,0 +1,10 @@
+is_new: yes
+dataset_name: LoadScript
+bible_id: TUJNTM
+username: GaryNTest
+email: gary@shortsands.com
+output_file: load_script_tujntm.json
+text_data:
+  post: /Users/gary/FCBH2024/tugutil/TUJNTMN2ST.xlsm
+testament:
+  nt_books: [MRK]

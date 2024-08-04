@@ -5,6 +5,7 @@ import (
 	"dataset/controller"
 	log "dataset/logger"
 	"io"
+	"mime/multipart"
 	"net/http"
 	//_ "net/http/pprof"
 	"os"
@@ -48,36 +49,41 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		errorResponse(w, http.StatusInternalServerError, err, "Failed to parse multipart form")
 		return
 	}
-	audioFile, audioHeader, err := r.FormFile("audio")
-	if err != nil {
-		errorResponse(w, http.StatusBadRequest, err, "Invalid audio file")
-		return
+	// Read form parts, currently tested to handle yaml file and one content file
+	var request []byte
+	var yamlHeader *multipart.FileHeader
+	var dataHeader *multipart.FileHeader
+	for key := range r.MultipartForm.File {
+		file, header, err2 := r.FormFile(key)
+		if err2 != nil {
+			errorResponse(w, http.StatusInternalServerError, err2, "Failed to read multipart form")
+			return
+		}
+		defer file.Close()
+		if key == "yaml" {
+			yamlHeader = header
+			request, err = io.ReadAll(file)
+			if err != nil {
+				errorResponse(w, http.StatusInternalServerError, err, "Unable to read YAML file")
+				return
+			}
+		} else {
+			dataHeader = header
+			var target *os.File
+			target, err = os.CreateTemp(os.Getenv(`FCBH_DATASET_TMP`), "*"+header.Filename)
+			if err != nil {
+				errorResponse(w, http.StatusInternalServerError, err, "Failed to create audio file on server")
+				return
+			}
+			defer target.Close()
+			_, err = io.Copy(target, file)
+			if err != nil {
+				errorResponse(w, http.StatusInternalServerError, err, "Failed to save audio file")
+				return
+			}
+		}
 	}
-	defer audioFile.Close()
-	// Save the audio file to disk
-	audioDst, err := os.CreateTemp(os.Getenv(`FCBH_DATASET_TMP`), "*"+audioHeader.Filename)
-	if err != nil {
-		errorResponse(w, http.StatusInternalServerError, err, "Failed to create audio file on server")
-		return
-	}
-	defer audioDst.Close()
-	_, err = io.Copy(audioDst, audioFile)
-	if err != nil {
-		errorResponse(w, http.StatusInternalServerError, err, "Failed to save audio file")
-		return
-	}
-	yamlFile, yamlHeader, err := r.FormFile("yaml")
-	if err != nil {
-		errorResponse(w, http.StatusBadRequest, err, "Invalid YAML file")
-		return
-	}
-	defer yamlFile.Close()
-	request, err := io.ReadAll(yamlFile)
-	if err != nil {
-		errorResponse(w, http.StatusInternalServerError, err, "Unable to read YAML file")
-		return
-	}
-	log.Info(context.TODO(), "Files uploaded successfully:", audioHeader.Filename, yamlHeader.Filename)
+	log.Info(context.TODO(), "Files uploaded successfully:", dataHeader.Filename, yamlHeader.Filename)
 	responder(w, request)
 	log.Info(context.TODO(), time.Since(start))
 }
