@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"dataset/controller"
+	"dataset/input"
 	log "dataset/logger"
 	"io"
 	"mime/multipart"
@@ -26,37 +27,41 @@ func main() {
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	var start = time.Now()
+	var ctx = context.WithValue(context.Background(), `runType`, `server`)
 	if r.Method != `POST` {
-		errorResponse(w, http.StatusMethodNotAllowed, nil, `Only POST method is allowed`)
+		errorResponse(ctx, w, http.StatusMethodNotAllowed, nil, `Only POST method is allowed`)
 	}
 	request, err := io.ReadAll(r.Body)
 	if err != nil {
-		errorResponse(w, http.StatusInternalServerError, err, `Error reading request to server`)
+		errorResponse(ctx, w, http.StatusInternalServerError, err, `Error reading request to server`)
 		return
 	}
-	responder(w, request)
+	var control = controller.NewController(ctx, request)
+	responder(ctx, w, control)
 	log.Info(context.TODO(), time.Since(start))
 }
 
 func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	var start = time.Now()
+	var ctx = context.WithValue(context.Background(), `runType`, `server`)
 	if r.Method != `POST` {
-		errorResponse(w, http.StatusMethodNotAllowed, nil, `Only POST method is allowed`)
+		errorResponse(ctx, w, http.StatusMethodNotAllowed, nil, `Only POST method is allowed`)
 	}
 	// Parse the multipart form with a max memory of 10 MiB
 	err := r.ParseMultipartForm(10 << 20)
 	if err != nil {
-		errorResponse(w, http.StatusInternalServerError, err, "Failed to parse multipart form")
+		errorResponse(ctx, w, http.StatusInternalServerError, err, "Failed to parse multipart form")
 		return
 	}
-	// Read form parts, currently tested to handle yaml file and one content file
+	// Read form parts, currently tested to handle yaml file and one content file, either text or audio key
+	var postFiles = input.NewPostFiles(ctx)
 	var request []byte
 	var yamlHeader *multipart.FileHeader
 	var dataHeader *multipart.FileHeader
 	for key := range r.MultipartForm.File {
 		file, header, err2 := r.FormFile(key)
 		if err2 != nil {
-			errorResponse(w, http.StatusInternalServerError, err2, "Failed to read multipart form")
+			errorResponse(ctx, w, http.StatusInternalServerError, err2, "Failed to read multipart form")
 			return
 		}
 		defer file.Close()
@@ -64,33 +69,25 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 			yamlHeader = header
 			request, err = io.ReadAll(file)
 			if err != nil {
-				errorResponse(w, http.StatusInternalServerError, err, "Unable to read YAML file")
+				errorResponse(ctx, w, http.StatusInternalServerError, err, "Unable to read YAML file")
 				return
 			}
 		} else {
 			dataHeader = header
-			var target *os.File
-			target, err = os.CreateTemp(os.Getenv(`FCBH_DATASET_TMP`), "*"+header.Filename)
-			if err != nil {
-				errorResponse(w, http.StatusInternalServerError, err, "Failed to create audio file on server")
-				return
-			}
-			defer target.Close()
-			_, err = io.Copy(target, file)
-			if err != nil {
-				errorResponse(w, http.StatusInternalServerError, err, "Failed to save audio file")
-				return
+			status := postFiles.ReadFile(key, file, header.Filename)
+			if status.IsErr {
+				errorResponse(ctx, w, status.Status, nil, status.Message+status.Error())
 			}
 		}
 	}
-	log.Info(context.TODO(), "Files uploaded successfully:", dataHeader.Filename, yamlHeader.Filename)
-	responder(w, request)
-	log.Info(context.TODO(), time.Since(start))
+	log.Info(ctx, "Files uploaded successfully:", dataHeader.Filename, yamlHeader.Filename)
+	var control = controller.NewController(ctx, request)
+	control.SetPostFiles(&postFiles)
+	responder(ctx, w, control)
+	log.Info(ctx, time.Since(start))
 }
 
-func responder(w http.ResponseWriter, request []byte) {
-	var ctx = context.WithValue(context.Background(), `runType`, `server`)
-	var control = controller.NewController(ctx, request)
+func responder(ctx context.Context, w http.ResponseWriter, control controller.Controller) {
 	var filename, status = control.Process()
 	if status.IsErr {
 		w.WriteHeader(status.Status)
@@ -109,18 +106,18 @@ func responder(w http.ResponseWriter, request []byte) {
 	var file *os.File
 	file, err := os.Open(filename)
 	if err != nil {
-		errorResponse(w, http.StatusInternalServerError, err, `File containing results is not found`)
+		errorResponse(ctx, w, http.StatusInternalServerError, err, `File containing results is not found`)
 		return
 	}
 	defer file.Close()
 	_, err = io.Copy(w, file)
 	if err != nil {
-		errorResponse(w, http.StatusInternalServerError, err, `Error writing results to http response`)
+		errorResponse(ctx, w, http.StatusInternalServerError, err, `Error writing results to http response`)
 		return
 	}
 }
 
-func errorResponse(w http.ResponseWriter, statusCode int, err error, message string) {
-	status := log.Error(context.TODO(), statusCode, err, message)
+func errorResponse(ctx context.Context, w http.ResponseWriter, statusCode int, err error, message string) {
+	status := log.Error(ctx, statusCode, err, message)
 	http.Error(w, status.String(), statusCode)
 }

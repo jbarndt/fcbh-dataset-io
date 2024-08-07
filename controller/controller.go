@@ -24,6 +24,7 @@ type Controller struct {
 	user        fetch.DBPUser
 	ident       db.Ident
 	database    db.DBAdapter
+	postFiles   *input.PostFiles
 }
 
 func NewController(ctx context.Context, yamlContent []byte) Controller {
@@ -33,8 +34,16 @@ func NewController(ctx context.Context, yamlContent []byte) Controller {
 	return c
 }
 
+func (c *Controller) SetPostFiles(postFiles *input.PostFiles) {
+	c.postFiles = postFiles
+}
+
 func (c *Controller) Process() (string, dataset.Status) {
 	var start = time.Now()
+	if c.postFiles != nil {
+		defer c.postFiles.RemoveDir()
+	}
+	// Isn't this in the wrong place, shouldn't it be executed once?
 	logLevel := os.Getenv("FCBH_DATASET_LOG_LEVEL")
 	if logLevel != `` {
 		log.SetLevel(logLevel)
@@ -193,8 +202,8 @@ func (c *Controller) collectTextInput() ([]input.InputFile, dataset.Status) {
 		files, status = input.FileInput(c.ctx, c.req.TextData.File, c.req.Testament)
 	} else if c.req.TextData.AWSS3 != `` {
 		files, status = input.AWSS3Input(c.ctx, c.req.TextData.AWSS3, c.req.Testament)
-	} else if c.req.TextData.POST != `` {
-		files, status = input.FileInput(c.ctx, c.req.TextData.POST, c.req.Testament)
+	} else if c.req.TextData.POST != `` && c.postFiles != nil {
+		files, status = c.postFiles.PostInput("text", c.req.Testament)
 	} else {
 		expectFiles = false
 	}
@@ -217,8 +226,8 @@ func (c *Controller) collectAudioInput() ([]input.InputFile, dataset.Status) {
 		files, status = input.FileInput(c.ctx, c.req.AudioData.File, c.req.Testament)
 	} else if c.req.AudioData.AWSS3 != `` {
 		files, status = input.AWSS3Input(c.ctx, c.req.AudioData.AWSS3, c.req.Testament)
-	} else if c.req.AudioData.POST != `` {
-		files, status = input.FileInput(c.ctx, c.req.AudioData.POST, c.req.Testament)
+	} else if c.req.AudioData.POST != `` && c.postFiles != nil {
+		files, status = c.postFiles.PostInput("audio", c.req.Testament)
 	} else {
 		expectFiles = false
 	}
