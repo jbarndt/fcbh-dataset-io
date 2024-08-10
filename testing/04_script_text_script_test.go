@@ -22,9 +22,8 @@ text_data:
 
 func TestScriptTextScriptAPI(t *testing.T) {
 	var cases []APITest
-	request := strings.Replace(ScriptTextScript, `/Users/gary/FCBH2024/`, `/home/dataset/data/`, 1)
 	cases = append(cases, APITest{BibleId: `ATIWBT`, Expected: 9747})
-	APITestUtility(request, cases, t)
+	APITestUtility(ScriptTextScript, cases, t)
 }
 
 func TestScriptTextScript(t *testing.T) {
