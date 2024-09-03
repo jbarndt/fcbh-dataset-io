@@ -14,7 +14,9 @@ func main() {
 	languages := loadGlottoLanguoid()
 	languages = loadIso6393(languages)
 	languages = loadWhisper(languages)
-	outputJSON(languages)
+	root := buildTree(languages)
+	//outputJSON(languages)
+	outputJSON(root)
 }
 
 func loadGlottoLanguoid() []db.Language {
@@ -135,6 +137,31 @@ func loadWhisper(languages []db.Language) []db.Language {
 		}
 	}
 	return languages
+}
+
+func buildTree(languages []db.Language) []db.Language {
+	var root []db.Language
+	var idMap = make(map[string]db.Language)
+	for _, lang := range languages {
+		idMap[lang.GlottoId] = lang
+	}
+	for _, lang := range languages {
+		if lang.ParentId == "" {
+			root = append(root, lang)
+		} else {
+			parentLang, ok := idMap[lang.ParentId]
+			if !ok {
+				panic(lang.ParentId + " does not exist")
+			}
+			parentLang.Children = append(parentLang.Children, lang)
+			idMap[lang.ParentId] = parentLang
+		}
+	}
+	for _, lang := range root {
+		fmt.Println(lang.GlottoId, lang.ParentId, lang.Iso6393, lang.FamilyId, lang.Bookkeeping, lang.Level)
+	}
+	fmt.Println(len(root))
+	return root
 }
 
 func outputJSON(languages []db.Language) {
