@@ -68,17 +68,20 @@ type MFCC struct {
 }
 
 type Language struct {
-	GlottoId    string     `json:"id"`
-	FamilyId    string     `json:"family_id"`
-	ParentId    string     `json:"parent_id"`
-	Name        string     `json:"name"`
-	Bookkeeping bool       `json:"bookkeeping"`
-	Level       string     `json:"level"` //(language, dialect, family)
-	Iso6393     string     `json:"iso639_3"`
-	CountryIds  string     `json:"country_ids"`
-	Iso6391     string     `json:"iso639_1"`
-	Whisper     bool       `json:"whisper"`
-	MMSASR      bool       `json:"mms_asr"`
-	ESpeak      bool       `json:"espeak"`
-	Children    []Language `json:"children,omitempty"`
+	GlottoId    string `json:"id"`
+	FamilyId    string `json:"family_id"`
+	ParentId    string `json:"parent_id"`
+	Name        string `json:"name"`
+	Bookkeeping bool   `json:"bookkeeping"`
+	Level       string `json:"level"` //(language, dialect, family)
+	Iso6393     string `json:"iso639_3"`
+	CountryIds  string `json:"country_ids"`
+	Iso6391     string `json:"iso639_1"`
+	Whisper     bool   `json:"whisper"`
+	MMSASR      bool   `json:"mms_asr"`
+	//MMSTTS	bool		`json:"mms_tts"`
+	//MMSLID	bool		`json:"mms_lid"`
+	ESpeak   bool        `json:"espeak"`
+	Parent   *Language   `json:"-"`
+	Children []*Language `json:"-"`
 }
