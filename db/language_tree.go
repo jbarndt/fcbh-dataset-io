@@ -21,7 +21,33 @@ func NewLanguageTree(ctx context.Context) LanguageTree {
 	return l
 }
 
-func (l *LanguageTree) LoadTable() dataset.Status {
+func (l *LanguageTree) Load() dataset.Status {
+	status := l.loadTable()
+	if status.IsErr {
+		return status
+	}
+	status = l.buildTree()
+	return status
+}
+
+func (l *LanguageTree) Search(iso6393 string, search string) ([]*Language, int, dataset.Status) {
+	var results []*Language
+	var distance int
+	var status dataset.Status
+	var lang *Language
+	lang, status = l.findLanguage(iso6393)
+	if status.IsErr {
+		return results, distance, status
+	}
+	if !l.validateSearch(search) {
+		status = log.ErrorNoErr(l.ctx, 400, "Search parameter", search, "is not known")
+		return results, distance, status
+	}
+	results, distance = l.searchRelatives(lang, search)
+	return results, distance, status
+}
+
+func (l *LanguageTree) loadTable() dataset.Status {
 	var status dataset.Status
 	// Read json file of languages
 	filename := "../db/language/language_tree.jason"
@@ -37,7 +63,7 @@ func (l *LanguageTree) LoadTable() dataset.Status {
 	return status
 }
 
-func (l *LanguageTree) BuildTree() dataset.Status {
+func (l *LanguageTree) buildTree() dataset.Status {
 	var status dataset.Status
 	// Make Map of GlottoId
 	var idMap = make(map[string]*Language)
@@ -73,17 +99,95 @@ func (l *LanguageTree) BuildTree() dataset.Status {
 	return status
 }
 
-func (l *LanguageTree) Search(iso6393 string, search string) { // whisper, mms_asr, espeak
-	// read in the json
-	// load it into a tree
-	// must have an iso6393 map
-	// lookup in iso6393map
-	// if not found 400 error
-	// perform recursive or stack-based descent of children looking for a true
-	// when found count the number of steps
-	// continue descending children, but don't go further down.
-	// Remeber the iso6393 code (or GlottoId) and minimum steps
-	// Go up the tree and repeeat the process
-	// Do not go up more than the minimum count.
+func (l *LanguageTree) findLanguage(iso6393 string) (*Language, dataset.Status) {
+	var language *Language
+	var status dataset.Status
+	var isoMap = make(map[string]*Language)
+	for i := range l.table {
+		lang := l.table[i]
+		if lang.Iso6393 != "" {
+			isoMap[lang.Iso6393] = &lang
+		}
+	}
+	fmt.Println("num iso6393: ", len(isoMap))
+	language, ok := isoMap[iso6393]
+	if !ok {
+		status = log.ErrorNoErr(l.ctx, 400, "iso code ", iso6393, " is not known.")
+	}
+	return language, status
+}
 
+func (l *LanguageTree) searchRelatives(start *Language, search string) ([]*Language, int) {
+	var finalLang []*Language
+	var finalDepth int
+	var limit = 1000
+	//for finalDepth > 0 && limit > 0 {
+	for limit > 0 && start != nil {
+		fmt.Println("\nSearching", start.Name, search, limit)
+		results, depth := l.descendantSearch(start, search, limit)
+		fmt.Println("Found", depth)
+		for _, result := range results {
+			fmt.Println("\t", result.Name)
+		}
+		if len(results) > 0 {
+			finalLang = results
+			finalDepth = depth
+			limit = depth
+		}
+		start = start.Parent
+	}
+	return finalLang, finalDepth
+}
+
+// DescendantSearch performs a breadth-first search of the LanguageTree
+func (l *LanguageTree) descendantSearch(start *Language, search string, limit int) ([]*Language, int) {
+	var results []*Language
+	var depth int
+	if start == nil {
+		return results, depth
+	}
+	var queue LanguageQueue
+	queue.Enqueue(start, 0)
+	for !queue.IsEmpty() {
+		item := queue.Dequeue()
+		if (len(results) > 0 && item.Depth > depth) || item.Depth > limit {
+			return results, depth
+		}
+		depth = item.Depth
+		if l.isMatch(item.Lang, search) {
+			results = append(results, item.Lang)
+		}
+		fmt.Printf("Depth: %d, Name: %s, GlottoId: %s\n", item.Depth, item.Lang.Name, item.Lang.GlottoId)
+
+		for _, child := range item.Lang.Children {
+			queue.Enqueue(child, item.Depth+1)
+		}
+	}
+	return results, depth
+}
+
+func (l *LanguageTree) validateSearch(search string) bool {
+	switch search {
+	case `whisper`:
+		return true
+	case `mms_asr`:
+		return true
+	case `espeak`:
+		return true
+	default:
+		return false
+	}
+}
+
+func (l *LanguageTree) isMatch(lang *Language, search string) bool {
+	switch search {
+	case `whisper`:
+		return lang.Whisper
+	case `mms_asr`:
+		return lang.MMSASR
+	case `espeak`:
+		return lang.ESpeak
+	default:
+		return false
+	}
 }
