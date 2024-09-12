@@ -10,14 +10,18 @@ import (
 )
 
 type LanguageTree struct {
-	ctx   context.Context
-	table []Language
-	roots []*Language
+	ctx    context.Context
+	table  []Language
+	roots  []*Language
+	idMap  map[string]*Language
+	isoMap map[string]*Language
 }
 
 func NewLanguageTree(ctx context.Context) LanguageTree {
 	var l LanguageTree
 	l.ctx = ctx
+	l.idMap = make(map[string]*Language)
+	l.isoMap = make(map[string]*Language)
 	return l
 }
 
@@ -35,8 +39,9 @@ func (l *LanguageTree) Search(iso6393 string, search string) ([]*Language, int, 
 	var distance int
 	var status dataset.Status
 	var lang *Language
-	lang, status = l.findLanguage(iso6393)
-	if status.IsErr {
+	lang, ok := l.isoMap[iso6393]
+	if !ok {
+		status = log.ErrorNoErr(l.ctx, 400, "iso code ", iso6393, " is not known.")
 		return results, distance, status
 	}
 	if !l.validateSearch(search) {
@@ -66,55 +71,39 @@ func (l *LanguageTree) loadTable() dataset.Status {
 func (l *LanguageTree) buildTree() dataset.Status {
 	var status dataset.Status
 	// Make Map of GlottoId
-	var idMap = make(map[string]*Language)
 	for i := range l.table {
 		lang := l.table[i]
-		idMap[lang.GlottoId] = &lang
+		l.idMap[lang.GlottoId] = &lang
 	}
 	// Build Tree
 	var idMapCount int
 	var parentIdCount int
-	for glottoId, lang := range idMap {
+	for glottoId, lang := range l.idMap {
 		idMapCount++
 		if lang.ParentId != "" {
 			parentIdCount++
-			parent, ok := idMap[lang.ParentId]
+			parent, ok := l.idMap[lang.ParentId]
 			if !ok {
 				return log.ErrorNoErr(l.ctx, 500, "Missing parent id: ", lang.ParentId)
 			}
 			lang.Parent = parent
-			idMap[glottoId] = lang
+			l.idMap[glottoId] = lang
 			lang.Parent.Children = append(lang.Parent.Children, lang)
-			idMap[lang.ParentId] = lang.Parent
+			l.idMap[lang.ParentId] = lang.Parent
+		}
+		if lang.Iso6393 != "" {
+			l.isoMap[lang.Iso6393] = lang
 		}
 	}
 	fmt.Println("count: ", idMapCount)
 	fmt.Println("parent count: ", parentIdCount)
 	// Build root
-	for _, lang := range idMap {
+	for _, lang := range l.idMap {
 		if lang.Parent == nil {
 			l.roots = append(l.roots, lang)
 		}
 	}
 	return status
-}
-
-func (l *LanguageTree) findLanguage(iso6393 string) (*Language, dataset.Status) {
-	var language *Language
-	var status dataset.Status
-	var isoMap = make(map[string]*Language)
-	for i := range l.table {
-		lang := l.table[i]
-		if lang.Iso6393 != "" {
-			isoMap[lang.Iso6393] = &lang
-		}
-	}
-	fmt.Println("num iso6393: ", len(isoMap))
-	language, ok := isoMap[iso6393]
-	if !ok {
-		status = log.ErrorNoErr(l.ctx, 400, "iso code ", iso6393, " is not known.")
-	}
-	return language, status
 }
 
 func (l *LanguageTree) searchRelatives(start *Language, search string) ([]*Language, int) {
@@ -125,9 +114,9 @@ func (l *LanguageTree) searchRelatives(start *Language, search string) ([]*Langu
 	for limit > 0 && start != nil {
 		fmt.Println("\nSearching", start.Name, search, limit)
 		results, depth := l.descendantSearch(start, search, limit)
-		fmt.Println("Found", depth)
+		fmt.Println("descendantSearch Depth", depth, "num", len(results))
 		for _, result := range results {
-			fmt.Println("\t", result.Name)
+			fmt.Println("descendentSearch lang.Name", result.Name)
 		}
 		if len(results) > 0 {
 			finalLang = results
