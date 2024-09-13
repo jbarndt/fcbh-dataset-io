@@ -9,6 +9,8 @@ import (
 	"os"
 )
 
+// https://github.com/espeak-ng/espeak-ng/blob/master/docs/languages.md?plain=1
+
 type LanguageTree struct {
 	ctx    context.Context
 	table  []Language
