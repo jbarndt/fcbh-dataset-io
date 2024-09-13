@@ -54,43 +54,58 @@ func TestLanguageTree_SampleData(t *testing.T) {
 
 	langs = append(langs, Language{Name: "British", GlottoId: "british", ParentId: "stan1293", Iso6393: "brit"})
 	langs = append(langs, Language{Name: "American", GlottoId: "american", ParentId: "stan1293", Iso6393: "amer"})
-	langs = append(langs, Language{Name: "Australian", GlottoId: "Australian", ParentId: "stan1293", Iso6393: "aust"})
+	langs = append(langs, Language{Name: "Australian", GlottoId: "australian", ParentId: "stan1293", Iso6393: "aust"})
 
 	tree := NewLanguageTree(context.Background())
 	tree.table = langs
 	searchType := `whisper`
 	tree.validateSearch(searchType)
 	tree.buildTree()
-	//setWhisper(tree, "stan1293", true)
-	//doSearch(t, tree, "eng", "whisper", 0, []string{"stan1293"})
-	//setWhisper(tree, "stan1293", false)
-	//setWhisper(tree, "american", true)
-	//doSearch(t, tree, "eng", "whisper", 1, []string{"american"})
-	//setWhisper(tree, "american", false)
-	setWhisper(tree, "indo1319", true)
-	doSearch(t, tree, "eng", "whisper", -1, []string{"indo1319"})
+	setWhisper(tree, []string{"stan1293"})
+	doSearch(t, tree, "eng", "whisper", 0, []string{"stan1293"})
+	setWhisper(tree, []string{"american"})
+	doSearch(t, tree, "eng", "whisper", 1, []string{"american"})
+	setWhisper(tree, []string{"germ1287"})
+	doSearch(t, tree, "eng", "whisper", 1, []string{"germ1287"})
+	setWhisper(tree, []string{"indo1319"})
+	doSearch(t, tree, "eng", "whisper", 2, []string{"indo1319"})
+	setWhisper(tree, []string{"british", "american", "australian"})
+	doSearch(t, tree, "eng", "whisper", 1, []string{"british", "american", "australian"})
+	setWhisper(tree, []string{"germ1287", "roma1334"})
+	doSearch(t, tree, "eng", "whisper", 1, []string{"germ1287"})
 }
 
-func setWhisper(tree LanguageTree, glottoId string, whisperOn bool) {
-	lang := tree.idMap[glottoId]
-	lang.Whisper = whisperOn
-	tree.isoMap[glottoId] = lang
+func setWhisper(tree LanguageTree, glottoIds []string) {
+	for id, lang := range tree.idMap {
+		lang.Whisper = false
+		tree.idMap[id] = lang
+	}
+	for _, id := range glottoIds {
+		lang := tree.idMap[id]
+		lang.Whisper = true
+		tree.isoMap[id] = lang
+	}
 }
 
-func doSearch(t *testing.T, tree LanguageTree, iso639 string, search string, depth int, result []string) {
-	langs, deph, status := tree.Search(iso639, search)
+func doSearch(t *testing.T, tree LanguageTree, iso639 string, search string, distance int, result []string) {
+	langs, dist, status := tree.Search(iso639, search)
 	if status.IsErr {
 		t.Error("status.IsErr:", status)
 	}
-	if deph != depth {
-		t.Error("Expected Depth:", depth, "Found Depth:", deph)
+	if dist != distance {
+		t.Error("Expected Depth:", distance, "Found Distance:", dist)
 	}
 	if len(langs) != len(result) {
 		t.Error("Expected Num:", len(result), "Found Num:", len(langs))
 	} else {
-		for i, lang := range result {
-			if lang != langs[i].GlottoId {
-				t.Error("Expected lang", lang, "Found lang", langs[i].GlottoId)
+		var resultMap = make(map[string]bool)
+		for _, lang := range result {
+			resultMap[lang] = true
+		}
+		for _, lang := range langs {
+			_, ok := resultMap[lang.GlottoId]
+			if !ok {
+				t.Error("Expected lang", lang, "Found lang", lang.GlottoId)
 			}
 		}
 	}

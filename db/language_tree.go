@@ -107,25 +107,27 @@ func (l *LanguageTree) buildTree() dataset.Status {
 }
 
 func (l *LanguageTree) searchRelatives(start *Language, search string) ([]*Language, int) {
-	var finalLang []*Language
-	var finalDepth int
+	var finalLang, results []*Language
+	var hierDown int
+	var hierUp = -1
 	var limit = 1000
 	//for finalDepth > 0 && limit > 0 {
 	for limit > 0 && start != nil {
+		hierUp++
 		fmt.Println("\nSearching", start.Name, search, limit)
-		results, depth := l.descendantSearch(start, search, limit)
-		fmt.Println("descendantSearch Depth", depth, "num", len(results))
+		results, hierDown = l.descendantSearch(start, search, limit)
+		fmt.Println("hierUp", hierUp, "hierDown", hierDown, "num", len(results))
 		for _, result := range results {
 			fmt.Println("descendentSearch lang.Name", result.Name)
 		}
 		if len(results) > 0 {
 			finalLang = results
-			finalDepth = depth
-			limit = depth
+			//finalDepth = depth
+			limit = hierDown - 1
 		}
 		start = start.Parent
 	}
-	return finalLang, finalDepth
+	return finalLang, hierUp + hierDown
 }
 
 // DescendantSearch performs a breadth-first search of the LanguageTree
