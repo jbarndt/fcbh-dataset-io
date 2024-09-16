@@ -24,11 +24,11 @@ func main() {
 	var numLanguages = 26879
 	languages := loadGlottoLanguoid()
 	languages = loadIso6393(languages)
-	languages = loadAIToolCompatibility(languages, "db/language/espeak.tab", ESpeak, 1)
-	languages = loadAIToolCompatibility(languages, "db/language/mms_asr.tab", MMSASR, 0)
-	languages = loadAIToolCompatibility(languages, "db/language/mms_lid.tab", MMSLID, 0)
-	languages = loadAIToolCompatibility(languages, "db/language/mms_tts.tab", MMSTTS, 0)
-	languages = loadAIToolCompatibility(languages, "db/language/whisper.tab", Whisper, 0)
+	languages = loadAIToolCompatibility(languages, "db/language/espeak.tab", ESpeak, 1, 3)
+	languages = loadAIToolCompatibility(languages, "db/language/mms_asr.tab", MMSASR, 0, 1)
+	languages = loadAIToolCompatibility(languages, "db/language/mms_lid.tab", MMSLID, 0, 1)
+	languages = loadAIToolCompatibility(languages, "db/language/mms_tts.tab", MMSTTS, 0, 1)
+	languages = loadAIToolCompatibility(languages, "db/language/whisper.tab", Whisper, 1, 0)
 	if len(languages) != numLanguages {
 		fmt.Println("Load Iso6393: Expected ", numLanguages, " got ", len(languages))
 		os.Exit(1)
@@ -138,14 +138,14 @@ func loadIso6393(languages []db.Language) []db.Language {
 	return languages
 }
 
-func loadAIToolCompatibility(languages []db.Language, filePath string, toolName ToolName, iso3Col int) []db.Language {
+func loadAIToolCompatibility(languages []db.Language, filePath string, toolName ToolName, iso3Col int, nameCol int) []db.Language {
 	file, err := os.Open(filePath)
 	if err != nil {
 		panic(err)
 	}
 	defer file.Close()
 	reader := csv.NewReader(file)
-	var toolMap = make(map[string]bool)
+	var toolMap = make(map[string]string)
 	var record []string
 	for {
 		record, err = reader.Read()
@@ -154,29 +154,31 @@ func loadAIToolCompatibility(languages []db.Language, filePath string, toolName 
 		} else if err != nil {
 			panic(err)
 		}
-		toolMap[record[iso3Col]] = true
+		toolMap[record[iso3Col]] = record[nameCol]
 	}
-	var usedMap = make(map[string]bool)
+	var usedMap = make(map[string]string)
 	for i := range languages {
-		_, ok := toolMap[languages[i].Iso6393]
+		name, ok := toolMap[languages[i].Iso6393]
 		if ok {
 			languages[i] = setLanguage(languages[i], toolName)
-			usedMap[languages[i].Iso6393] = true
+			usedMap[languages[i].Iso6393] = name
 		} else {
-			_, ok = toolMap[languages[i].Iso6391]
+			name, ok = toolMap[languages[i].Iso6391]
 			if ok {
-				//languages[i].Whisper = true
 				languages[i] = setLanguage(languages[i], toolName)
-				usedMap[languages[i].Iso6391] = true
+				usedMap[languages[i].Iso6391] = name
 			}
 		}
 	}
-	for iso := range toolMap {
+	var missingCount = 0
+	for iso, name := range toolMap {
 		_, ok := usedMap[iso]
 		if !ok {
-			fmt.Println("AI Tool", toolName, "Has iso code", iso, " but it has no match in table")
+			fmt.Println("AI Tool", toolName, "Has iso code", iso, name, "but it has no match in table")
+			missingCount++
 		}
 	}
+	fmt.Println("Num ai-tool records not matching:", missingCount, "out of", len(toolMap))
 	return languages
 }
 
@@ -203,7 +205,7 @@ func outputJSON(languages []db.Language) {
 	if err != nil {
 		panic(err)
 	}
-	err = os.WriteFile("db/language/language_tree.jason_new", bytes, 0644)
+	err = os.WriteFile("db/language/language_tree.jason", bytes, 0644)
 	if err != nil {
 		panic(err)
 	}
