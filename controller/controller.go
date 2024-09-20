@@ -75,13 +75,7 @@ func (c *Controller) processSteps() (string, dataset.Status) {
 	if status.IsErr {
 		return filename, status
 	}
-	var yaml string
-	// Stuff YAML request into context
-	yaml, status = reqDecoder.Encode(c.req)
-	if status.IsErr {
-		return filename, status
-	}
-	c.ctx = context.WithValue(c.ctx, `request`, yaml)
+	c.ctx = context.WithValue(c.ctx, `request`, string(c.yamlRequest))
 	// Get User
 	c.user, status = fetch.GetDBPUser(c.req)
 	if status.IsErr {
