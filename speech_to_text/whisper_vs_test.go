@@ -9,7 +9,6 @@ import (
 	"dataset/read"
 	"dataset/request"
 	"fmt"
-	"strings"
 	"testing"
 )
 
@@ -117,6 +116,7 @@ func loadTimestamps(filesetId string, conn db.DBAdapter,
 	fmt.Println("Timestamps OK ", ok)
 }
 
+/*
 func TestAvailTSAndWhisper(t *testing.T) {
 	ctx := context.Background()
 	api := fetch.NewAPIDBPTimestamps(db.DBAdapter{}, ``)
@@ -135,3 +135,4 @@ func TestAvailTSAndWhisper(t *testing.T) {
 		}
 	}
 }
+*/

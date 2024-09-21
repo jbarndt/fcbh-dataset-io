@@ -8,6 +8,7 @@ import (
 	"dataset/input"
 	log "dataset/logger"
 	"fmt"
+	"github.com/garygriswold/lang_tree/search"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -53,11 +54,18 @@ func (w *Whisper) ProcessFiles(files []input.InputFile) dataset.Status {
 	}
 	defer os.RemoveAll(w.tempDir)
 	if w.lang2 == `` {
-		var iso639 []db.Sil639
-		iso639, status = db.FindWhisperCompatibility(w.ctx, strings.ToLower(w.bibleId[:3]))
-		if len(iso639) > 0 {
-			w.lang2 = iso639[0].Lang2
-			log.Info(w.ctx, `Using language`, w.lang2, iso639[0].Name)
+		var tree = search.NewLanguageTree(w.ctx)
+		err = tree.Load()
+		if err != nil {
+			return log.Error(w.ctx, 500, err, `Error loading language`)
+		}
+		langs, distance, err2 := tree.Search(strings.ToLower(w.bibleId[:3]), "whisper")
+		if err2 != nil {
+			return log.Error(w.ctx, 500, err2, `Error Searching for language`)
+		}
+		if len(langs) > 0 {
+			w.lang2 = langs[0].Iso6391
+			log.Info(w.ctx, `Using language`, w.lang2, langs[0].Name, "distance:", distance)
 		} else {
 			return log.ErrorNoErr(w.ctx, 400, `No compatible language code was found for`, w.bibleId)
 		}
