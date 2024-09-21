@@ -64,8 +64,8 @@ func (w *Whisper) ProcessFiles(files []input.InputFile) dataset.Status {
 			return log.Error(w.ctx, 500, err2, `Error Searching for language`)
 		}
 		if len(langs) > 0 {
-			w.lang2 = langs[0].Iso6391
-			log.Info(w.ctx, `Using language`, w.lang2, langs[0].Name, "distance:", distance)
+			w.lang2 = langs[0]
+			log.Info(w.ctx, `Using language`, w.lang2, "distance:", distance)
 		} else {
 			return log.ErrorNoErr(w.ctx, 400, `No compatible language code was found for`, w.bibleId)
 		}
