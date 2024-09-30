@@ -7,36 +7,51 @@ import (
 	"dataset/request"
 	"encoding/json"
 	"fmt"
+	"gonum.org/v1/gonum/stat"
+	"math"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 )
 
-func main() {
-	//LoadTimestamps()
+type TS struct {
+	Book        string  `json:"book"`
+	Chap        int     `json:"chap"`
+	Verse       string  `json:"verse"`
+	BBBeginTS   float64 `json:"bb_begin_ts"`
+	BBAbsent    bool    `json:"bb_absent"`
+	WahaBeginTS float64 `json:"waha_begin_ts"`
+	WahaEndTS   float64 `json:"waha_end_ts"`
+	BeginTSDiff float64 `json:"begin_diff"`
+}
 
-	ConpareWahaTS2BBTS("npi", "NPIDPIN1DA")
+func main() {
+	directory := filepath.Join(os.Getenv("FCBH_DATASET_DB"), "Muller_Timestamps")
+	//LoadTimestamps(directory, "NPIDPI", "NPIDPIN1DA")
+	//LoadTimestamps(directory, "URDIRV", "URDIRVN1DA")
+	//ConpareWahaTS2BBTS(directory, "npi", "NPIDPIN1DA")
+	//ConpareWahaTS2BBTS(directory, "urd", "URDIRVN1DA")
+	//ComputeAverageAnDSort(directory, "npi")
+	ComputeAverageAnDSort(directory, "urd")
 }
 
 // LoadTimestamps is is a utility for getting timestamp data from API into a json file.
-func LoadTimestamps() {
+func LoadTimestamps(directory string, bibleId string, filesetId string) {
 	var results []fetch.Timestamp
 	ctx := context.Background()
-	bibleId := `NPIDPI`
-	//bibleId := `URDIRV`
 	database := bibleId + `_TS`
 	conn, status := db.NewerDBAdapter(ctx, true, `GaryNGriswold`, database)
 	if status.IsErr {
 		panic(status)
 	}
-	filesetId := `NPIDPIN1DA`
-	//filesetId := `URDIRVN1DA`
 	api := fetch.NewAPIDBPTimestamps(conn, filesetId)
 	books := db.RequestedBooks(request.Testament{OT: false, NT: true})
 	for _, book := range books {
 		maxChap, _ := db.BookChapterMap[book]
 		for chap := 1; chap <= maxChap; chap++ {
+			fmt.Println(book, chap)
 			tsList, status := api.Timestamps(book, chap)
 			if status.IsErr {
 				panic(status.Message)
@@ -50,23 +65,11 @@ func LoadTimestamps() {
 		panic(err)
 	}
 	//fmt.Println(string(bytes))
-	filename := filepath.Join(os.Getenv("FCBH_DATASET_DB"), "Muller_Timestamps", "npi.json")
-	//filename := filepath.Join(os.Getenv("FCBH_DATASET_DB"), "Muller_Timestamps", "urd.json")
+	filename := filepath.Join(directory, strings.ToLower(bibleId[:3])+".json")
 	os.WriteFile(filename, bytes, 0644)
 }
 
-func ConpareWahaTS2BBTS(isoCode string, mediaId string) {
-	directory := filepath.Join(os.Getenv("FCBH_DATASET_DB"), "Muller_Timestamps")
-	type TS struct {
-		Book        string  `json:"book"`
-		Chap        int     `json:"chap"`
-		Verse       string  `json:"verse"`
-		BBBeginTS   float64 `json:"bb_begin_ts"`
-		BBAbsent    bool    `json:"bb_absent"`
-		WahaBeginTS float64 `json:"waha_begin_ts"`
-		WahaEndTS   float64 `json:"waha_end_ts"`
-		BeginTSDiff float64 `json:"begin_diff"`
-	}
+func ConpareWahaTS2BBTS(directory string, isoCode string, mediaId string) {
 	var results []TS
 	ctx := context.Background()
 	conn := db.NewDBAdapter(ctx, ":memory:")
@@ -74,11 +77,9 @@ func ConpareWahaTS2BBTS(isoCode string, mediaId string) {
 	books := db.RequestedBooks(request.Testament{OT: false, NT: true}) //, NTBooks: []string{`MRK`}})
 	//request.Testament{NTBooks: []string{}}
 	for _, book := range books {
-		fmt.Println(book)
 		maxChap, _ := db.BookChapterMap[book]
 		for chap := 1; chap <= maxChap; chap++ {
-			fmt.Println(chap)
-			//maxChap = 2
+			fmt.Println(book, chap)
 			bbTSMap := readBBTS(api, book, chap)
 			wahaChap := readWaha(directory, isoCode, book, chap)
 			//fmt.Println(book, chap, wahaChap)
@@ -128,16 +129,17 @@ type WahaVerse struct {
 }
 
 func readWaha(directory string, isoCode string, book string, chap int) *WahaChap {
+	var result WahaChap
 	chapStr := fmt.Sprintf("%03s", strconv.Itoa(chap))
 	filename := book + "_" + chapStr + ".json"
 	chapFile := filepath.Join(directory, isoCode, book, filename)
 	//fmt.Println(chapFile)
 	bytes, err := os.ReadFile(chapFile)
 	if err != nil {
-		panic(err)
+		fmt.Println("File not found", chapFile)
+	} else {
+		json.Unmarshal(bytes, &result)
 	}
-	var result WahaChap
-	json.Unmarshal(bytes, &result)
 	return &result
 }
 
@@ -152,4 +154,46 @@ func readBBTS(api fetch.APIDBPTimestamps, book string, chap int) map[string]floa
 		result[ts.VerseStart] = ts.Timestamp
 	}
 	return result
+}
+
+func ComputeAverageAnDSort(directory string, isoCode string) {
+	filename := filepath.Join(directory, isoCode+"_compare.json")
+	bytes, err := os.ReadFile(filename)
+	if err != nil {
+		panic(err)
+	}
+	var timestamps []TS
+	err = json.Unmarshal(bytes, &timestamps)
+	if err != nil {
+		panic(err)
+	}
+	var diffs []float64
+	for _, ts := range timestamps {
+		if ts.Verse != "1" && ts.BBAbsent == false {
+			diffs = append(diffs, ts.BeginTSDiff)
+		}
+	}
+	fmt.Printf("data sample size: %v\n", len(diffs))
+	mean := stat.Mean(diffs, nil)
+	variance := stat.Variance(diffs, nil)
+	stddev := math.Sqrt(variance)
+	sort.Float64s(diffs)
+	median := stat.Quantile(0.5, stat.Empirical, diffs, nil)
+	fmt.Printf("mean=     %v\n", mean)
+	fmt.Printf("median=   %v\n", median)
+	fmt.Printf("variance= %v\n", variance)
+	fmt.Printf("std-dev=  %v\n", stddev)
+	sort.Slice(timestamps, func(i, j int) bool {
+		return timestamps[i].BeginTSDiff > timestamps[j].BeginTSDiff
+	})
+	var count = 0
+	for _, ts := range timestamps {
+		if ts.Verse != "1" && ts.BBAbsent == false {
+			fmt.Printf("%d\t%g\t%+v\n", count, ts.BeginTSDiff, ts)
+			count++
+		}
+		if count >= 16 {
+			break
+		}
+	}
 }
