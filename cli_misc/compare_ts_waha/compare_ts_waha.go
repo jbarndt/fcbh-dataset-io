@@ -29,16 +29,17 @@ type TS struct {
 
 func main() {
 	directory := filepath.Join(os.Getenv("FCBH_DATASET_DB"), "Muller_Timestamps")
-	//LoadTimestamps(directory, "NPIDPI", "NPIDPIN1DA")
-	//LoadTimestamps(directory, "URDIRV", "URDIRVN1DA")
+	//LoadBBTimestamps(directory, "NPIDPI", "NPIDPIN1DA")
+	//LoadBBTimestamps(directory, "URDIRV", "URDIRVN1DA")
 	//ConpareWahaTS2BBTS(directory, "npi", "NPIDPIN1DA")
 	//ConpareWahaTS2BBTS(directory, "urd", "URDIRVN1DA")
 	//ComputeAverageAnDSort(directory, "npi")
-	ComputeAverageAnDSort(directory, "urd")
+	//ComputeAverageAnDSort(directory, "urd")
+	CompareBB2S3TS(directory, "npi", "NPIDPIN1DA")
 }
 
-// LoadTimestamps is is a utility for getting timestamp data from API into a json file.
-func LoadTimestamps(directory string, bibleId string, filesetId string) {
+// LoadBBTimestamps is is a utility for getting timestamp data from API into a json file.
+func LoadBBTimestamps(directory string, bibleId string, filesetId string) {
 	var results []fetch.Timestamp
 	ctx := context.Background()
 	database := bibleId + `_TS`
@@ -65,7 +66,7 @@ func LoadTimestamps(directory string, bibleId string, filesetId string) {
 		panic(err)
 	}
 	//fmt.Println(string(bytes))
-	filename := filepath.Join(directory, strings.ToLower(bibleId[:3])+".json")
+	filename := filepath.Join(directory, "BB_"+strings.ToLower(bibleId[:3])+".json")
 	os.WriteFile(filename, bytes, 0644)
 }
 
@@ -156,6 +157,35 @@ func readBBTS(api fetch.APIDBPTimestamps, book string, chap int) map[string]floa
 	return result
 }
 
+func readS3TS(directory string, isoCode string, book string, chap int) map[string]float64 {
+	var result = make(map[string]float64)
+	bookSeq, ok := db.BookSeqMap[book]
+	if !ok {
+		panic("Missing book " + book)
+	}
+	bookSeq--
+	chapStr := fmt.Sprintf("%02s", strconv.Itoa(chap))
+	filename := "C01-" + strconv.Itoa(bookSeq) + "-" + book + "-" + chapStr + "-timing.txt"
+	//var filename = "C01-66-REV-17-timing.txt"
+	filePath := filepath.Join(directory, isoCode+"_S3", filename)
+	bytes, err := os.ReadFile(filePath)
+	if err != nil {
+		panic(err)
+	}
+	for _, line := range strings.Split(string(bytes), "\n") {
+		parts := strings.Split(line, "\t")
+		if len(parts) == 3 {
+			verse := parts[2]
+			beginTS, err1 := strconv.ParseFloat(parts[0], 64)
+			if err1 != nil {
+				panic(err1)
+			}
+			result[verse] = beginTS
+		}
+	}
+	return result
+}
+
 func ComputeAverageAnDSort(directory string, isoCode string) {
 	filename := filepath.Join(directory, isoCode+"_compare.json")
 	bytes, err := os.ReadFile(filename)
@@ -196,4 +226,37 @@ func ComputeAverageAnDSort(directory string, isoCode string) {
 			break
 		}
 	}
+}
+
+func CompareBB2S3TS(directory string, isoCode string, mediaId string) {
+	var diffs []float64
+	ctx := context.Background()
+	conn := db.NewDBAdapter(ctx, ":memory:")
+	api := fetch.NewAPIDBPTimestamps(conn, mediaId)
+	for _, book := range db.RequestedBooks(request.Testament{NT: true}) {
+		maxChap, _ := db.BookChapterMap[book]
+		for chap := 1; chap <= maxChap; chap++ {
+			fmt.Println(book, chap)
+			s3TSMap := readS3TS(directory, isoCode, book, chap)
+			bbTSMap := readBBTS(api, book, chap)
+			for verse, beginS3TS := range s3TSMap {
+				beginBBTS, ok := bbTSMap[verse]
+				if !ok {
+					fmt.Println("Missing BBTS", book, chap, verse)
+				} else {
+					diff := beginBBTS - beginS3TS
+					diffs = append(diffs, diff)
+				}
+			}
+		}
+	}
+	mean := stat.Mean(diffs, nil)
+	variance := stat.Variance(diffs, nil)
+	stddev := math.Sqrt(variance)
+	sort.Float64s(diffs)
+	median := stat.Quantile(0.5, stat.Empirical, diffs, nil)
+	fmt.Printf("mean=     %v  %.4f\n", mean, mean)
+	fmt.Printf("median=   %v  %.4f\n", median, median)
+	fmt.Printf("variance= %v  %.4f\n", variance, variance)
+	fmt.Printf("std-dev=  %v  %.4f\n", stddev, stddev)
 }
