@@ -13,11 +13,12 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 )
 
 func main() {
 	bibleId := "ABIWBT"
-	outDir := filepath.Join(os.Getenv("HOME"), "miniconda3", "envs", "waha_ts", "data", bibleId)
+	outDir := filepath.Join(os.Getenv("HOME"), "miniconda3", "envs", "torch2", "data", bibleId)
 	err := os.MkdirAll(outDir, 0777)
 	if err != nil {
 		panic(err)
@@ -26,7 +27,7 @@ func main() {
 	testament.BuildBookMaps()
 	var info = downloadBible(bibleId, testament)
 	renameAudioFiles(outDir, bibleId, info)
-	chopupTextFile(outDir, bibleId, info, testament)
+	chopupTextFile2Txt(outDir, bibleId, info, testament)
 }
 
 func downloadBible(bibleId string, testament request.Testament) fetch.BibleInfoType {
@@ -70,11 +71,52 @@ func renameAudioFiles(outputDir string, bibleId string, info fetch.BibleInfoType
 }
 
 type PlainText struct {
-	Verse string
-	Text  string
+	Verse string `json:"verse"`
+	Text  string `json:"text"`
 }
 
-func chopupTextFile(outputDir string, bibleId string, info fetch.BibleInfoType,
+func chopupTextFile2Txt(outputDir string, bibleId string, info fetch.BibleInfoType,
+	testament request.Testament) {
+	ctx := context.Background()
+	dir := filepath.Join(os.Getenv("FCBH_DATASET_FILES"), bibleId)
+	filename := filepath.Join(dir, info.AudioNTFileset.Id)
+	fmt.Println(filename)
+	var conn = db.NewDBAdapter(ctx, ":memory:")
+	var reader = read.NewDBPTextReader(conn, testament)
+	var files []input.InputFile
+	var file input.InputFile
+	file.Directory = filepath.Join(os.Getenv("FCBH_DATASET_FILES"), bibleId)
+	file.Filename = info.TextNTPlainFileset.Id + ".json"
+	file.MediaType = request.TextPlain
+	files = append(files, file)
+	status := reader.ProcessFiles(files)
+	if status.IsErr {
+		panic(status)
+	}
+	for _, book := range db.RequestedBooks(testament) {
+		maxChap := db.BookChapterMap[book]
+		for chap := 1; chap <= maxChap; chap++ {
+			verses, status2 := conn.SelectScriptsByChapter(book, chap)
+			if status2.IsErr {
+				panic(status2)
+			}
+			var results []string
+			for _, verse := range verses {
+				//fmt.Printf("%+v\n", verse)
+				results = append(results, verse.ScriptText)
+			}
+			bytes := []byte(strings.Join(results, "\n"))
+			newPath := filepath.Join(outputDir, book+"."+strconv.Itoa(chap)+".txt")
+			err := os.WriteFile(newPath, bytes, 0644)
+			if err != nil {
+				panic(err)
+			}
+		}
+	}
+}
+
+// chopupTextFile2Json did not work. I am not sure what is the correct json format.
+func chopupTextFile2Json(outputDir string, bibleId string, info fetch.BibleInfoType,
 	testament request.Testament) {
 	ctx := context.Background()
 	dir := filepath.Join(os.Getenv("FCBH_DATASET_FILES"), bibleId)
@@ -111,7 +153,7 @@ func chopupTextFile(outputDir string, bibleId string, info fetch.BibleInfoType,
 			if err != nil {
 				panic(err)
 			}
-			newPath := filepath.Join(outputDir, book+"."+strconv.Itoa(chap)+".txt")
+			newPath := filepath.Join(outputDir, book+"."+strconv.Itoa(chap)+".json")
 			err = os.WriteFile(newPath, bytes, 0644)
 		}
 	}
