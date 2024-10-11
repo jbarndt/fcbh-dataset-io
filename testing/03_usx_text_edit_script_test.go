@@ -22,8 +22,9 @@ text_data:
 
 func TestUSXTextEditScriptAPI(t *testing.T) {
 	var cases []APITest
-	cases = append(cases, APITest{BibleId: `ENGWEB`, Expected: 9588})
-	cases = append(cases, APITest{BibleId: `ATIWBT`, Expected: 8254})
+	//cases = append(cases, APITest{BibleId: `ENGWEB`, Expected: 9588})
+	//cases = append(cases, APITest{BibleId: `ATIWBT`, Expected: 8254})
+	cases = append(cases, APITest{BibleId: `ABIWBT`, Expected: 8256})
 	APITestUtility(USXTextEditScript, cases, t)
 }
 

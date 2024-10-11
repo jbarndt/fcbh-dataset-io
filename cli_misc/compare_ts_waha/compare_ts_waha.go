@@ -33,9 +33,9 @@ func main() {
 	//LoadBBTimestamps(directory, "URDIRV", "URDIRVN1DA")
 	//ConpareWahaTS2BBTS(directory, "npi", "NPIDPIN1DA")
 	//ConpareWahaTS2BBTS(directory, "urd", "URDIRVN1DA")
-	//ComputeAverageAnDSort(directory, "npi")
+	ComputeAverageAnDSort(directory, "npi")
 	//ComputeAverageAnDSort(directory, "urd")
-	CompareBB2S3TS(directory, "npi", "NPIDPIN1DA")
+	//CompareBB2S3TS(directory, "npi", "NPIDPIN1DA")
 }
 
 // LoadBBTimestamps is is a utility for getting timestamp data from API into a json file.
@@ -199,7 +199,8 @@ func ComputeAverageAnDSort(directory string, isoCode string) {
 	}
 	var diffs []float64
 	for _, ts := range timestamps {
-		if ts.Verse != "1" && ts.BBAbsent == false {
+		//if ts.Verse != "1" && ts.BBAbsent == false {
+		if ts.BBAbsent == false {
 			diffs = append(diffs, ts.BeginTSDiff)
 		}
 	}
