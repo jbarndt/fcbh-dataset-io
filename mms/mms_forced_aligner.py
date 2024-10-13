@@ -38,6 +38,7 @@ class MMSForcedAligner:
         self.tokenizer = bundle.get_tokenizer()
         self.aligner = bundle.get_aligner()
         self.uroman = ur.Uroman() # load uroman
+        # print(bundle.get_dict())
 
 
     ## convert text output from the dataset program to a map keyed on book:chapter
@@ -68,8 +69,10 @@ class MMSForcedAligner:
             text = re.sub("([^a-z' ])", " ", text)
             text = re.sub(' +', ' ', text)
             text = text.strip()
-            textList.append(text)
-            refList.append(verse["verse_str"])
+            words = text.split()
+            for i in range(0, len(words), 1):
+                textList.append(words[i])
+                refList.append(verse["verse_str"] + "\t" + str(i))
         return textList, refList
 
     ## load a chapter audio file, converting to .wav if needed
@@ -99,18 +102,21 @@ class MMSForcedAligner:
     def align(self, lang: str, book: str, chapter: int, audioPath: str, jsonText: str):
         transcript, references = self.prepareText(lang, jsonText)
         waveform, sample_rate = self.prepareAudio(audioPath)
-        #tokens = self.tokenizer(transcript)
         with torch.inference_mode():
             emission, _ = self.model(waveform.to(self.device))
             token_spans = self.aligner(emission[0], self.tokenizer(transcript))
         num_frames = emission.size(1)
         ratio = waveform.size(1) / num_frames / sample_rate
         result = []
+        assert len(token_spans) == len(transcript)
+        assert len(token_spans) == len(references)
         for spans, chars, ref in zip(token_spans, transcript, references):
             timestamp = {}
             timestamp["book"] = book
             timestamp["chapter"] = chapter
-            timestamp["verse"] = ref
+            verse, seq = ref.split("\t")
+            timestamp["verse"] = verse
+            timestamp["seq"] = seq
             timestamp["start"] = round(spans[0].start * ratio, 3)
             timestamp["end"] = round(spans[-1].end * ratio, 3)
             score = sum(s.score * len(s) for s in spans) / sum(len(s) for s in spans)
@@ -119,7 +125,37 @@ class MMSForcedAligner:
             result.append(timestamp)
             print("spans", spans)
             print("timestamp", timestamp)
+        return result
+
+
+    # compute the timestamp and word alignment of each word
+    def word_align(self, lang: str, book: str, chapter: int, audioPath: str, jsonText: str):
+        result = self.align(lang, book, chapter, audioPath, jsonText)
         return json.dumps(result, indent=2)
+
+
+    # compute the timestamp and word alignment of each verse
+    def verse_align(self, lang: str, book: str, chapter: int, audioPath: str, jsonText: str):
+        words = self.align(lang, book, chapter, audioPath, jsonText)
+        scores = []
+        result = []
+        for i in range(0, len(words), 1):
+            word = words[i]
+            if word["seq"] == "0":
+                if i > 0:
+                    timestamp["score"] = round(sum(s for s in scores) / len(scores), 2)
+                    result.append(timestamp)
+                timestamp = word
+                word.pop("seq")
+                scores.append(word["score"])
+            else:
+                timestamp["end"] = word["end"]
+                scores.append(word["score"])
+                timestamp["text"] += " " + word["text"]
+        timestamp["score"] = round(sum(s for s in scores) / len(scores), 2)
+        result.append(timestamp)
+        return json.dumps(result, indent=2)
+
 
 
 if __name__ == "__main__":
@@ -133,7 +169,7 @@ if __name__ == "__main__":
     #waveform, sample_rate = mms_fa.prepareAudio(audioFile)
     #print("len", len(waveform), "rate", sample_rate)
     textMap = mms_fa.loadText(textFile)
-    result = mms_fa.align('npi', 'MRK', 1, audioFile, textMap['MRK:1'])
+    result = mms_fa.verse_align('npi', 'MRK', 1, audioFile, textMap['MRK:1'])
     print(result)
 
 
