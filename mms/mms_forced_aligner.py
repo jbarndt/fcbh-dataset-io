@@ -123,8 +123,8 @@ class MMSForcedAligner:
             timestamp["score"] = round(score, 2)
             timestamp["text"] = chars
             result.append(timestamp)
-            print("spans", spans)
-            print("timestamp", timestamp)
+            # print("spans", spans)
+            #print("timestamp", timestamp)
         return result
 
 
