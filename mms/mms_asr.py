@@ -7,25 +7,29 @@ import torch
 # Documentation used to write this program
 # https://huggingface.co/docs/transformers/main/en/model_doc/mms
 
+def isASRLanguage(lang:str):
+    model_id = "facebook/mms-1b-all"
+    processor = AutoProcessor.from_pretrained(model_id)
+    dict = processor.tokenizer.vocab.keys()
+    for l in dict:
+        if l == lang:
+            return True
+    return False
+
+
 class MMSAutoSpeechRecognition:
 
-    def __init__(self):
-        #model_id = "facebook/mms-1b-all"
-        #target_lang = "npi"
-        #self.processor = AutoProcessor.from_pretrained(model_id, target_lang=target_lang)
-        #self.model = Wav2Vec2ForCTC.from_pretrained(model_id, target_lang=target_lang, ignore_mismatched_sizes=True)
+    def __init__(self, lang: str):
         model_id = "facebook/mms-1b-all"
-        self.processor = AutoProcessor.from_pretrained(model_id)
-        self.model = Wav2Vec2ForCTC.from_pretrained(model_id)
+        self.processor = AutoProcessor.from_pretrained(model_id, target_lang=lang)
+        self.model = Wav2Vec2ForCTC.from_pretrained(model_id, target_lang=lang, ignore_mismatched_sizes=True)
 
 
-    def recognize(self, lang: str, audioFile: str):
+    def recognize(self, audioFile: str):
         fromDict = Dataset.from_dict({"audio": [audioFile]})
         streamData = fromDict.cast_column("audio", Audio(sampling_rate=16000))
         sample = next(iter(streamData))["audio"]["array"]
 
-        self.processor.tokenizer.set_target_lang(lang)
-        self.model.load_adapter(lang)
         inputs = self.processor(sample, sampling_rate=16_000, return_tensors="pt")
         with torch.no_grad():
             outputs = self.model(**inputs).logits
@@ -35,7 +39,9 @@ class MMSAutoSpeechRecognition:
 
 
 if __name__ == "__main__":
-    asr = MMSAutoSpeechRecognition()
+    ans = isASRLanguage("npi")
+    print(ans)
+    asr = MMSAutoSpeechRecognition("npi")
     audioFile = os.environ.get("FCBH_DATASET_FILES") + "/NPIDPI/NPIDPIN1DA/B02___01_Mark________NPIDPIN1DA.wav"
-    transcription = asr.recognize("npi", audioFile)
+    transcription = asr.recognize(audioFile)
     print(transcription)
