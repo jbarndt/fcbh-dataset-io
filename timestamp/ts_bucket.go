@@ -15,7 +15,6 @@ import (
 )
 
 /*
-This file has been copied to the timestamp directory
 This file was written to support testing.
 It provides methods to access Sandeep's bucket of timestamp data
 If moved to production, there is significant error handling to be done.
