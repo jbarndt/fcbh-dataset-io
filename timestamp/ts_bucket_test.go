@@ -1,4 +1,4 @@
-package cli_misc
+package timestamp
 
 import (
 	"context"
@@ -9,12 +9,24 @@ import (
 // This test is not working...
 func TestTSBucket(t *testing.T) {
 	ctx := context.Background()
-	ts := NewTSBucket(ctx)
-	key := ts.GetKey(ScriptTS, `ENGWEBN2DA`, `REV`, 22)
+	ts, status := NewTSBucket(ctx)
+	if status.IsErr {
+		t.Fatal(status)
+	}
+	key, status := ts.GetKey(ScriptTS, `ENGWEBN2DA`, `REV`, 22)
+	if status.IsErr {
+		t.Fatal(status)
+	}
 	fmt.Println(key)
-	object := ts.GetObject(TSBucketName, key)
+	object, status := ts.GetObject(TSBucketName, key)
+	if status.IsErr {
+		t.Fatal(status)
+	}
 	fmt.Println(string(object))
-	timestamps := ts.GetTimestamps(ScriptTS, `ENGWEBN2DA`, `REV`, 22)
+	timestamps, status := ts.GetTimestamps(ScriptTS, `ENGWEBN2DA`, `REV`, 22)
+	if status.IsErr {
+		t.Fatal(status)
+	}
 	for _, time := range timestamps {
 		fmt.Println(time)
 	}
@@ -22,12 +34,24 @@ func TestTSBucket(t *testing.T) {
 
 func TestTSBucket_GetTimestamps(t *testing.T) {
 	ctx := context.Background()
-	ts := NewTSBucket(ctx)
-	key := ts.GetKey(VerseAeneas, `ENGWEBN2DA`, `REV`, 22)
+	ts, status := NewTSBucket(ctx)
+	if status.IsErr {
+		t.Fatal(status)
+	}
+	key, status := ts.GetKey(VerseAeneas, `ENGWEBN2DA`, `REV`, 22)
+	if status.IsErr {
+		t.Fatal(status)
+	}
 	fmt.Println(key)
-	object := ts.GetObject(TSBucketName, key)
+	object, status := ts.GetObject(TSBucketName, key)
+	if status.IsErr {
+		t.Fatal(status)
+	}
 	fmt.Println(string(object))
-	timestamps := ts.GetTimestamps(VerseAeneas, `ENGWEBN2DA`, `REV`, 22)
+	timestamps, status := ts.GetTimestamps(VerseAeneas, `ENGWEBN2DA`, `REV`, 22)
+	if status.IsErr {
+		t.Fatal(status)
+	}
 	for _, time := range timestamps {
 		fmt.Println(time)
 	}
