@@ -6,7 +6,6 @@ import (
 	"dataset"
 	log "dataset/logger"
 	"github.com/garygriswold/lang_tree/search"
-	"io"
 	"os/exec"
 	"strings"
 )
@@ -39,9 +38,9 @@ func checkLanguage(ctx context.Context, lang string, sttLang string) (string, da
 }
 
 // callPythonScript will exec the python script, and setup pipes on stdin and stdout
-func callStdIOScript(ctx context.Context, command string, arg ...string) (io.Writer, io.Reader, dataset.Status) {
-	var writer io.Writer
-	var reader io.Reader
+func callStdIOScript(ctx context.Context, command string, arg ...string) (*bufio.Writer, *bufio.Reader, dataset.Status) {
+	var writer *bufio.Writer
+	var reader *bufio.Reader
 	var status dataset.Status
 	cmd := exec.Command(command, arg...)
 	stdin, err := cmd.StdinPipe()

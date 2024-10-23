@@ -96,12 +96,22 @@ func (t *TSBucket) GetTimestamps(tsType string, mediaId string, bookId string, c
 	if status.IsErr {
 		return results, status
 	}
-	for _, row := range strings.Split(string(object), "\n") {
-		var ts db.Audio
-		ts.Book = bookId
-		ts.ChapterNum = chapterNum
+	for i, row := range strings.Split(string(object), "\n") {
+		if i == 0 { // Add an entry for chapter heading
+			var ts db.Audio
+			ts.Book = bookId
+			ts.ChapterNum = chapterNum
+			ts.VerseStr = "0"
+			ts.BeginTS = 0.0
+			parts := strings.Split(row, "\t")
+			ts.EndTS, _ = strconv.ParseFloat(parts[0], 64)
+			results = append(results, ts)
+		}
 		parts := strings.Split(row, "\t")
 		if len(parts) >= 3 {
+			var ts db.Audio
+			ts.Book = bookId
+			ts.ChapterNum = chapterNum
 			ts.VerseStr = strings.TrimLeft(parts[2], `0`)
 			ts.BeginTS, _ = strconv.ParseFloat(parts[0], 64)
 			ts.EndTS, _ = strconv.ParseFloat(parts[1], 64)
@@ -118,7 +128,7 @@ func (t *TSBucket) GetObject(bucket string, key string) ([]byte, dataset.Status)
 		Key:    aws.String(key),
 	})
 	if err != nil {
-		log.Warn(t.ctx, err)
+		status = log.Error(t.ctx, 400, err, "Error getting S3 bucket object.")
 		return []byte{}, status
 	}
 	defer response.Body.Close()
