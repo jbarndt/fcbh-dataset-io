@@ -69,7 +69,7 @@ func (a *MMSASR) processFile(file input.InputFile, writer *bufio.Writer, reader 
 	if status.IsErr {
 		return status
 	}
-	timestamps, status = timestamp.ChopByTimestamp(a.ctx, tempDir, file, timestamps)
+	timestamps, status = timestamp.ChopByTimestamp(a.ctx, tempDir, wavFile, timestamps)
 	for i, ts := range timestamps {
 		timestamps[i].AudioChapter = file.Filename
 		timestamps[i].AudioChapterWav = wavFile

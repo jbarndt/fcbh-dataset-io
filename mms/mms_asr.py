@@ -16,26 +16,6 @@ def isSupportedLanguage(modelId:str, lang:str):
     return False
 
 
-#class MMSAutoSpeechRecognition:
-
-#    def __init__(self, lang: str):
-#        model_id = "facebook/mms-1b-all"
-#        self.processor = AutoProcessor.from_pretrained(model_id, target_lang=lang)
-#        self.model = Wav2Vec2ForCTC.from_pretrained(model_id, target_lang=lang, ignore_mismatched_sizes=True)
-
-
-#    def recognize(self, audioFile: str):
-#        fromDict = Dataset.from_dict({"audio": [audioFile]})
-#        streamData = fromDict.cast_column("audio", Audio(sampling_rate=16000))
-#        sample = next(iter(streamData))["audio"]["array"]
-
-#        inputs = self.processor(sample, sampling_rate=16_000, return_tensors="pt")
-#        with torch.no_grad():
-#            outputs = self.model(**inputs).logits
-#        ids = torch.argmax(outputs, dim=-1)[0]
-#        transcription = self.processor.decode(ids)
-#        return transcription
-
 if len(sys.argv) < 2:
     print("Usage: mms_asr.py  {iso639-3 code}")
     sys.exit(1)
@@ -61,14 +41,6 @@ for line in sys.stdin:
     sys.stdout.write("\n")
     sys.stdout.flush()
 
-
-#if __name__ == "__main__":
-#    ans = isASRLanguage("npi")
-#    print(ans)
-#    asr = MMSAutoSpeechRecognition("npi")
-#    audioFile = os.environ.get("FCBH_DATASET_FILES") + "/NPIDPI/NPIDPIN1DA/B02___01_Mark________NPIDPIN1DA.wav"
-#    transcription = asr.recognize(audioFile)
-#    print(transcription)
 
 #$HOME + "/NPIDPI/NPIDPIN1DA/B02___01_Mark________NPIDPIN1DA.wav"
 

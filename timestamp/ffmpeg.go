@@ -15,25 +15,25 @@ import (
 )
 
 // ChopByTimestamp uses timestamps to chop timestamps into files, and puts the filenames in timestamp record.
-func ChopByTimestamp(ctx context.Context, tempDir string, file input.InputFile, timestamps []db.Audio) ([]db.Audio, dataset.Status) {
+func ChopByTimestamp(ctx context.Context, tempDir string, inputFile string, timestamps []db.Audio) ([]db.Audio, dataset.Status) {
 	var results []db.Audio
 	var status dataset.Status
 	var command []string
-	command = append(command, `-i`, file.FilePath())
+	command = append(command, `-i`, inputFile)
 	command = append(command, `-codec:a`, `copy`)
 	command = append(command, `-y`)
 	for _, ts := range timestamps {
 		if ts.BeginTS == 0.0 && ts.EndTS == 0.0 {
 			continue
 		}
-		beginTS := strconv.FormatFloat(ts.BeginTS, 'f', 2, 64)
+		beginTS := strconv.FormatFloat(ts.BeginTS, 'f', 3, 64)
 		command = append(command, `-ss`, beginTS)
 		if ts.EndTS != 0.0 {
-			endTS := strconv.FormatFloat(ts.EndTS, 'f', 2, 64)
+			endTS := strconv.FormatFloat(ts.EndTS, 'f', 3, 64)
 			command = append(command, `-to`, endTS)
 		}
 		verseFilename := fmt.Sprintf("verse_%s_%d_%s_%s.wav",
-			file.BookId, file.Chapter, ts.VerseStr, beginTS)
+			ts.Book, ts.ChapterNum, ts.VerseStr, beginTS)
 		ts.AudioVerse = filepath.Join(tempDir, verseFilename)
 		command = append(command, `-c`, `copy`, ts.AudioVerse)
 		results = append(results, ts)
