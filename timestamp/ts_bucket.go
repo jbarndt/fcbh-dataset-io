@@ -86,8 +86,8 @@ func (t *TSBucket) ListPrefix(bucket, prefix string) ([]string, dataset.Status) 
 	return results, status
 }
 
-func (t *TSBucket) GetTimestamps(tsType string, mediaId string, bookId string, chapterNum int) ([]Timestamp, dataset.Status) {
-	var results []Timestamp
+func (t *TSBucket) GetTimestamps(tsType string, mediaId string, bookId string, chapterNum int) ([]db.Audio, dataset.Status) {
+	var results []db.Audio
 	key, status := t.GetKey(tsType, mediaId, bookId, chapterNum)
 	if status.IsErr {
 		return results, status
@@ -97,12 +97,12 @@ func (t *TSBucket) GetTimestamps(tsType string, mediaId string, bookId string, c
 		return results, status
 	}
 	for _, row := range strings.Split(string(object), "\n") {
-		var ts Timestamp
+		var ts db.Audio
 		ts.Book = bookId
-		ts.Chapter = chapterNum
+		ts.ChapterNum = chapterNum
 		parts := strings.Split(row, "\t")
 		if len(parts) >= 3 {
-			ts.Verse = strings.TrimLeft(parts[2], `0`)
+			ts.VerseStr = strings.TrimLeft(parts[2], `0`)
 			ts.BeginTS, _ = strconv.ParseFloat(parts[0], 64)
 			ts.EndTS, _ = strconv.ParseFloat(parts[1], 64)
 			results = append(results, ts)

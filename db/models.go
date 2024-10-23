@@ -66,3 +66,19 @@ type MFCC struct {
 	Cols int
 	MFCC [][]float32
 }
+
+type Audio struct {
+	Book         string  `json:"book"`
+	ChapterNum   int     `json:"chapter_num"`
+	ChapterEnd   int     `json:"chapter_end"`
+	VerseStr     string  `json:"verse_str"`
+	VerseEnd     string  `json:"verse_end"`
+	VerseSeq     int     `json:"verse_seq"`
+	BeginTS      float64 `json:"begin_ts"`
+	EndTS        float64 `json:"end_ts"`
+	Score        float64 `json:"score"`
+	Uroman       string  `json:"uroman"` // Is this needed
+	Text         string  `json:"text"`
+	AudioChapter string  `json:"audio_chapter"`
+	AudioVerse   string  `json:"-"` // This exists temporarily
+}

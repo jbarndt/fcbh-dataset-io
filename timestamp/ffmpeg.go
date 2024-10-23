@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"dataset"
+	"dataset/db"
 	"dataset/input"
 	log "dataset/logger"
 	"fmt"
@@ -13,8 +14,8 @@ import (
 )
 
 // ChopByTimestamp uses timestamps to chop timestamps into files, and puts the filenames in timestamp record.
-func ChopByTimestamp(ctx context.Context, tempDir string, file input.InputFile, timestamps []Timestamp) ([]Timestamp, dataset.Status) {
-	var results []Timestamp
+func ChopByTimestamp(ctx context.Context, tempDir string, file input.InputFile, timestamps []db.Audio) ([]db.Audio, dataset.Status) {
+	var results []db.Audio
 	var status dataset.Status
 	var command []string
 	command = append(command, `-i`, file.FilePath())
@@ -31,7 +32,7 @@ func ChopByTimestamp(ctx context.Context, tempDir string, file input.InputFile, 
 			command = append(command, `-to`, endTS)
 		}
 		ts.AudioVerse = fmt.Sprintf("verse_%s_%d_%s_%s.mp3",
-			file.BookId, file.Chapter, ts.Verse, beginTS)
+			file.BookId, file.Chapter, ts.VerseStr, beginTS)
 		outputPath := filepath.Join(tempDir, ts.AudioVerse)
 		command = append(command, `-c`, `copy`, outputPath)
 		results = append(results, ts)
