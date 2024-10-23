@@ -52,7 +52,7 @@ func ChopByTimestamp(ctx context.Context, tempDir string, file input.InputFile, 
 
 // ConvertMp3toWav
 func ConvertMp3ToWav(ctx context.Context, tempDir string, file input.InputFile) (string, dataset.Status) {
-	// ffmpeg -I filename.mp3 -acodec pcm_s16le -ar 16000 output.wav
+	// ffmpeg -i filename.mp3 -acodec pcm_s16le -ar 16000 output.wav
 	var outputPath string
 	var status dataset.Status
 	if filepath.Ext(file.Filename) == ".wav" {
@@ -62,7 +62,7 @@ func ConvertMp3ToWav(ctx context.Context, tempDir string, file input.InputFile) 
 		outputPath = filepath.Join(tempDir, filename+".wav")
 		ffMpegPath := `ffmpeg`
 		cmd := exec.Command(ffMpegPath,
-			file.FilePath(),
+			`-i`, file.FilePath(),
 			`-acodec`, `pcm_s16le`,
 			`-ar`, `16000`,
 			outputPath)
