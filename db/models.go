@@ -80,6 +80,6 @@ type Audio struct {
 	Uroman          string  `json:"uroman"` // Is this needed
 	Text            string  `json:"text"`
 	AudioChapter    string  `json:"audio_chapter"`
-	AudioChapterWav string  `json:"-"` // This is transient
-	AudioVerse      string  `json:"-"` // This is transient
+	AudioChapterWav string  `json:"-"` // Transient
+	AudioVerseWav   string  `json:"-"` // Transient
 }

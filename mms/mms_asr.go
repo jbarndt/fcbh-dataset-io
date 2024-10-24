@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 )
 
 type MMSASR struct {
@@ -58,7 +59,10 @@ func (a *MMSASR) processFile(file input.InputFile, writer *bufio.Writer, reader 
 		return log.Error(a.ctx, 500, err, `Error creating temp dir`)
 	}
 	defer os.RemoveAll(tempDir)
-	wavFile, status := timestamp.ConvertMp3ToWav(a.ctx, tempDir, file)
+	wavFile, status := timestamp.ConvertMp3ToWav(a.ctx, tempDir, file.FilePath())
+	if status.IsErr {
+		return status
+	}
 	var bucket timestamp.TSBucket
 	bucket, status = timestamp.NewTSBucket(a.ctx)
 	if status.IsErr {
@@ -73,7 +77,7 @@ func (a *MMSASR) processFile(file input.InputFile, writer *bufio.Writer, reader 
 	for i, ts := range timestamps {
 		timestamps[i].AudioChapter = file.Filename
 		timestamps[i].AudioChapterWav = wavFile
-		_, err = writer.WriteString(ts.AudioVerse + "\n")
+		_, err = writer.WriteString(ts.AudioVerseWav + "\n")
 		if err != nil {
 			return log.Error(a.ctx, 500, err, "Error writing to mms_asr.py")
 		}
@@ -85,6 +89,7 @@ func (a *MMSASR) processFile(file input.InputFile, writer *bufio.Writer, reader 
 		if err2 != nil {
 			return log.Error(a.ctx, 500, err2, `Error reading mms_asr.py response`)
 		}
+		response = strings.TrimRight(response, "\n")
 		fmt.Println(ts.Book, ts.ChapterNum, ts.VerseStr, response)
 		timestamps[i].Text = response
 	}
