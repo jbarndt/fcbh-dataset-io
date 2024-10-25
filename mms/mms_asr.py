@@ -17,7 +17,7 @@ def isSupportedLanguage(modelId:str, lang:str):
 
 
 if len(sys.argv) < 2:
-    print("Usage: mms_asr.py  {iso639-3 code}")
+    print("Usage: mms_asr.py  {iso639-3}")
     sys.exit(1)
 lang = sys.argv[1]
 modelId = "facebook/mms-1b-all"

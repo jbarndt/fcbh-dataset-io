@@ -46,13 +46,11 @@ func (a *MMSASR) ProcessFiles(files []input.InputFile) dataset.Status {
 			return status
 		}
 	}
-	// when entirely done, send it an exit message, such as ctrl-D
 	return status
 }
 
 // processFile
 func (a *MMSASR) processFile(file input.InputFile, writer *bufio.Writer, reader *bufio.Reader) dataset.Status {
-	//var scripts []db.Script
 	var status dataset.Status
 	tempDir, err := os.MkdirTemp(os.Getenv(`FCBH_DATASET_TMP`), "mms_asr_")
 	if err != nil {
