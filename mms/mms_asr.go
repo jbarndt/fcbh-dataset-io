@@ -63,11 +63,20 @@ func (a *MMSASR) processFile(file input.InputFile, writer *bufio.Writer, reader 
 	if status.IsErr {
 		return status
 	}
-	var bucket timestamp.TSBucket
-	bucket, status = timestamp.NewTSBucket(a.ctx)
-	if status.IsErr {
-		return status
-	}
+	/*
+		// Get Timestamps from Sandeep's bucket
+		var bucket timestamp.TSBucket
+		bucket, status = timestamp.NewTSBucket(a.ctx)
+		if status.IsErr {
+			return status
+		}
+		var timestamps []db.Audio
+		timestamps, status = bucket.GetTimestamps(timestamp.VerseAeneas, file.MediaId, file.BookId, file.Chapter)
+		if status.IsErr {
+			return status
+		}
+	*/
+	bucket := timestamp.NewWahaTimestamper(a.ctx)
 	var timestamps []db.Audio
 	timestamps, status = bucket.GetTimestamps(timestamp.VerseAeneas, file.MediaId, file.BookId, file.Chapter)
 	if status.IsErr {
