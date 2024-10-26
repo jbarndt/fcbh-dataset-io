@@ -75,8 +75,8 @@ def align(book: str, chapter: int, audioPath: str, verses):
     assert len(token_spans) == len(references)
     for spans, chars, ref in zip(token_spans, transcript, references):
         timestamp = {}
-        timestamp["book_id"] = book
-        timestamp["chapter_num"] = chapter
+        #timestamp["book_id"] = book
+        #timestamp["chapter_num"] = chapter
         verse, seq = ref.split("\t")
         timestamp["verse_str"] = verse
         timestamp["word_seq"] = seq
@@ -85,7 +85,7 @@ def align(book: str, chapter: int, audioPath: str, verses):
         score = sum(s.score * len(s) for s in spans) / sum(len(s) for s in spans)
         timestamp["fa_score"] = round(score, 2)
         timestamp["uroman"] = chars
-        timestamp["audio_file"] = os.path.basename(audioPath)
+        #timestamp["audio_file"] = os.path.basename(audioPath)
         result.append(timestamp)
     return result
 
