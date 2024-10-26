@@ -26,16 +26,6 @@ type MMSFA_Verses struct {
 	Text  string `json:"text"`
 }
 
-type MMSFA_Output struct {
-	BookId  string  `json:"book"`
-	Chapter int     `json:"chapter"`
-	Verse   string  `json:"verse"`
-	Start   float64 `json:"start"`
-	End     float64 `json:"end"`
-	Score   float64 `json:"score"`
-	Text    string  `json:"text"`
-}
-
 type MMSFA struct {
 	ctx     context.Context
 	conn    db.DBAdapter // This database adapter must contain the text to be processed
@@ -101,7 +91,8 @@ func (m *MMSFA) processFile(file input.InputFile, writer *bufio.Writer, reader *
 	if err != nil {
 		return log.Error(m.ctx, 500, err, `Error marshalling json`)
 	}
-	err2 := os.WriteFile("engweb_fa_test.json", content, 0644)
+	// temp
+	err2 := os.WriteFile("engweb_fa_inp.json", content, 0644)
 	if err2 != nil {
 		panic(err2)
 	}
@@ -117,12 +108,13 @@ func (m *MMSFA) processFile(file input.InputFile, writer *bufio.Writer, reader *
 	if err2 != nil {
 		return log.Error(m.ctx, 500, err2, `Error reading mms_fa.py response`)
 	}
+	fmt.Println("response", response)
 	response = strings.TrimRight(response, "\n")
-	var output MMSFA_Output
+	var output []db.Audio
 	err = json.Unmarshal([]byte(response), &output)
 	if err != nil {
 		return log.Error(m.ctx, 500, err, `Error unmarshalling json`)
 	}
-	fmt.Println(output)
+	fmt.Println("output", output)
 	return status
 }

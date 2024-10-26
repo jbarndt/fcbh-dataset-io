@@ -33,7 +33,7 @@ func ChopByTimestamp(ctx context.Context, tempDir string, inputFile string, time
 			command = append(command, `-to`, endTS)
 		}
 		verseFilename := fmt.Sprintf("verse_%s_%d_%s_%s%s",
-			ts.Book, ts.ChapterNum, ts.VerseStr, beginTS, fileExt)
+			ts.BookId, ts.ChapterNum, ts.VerseStr, beginTS, fileExt)
 		ts.AudioVerseWav = filepath.Join(tempDir, verseFilename)
 		command = append(command, `-c`, `copy`, ts.AudioVerseWav)
 		results = append(results, ts)

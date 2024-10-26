@@ -53,9 +53,9 @@ func (w *WahaTimestamper) GetTimestamps(tsType string, mediaId string, bookId st
 	var chapter = response[0]
 	for _, seg := range chapter.Sections {
 		var aud db.Audio
-		aud.Book = bookId
+		aud.BookId = bookId
 		aud.ChapterNum = chapterNum
-		aud.AudioChapter = chapter.AudioFile
+		aud.AudioFile = chapter.AudioFile
 		aud.VerseStr = seg.VerseId
 		aud.Text = seg.Text
 		fmt.Println(aud.VerseStr, aud.Text)

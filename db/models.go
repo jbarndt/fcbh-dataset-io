@@ -68,7 +68,7 @@ type MFCC struct {
 }
 
 type Audio struct {
-	Book            string  `json:"book"`
+	BookId          string  `json:"book_id"`
 	ChapterNum      int     `json:"chapter_num"`
 	ChapterEnd      int     `json:"chapter_end"`
 	VerseStr        string  `json:"verse_str"`
@@ -76,10 +76,10 @@ type Audio struct {
 	VerseSeq        int     `json:"verse_seq"`
 	BeginTS         float64 `json:"begin_ts"`
 	EndTS           float64 `json:"end_ts"`
-	Score           float64 `json:"score"`
-	Uroman          string  `json:"uroman"` // Is this needed
+	FAScore         float64 `json:"fa_score"`
+	Uroman          string  `json:"uroman"` // Is this useful?
 	Text            string  `json:"text"`
-	AudioChapter    string  `json:"audio_chapter"`
+	AudioFile       string  `json:"audio_file"`
 	AudioChapterWav string  `json:"-"` // Transient
 	AudioVerseWav   string  `json:"-"` // Transient
 }

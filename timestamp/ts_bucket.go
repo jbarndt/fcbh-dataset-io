@@ -99,7 +99,7 @@ func (t *TSBucket) GetTimestamps(tsType string, mediaId string, bookId string, c
 	for i, row := range strings.Split(string(object), "\n") {
 		if i == 0 { // Add an entry for chapter heading
 			var ts db.Audio
-			ts.Book = bookId
+			ts.BookId = bookId
 			ts.ChapterNum = chapterNum
 			ts.VerseStr = "0"
 			ts.BeginTS = 0.0
@@ -110,7 +110,7 @@ func (t *TSBucket) GetTimestamps(tsType string, mediaId string, bookId string, c
 		parts := strings.Split(row, "\t")
 		if len(parts) >= 3 {
 			var ts db.Audio
-			ts.Book = bookId
+			ts.BookId = bookId
 			ts.ChapterNum = chapterNum
 			ts.VerseStr = strings.TrimLeft(parts[2], `0`)
 			ts.BeginTS, _ = strconv.ParseFloat(parts[0], 64)

@@ -82,7 +82,7 @@ func (a *MMSASR) processFile(file input.InputFile, writer *bufio.Writer, reader 
 	}
 	timestamps, status = timestamp.ChopByTimestamp(a.ctx, tempDir, wavFile, timestamps)
 	for i, ts := range timestamps {
-		timestamps[i].AudioChapter = file.Filename
+		timestamps[i].AudioFile = file.Filename
 		timestamps[i].AudioChapterWav = wavFile
 		_, err = writer.WriteString(ts.AudioVerseWav + "\n")
 		if err != nil {
@@ -97,7 +97,7 @@ func (a *MMSASR) processFile(file input.InputFile, writer *bufio.Writer, reader 
 			return log.Error(a.ctx, 500, err2, `Error reading mms_asr.py response`)
 		}
 		response = strings.TrimRight(response, "\n")
-		fmt.Println(ts.Book, ts.ChapterNum, ts.VerseStr, response)
+		fmt.Println(ts.BookId, ts.ChapterNum, ts.VerseStr, response)
 		timestamps[i].Text = response
 	}
 	//a.conn.InsertTimestamps(timestamps)
