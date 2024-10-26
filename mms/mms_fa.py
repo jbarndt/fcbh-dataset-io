@@ -21,22 +21,6 @@ import ffmpeg
 # pip install soundfile # needed for loading audio files
 # pip install ffmpeg-python # needed for audio file conversion to wav
 
-
-# convert text output from the dataset program to a map keyed on book:chapter
-#def loadText(textPath:str):
-#    with open(textPath, 'r') as f:
-#        text = json.load(f)
-#    result = {}
-#    for verse in text:
-#        ref = verse['book_id'] + ':' + str(verse['chapter_num'])
-#        list = result.get(ref, [])
-#        list.append(verse)
-#        result[ref] = list
-#    jsonMap = {}
-#    for ref, verses in result.items():
-#        jsonMap[ref] = json.dumps(verses, indent=2)
-#    return jsonMap
-
 # convert the text of a chapter to a list of normalized and uroman verse text and references
 def prepareText(lang:str, verses):
     textList = []
@@ -58,7 +42,6 @@ def prepareText(lang:str, verses):
 # load a chapter audio file, converting to .wav if needed
 def prepareAudio(audioPath: str):
     filename, ext = os.path.splitext(audioPath)
-    print("filename", filename, "ext", ext)
     if ext == ".mp3":
         outputFile = filename + ".wav"
         stream = ffmpeg.input(audioPath)
@@ -72,7 +55,7 @@ def prepareAudio(audioPath: str):
     elif ext == ".wav":
         outputFile = audioPath
     else:
-        print("This audio format is not supported.", audioPath)
+        sys.stderr.write("This audio format is not supported. " + audioPath + "\n")
         os.exit(1)
     waveform, sample_rate = torchaudio.load(outputFile)#, frame_offset=int(0.5 * bundle.sample_rate), num_frames=int(2.5 * bundle.sample_rate))
     assert sample_rate == bundle.sample_rate
@@ -93,49 +76,48 @@ def align(book: str, chapter: int, audioPath: str, verses):
     for spans, chars, ref in zip(token_spans, transcript, references):
         timestamp = {}
         timestamp["book_id"] = book
-        timestamp["chapter"] = chapter
+        timestamp["chapter_num"] = chapter
         verse, seq = ref.split("\t")
         timestamp["verse_str"] = verse
-        timestamp["verse_seq"] = seq
+        timestamp["word_seq"] = seq
         timestamp["begin_ts"] = round(spans[0].start * ratio, 3)
         timestamp["end_ts"] = round(spans[-1].end * ratio, 3)
         score = sum(s.score * len(s) for s in spans) / sum(len(s) for s in spans)
-        timestamp["score"] = round(score, 2)
-        timestamp["text"] = chars
+        timestamp["fa_score"] = round(score, 2)
+        timestamp["uroman"] = chars
+        timestamp["audio_file"] = os.path.basename(audioPath)
         result.append(timestamp)
-        # print("spans", spans)
-        #print("timestamp", timestamp)
     return result
 
 # compute the timestamp and word alignment of each word
-def word_align(book: str, chapter: int, audioPath: str, verses):
-    result = align(book, chapter, audioPath, verses)
-    return result
+#def word_align(book: str, chapter: int, audioPath: str, verses):
+#    result = align(book, chapter, audioPath, verses)
+#    return result
 
 # compute the timestamp and word alignment of each verse
-def verse_align(book: str, chapter: int, audioPath: str, verses):
-    words = align(book, chapter, audioPath, verses)
-    scores = []
-    result = []
-    for i in range(0, len(words), 1):
-        word = words[i]
-        if word["verse_seq"] == "0":
-            if i > 0:
-                timestamp["score"] = round(sum(s for s in scores) / len(scores), 2)
-                result.append(timestamp)
-            timestamp = word
-            word.pop("verse_seq")
-            scores.append(word["score"])
-        else:
-            timestamp["end_ts"] = word["end_ts"]
-            scores.append(word["score"])
-            timestamp["text"] += " " + word["text"]
-    timestamp["score"] = round(sum(s for s in scores) / len(scores), 2)
-    result.append(timestamp)
-    return result
+#def verse_align(book: str, chapter: int, audioPath: str, verses):
+#    words = align(book, chapter, audioPath, verses)
+#    scores = []
+#    result = []
+#    for i in range(0, len(words), 1):
+#        word = words[i]
+#        if word["word_seq"] == "0":
+#            if i > 0:
+#                timestamp["fa_score"] = round(sum(s for s in scores) / len(scores), 2)
+#                result.append(timestamp)
+#            timestamp = word
+#            word.pop("word_seq")
+#            scores.append(word["fa_score"])
+#        else:
+#            timestamp["end_ts"] = word["end_ts"]
+#            scores.append(word["fa_score"])
+#            timestamp["uroman"] += " " + word["uroman"]
+#    timestamp["fa_score"] = round(sum(s for s in scores) / len(scores), 2)
+#    result.append(timestamp)
+#    return result
 
 if len(sys.argv) < 2:
-    print("Usage: mms_fa.py  {iso639-3}")
+    sys.stderr.write("Usage: mms_fa.py  {iso639-3}\n")
     sys.exit(1)
 lang = sys.argv[1]
 if torch.cuda.is_available():
@@ -144,7 +126,6 @@ elif torch.backends.mps.is_available():
     device = "cpu" ## mps is not yet supported
 else:
     device = "cpu"
-#print("device", device)
 model = bundle.get_model(with_star=False)
 model.to(device)
 tokenizer = bundle.get_tokenizer()
@@ -152,14 +133,14 @@ aligner = bundle.get_aligner()
 uroman = ur.Uroman() # load uroman
 for line in sys.stdin:
     inp = json.loads(line)
-    results = verse_align(inp["book_id"], inp["chapter"], inp["audio_file"], inp["verses"])
-    output = json.dumps(results, indent=2)
+    results = align(inp["book_id"], inp["chapter"], inp["audio_file"], inp["verses"])
+    output = json.dumps(results)
     sys.stdout.write(output)
     sys.stdout.write("\n")
     sys.stdout.flush()
 
 # Testing
 # conda activate mms_fa
-# time python mms_fa.py eng < engweb_fa_test.json
+# time python mms_fa.py eng < engweb_fa_inp.json > engweb_fa_out.json
 
 
