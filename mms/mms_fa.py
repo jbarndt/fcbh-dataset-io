@@ -79,7 +79,7 @@ def align(book: str, chapter: int, audioPath: str, verses):
         #timestamp["chapter_num"] = chapter
         verse, seq = ref.split("\t")
         timestamp["verse_str"] = verse
-        timestamp["word_seq"] = seq
+        timestamp["word_seq"] = int(seq)
         timestamp["begin_ts"] = round(spans[0].start * ratio, 3)
         timestamp["end_ts"] = round(spans[-1].end * ratio, 3)
         score = sum(s.score * len(s) for s in spans) / sum(len(s) for s in spans)
@@ -88,33 +88,6 @@ def align(book: str, chapter: int, audioPath: str, verses):
         #timestamp["audio_file"] = os.path.basename(audioPath)
         result.append(timestamp)
     return result
-
-# compute the timestamp and word alignment of each word
-#def word_align(book: str, chapter: int, audioPath: str, verses):
-#    result = align(book, chapter, audioPath, verses)
-#    return result
-
-# compute the timestamp and word alignment of each verse
-#def verse_align(book: str, chapter: int, audioPath: str, verses):
-#    words = align(book, chapter, audioPath, verses)
-#    scores = []
-#    result = []
-#    for i in range(0, len(words), 1):
-#        word = words[i]
-#        if word["word_seq"] == "0":
-#            if i > 0:
-#                timestamp["fa_score"] = round(sum(s for s in scores) / len(scores), 2)
-#                result.append(timestamp)
-#            timestamp = word
-#            word.pop("word_seq")
-#            scores.append(word["fa_score"])
-#        else:
-#            timestamp["end_ts"] = word["end_ts"]
-#            scores.append(word["fa_score"])
-#            timestamp["uroman"] += " " + word["uroman"]
-#    timestamp["fa_score"] = round(sum(s for s in scores) / len(scores), 2)
-#    result.append(timestamp)
-#    return result
 
 if len(sys.argv) < 2:
     sys.stderr.write("Usage: mms_fa.py  {iso639-3}\n")

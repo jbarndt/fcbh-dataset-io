@@ -48,6 +48,7 @@ type Word struct {
 	Word        string
 	WordBeginTS float64
 	WordEndTS   float64
+	FAScore     float64
 	WordEncoded []float64
 }
 
@@ -68,12 +69,15 @@ type MFCC struct {
 }
 
 type Audio struct {
+	WordId          int64   `json:"word_id,omitempty"` // Used only for Word table
+	ScriptId        int64   `json:"script_id"`
 	BookId          string  `json:"book_id"`
 	ChapterNum      int     `json:"chapter_num"`
 	ChapterEnd      int     `json:"chapter_end"`
 	VerseStr        string  `json:"verse_str"`
 	VerseEnd        string  `json:"verse_end"`
 	VerseSeq        int     `json:"verse_seq"`
+	WordSeq         int     `json:"word_seq"` // Used by Words, not Verses
 	BeginTS         float64 `json:"begin_ts"`
 	EndTS           float64 `json:"end_ts"`
 	FAScore         float64 `json:"fa_score"`

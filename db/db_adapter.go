@@ -144,15 +144,17 @@ func createDatabase(db *sql.DB) {
 		chapter_end INTEGER NOT NULL,
 		audio_file TEXT NOT NULL, -- questionable now that audio filesetId is in ident
 		script_num TEXT NOT NULL,
-		usfm_style TEXT NOT NULL,
-		person TEXT NOT NULL,
-		actor TEXT NOT NULL,  
+		usfm_style TEXT NOT NULL DEFAULT '',
+		person TEXT NOT NULL DEFAULT '',
+		actor TEXT NOT NULL DEFAULT '',  
 		verse_num INTEGER NOT NULL,
 		verse_str TEXT NOT NULL, /* e.g. 6-10 7,8 6a */
 		verse_end TEXT NOT NULL,
 		script_text TEXT NOT NULL,
-		script_begin_ts REAL NOT NULL,
-		script_end_ts REAL NOT NULL,
+		uroman TEXT NOT NULL DEFAULT '',
+		script_begin_ts REAL NOT NULL DEFAULT 0.0,
+		script_end_ts REAL NOT NULL DEFAULT 0.0,
+		fa_score REAL NOT NULL DEFAULT 0.0,
 		FOREIGN KEY(dataset_id) REFERENCES ident(dataset_id)) STRICT`
 	execDDL(db, query)
 	query = `CREATE UNIQUE INDEX IF NOT EXISTS scripts_idx
@@ -165,10 +167,12 @@ func createDatabase(db *sql.DB) {
 		script_id INTEGER NOT NULL,
 		word_seq INTEGER NOT NULL,
 		verse_num INTEGER NOT NULL,
-		ttype TEXT NOT NULL,
+		ttype TEXT NOT NULL DEFAULT 'W',
 		word TEXT NOT NULL,
+		uroman TEXT NOT NULL DEFAULT '',
 		word_begin_ts REAL NOT NULL DEFAULT 0.0,
 		word_end_ts REAL NOT NULL DEFAULT 0.0,
+		fa_score REAL NOT NULL DEFAULT 0.0,
 		word_enc TEXT NOT NULL DEFAULT '',
 		src_word_enc TEXT NOT NULL DEFAULT '', -- planned
 		word_multi_enc TEXT NOT NULL DEFAULT '', -- planned
@@ -326,6 +330,60 @@ func (d *DBAdapter) DeleteScripts(bookId string, chapterNum int) dataset.Status 
 
 func (d *DBAdapter) DeleteWords() {
 	execDDL(d.DB, `DELETE FROM words`)
+}
+
+func (d *DBAdapter) InsertAudioVerses(bookId string, chapter int, filename string, records []Audio) ([]Audio, dataset.Status) {
+	//var result []int64
+	var status dataset.Status
+	query := `INSERT INTO scripts(dataset_id, book_id, chapter_num, chapter_end, audio_file,
+			script_num, verse_num, verse_str, verse_end, script_text, script_begin_ts, script_end_ts,
+			fa_score, uroman) 
+			VALUES (1,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+	tx, stmt := d.prepareDML(query)
+	defer d.closeDef(stmt, "InsertAudioVerse stmt")
+	for i, rec := range records {
+		scriptNum := zeroFill(rec.VerseStr, 5)
+		qry, err := stmt.Exec(bookId, chapter, chapter, filename, scriptNum,
+			rec.VerseSeq, rec.VerseStr, rec.VerseEnd, rec.Text, rec.BeginTS, rec.EndTS,
+			rec.FAScore, rec.Uroman)
+		if err != nil {
+			status = log.Error(d.Ctx, 500, err, `Error while inserting Audio Verse.`)
+			return records, status
+		}
+		records[i].ScriptId, err = qry.LastInsertId()
+		if err != nil {
+			status = log.Error(d.Ctx, 500, err, `Error getting lastInsertId, while inserting Audio Verse.`)
+			return records, status
+		}
+	}
+	status = d.commitDML(tx, query)
+	return records, status
+}
+
+func (d *DBAdapter) InsertAudioWords(verse Audio, words []Audio) ([]Audio, dataset.Status) {
+	//var result []int64
+	var status dataset.Status
+	query := `INSERT INTO words(script_id, word_seq, verse_num, word, uroman,
+			word_begin_ts, word_end_ts, fa_score)
+			VALUES (?,?,?,?,?,?,?,?)`
+	tx, stmt := d.prepareDML(query)
+	defer d.closeDef(stmt, "InsertAudioWords stmt")
+	for i, rec := range words {
+		qry, err := stmt.Exec(verse.ScriptId, rec.WordSeq, rec.VerseSeq, rec.Text, rec.Uroman,
+			rec.BeginTS, rec.EndTS, rec.FAScore)
+		if err != nil {
+			status = log.Error(d.Ctx, 500, err, `Error while inserting Audio Word.`)
+			return words, status
+		}
+		words[i].WordId, err = qry.LastInsertId()
+		if err != nil {
+			status = log.Error(d.Ctx, 500, err, `Error getting lastInsertId, while inserting Audio Word.`)
+			return words, status
+		}
+		words[i].ScriptId = verse.ScriptId
+	}
+	status = d.commitDML(tx, query)
+	return words, status
 }
 
 func (d *DBAdapter) InsertReplaceIdent(id Ident) dataset.Status {

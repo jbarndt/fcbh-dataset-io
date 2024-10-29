@@ -9,7 +9,7 @@ import (
 	log "dataset/logger"
 	"dataset/timestamp"
 	"encoding/json"
-	"fmt"
+	"math"
 	"os"
 	"strings"
 )
@@ -61,7 +61,7 @@ func (a *MMSFA) ProcessFiles(files []input.InputFile) dataset.Status {
 	return status
 }
 
-// processFile
+// processFile will process one audio file through mms forced alignment
 func (m *MMSFA) processFile(file input.InputFile, writer *bufio.Writer, reader *bufio.Reader) dataset.Status {
 	var status dataset.Status
 	tempDir, err := os.MkdirTemp(os.Getenv(`FCBH_DATASET_TMP`), "mms_fa_")
@@ -108,13 +108,77 @@ func (m *MMSFA) processFile(file input.InputFile, writer *bufio.Writer, reader *
 	if err2 != nil {
 		return log.Error(m.ctx, 500, err2, `Error reading mms_fa.py response`)
 	}
-	fmt.Println("response", response)
+	m.processPyOutput(file, response)
+	return status
+}
+
+func (m *MMSFA) processPyOutput(file input.InputFile, response string) dataset.Status {
+	var status dataset.Status
 	response = strings.TrimRight(response, "\n")
-	var output []db.Audio
-	err = json.Unmarshal([]byte(response), &output)
+	var words []db.Audio
+	err := json.Unmarshal([]byte(response), &words)
 	if err != nil {
 		return log.Error(m.ctx, 500, err, `Error unmarshalling json`)
 	}
-	fmt.Println("output", output)
+	wordsByVerse := m.groupByVerse(words)
+	verses := m.summarizeByVerse(wordsByVerse)
+	verses, status = m.conn.InsertAudioVerses(file.BookId, file.Chapter, file.Filename, verses)
+	if status.IsErr {
+		return status
+	}
+	for i := range verses {
+		_, status = m.conn.InsertAudioWords(verses[i], wordsByVerse[i])
+		if status.IsErr {
+			return status
+		}
+	}
 	return status
+}
+
+func (m *MMSFA) groupByVerse(words []db.Audio) [][]db.Audio {
+	var result [][]db.Audio
+	var verse []db.Audio
+	var verseSeq = 0
+	for i, word := range words {
+		if word.WordSeq == 0 {
+			if i > 0 {
+				result = append(result, verse)
+				verse = nil
+				verseSeq++
+			}
+		}
+		word.VerseSeq = verseSeq
+		verse = append(verse, word)
+	}
+	result = append(result, verse)
+	return result
+}
+
+func (m *MMSFA) summarizeByVerse(chapter [][]db.Audio) []db.Audio {
+	var result []db.Audio
+	for _, verse := range chapter {
+		var vs = verse[0]
+		vs.EndTS = verse[len(verse)-1].EndTS
+		var scores []float64
+		var uroman []string
+		for _, word := range verse {
+			scores = append(scores, word.FAScore)
+			uroman = append(uroman, word.Uroman)
+		}
+		vs.FAScore = m.average(scores, 3)
+		vs.Uroman = strings.Join(uroman, " ")
+		result = append(result, vs)
+	}
+	return result
+}
+
+func (m *MMSFA) average(scores []float64, precision int) float64 {
+	var sum float64
+	for _, scr := range scores {
+		sum += scr
+	}
+	avg := sum / float64(len(scores))
+	pow := math.Pow10(precision)
+	result := math.Round(avg*pow) / pow
+	return result
 }
