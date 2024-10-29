@@ -15,15 +15,13 @@ import (
 )
 
 type MMSFA_Input struct {
-	BookId    string         `json:"book_id"`
-	Chapter   int            `json:"chapter"`
 	AudioFile string         `json:"audio_file"`
 	Verses    []MMSFA_Verses `json:"verses"`
 }
 
 type MMSFA_Verses struct {
-	Verse string `json:"verse_str"`
-	Text  string `json:"text"`
+	ScriptId int    `json:"script_id"`
+	Text     string `json:"text"`
 }
 
 type MMSFA struct {
@@ -70,8 +68,6 @@ func (m *MMSFA) processFile(file input.InputFile, writer *bufio.Writer, reader *
 	}
 	defer os.RemoveAll(tempDir)
 	var faInput MMSFA_Input
-	faInput.BookId = file.BookId
-	faInput.Chapter = file.Chapter
 	faInput.AudioFile, status = timestamp.ConvertMp3ToWav(m.ctx, tempDir, file.FilePath())
 	if status.IsErr {
 		return status
@@ -83,7 +79,7 @@ func (m *MMSFA) processFile(file input.InputFile, writer *bufio.Writer, reader *
 	}
 	for _, vers := range verses {
 		var faVerse MMSFA_Verses
-		faVerse.Verse = vers.VerseStr
+		faVerse.ScriptId = vers.ScriptId
 		faVerse.Text = vers.ScriptText
 		faInput.Verses = append(faInput.Verses, faVerse)
 	}
@@ -122,7 +118,10 @@ func (m *MMSFA) processPyOutput(file input.InputFile, response string) dataset.S
 	}
 	wordsByVerse := m.groupByVerse(words)
 	verses := m.summarizeByVerse(wordsByVerse)
-	verses, status = m.conn.InsertAudioVerses(file.BookId, file.Chapter, file.Filename, verses)
+	for i := range verses {
+		verses[i].AudioFile = file.Filename
+	}
+	status = m.conn.UpdateScriptFATimestamps(verses)
 	if status.IsErr {
 		return status
 	}

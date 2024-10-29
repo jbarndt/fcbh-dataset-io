@@ -542,7 +542,7 @@ func (d *DBAdapter) SelectIdent() (Ident, dataset.Status) {
 func (d *DBAdapter) SelectScriptsByChapter(bookId string, chapterNum int) ([]Script, dataset.Status) {
 	var results []Script
 	var status dataset.Status
-	sqlStmt := `SELECT book_id, chapter_num, verse_str, script_text FROM scripts 
+	sqlStmt := `SELECT script_id, verse_str, script_text FROM scripts 
 			WHERE book_id=? AND chapter_num=?
 			ORDER BY script_id`
 	rows, err := d.DB.Query(sqlStmt, bookId, chapterNum)
@@ -553,7 +553,9 @@ func (d *DBAdapter) SelectScriptsByChapter(bookId string, chapterNum int) ([]Scr
 	defer d.closeDef(rows, `SelectScriptsByChapter`)
 	for rows.Next() {
 		var vs Script
-		err = rows.Scan(&vs.BookId, &vs.ChapterNum, &vs.VerseStr, &vs.ScriptText)
+		vs.BookId = bookId
+		vs.ChapterNum = chapterNum
+		err = rows.Scan(&vs.ScriptId, &vs.VerseStr, &vs.ScriptText)
 		if err != nil {
 			status = log.Error(d.Ctx, 500, err, `Error scanning in ReadScriptByChapter`)
 			return results, status
@@ -837,6 +839,22 @@ func (d *DBAdapter) UpdateScriptTimestamps(scripts []Timestamp) dataset.Status {
 		_, err := stmt.Exec(rec.AudioFile, rec.BeginTS, rec.EndTS, rec.Id)
 		if err != nil {
 			return log.Error(d.Ctx, 500, err, `Error while updating script timestamps.`)
+		}
+	}
+	status = d.commitDML(tx, query)
+	return status
+}
+
+func (d *DBAdapter) UpdateScriptFATimestamps(audio []Audio) dataset.Status {
+	var status dataset.Status
+	query := `UPDATE scripts SET audio_file = ?, script_begin_ts = ?,
+		script_end_ts = ?, fa_score = ?, uroman = ? WHERE script_id = ?`
+	tx, stmt := d.prepareDML(query)
+	defer d.closeDef(stmt, "UpdateScriptFATimestamps stmt")
+	for _, rec := range audio {
+		_, err := stmt.Exec(rec.AudioFile, rec.BeginTS, rec.EndTS, rec.FAScore, rec.Uroman, rec.ScriptId)
+		if err != nil {
+			return log.Error(d.Ctx, 500, err, `Error while updating script FA timestamps.`)
 		}
 	}
 	status = d.commitDML(tx, query)

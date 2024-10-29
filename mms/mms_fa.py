@@ -36,7 +36,7 @@ def prepareText(lang:str, verses):
         words = text.split()
         for i in range(0, len(words), 1):
             textList.append(words[i])
-            refList.append(verse["verse_str"] + "\t" + str(i))
+            refList.append(str(verse["script_id"]) + "\t" + str(i))
     return textList, refList
 
 # load a chapter audio file, converting to .wav if needed
@@ -62,7 +62,7 @@ def prepareAudio(audioPath: str):
     return waveform, sample_rate
 
 # execute force alignment on one Bible chapter
-def align(book: str, chapter: int, audioPath: str, verses):
+def align(audioPath: str, verses):
     transcript, references = prepareText(lang, verses)
     waveform, sample_rate = prepareAudio(audioPath)
     with torch.inference_mode():
@@ -75,17 +75,14 @@ def align(book: str, chapter: int, audioPath: str, verses):
     assert len(token_spans) == len(references)
     for spans, chars, ref in zip(token_spans, transcript, references):
         timestamp = {}
-        #timestamp["book_id"] = book
-        #timestamp["chapter_num"] = chapter
-        verse, seq = ref.split("\t")
-        timestamp["verse_str"] = verse
+        scriptId, seq = ref.split("\t")
+        timestamp["script_id"] = int(scriptId)
         timestamp["word_seq"] = int(seq)
         timestamp["begin_ts"] = round(spans[0].start * ratio, 3)
         timestamp["end_ts"] = round(spans[-1].end * ratio, 3)
         score = sum(s.score * len(s) for s in spans) / sum(len(s) for s in spans)
         timestamp["fa_score"] = round(score, 2)
         timestamp["uroman"] = chars
-        #timestamp["audio_file"] = os.path.basename(audioPath)
         result.append(timestamp)
     return result
 
@@ -106,7 +103,7 @@ aligner = bundle.get_aligner()
 uroman = ur.Uroman() # load uroman
 for line in sys.stdin:
     inp = json.loads(line)
-    results = align(inp["book_id"], inp["chapter"], inp["audio_file"], inp["verses"])
+    results = align(inp["audio_file"], inp["verses"])
     output = json.dumps(results)
     sys.stdout.write(output)
     sys.stdout.write("\n")
