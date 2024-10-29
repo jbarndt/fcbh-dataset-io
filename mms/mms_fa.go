@@ -121,6 +121,7 @@ func (m *MMSFA) processPyOutput(file input.InputFile, response string) dataset.S
 	for i := range verses {
 		verses[i].AudioFile = file.Filename
 	}
+	verses = m.addSpace(verses)
 	status = m.conn.UpdateScriptFATimestamps(verses)
 	if status.IsErr {
 		return status
@@ -180,4 +181,18 @@ func (m *MMSFA) average(scores []float64, precision int) float64 {
 	pow := math.Pow10(precision)
 	result := math.Round(avg*pow) / pow
 	return result
+}
+
+// addSpace adds back space that was removed from words by mms_fa
+func (m *MMSFA) addSpace(parts []db.Audio) []db.Audio {
+	for i := range parts {
+		if i == 0 {
+			parts[0].BeginTS = 0.0
+		} else {
+			midPoint := (parts[i].BeginTS + parts[i-1].EndTS) / 2.0
+			parts[i].BeginTS = midPoint
+			parts[i-1].EndTS = midPoint
+		}
+	}
+	return parts
 }

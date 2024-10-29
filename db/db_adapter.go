@@ -361,9 +361,8 @@ func (d *DBAdapter) InsertAudioVerses(bookId string, chapter int, filename strin
 }
 
 func (d *DBAdapter) InsertAudioWords(verse Audio, words []Audio) ([]Audio, dataset.Status) {
-	//var result []int64
 	var status dataset.Status
-	query := `INSERT INTO words(script_id, word_seq, verse_num, word, uroman,
+	query := `REPLACE INTO words(script_id, word_seq, verse_num, word, uroman,
 			word_begin_ts, word_end_ts, fa_score)
 			VALUES (?,?,?,?,?,?,?,?)`
 	tx, stmt := d.prepareDML(query)
