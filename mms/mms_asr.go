@@ -61,7 +61,9 @@ func (a *MMSASR) processFile(file input.InputFile, writer *bufio.Writer, reader 
 	if status.IsErr {
 		return status
 	}
+	var timestamps []db.Audio
 	/*
+		Sandeep timestamp solution
 		// Get Timestamps from Sandeep's bucket
 		var bucket timestamp.TSBucket
 		bucket, status = timestamp.NewTSBucket(a.ctx)
@@ -74,9 +76,12 @@ func (a *MMSASR) processFile(file input.InputFile, writer *bufio.Writer, reader 
 			return status
 		}
 	*/
+	// Waha Solution
 	bucket := timestamp.NewWahaTimestamper(a.ctx)
-	var timestamps []db.Audio
 	timestamps, status = bucket.GetTimestamps(timestamp.VerseAeneas, file.MediaId, file.BookId, file.Chapter)
+	// My FA Timestamps
+	//bucket := timestamp.NewFATimeStamper(a.ctx, a.conn)
+	//timestamps, status = bucket.GetTimestamps(file.BookId, file.Chapter)
 	if status.IsErr {
 		return status
 	}

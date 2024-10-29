@@ -11,6 +11,8 @@ import (
 func TestMMSASR_ProcessFiles(t *testing.T) {
 	ctx := context.Background()
 	conn := db.NewDBAdapter(ctx, ":memory:")
+	//user, _ := fetch.GetTestUser()
+	//conn, status := db.NewerDBAdapter(ctx, false, user.Username, "PlainTextEditScript_ENGWEB")
 	asr := NewMMSASR(ctx, conn, "eng", "")
 	var files []input.InputFile
 	var file input.InputFile

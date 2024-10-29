@@ -708,6 +708,38 @@ func (d *DBAdapter) SelectScriptIds() ([]Script, dataset.Status) {
 	return results, status
 }
 
+func (d *DBAdapter) SelectFAScriptTimestamps(bookId string, chapter int) ([]Audio, dataset.Status) {
+	var results []Audio
+	var status dataset.Status
+	var query = `SELECT script_id, audio_file, verse_str, verse_num, 
+			script_text, uroman, script_begin_ts, script_end_ts, fa_score 
+			FROM scripts WHERE book_id = ? AND chapter_num = ?
+			ORDER BY script_id`
+	rows, err := d.DB.Query(query, bookId, chapter)
+	if err != nil {
+		status = log.Error(d.Ctx, 500, err, "Error during SelectFAScriptTimestamps By Book Chapter.")
+		return results, status
+	}
+	defer d.closeDef(rows, "SelectFAScriptTimestamps stmt")
+	for rows.Next() {
+		var rec Audio
+		rec.BookId = bookId
+		rec.ChapterNum = chapter
+		err = rows.Scan(&rec.ScriptId, &rec.AudioFile, &rec.VerseStr, &rec.VerseSeq,
+			&rec.Text, &rec.Uroman, &rec.BeginTS, &rec.EndTS, &rec.FAScore)
+		if err != nil {
+			status = log.Error(d.Ctx, 500, err, "Error during SelectFAScriptTimestamps By Book Chapter.")
+			return results, status
+		}
+		results = append(results, rec)
+	}
+	err = rows.Err()
+	if err != nil {
+		log.Warn(d.Ctx, err, query)
+	}
+	return results, status
+}
+
 func (d *DBAdapter) SelectScriptTimestamps(bookId string, chapter int) ([]Timestamp, dataset.Status) {
 	query := `SELECT script_id, verse_str, script_begin_ts, script_end_ts
 		FROM scripts WHERE book_id = ? AND chapter_num = ? ORDER BY script_id`
