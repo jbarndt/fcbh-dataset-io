@@ -42,7 +42,7 @@ func NewMMSFA(ctx context.Context, conn db.DBAdapter, lang string, sttLang strin
 
 // ProcessFiles will perform Forced Alignment on these files
 func (a *MMSFA) ProcessFiles(files []input.InputFile) dataset.Status {
-	lang, status := checkLanguage(a.ctx, a.lang, a.sttLang) // is this correct for mms_fa
+	lang, status := checkLanguage(a.ctx, a.lang, a.sttLang, "mms_asr")
 	if status.IsErr {
 		return status
 	}

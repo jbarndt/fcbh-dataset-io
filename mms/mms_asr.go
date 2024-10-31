@@ -32,7 +32,7 @@ func NewMMSASR(ctx context.Context, conn db.DBAdapter, lang string, sttLang stri
 
 // ProcessFiles will perform Auto Speech Recognition on these files
 func (a *MMSASR) ProcessFiles(files []input.InputFile) dataset.Status {
-	lang, status := checkLanguage(a.ctx, a.lang, a.sttLang)
+	lang, status := checkLanguage(a.ctx, a.lang, a.sttLang, "mms_asr")
 	if status.IsErr {
 		return status
 	}
