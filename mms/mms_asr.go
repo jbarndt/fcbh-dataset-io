@@ -79,8 +79,7 @@ func (a *MMSASR) processFile(file input.InputFile, writer *bufio.Writer, reader 
 	//bucket := timestamp.NewWahaTimestamper(a.ctx)
 	//timestamps, status = bucket.GetTimestamps(timestamp.VerseAeneas, file.MediaId, file.BookId, file.Chapter)
 	// My FA Timestamps
-	bucket := timestamp.NewFATimeStamper(a.ctx, a.conn)
-	timestamps, status = bucket.GetTimestamps(file.BookId, file.Chapter)
+	timestamps, status = a.conn.SelectFAScriptTimestamps(file.BookId, file.Chapter)
 	if status.IsErr {
 		return status
 	}

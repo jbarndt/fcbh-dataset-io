@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -882,13 +883,19 @@ func (d *DBAdapter) UpdateScriptFATimestamps(audio []Audio) dataset.Status {
 		script_end_ts = ?, fa_score = ?, uroman = ? WHERE script_id = ?`
 	tx, stmt := d.prepareDML(query)
 	defer d.closeDef(stmt, "UpdateScriptFATimestamps stmt")
+	var rowsUpdated int64
 	for _, rec := range audio {
-		_, err := stmt.Exec(rec.AudioFile, rec.BeginTS, rec.EndTS, rec.FAScore, rec.Uroman, rec.ScriptId)
+		res, err := stmt.Exec(rec.AudioFile, rec.BeginTS, rec.EndTS, rec.FAScore, rec.Uroman, rec.ScriptId)
 		if err != nil {
 			return log.Error(d.Ctx, 500, err, `Error while updating script FA timestamps.`)
 		}
+		affected, _ := res.RowsAffected()
+		rowsUpdated += affected
 	}
 	status = d.commitDML(tx, query)
+	if int(rowsUpdated) != len(audio) {
+		status = log.ErrorNoErr(d.Ctx, 400, strconv.Itoa(len(audio))+" rows updated "+strconv.Itoa(int(rowsUpdated)))
+	}
 	return status
 }
 

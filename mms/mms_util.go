@@ -11,7 +11,7 @@ import (
 )
 
 // Check that language is supported by mms_asr, and return alternate if it is not
-func checkLanguage(ctx context.Context, lang string, sttLang string) (string, dataset.Status) {
+func checkLanguage(ctx context.Context, lang string, sttLang string, aiTool string) (string, dataset.Status) {
 	var result string
 	var status dataset.Status
 	if sttLang != `` {
@@ -23,7 +23,7 @@ func checkLanguage(ctx context.Context, lang string, sttLang string) (string, da
 			status = log.Error(ctx, 500, err, `Error loading language`)
 			return result, status
 		}
-		langs, distance, err2 := tree.Search(strings.ToLower(lang), "mms_asr")
+		langs, distance, err2 := tree.Search(strings.ToLower(lang), aiTool)
 		if err2 != nil {
 			status = log.Error(ctx, 500, err2, `Error Searching for language`)
 		}
@@ -45,17 +45,17 @@ func callStdIOScript(ctx context.Context, command string, arg ...string) (*bufio
 	cmd := exec.Command(command, arg...)
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
-		status = log.Error(ctx, 500, err, `Unable to open stdin for writing to Fasttext`)
+		status = log.Error(ctx, 500, err, `Unable to open stdin for reading`)
 		return writer, reader, status
 	}
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		status = log.Error(ctx, 500, err, `Unable to open stdout for writing to Fasttext`)
+		status = log.Error(ctx, 500, err, `Unable to open stdout for writing`)
 		return writer, reader, status
 	}
 	err = cmd.Start()
 	if err != nil {
-		status = log.Error(ctx, 500, err, `Unable to start writing to Fasttext`)
+		status = log.Error(ctx, 500, err, `Unable to start writing`)
 		return writer, reader, status
 	}
 	writer = bufio.NewWriterSize(stdin, 4096)
