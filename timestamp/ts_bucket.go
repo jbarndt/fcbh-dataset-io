@@ -86,6 +86,30 @@ func (t *TSBucket) ListPrefix(bucket, prefix string) ([]string, dataset.Status) 
 	return results, status
 }
 
+func (t *TSBucket) LoadTimestamps(conn db.DBAdapter, tsType string, mediaId string, bookId string, chapterNum int) dataset.Status {
+	scripts, status := conn.SelectScriptsByChapter(bookId, chapterNum)
+	if status.IsErr {
+		return status
+	}
+	var verseMap = make(map[string]int)
+	for _, scr := range scripts {
+		verseMap[scr.VerseStr] = scr.ScriptId
+	}
+	timestamps, status := t.GetTimestamps(tsType, mediaId, bookId, chapterNum)
+	if status.IsErr {
+		return status
+	}
+	for i := range timestamps {
+		scriptId, ok := verseMap[timestamps[i].VerseStr]
+		if !ok {
+			log.Warn(t.ctx, "Could not match verse "+timestamps[i].VerseStr)
+		}
+		timestamps[i].ScriptId = int64(scriptId)
+	}
+	status = conn.UpdateScriptFATimestamps(timestamps)
+	return status
+}
+
 func (t *TSBucket) GetTimestamps(tsType string, mediaId string, bookId string, chapterNum int) ([]db.Audio, dataset.Status) {
 	var results []db.Audio
 	key, status := t.GetKey(tsType, mediaId, bookId, chapterNum)

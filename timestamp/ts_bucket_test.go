@@ -2,7 +2,11 @@ package timestamp
 
 import (
 	"context"
+	"dataset/db"
+	"dataset/input"
+	"dataset/read"
 	"fmt"
+	"os"
 	"testing"
 )
 
@@ -54,6 +58,34 @@ func TestTSBucket_GetTimestamps(t *testing.T) {
 	}
 	for _, time := range timestamps {
 		fmt.Println(time)
+	}
+}
+
+func TestTSBucket_LoadTimestamps(t *testing.T) {
+	ctx := context.Background()
+	ts, status := NewTSBucket(ctx)
+	if status.IsErr {
+		t.Fatal(status)
+	}
+	var files []input.InputFile
+	var file input.InputFile
+	file.BookId = "MRK"
+	file.Chapter = 1
+	file.MediaId = "ENGWEBN2DA"
+	file.Directory = os.Getenv("FCBH_DATASET_FILES") + "/ENGWEB/ENGWEBN_ET-usx/"
+	file.Filename = "041MRK.usx"
+	files = append(files, file)
+	var database = "TestTSBucket_LoadTimestamps.db"
+	db.DestroyDatabase(database)
+	var conn = db.NewDBAdapter(ctx, database)
+	parser := read.NewUSXParser(conn)
+	status = parser.ProcessFiles(files)
+	if status.IsErr {
+		t.Error(status)
+	}
+	status = ts.LoadTimestamps(conn, VerseAeneas, `ENGWEBN2DA`, `MRK`, 1)
+	if status.IsErr {
+		t.Error(status)
 	}
 }
 
