@@ -10,9 +10,9 @@ type Request struct {
 	Testament     Testament     `yaml:"testament,omitempty"`
 	AudioData     AudioData     `yaml:"audio_data,omitempty"`
 	TextData      TextData      `yaml:"text_data,omitempty"`
+	Timestamps    Timestamps    `yaml:"timestamps,omitempty"`
 	SpeechToText  SpeechToText  `yaml:"speech_to_text,omitempty"`
 	Detail        Detail        `yaml:"detail,omitempty"`
-	Timestamps    Timestamps    `yaml:"timestamps,omitempty"`
 	AudioEncoding AudioEncoding `yaml:"audio_encoding,omitempty"`
 	TextEncoding  TextEncoding  `yaml:"text_encoding,omitempty"`
 	OutputFormat  OutputFormat  `yaml:"output_format,omitempty"` // Set by request.Depend, not user
@@ -162,6 +162,7 @@ func (t MediaType) IsFrom(ttype string) bool {
 
 type SpeechToText struct {
 	Language       string  `yaml:"language,omitempty"`
+	MMS            bool    `yaml:"mms_asr,omitempty"`
 	Whisper        Whisper `yaml:"whisper,omitempty"`
 	NoSpeechToText bool    `yaml:"no_speech_to_text,omitempty"`
 }
@@ -201,6 +202,9 @@ type Detail struct {
 type Timestamps struct {
 	BibleBrain   bool `yaml:"bible_brain,omitempty"`
 	Aeneas       bool `yaml:"aeneas,omitempty"`
+	TSBucket     bool `yaml:"ts_bucket,omitempty"`
+	MMSFAVerse   bool `yaml:"mms_fa_verse,omitempty"`
+	MMSFAWord    bool `yaml:"mms_fa_word,omitempty"`
 	NoTimestamps bool `yaml:"no_timestamps,omitempty"`
 }
 

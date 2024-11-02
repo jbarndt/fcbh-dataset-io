@@ -69,8 +69,8 @@ func (r *RequestDecoder) checkTextData(req *TextData, fieldName string) {
 }
 
 func (r *RequestDecoder) checkSpeechToText(req *SpeechToText, fieldName string) {
-	whisper := req.Whisper
-	count := r.checkForOne(reflect.ValueOf(whisper), fieldName)
+	//whisper := req.Whisper
+	count := r.checkForOne(reflect.ValueOf(*req), fieldName)
 	if count == 0 {
 		req.NoSpeechToText = true
 	}

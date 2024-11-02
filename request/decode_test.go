@@ -9,7 +9,7 @@ import (
 
 func TestRequestYamlFile(t *testing.T) {
 	var d = NewRequestDecoder(context.Background())
-	content, err := os.ReadFile(`../controller/cli/request_test.yaml`)
+	content, err := os.ReadFile(`request_test.yaml`)
 	if err != nil {
 		panic(err)
 	}
@@ -54,8 +54,16 @@ text_data:
   aws_s3: http://west1/path
   post: Yes
   no_text: Yes
+timestamps:
+  bible_brain: yes
+  aeneas: yes
+  ts_bucket: yes
+  mms_fa_verse: yes
+  mms_fa_word: yes
+  no_timestamps: yes
 speech_to_text:
   language: en
+  mms_asr: Yes
   whisper:
     model: 
       large: Yes
@@ -67,10 +75,6 @@ speech_to_text:
 detail:
   lines: yes
   words: yes
-timestamps:
-  bible_brain: yes
-  aeneas: yes
-  no_timestamps: yes
 audio_encoding:
   mfcc: yes
   no_encoding: yes
@@ -118,6 +122,13 @@ compare:
 		req.TextData.BibleBrain.TextPlainEdit,
 		req.TextData.BibleBrain.TextPlain,
 		req.TextData.NoText,
+		req.Timestamps.BibleBrain,
+		req.Timestamps.Aeneas,
+		req.Timestamps.TSBucket,
+		req.Timestamps.MMSFAVerse,
+		req.Timestamps.MMSFAWord,
+		req.Timestamps.NoTimestamps,
+		req.SpeechToText.MMS,
 		req.SpeechToText.Whisper.Model.Large,
 		req.SpeechToText.Whisper.Model.Medium,
 		req.SpeechToText.Whisper.Model.Small,
@@ -126,9 +137,6 @@ compare:
 		req.SpeechToText.NoSpeechToText,
 		req.Detail.Lines,
 		req.Detail.Words,
-		req.Timestamps.BibleBrain,
-		req.Timestamps.Aeneas,
-		req.Timestamps.NoTimestamps,
 		req.AudioEncoding.MFCC,
 		req.AudioEncoding.NoEncoding,
 		req.TextEncoding.FastText,

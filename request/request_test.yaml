@@ -43,13 +43,17 @@ text_data: # Choose one of the following
 
 timestamps: # If timestamps are needed, mark Yes by source
   bible_brain: # Use is not recommended, because the last verse has no ending timestamp.
-  aeneas: yes
-  no_timestamps:
+  aeneas:  # This will cause aeneas to compute timestamps, audio and text are both required
+  ts_bucket: # This will pull timestamp data from Sandeep's bucket
+  mms_fa_verse: # This will compute timestamps using mms forced alignment
+  mms_fa_word: # This is a second method for computing timestamps.  It also provides a score for each word and verse.
+  no_timestamps: # If time stamps are not needed
 # Default: no_timestamps
 
 speech_to_text: # If STT is source Yes by desired type
   language: # STT language. If left blank, STT will use language of bibleId, but may fail if it is not known
-  whisper: # This is OpenAI’s STT model
+  mms_asr: # This is Meta's MMS Speech to Text model
+  whisper: # This is OpenAI’s Speech to Text model
     model: # If using Whisper, choose one of the model sizes by marking it Yes
       large:
       medium:
