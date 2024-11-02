@@ -9,7 +9,7 @@ import (
 
 func TestValidate(t *testing.T) {
 	var d = NewRequestDecoder(context.Background())
-	content, err := os.ReadFile(`../controller/cli/request_test.yaml`)
+	content, err := os.ReadFile(`request_test.yaml`)
 	if err != nil {
 		panic(err)
 	}
@@ -22,7 +22,10 @@ func TestValidate(t *testing.T) {
 	req.AudioData.POST = `` //`filename`
 	req.TextData.NoText = false
 	req.TextData.BibleBrain.TextPlain = true
-	req.SpeechToText.Whisper.Model.Medium = true
+	req.Timestamps.MMSFAVerse = true
+	//req.Timestamps.MMSFAWord = true
+	//req.SpeechToText.Whisper.Model.Medium = true
+	req.SpeechToText.MMS = true
 	req.AudioEncoding.MFCC = true
 	req.AudioEncoding.NoEncoding = false
 	req.Compare.CompareSettings.Apostrophe.Normalize = true
