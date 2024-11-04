@@ -4,6 +4,7 @@ import (
 	"context"
 	"dataset"
 	"dataset/db"
+	"dataset/input"
 	log "dataset/logger"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -31,13 +32,15 @@ const (
 
 type TSBucket struct {
 	ctx    context.Context
+	conn   db.DBAdapter
 	client *s3.Client
 }
 
-func NewTSBucket(ctx context.Context) (TSBucket, dataset.Status) {
+func NewTSBucket(ctx context.Context, conn db.DBAdapter) (TSBucket, dataset.Status) {
 	var t TSBucket
 	var status dataset.Status
 	t.ctx = ctx
+	t.conn = conn
 	cfg, err := config.LoadDefaultConfig(ctx)
 	if err != nil {
 		status = log.Error(ctx, 400, err, "Failed to load AWS S3 Config.")
@@ -86,27 +89,32 @@ func (t *TSBucket) ListPrefix(bucket, prefix string) ([]string, dataset.Status) 
 	return results, status
 }
 
-func (t *TSBucket) LoadTimestamps(conn db.DBAdapter, tsType string, mediaId string, bookId string, chapterNum int) dataset.Status {
-	scripts, status := conn.SelectScriptsByChapter(bookId, chapterNum)
-	if status.IsErr {
-		return status
-	}
-	var verseMap = make(map[string]int)
-	for _, scr := range scripts {
-		verseMap[scr.VerseStr] = scr.ScriptId
-	}
-	timestamps, status := t.GetTimestamps(tsType, mediaId, bookId, chapterNum)
-	if status.IsErr {
-		return status
-	}
-	for i := range timestamps {
-		scriptId, ok := verseMap[timestamps[i].VerseStr]
-		if !ok {
-			log.Warn(t.ctx, "Could not match verse "+timestamps[i].VerseStr)
+func (t *TSBucket) ProcessFiles(files []input.InputFile) dataset.Status {
+	var status dataset.Status
+	for _, file := range files {
+		var scripts []db.Script
+		scripts, status = t.conn.SelectScriptsByChapter(file.BookId, file.Chapter)
+		if status.IsErr {
+			return status
 		}
-		timestamps[i].ScriptId = int64(scriptId)
+		var verseMap = make(map[string]int)
+		for _, scr := range scripts {
+			verseMap[scr.VerseStr] = scr.ScriptId
+		}
+		var timestamps []db.Audio
+		timestamps, status = t.GetTimestamps(VerseAeneas, file.MediaId, file.BookId, file.Chapter)
+		if status.IsErr {
+			return status
+		}
+		for i := range timestamps {
+			scriptId, ok := verseMap[timestamps[i].VerseStr]
+			if !ok {
+				log.Warn(t.ctx, "Could not match verse "+timestamps[i].VerseStr)
+			}
+			timestamps[i].ScriptId = int64(scriptId)
+		}
+		status = t.conn.UpdateScriptFATimestamps(timestamps)
 	}
-	status = conn.UpdateScriptFATimestamps(timestamps)
 	return status
 }
 

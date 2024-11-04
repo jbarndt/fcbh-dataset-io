@@ -13,7 +13,8 @@ import (
 // This test is not working...
 func TestTSBucket(t *testing.T) {
 	ctx := context.Background()
-	ts, status := NewTSBucket(ctx)
+	conn := db.NewDBAdapter(ctx, ":memory:")
+	ts, status := NewTSBucket(ctx, conn)
 	if status.IsErr {
 		t.Fatal(status)
 	}
@@ -38,7 +39,8 @@ func TestTSBucket(t *testing.T) {
 
 func TestTSBucket_GetTimestamps(t *testing.T) {
 	ctx := context.Background()
-	ts, status := NewTSBucket(ctx)
+	conn := db.NewDBAdapter(ctx, ":memory:")
+	ts, status := NewTSBucket(ctx, conn)
 	if status.IsErr {
 		t.Fatal(status)
 	}
@@ -63,7 +65,10 @@ func TestTSBucket_GetTimestamps(t *testing.T) {
 
 func TestTSBucket_LoadTimestamps(t *testing.T) {
 	ctx := context.Background()
-	ts, status := NewTSBucket(ctx)
+	var database = "TestTSBucket_LoadTimestamps.db"
+	db.DestroyDatabase(database)
+	var conn = db.NewDBAdapter(ctx, database)
+	ts, status := NewTSBucket(ctx, conn)
 	if status.IsErr {
 		t.Fatal(status)
 	}
@@ -75,15 +80,12 @@ func TestTSBucket_LoadTimestamps(t *testing.T) {
 	file.Directory = os.Getenv("FCBH_DATASET_FILES") + "/ENGWEB/ENGWEBN_ET-usx/"
 	file.Filename = "041MRK.usx"
 	files = append(files, file)
-	var database = "TestTSBucket_LoadTimestamps.db"
-	db.DestroyDatabase(database)
-	var conn = db.NewDBAdapter(ctx, database)
 	parser := read.NewUSXParser(conn)
 	status = parser.ProcessFiles(files)
 	if status.IsErr {
 		t.Error(status)
 	}
-	status = ts.LoadTimestamps(conn, VerseAeneas, `ENGWEBN2DA`, `MRK`, 1)
+	status = ts.ProcessFiles(files)
 	if status.IsErr {
 		t.Error(status)
 	}
