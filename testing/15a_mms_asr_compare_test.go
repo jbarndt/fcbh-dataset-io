@@ -40,8 +40,8 @@ compare:
 
 func TestMMSASRCompare(t *testing.T) {
 	var tests []CtlTest
-	tests = append(tests, CtlTest{BibleId: "ENGWEB", Expected: 27, TextNtId: "ENGWEBN_ET-usx",
-		TextType: request.TextUSXEdit, AudioNTId: "ENGWEBN2DA-mp3-16", Language: "eng"})
+	tests = append(tests, CtlTest{BibleId: "ENGWEB", Expected: 8, TextNtId: "ENGWEBN_ET-usx",
+		TextType: request.TextUSXEdit, AudioNTId: "ENGWEBN2DA", Language: "eng"})
 	//tests = append(tests, CtlTest{BibleId: "APFCMU", Expected: 16, TextNtId: "APFCMUN_ET-usx",
 	//	AudioNTId: `APFCMUN1DA`, TextType: request.TextUSXEdit, Language: "apf"})
 	DirectTestUtility(MMSASRCompare, tests, t)
