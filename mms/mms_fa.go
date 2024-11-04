@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"math"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -46,7 +47,8 @@ func (a *MMSFA) ProcessFiles(files []input.InputFile) dataset.Status {
 	if status.IsErr {
 		return status
 	}
-	writer, reader, status := callStdIOScript(a.ctx, os.Getenv(`FCBH_MMS_PYTHON`), "mms_fa.py", lang)
+	pythonScript := filepath.Join(os.Getenv("GOPATH"), "dataset/mms/mms_fa.py")
+	writer, reader, status := callStdIOScript(a.ctx, os.Getenv(`FCBH_MMS_PYTHON`), pythonScript, lang)
 	if status.IsErr {
 		return status
 	}
@@ -88,10 +90,10 @@ func (m *MMSFA) processFile(file input.InputFile, writer *bufio.Writer, reader *
 		return log.Error(m.ctx, 500, err, `Error marshalling json`)
 	}
 	// temp
-	err2 := os.WriteFile("engweb_fa_inp.json", content, 0644)
-	if err2 != nil {
-		panic(err2)
-	}
+	//err2 := os.WriteFile("engweb_fa_inp.json", content, 0644)
+	//if err2 != nil {
+	//	panic(err2)
+	//}
 	_, err = writer.WriteString(string(content) + "\n")
 	if err != nil {
 		return log.Error(m.ctx, 500, err, "Error writing to mms_fa.py")
