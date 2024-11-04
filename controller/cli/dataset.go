@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"dataset"
 	"dataset/controller"
+	log "dataset/logger"
 	"fmt"
 	"os"
 	"strings"
@@ -10,30 +12,38 @@ import (
 
 func main() {
 	if len(os.Args) < 2 {
-		_, _ = fmt.Println("Usage: dataset  request.yaml")
+		_, _ = fmt.Fprintln(os.Stdout, "Usage: dataset  request.yaml")
 		os.Exit(1)
 	}
-	var yamlPath = os.Args[1]
+	outputFile, status := MainProcess(os.Args[1])
+	if status.IsErr {
+		_, _ = fmt.Fprintln(os.Stderr, status.String())
+		os.Exit(1)
+	} else {
+		_, _ = fmt.Fprintln(os.Stdout, `Success:`, outputFile)
+	}
+}
+
+func MainProcess(yamlPath string) (string, dataset.Status) {
+	var result string
 	var content, err = os.ReadFile(yamlPath)
 	if err != nil {
-		_, _ = fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		return result, log.Error(context.Background(), 400, err, `Error reading yaml request file.`)
 	}
 	var ctx = context.WithValue(context.Background(), `runType`, `cli`)
 	var control = controller.NewController(ctx, content)
 	filename, status := control.Process()
 	if status.IsErr {
-		_, _ = fmt.Fprintln(os.Stderr, status.String())
-		_, _ = fmt.Fprintln(os.Stderr, `Error File:`, filename)
-		os.Exit(1)
+		result = status.String()
 	}
 	outputFile := findOutputFilename(content)
 	err = os.Rename(filename, outputFile)
 	if err != nil {
-		_, _ = fmt.Fprintln(os.Stdout, `Success:`, filename)
+		result = filename
 	} else {
-		_, _ = fmt.Fprintln(os.Stdout, `Success:`, outputFile)
+		result = outputFile
 	}
+	return result, status
 }
 
 func findOutputFilename(request []byte) string {
