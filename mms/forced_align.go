@@ -95,16 +95,16 @@ func (f *ForcedAlign) processFile(file input.InputFile, lang string) dataset.Sta
 func (f *ForcedAlign) forcedAlign(audioFile string, textFile string, lang string, tempDir string) (string, dataset.Status) {
 	var result string
 	var status dataset.Status
-	FAIRSEQPYTHON := os.Getenv("FCBH_FAIRSEQ_PYTHON")
-	mmsFAPYTHON := os.Getenv("FCBH_MMS_PYTHON")
+	MMSFAPYTHON := os.Getenv("FCBH_MMS_PYTHON")
+	pythonScript := filepath.Join(os.Getenv("GOPATH"), "dataset/mms/forced_align/align_and_segment.py")
 	outputDir := filepath.Join(tempDir, `output`)
-	cmd := exec.Command(FAIRSEQPYTHON,
-		"forced_align/align_and_segment.py",
+	cmd := exec.Command(MMSFAPYTHON,
+		pythonScript,
 		`--audio`, audioFile,
 		`--text_filepath`, textFile,
 		`--lang`, lang,
 		`--outdir`, outputDir,
-		`--uroman`, filepath.Dir(mmsFAPYTHON))
+		`--uroman`, filepath.Dir(MMSFAPYTHON))
 	var stdoutBuf, stderrBuf bytes.Buffer
 	cmd.Stdout = &stdoutBuf
 	cmd.Stderr = &stderrBuf
