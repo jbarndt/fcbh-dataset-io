@@ -16,6 +16,7 @@ func TestValidate(t *testing.T) {
 	var req, _ = d.Decode(content)
 	req.IsNew = true
 	req.BibleId = `EBGESV`
+	req.AltLanguage = `en`
 	req.AudioData.File = `file:///where`
 	req.AudioData.BibleBrain.MP3_64 = false
 	req.AudioData.BibleBrain.OPUS = false

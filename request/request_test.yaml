@@ -9,7 +9,7 @@ bible_id: ATIWBT
 username: GaryNGriswold
 email: gary@shortsands.com
 output_file: myRun.json # Allowed file types are .json, .csv, .sqlite, and .html for compare tasks
-
+alt_language: # To force the use of an alternate language, use this field
 # The remaining configuration choices are all optional, but something must be selected in order for some processing to be done.
 
 testament: # Choose one or both
@@ -51,7 +51,6 @@ timestamps: # If timestamps are needed, mark Yes by source
 # Default: no_timestamps
 
 speech_to_text: # If STT is source Yes by desired type
-  language: # STT language. If left blank, STT will use language of bibleId, but may fail if it is not known
   mms_asr: # This is Meta's MMS Speech to Text model
   whisper: # This is OpenAI’s Speech to Text model
     model: # If using Whisper, choose one of the model sizes by marking it Yes

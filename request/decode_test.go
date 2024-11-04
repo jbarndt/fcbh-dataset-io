@@ -31,6 +31,7 @@ bible_id: ENGWEB
 username: GaryNGriswold
 email: gary@gmail.com
 output_file: myfile.json
+alt_language: en
 testament:
   ot: 
   ot_books: [GEN,EXO,LEV,NUM,DEU]
@@ -62,7 +63,6 @@ timestamps:
   mms_fa_word: yes
   no_timestamps: yes
 speech_to_text:
-  language: en
   mms_asr: Yes
   whisper:
     model: 

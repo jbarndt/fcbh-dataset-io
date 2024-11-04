@@ -8,9 +8,9 @@ import (
 	"dataset/input"
 	log "dataset/logger"
 	"dataset/timestamp"
-	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -36,7 +36,8 @@ func (a *MMSASR) ProcessFiles(files []input.InputFile) dataset.Status {
 	if status.IsErr {
 		return status
 	}
-	writer, reader, status := callStdIOScript(a.ctx, os.Getenv(`FCBH_MMS_PYTHON`), "mms_asr.py", lang)
+	pythonScript := filepath.Join(os.Getenv("GOPATH"), "dataset/mms/mms_asr.py")
+	writer, reader, status := callStdIOScript(a.ctx, os.Getenv(`FCBH_MMS_PYTHON`), pythonScript, lang)
 	if status.IsErr {
 		return status
 	}
@@ -62,23 +63,6 @@ func (a *MMSASR) processFile(file input.InputFile, writer *bufio.Writer, reader 
 		return status
 	}
 	var timestamps []db.Audio
-	/*
-		Sandeep timestamp solution
-		// Get Timestamps from Sandeep's bucket
-		var bucket timestamp.TSBucket
-		bucket, status = timestamp.NewTSBucket(a.ctx)
-		if status.IsErr {
-			return status
-		}
-		timestamps, status = bucket.GetTimestamps(timestamp.VerseAeneas, file.MediaId, file.BookId, file.Chapter)
-		if status.IsErr {
-			return status
-		}
-	*/
-	// Waha Solution
-	//bucket := timestamp.NewWahaTimestamper(a.ctx)
-	//timestamps, status = bucket.GetTimestamps(timestamp.VerseAeneas, file.MediaId, file.BookId, file.Chapter)
-	// My FA Timestamps
 	timestamps, status = a.conn.SelectFAScriptTimestamps(file.BookId, file.Chapter)
 	if status.IsErr {
 		return status
@@ -100,14 +84,11 @@ func (a *MMSASR) processFile(file input.InputFile, writer *bufio.Writer, reader 
 			return log.Error(a.ctx, 500, err2, `Error reading mms_asr.py response`)
 		}
 		response = strings.TrimRight(response, "\n")
-		fmt.Println(ts.BookId, ts.ChapterNum, ts.VerseStr, response)
+		fmt.Println(ts.BookId, ts.ChapterNum, ts.VerseStr, ts.ScriptId, response)
 		timestamps[i].Text = response
 	}
-	//a.conn.InsertTimestamps(timestamps)
-	bytes, err := json.Marshal(timestamps)
-	if err != nil {
-		return log.Error(a.ctx, 500, err, `Error marshalling timestamps`)
-	}
-	fmt.Println(file.BookId, file.Chapter, string(bytes))
+	var recCount int
+	recCount, status = a.conn.UpdateScriptText(timestamps)
+	fmt.Println(file.BookId, file.Chapter, recCount)
 	return status
 }

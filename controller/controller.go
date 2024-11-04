@@ -9,10 +9,12 @@ import (
 	"dataset/input"
 	log "dataset/logger"
 	"dataset/match"
+	"dataset/mms"
 	"dataset/output"
 	"dataset/read"
 	"dataset/request"
 	"dataset/speech_to_text"
+	"dataset/timestamp"
 	"os"
 	"time"
 )
@@ -126,13 +128,17 @@ func (c *Controller) processSteps() (string, dataset.Status) {
 	if status.IsErr {
 		return filename, status
 	}
-	// Copy for STT Compare
-	if c.req.OutputFormat.HTML &&
-		c.req.Compare.BaseDataset == `` &&
+	// Copy for STT
+	if !c.req.TextData.NoText &&
+		//c.req.Compare.BaseDataset == `` &&
 		!c.req.SpeechToText.NoSpeechToText {
 		c.req.Compare.BaseDataset = c.database.Project
 		// This makes a copy of database, and closes it.  Names the new database *_STT, and returns new
 		c.database, status = c.database.CopyDatabase(`_STT`)
+		if status.IsErr {
+			return filename, status
+		}
+		status = c.database.UpdateEraseScriptText()
 		if status.IsErr {
 			return filename, status
 		}
@@ -153,7 +159,7 @@ func (c *Controller) processSteps() (string, dataset.Status) {
 		return filename, status
 	}
 	// Compare
-	if c.req.Compare.BaseDataset != `` || c.req.OutputFormat.HTML {
+	if c.req.OutputFormat.HTML {
 		filename, status = c.matchText()
 		return filename, status // return whether success or not
 	}
@@ -279,28 +285,38 @@ func (c *Controller) readText(textFiles []input.InputFile) dataset.Status {
 func (c *Controller) timestamps(audioFiles []input.InputFile) dataset.Status {
 	var status dataset.Status
 	if c.req.Timestamps.BibleBrain {
-		var filesetIds []string
-		if c.ident.AudioOTId != `` {
-			filesetIds = append(filesetIds, c.ident.AudioOTId)
-		}
-		if c.ident.AudioNTId != `` {
-			filesetIds = append(filesetIds, c.ident.AudioNTId)
-		}
+		//
+		// Why isn't Bible Brain just processing input??
+		//
+		var filesetIds = []string{c.ident.AudioOTId, c.ident.AudioNTId}
 		for _, filesetId := range filesetIds {
-			api := fetch.NewAPIDBPTimestamps(c.database, filesetId)
-			// Load returns bool, which could be used to invoke aeneas
-			_, status = api.LoadTimestamps(c.req.Testament)
-			if status.IsErr {
-				return status
+			if filesetId != `` {
+				api := fetch.NewAPIDBPTimestamps(c.database, filesetId)
+				// Load returns bool, which could be used to invoke aeneas
+				_, status = api.LoadTimestamps(c.req.Testament)
+				if status.IsErr {
+					return status
+				}
 			}
 		}
 	} else if c.req.Timestamps.Aeneas {
 		bibleId := c.req.BibleId
 		aeneas := encode.NewAeneas(c.ctx, c.database, bibleId, c.ident.LanguageISO, c.req.Detail)
 		status = aeneas.ProcessFiles(audioFiles)
-		if status.IsErr {
-			return status
+	} else if c.req.Timestamps.TSBucket {
+		var ts timestamp.TSBucket
+		ts, status = timestamp.NewTSBucket(c.ctx, c.database)
+		if !status.IsErr {
+			status = ts.ProcessFiles(audioFiles)
 		}
+	} else if c.req.Timestamps.MMSFAVerse {
+		var ts mms.ForcedAlign
+		ts = mms.NewForcedAlign(c.ctx, c.database, c.ident.LanguageISO, c.req.AltLanguage)
+		status = ts.ProcessFiles(audioFiles)
+	} else if c.req.Timestamps.MMSFAWord {
+		var ts mms.MMSFA
+		ts = mms.NewMMSFA(c.ctx, c.database, c.ident.LanguageISO, c.req.AltLanguage)
+		status = ts.ProcessFiles(audioFiles)
 	}
 	return status
 }
@@ -308,22 +324,28 @@ func (c *Controller) timestamps(audioFiles []input.InputFile) dataset.Status {
 func (c *Controller) speechToText(audioFiles []input.InputFile) dataset.Status {
 	var status dataset.Status
 	bibleId := c.req.BibleId
-	var whisperModel = c.req.SpeechToText.Whisper.Model.String()
-	if whisperModel != `` {
-		var lang2 = c.req.SpeechToText.Language
-		var whisper = speech_to_text.NewWhisper(bibleId, c.database, whisperModel, lang2)
-		status = whisper.ProcessFiles(audioFiles)
-		if status.IsErr {
-			return status
+	if c.req.SpeechToText.MMS {
+		var asr mms.MMSASR
+		asr = mms.NewMMSASR(c.ctx, c.database, c.ident.LanguageISO, c.req.AltLanguage)
+		status = asr.ProcessFiles(audioFiles)
+	} else {
+		var whisperModel = c.req.SpeechToText.Whisper.Model.String()
+		if whisperModel != `` {
+			var lang2 = c.req.AltLanguage
+			var whisper = speech_to_text.NewWhisper(bibleId, c.database, whisperModel, lang2)
+			status = whisper.ProcessFiles(audioFiles)
+			if status.IsErr {
+				return status
+			}
+			c.ident.TextSource = request.TextSTT
+			if len(c.ident.AudioOTId) >= 10 {
+				c.ident.TextOTId = c.ident.AudioOTId[:7] + `_TT`
+			}
+			if len(c.ident.AudioNTId) >= 10 {
+				c.ident.TextNTId = c.ident.AudioNTId[:7] + `_TT`
+			}
+			c.database.UpdateIdent(c.ident)
 		}
-		c.ident.TextSource = request.TextSTT
-		if len(c.ident.AudioOTId) >= 10 {
-			c.ident.TextOTId = c.ident.AudioOTId[:7] + `_TT`
-		}
-		if len(c.ident.AudioNTId) >= 10 {
-			c.ident.TextNTId = c.ident.AudioNTId[:7] + `_TT`
-		}
-		c.database.UpdateIdent(c.ident)
 	}
 	return status
 }

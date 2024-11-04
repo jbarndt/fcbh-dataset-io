@@ -877,6 +877,39 @@ func (d *DBAdapter) UpdateScriptTimestamps(scripts []Timestamp) dataset.Status {
 	return status
 }
 
+func (d *DBAdapter) UpdateEraseScriptText() dataset.Status {
+	var status dataset.Status
+	query := `UPDATE scripts SET script_text = ""`
+	tx, stmt := d.prepareDML(query)
+	defer d.closeDef(stmt, "UpdateEraseScriptText stmt")
+	_, err := stmt.Exec()
+	if err != nil {
+		status = log.Error(d.Ctx, 500, err, `Error while updating script text.`)
+		return status
+	}
+	status = d.commitDML(tx, query)
+	return status
+}
+
+func (d *DBAdapter) UpdateScriptText(audio []Audio) (int, dataset.Status) {
+	var rowsUpdated int64
+	var status dataset.Status
+	query := `UPDATE scripts SET script_text = ? WHERE script_id = ?`
+	tx, stmt := d.prepareDML(query)
+	defer d.closeDef(stmt, "UpdateScriptText stmt")
+	for _, rec := range audio {
+		res, err := stmt.Exec(rec.Text, rec.ScriptId)
+		if err != nil {
+			status = log.Error(d.Ctx, 500, err, `Error while updating script text.`)
+			return int(rowsUpdated), status
+		}
+		affected, _ := res.RowsAffected()
+		rowsUpdated += affected
+	}
+	status = d.commitDML(tx, query)
+	return int(rowsUpdated), status
+}
+
 func (d *DBAdapter) UpdateScriptFATimestamps(audio []Audio) dataset.Status {
 	var status dataset.Status
 	query := `UPDATE scripts SET audio_file = ?, script_begin_ts = ?,

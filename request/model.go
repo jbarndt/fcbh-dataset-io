@@ -7,6 +7,7 @@ type Request struct {
 	Username      string        `yaml:"username"`
 	Email         string        `yaml:"email"`
 	OutputFile    string        `yaml:"output_file"`
+	AltLanguage   string        `yaml:"alt_language,omitempty"`
 	Testament     Testament     `yaml:"testament,omitempty"`
 	AudioData     AudioData     `yaml:"audio_data,omitempty"`
 	TextData      TextData      `yaml:"text_data,omitempty"`
@@ -161,7 +162,6 @@ func (t MediaType) IsFrom(ttype string) bool {
 }
 
 type SpeechToText struct {
-	Language       string  `yaml:"language,omitempty"`
 	MMS            bool    `yaml:"mms_asr,omitempty"`
 	Whisper        Whisper `yaml:"whisper,omitempty"`
 	NoSpeechToText bool    `yaml:"no_speech_to_text,omitempty"`

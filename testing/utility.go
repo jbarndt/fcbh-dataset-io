@@ -3,16 +3,17 @@ package testing
 import (
 	"bytes"
 	"context"
+	"database/sql"
+	"dataset/controller"
 	"dataset/db"
 	"dataset/fetch"
 	"dataset/request"
 	"encoding/csv"
 	"encoding/json"
 	"io"
-	"net/http"
 	"os"
 	"os/exec"
-	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -23,35 +24,49 @@ const (
 	OUTPUT     = `/Users/gary/FCBH2024/systemtest/`
 )
 
-// HttpPost is deprecated
-func HttpPost(request string, name string, t *testing.T) ([]byte, int) {
-	client := &http.Client{}
-	req, err := http.NewRequest("POST", HOST, bytes.NewReader([]byte(request)))
+type SqliteTest struct {
+	Query string
+	Count int
+}
+
+// CLISqlTest requires a sqlite database as output to perform tests on the result
+func DirectSqlTest(request string, tests []SqliteTest, t *testing.T) {
+	database, status := controller.CLIProcessEntry([]byte(request))
+	if status.IsErr {
+		t.Fatal(status)
+	}
+	conn, err := sql.Open("sqlite3", database)
 	if err != nil {
 		t.Fatal(err)
 	}
-	req.Header.Set("Content-Type", "application/x-yaml")
-	resp, err := client.Do(req)
+	defer conn.Close()
+	var count int
+	for _, tst := range tests {
+		count = SelectScalarInt(conn, tst.Query, t)
+		if count != tst.Count {
+			t.Error("Count was " + strconv.Itoa(count) + ", expected " + strconv.Itoa(tst.Count) + " ON: " + tst.Query)
+		}
+	}
+}
+
+func SelectScalarInt(conn *sql.DB, sql string, t *testing.T) int {
+	var count int
+	rows, err := conn.Query(sql)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
+	defer rows.Close()
+	for rows.Next() {
+		err = rows.Scan(&count)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	err = rows.Err()
 	if err != nil {
 		t.Fatal(err)
 	}
-	// can close go here
-	filePath := filepath.Join(OUTPUT, name)
-	file, err := os.Create(filePath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, err = file.Write(body)
-	if err != nil {
-		t.Fatal(err)
-	}
-	_ = file.Close()
-	return body, resp.StatusCode
+	return count
 }
 
 func CLIExec(requestYaml string, t *testing.T) (string, string) {
