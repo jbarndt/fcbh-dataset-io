@@ -1,4 +1,4 @@
-package testing
+package tests
 
 import (
 	"context"
@@ -9,16 +9,16 @@ import (
 	"testing"
 )
 
-const CompareUsXTextEdit2STT = `is_new: no
-dataset_name: AudioWhisperJson_{bibleId}
+const ComparePlainEdit2USXEditScript = `is_new: no
+dataset_name: PlainTextEditScript_{bibleId}
 bible_id: {bibleId}
 username: GaryNTest
 email: gary@shortsands.com
-output_file: 10__compare_usx_edit_2_stt.html
+output_file: 06__compare_plain_edit_2_usx_edit.html
 compare:
   base_dataset: USX Text Edit Script_{bibleId}
   compare_settings: # Mark yes, all settings that apply
-    lower_case: y
+    lower_case: n
     remove_prompt_chars: y
     remove_punctuation: y
     double_quotes: 
@@ -38,18 +38,16 @@ compare:
       normalize_nfkd:
 `
 
-// Danger: depends on test 09 and 03
-
-func TestCompareUsXTextEdit2STTAPI(t *testing.T) {
+func TestComparePlainEdit2USXEditScriptAPI(t *testing.T) {
 	var cases []APITest
-	cases = append(cases, APITest{BibleId: `ENGWEB`, Expected: 1, Diff: 0})
-	APITestUtility(CompareUsXTextEdit2STT, cases, t)
+	cases = append(cases, APITest{BibleId: `ENGWEB`, Expected: 0})
+	APITestUtility(ComparePlainEdit2USXEditScript, cases, t)
 }
 
-func TestCompareUsXTextEdit2STT(t *testing.T) {
+func TestComparePlainEdit2USXEditScript(t *testing.T) {
 	var bibleId = `ENGWEB`
 	ctx := context.Background()
-	var req = strings.Replace(CompareUsXTextEdit2STT, `{bibleId}`, bibleId, 3)
+	var req = strings.Replace(ComparePlainEdit2USXEditScript, `{bibleId}`, bibleId, 3)
 	var control = controller.NewController(ctx, []byte(req))
 	filename, status := control.Process()
 	if status.IsErr {
@@ -57,10 +55,10 @@ func TestCompareUsXTextEdit2STT(t *testing.T) {
 	}
 	fmt.Println("Filename", filename)
 	count := NumHTMLFileLines(filename, t)
-	expected := 1
+	expected := 0
 	if count != expected {
 		t.Error(`expected`, expected, `found`, count)
 	}
-	identTest(`AudioWhisperJson_`+bibleId, t, request.TextSTT, ``,
-		`ENGWEBN_TT`, ``, `ENGWEBN2DA`, `eng`)
+	identTest(`PlainTextEditScript_`+bibleId, t, request.TextPlainEdit, ``,
+		`ENGWEBN_ET`, ``, ``, `eng`)
 }

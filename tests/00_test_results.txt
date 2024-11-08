@@ -1,0 +1,31 @@
+
+
+Tests run Nov 7, 2024
+
+# 13a
+go test ./tests -run TestTSBB
+ok  	dataset/tests	19.704s
+
+# 13b
+go test ./tests -run TestTSAeneasDirect
+Not attempted, not ready
+
+# 13c
+go test ./tests -run TestTSBucketDirect
+Credential Error
+
+# 13d
+go test ./tests -run TestFAVerseDirect
+can't open file '/home/ec2-user/go/dataset/mms/forced_align/align_and_segment.py
+
+# 13e
+go test ./tests -run TestFAVWordDirect
+utility.go:36: {true Error flush to mms_fa.py 500 write |1: broken pipe
+
+ # 14a
+ go test ./tests -run TestMMSASRDirect
+ will fail with same fa error
+
+ # 15a
+ go test ./tests -run TestMMSASRCompare
+ will fail with same fa error

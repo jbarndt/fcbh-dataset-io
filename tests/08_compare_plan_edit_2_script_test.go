@@ -1,4 +1,4 @@
-package testing
+package tests
 
 import (
 	"context"
@@ -9,14 +9,14 @@ import (
 	"testing"
 )
 
-const ComparePlainEdit2USXEditScript = `is_new: no
-dataset_name: PlainTextEditScript_{bibleId}
+const ComparePlainTextEdit2Script = `is_new: no
+dataset_name: ScriptTextScript_{bibleId}
 bible_id: {bibleId}
 username: GaryNTest
 email: gary@shortsands.com
-output_file: 06__compare_plain_edit_2_usx_edit.html
+output_file: 08__compare_plain_edit_2_script.html
 compare:
-  base_dataset: USX Text Edit Script_{bibleId}
+  base_dataset: PlainTextEditScript_{bibleId}
   compare_settings: # Mark yes, all settings that apply
     lower_case: n
     remove_prompt_chars: y
@@ -38,16 +38,17 @@ compare:
       normalize_nfkd:
 `
 
-func TestComparePlainEdit2USXEditScriptAPI(t *testing.T) {
+// Danger: This test is dependent on test 4 to create the script file.
+func TestComparePlainTextEdit2ScriptAPI(t *testing.T) {
 	var cases []APITest
-	cases = append(cases, APITest{BibleId: `ENGWEB`, Expected: 0})
-	APITestUtility(ComparePlainEdit2USXEditScript, cases, t)
+	cases = append(cases, APITest{BibleId: `ATIWBT`, Expected: 2})
+	APITestUtility(ComparePlainTextEdit2Script, cases, t)
 }
 
-func TestComparePlainEdit2USXEditScript(t *testing.T) {
-	var bibleId = `ENGWEB`
+func TestComparePlainTextEdit2Script(t *testing.T) {
+	var bibleId = `ATIWBT`
 	ctx := context.Background()
-	var req = strings.Replace(ComparePlainEdit2USXEditScript, `{bibleId}`, bibleId, 3)
+	var req = strings.Replace(ComparePlainTextEdit2Script, `{bibleId}`, bibleId, 3)
 	var control = controller.NewController(ctx, []byte(req))
 	filename, status := control.Process()
 	if status.IsErr {
@@ -55,10 +56,10 @@ func TestComparePlainEdit2USXEditScript(t *testing.T) {
 	}
 	fmt.Println("Filename", filename)
 	count := NumHTMLFileLines(filename, t)
-	expected := 0
+	expected := 2
 	if count != expected {
 		t.Error(`expected`, expected, `found`, count)
 	}
-	identTest(`PlainTextEditScript_`+bibleId, t, request.TextPlainEdit, ``,
-		`ENGWEBN_ET`, ``, ``, `eng`)
+	identTest(`ScriptTextScript_`+bibleId, t, request.TextScript, ``,
+		`ATIWBTN2ST`, ``, ``, `ati`)
 }

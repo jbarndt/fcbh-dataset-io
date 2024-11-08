@@ -1,4 +1,4 @@
-package testing
+package tests
 
 import (
 	"strings"
@@ -23,7 +23,7 @@ timestamps:
 
 func TestTSBB(t *testing.T) {
 	var tests []SqliteTest
-	tests = append(tests, SqliteTest{"SELECT count(*) FROM scripts", 8218})
+	tests = append(tests, SqliteTest{"SELECT count(*) FROM scripts", 8215})
 	tests = append(tests, SqliteTest{"SELECT count(*) FROM scripts WHERE script_begin_ts != 0.0", 7954})
 	testName := strings.Replace(TSBibleBrain, "{bibleId}", "ENGWEB", -1)
 	DirectSqlTest(testName, tests, t)
