@@ -7,4 +7,5 @@
 *.html
 *.db
 *.sqlite
+user-data.sh
 
