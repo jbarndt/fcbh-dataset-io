@@ -33,7 +33,7 @@ type SqliteTest struct {
 func DirectSqlTest(request string, tests []SqliteTest, t *testing.T) {
 	database, status := controller.CLIProcessEntry([]byte(request))
 	if status.IsErr {
-		t.Fatal(status)
+		t.Fatal(status.String())
 	}
 	conn, err := sql.Open("sqlite3", database)
 	if err != nil {
