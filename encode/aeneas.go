@@ -142,7 +142,7 @@ func (a *Aeneas) executeAeneas(language string, audioFile string, textFile strin
 		return "", status
 	}
 	language = `epo` // Esperanto - This should only be used when a language is not supported
-	pythonPath := os.Getenv(`PYTHON_EXE`)
+	pythonPath := os.Getenv(`FCBH_AENEAS_PYTHON`)
 	cmd := exec.Command(pythonPath, `-m`, `aeneas.tools.execute_task`,
 		audioFile,
 		textFile,

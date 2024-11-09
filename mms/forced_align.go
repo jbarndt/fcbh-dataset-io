@@ -96,7 +96,7 @@ func (f *ForcedAlign) forcedAlign(audioFile string, textFile string, lang string
 	var result string
 	var status dataset.Status
 	MMSFAPYTHON := os.Getenv("FCBH_MMS_PYTHON")
-	pythonScript := filepath.Join(os.Getenv("GOPATH"), "dataset/mms/forced_align/align_and_segment.py")
+	pythonScript := filepath.Join(os.Getenv("GOPROJ"), "dataset/mms/forced_align/align_and_segment.py")
 	outputDir := filepath.Join(tempDir, `output`)
 	cmd := exec.Command(MMSFAPYTHON,
 		pythonScript,
