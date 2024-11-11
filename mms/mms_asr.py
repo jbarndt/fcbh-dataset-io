@@ -47,8 +47,8 @@ for line in sys.stdin:
 # /Users/gary/FCBH2024/download/NPIDPI/NPIDPIN1DA/B02___01_Mark________NPIDPIN1DA.wav
 
 ## Testing
-## conda activate mms_fa
-## python mms_asr.py  npi
-## /Users/gary/FCBH2024/download/NPIDPI/NPIDPIN1DA/B02___01_Mark________NPIDPIN1DA.wav
-## ctrl-D
+## cd Documents/go2/dataset/mms
+## conda activate mms_asr
+## python mms_asr.py eng < /Users/gary/FCBH2024/download/ENGWEB/ENGWEBN2DA-mp3-64/B02___01_Mark________ENGWEBN2DA.wav
+
 
