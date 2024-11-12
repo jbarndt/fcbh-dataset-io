@@ -1,8 +1,10 @@
 import os
 import sys
-import torch
-from transformers import Wav2Vec2ForCTC, AutoProcessor
 from datasets import Dataset, Audio
+from transformers import Wav2Vec2ForCTC
+from transformers import AutoProcessor
+import torch
+
 
 ## Documentation used to write this program
 ## https://huggingface.co/docs/transformers/main/en/model_doc/mms
@@ -49,6 +51,8 @@ for line in sys.stdin:
 ## Testing
 ## cd Documents/go2/dataset/mms
 ## conda activate mms_asr
-## python mms_asr.py eng < /Users/gary/FCBH2024/download/ENGWEB/ENGWEBN2DA-mp3-64/B02___01_Mark________ENGWEBN2DA.wav
+## python mms_asr.py eng
+## /Users/gary/FCBH2024/download/ENGWEB/ENGWEBN2DA-mp3-64/B02___01_Mark________ENGWEBN2DA.wav
+
 
 

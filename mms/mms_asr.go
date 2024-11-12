@@ -37,7 +37,7 @@ func (a *MMSASR) ProcessFiles(files []input.InputFile) dataset.Status {
 		return status
 	}
 	pythonScript := filepath.Join(os.Getenv("GOPROJ"), "dataset/mms/mms_asr.py")
-	writer, reader, status := callStdIOScript(a.ctx, os.Getenv(`FCBH_MMS_PYTHON`), pythonScript, lang)
+	writer, reader, status := callStdIOScript(a.ctx, os.Getenv(`FCBH_MMS_ASR_PYTHON`), pythonScript, lang)
 	if status.IsErr {
 		return status
 	}
