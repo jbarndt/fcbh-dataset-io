@@ -10,7 +10,7 @@ dataset_name: TS_BB
 bible_id: {bibleId}
 username: GaryNTest
 email: gary@shortsands.com
-output_file: 13a ts_bb.sqlite
+output_file: 13a_ts_bb.sqlite
 text_data:
   bible_brain:
     text_plain_edit: yes
