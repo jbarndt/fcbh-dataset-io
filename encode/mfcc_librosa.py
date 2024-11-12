@@ -27,4 +27,4 @@ result["mfcc_type"] = str(type(mfccs_T.dtype))
 result["mfccs"] = mfccs_T.tolist()
 print(json.dumps(result))
 
-# python3 mfcc_librosa.py $HOME/FCBH2024/download/ENGWEB/ENGWEBN2DA/B26___01_Jude________ENGWEBN2DA.mp3 20
+# python mfcc_librosa.py $HOME/FCBH2024/download/ENGWEB/ENGWEBN2DA-mp3-64/B26___01_Jude________ENGWEBN2DA.mp3 20

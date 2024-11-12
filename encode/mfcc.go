@@ -71,7 +71,7 @@ type MFCCResp struct {
 func (m *MFCC) executeLibrosa(audioFile string) (MFCCResp, dataset.Status) {
 	var result MFCCResp
 	var status dataset.Status
-	pythonPath := os.Getenv(`PYTHON_EXE`)
+	pythonPath := os.Getenv(`FCBH_LIBROSA_PYTHON`)
 	mfccLibrosaPath := filepath.Join(os.Getenv(`GOPROJ`), `dataset`, `encode`, `mfcc_librosa.py`)
 	cmd := exec.Command(pythonPath, mfccLibrosaPath, audioFile, strconv.Itoa(m.numMFCC))
 	var stdoutBuf, stderrBuf bytes.Buffer
