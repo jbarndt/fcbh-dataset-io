@@ -20,7 +20,7 @@ audio_data:
 timestamps:
   aeneas: yes
 testament:
-  nt_books: ['1JN']
+  nt_books: [1JN]
 `
 
 func TestTSAeneasDirect(t *testing.T) {
