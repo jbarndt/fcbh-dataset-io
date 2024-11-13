@@ -44,3 +44,7 @@ mac ok      dataset/tests   43.359s
  # 12a Librosa
  go test ./tests -run TestLibrosaDirect
  mac ok      dataset/tests   21.745s
+
+# 12b FastText
+go test ./tests -run TestFasttextDirect
+mac ok      dataset/tests   14.134s

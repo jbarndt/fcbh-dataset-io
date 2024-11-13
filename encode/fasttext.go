@@ -18,9 +18,6 @@ import (
 /**
 FastText
 https://github.com/facebookresearch/fastText?tab=readme-ov-file
-Installed on Mac using:
-brew install fasttext
-
 */
 
 type FastText struct {
@@ -78,9 +75,10 @@ func (f *FastText) createFile(words []db.Word) (string, dataset.Status) {
 
 func (f *FastText) executeFastText(inputFile string) (string, dataset.Status) {
 	var status dataset.Status
+	fastTextExe := os.Getenv("FCBH_FASTTEXT_EXE")
 	model := `skipgram` // or `cbow
 	outputModel := strings.Replace(f.conn.DatabasePath, `.db`, `_fasttext`, 1)
-	cmd := exec.Command(`fasttext`, model, `-input`, inputFile, `-output`, outputModel)
+	cmd := exec.Command(fastTextExe, model, `-input`, inputFile, `-output`, outputModel)
 	var stdoutBuf, stderrBuf bytes.Buffer
 	cmd.Stdout = &stdoutBuf
 	cmd.Stderr = &stderrBuf
@@ -99,7 +97,8 @@ func (f *FastText) executeFastText(inputFile string) (string, dataset.Status) {
 
 func (f *FastText) getWordEncodings(model string, words []db.Word) ([]db.Word, dataset.Status) {
 	var status dataset.Status
-	cmd := exec.Command(`fasttext`, `print-word-vectors`, model+`.bin`)
+	fastTextExe := os.Getenv("FCBH_FASTTEXT_EXE")
+	cmd := exec.Command(fastTextExe, `print-word-vectors`, model+`.bin`)
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		status = log.Error(f.ctx, 500, err, `Unable to open stdin for writing to Fasttext`)
