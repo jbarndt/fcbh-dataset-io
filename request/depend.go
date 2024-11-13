@@ -46,6 +46,12 @@ func (r *RequestDecoder) Depend(req Request) {
 		if req.AudioData.NoAudio {
 			r.errors = append(r.errors, `Timestamps are requested, but there is no audio`)
 		}
+		if req.TextData.NoText {
+			r.errors = append(r.errors, `Timestamps are requested, but there is no text`)
+			// The need for text is not a real requirement, but the system is coded to store timestamps
+			// in the scripts table, and it cannot do this unless there is text.  If this becomes
+			// a problem the system could be changed to insert timestamp data without text.
+		}
 	}
 	if req.Timestamps.Aeneas || req.Timestamps.MMSFAVerse || req.Timestamps.MMSFAWord {
 		if req.TextData.NoText {

@@ -16,10 +16,15 @@ username: GaryNTest
 email: gary@shortsands.com
 output_file: 09__audio_whisper_json.json
 testament: # Choose one or both
-  nt_books: ["PHM"]
+  nt_books: [PHM]
+text_data:
+  bible_brain:
+    text_usx_edit: yes
 audio_data:
   bible_brain:
     mp3_64: yes
+timestamps:
+  ts_bucket: yes
 speech_to_text:
   whisper:
     model:

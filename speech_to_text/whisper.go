@@ -107,7 +107,7 @@ func (w *Whisper) ProcessFiles(files []input.InputFile) dataset.Status {
 
 func (w *Whisper) RunWhisper(audioFile string) (string, dataset.Status) {
 	var status dataset.Status
-	whisperPath := os.Getenv(`WHISPER_EXE`)
+	whisperPath := os.Getenv(`FCBH_WHISPER_EXE`)
 	cmd := exec.Command(whisperPath,
 		audioFile,
 		`--model`, w.model,
