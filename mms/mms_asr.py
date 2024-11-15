@@ -22,11 +22,18 @@ if len(sys.argv) < 2:
     print("Usage: mms_asr.py  {iso639-3}")
     sys.exit(1)
 lang = sys.argv[1]
+if torch.cuda.is_available():
+    torch.cuda.empty_cache() # This might not be OK for concurrent processes
+    device = 'cuda'
+else:
+    device = 'cpu'
+print("Using device:", device, file=sys.stderr)
 modelId = "facebook/mms-1b-all"
 if not isSupportedLanguage(modelId, lang):
     print(lang, "is not supported by", modelId)
 processor = AutoProcessor.from_pretrained(modelId, target_lang=lang)
 model = Wav2Vec2ForCTC.from_pretrained(modelId, target_lang=lang, ignore_mismatched_sizes=True)
+model = model.to(device)
 
 for line in sys.stdin:
     audioFile = line.strip()
@@ -35,6 +42,7 @@ for line in sys.stdin:
     sample = next(iter(streamData))["audio"]["array"]
 
     inputs = processor(sample, sampling_rate=16_000, return_tensors="pt")
+    inputs = {name: tensor.to(device) for name, tensor in inputs.items()}
     with torch.no_grad():
         outputs = model(**inputs).logits
     ids = torch.argmax(outputs, dim=-1)[0]
