@@ -2,45 +2,45 @@
 
 Tests run Nov 7-13, 2024
 
- # 12a_librosa
+ # 12a_librosa [MRK]
  go test ./tests -run TestLibrosaDirect
- mac ok      dataset/tests   21.745s
+ mac ok     dataset/tests   21.745s
  aws ok  	dataset/tests	48.225s
 
-# 12b_fasttext
+# 12b_fasttext NT
 go test ./tests -run TestFasttextDirect
 mac ok      dataset/tests   14.134s
-aws ok  	dataset/tests	23.218s
+aws ok  	dataset/tests	23.218s, 43.399
 
-# 13a_ts_bb
-go test ./tests -run TestTSBB
+# 13a_ts_bb [MRK]
+go test ./tests -count=1 -run TestTSBB
 mac ok      dataset/tests   6.373s
 aws ok  	dataset/tests	1.643s
 
-# 13b_ts_aeneas
+# 13b_ts_aeneas [1JN]
 go test ./tests -run TestTSAeneasDirect
 mac ok      dataset/tests   9.644s
 aws ok  	dataset/tests	7.229s
 
-# 13c_ts_bucket
+# 13c_ts_bucket [TIT]
 go test ./tests -run TestTSBucketDirect
 mac ok      dataset/tests   2.163s
 aws ok  	dataset/tests	0.463s
 
-# 13d_fa_verse
+# 13d_fa_verse [PHM]
 go test ./tests -run TestFAVerseDirect
 mac ok  	dataset/tests	50.491s
-aws ok  	dataset/tests	25.305s
+aws ok  	dataset/tests	17.304s, 30.
 
-# 13e_fa_word
+# 13e_fa_word [PHM]
 go test ./tests -run TestFAVWordDirect
-mac ok  	dataset/tests	76.812s
-aws ok  	dataset/tests	28.621s
+mac ok  	dataset/tests	76.812s, 111.623s
+aws ok  	dataset/tests	19.941s
 
-# 14a_mms_asr
+# 14a_mms_asr [PHM]
 go test -count=1 ./tests -run TestMMSASRDirect
-mac ok      dataset/tests   95.041s
-aws ok  	dataset/tests	94.138s
+mac ok      dataset/tests   95.041s, 60.639s
+aws ok  	dataset/tests	25.839s
 
 # 14b_whisper
 go test ./tests -run TestWhisperDirect
