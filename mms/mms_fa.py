@@ -1,3 +1,4 @@
+
 import os
 import sys
 import re
@@ -100,6 +101,8 @@ model = bundle.get_model(with_star=False)
 model.to(device)
 tokenizer = bundle.get_tokenizer()
 aligner = bundle.get_aligner()
+if device == "cuda":
+    aligner = aligner.cuda()
 uroman = ur.Uroman() # load uroman
 for line in sys.stdin:
     inp = json.loads(line)
