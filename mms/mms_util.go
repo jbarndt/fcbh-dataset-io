@@ -6,6 +6,7 @@ import (
 	"dataset"
 	log "dataset/logger"
 	"github.com/garygriswold/lang_tree/search"
+	"io"
 	"os/exec"
 	"strings"
 )
@@ -53,12 +54,34 @@ func callStdIOScript(ctx context.Context, command string, arg ...string) (*bufio
 		status = log.Error(ctx, 500, err, `Unable to open stdout for writing`)
 		return writer, reader, status
 	}
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		status = log.Error(ctx, 500, err, `Unable to open stderr for writing`)
+		return writer, reader, status
+	}
 	err = cmd.Start()
 	if err != nil {
 		status = log.Error(ctx, 500, err, `Unable to start writing`)
 		return writer, reader, status
 	}
+	handleStderr(ctx, stderr)
 	writer = bufio.NewWriterSize(stdin, 4096)
 	reader = bufio.NewReaderSize(stdout, 4096)
 	return writer, reader, status
+}
+
+func handleStderr(ctx context.Context, stderr io.ReadCloser) {
+	go func() {
+		stderrReader := bufio.NewReader(stderr)
+		for {
+			line, err := stderrReader.ReadString('\n')
+			if err != nil {
+				if err != io.EOF {
+					_ = log.Error(ctx, 500, err, "Error reading stderr")
+				}
+				return
+			}
+			log.Warn(ctx, "Stderr: ", line)
+		}
+	}()
 }
