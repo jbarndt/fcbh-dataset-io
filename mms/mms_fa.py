@@ -20,6 +20,7 @@ import ffmpeg
 # pip install uroman # conda does not have it
 # pip install soundfile # needed for loading audio files
 # pip install ffmpeg-python # needed for audio file conversion to wav
+# This program is NOT reentrant because of torch.cuda.empty_cache()
 
 # convert the text of a chapter to a list of normalized and uroman verse text and references
 def prepareText(lang:str, verses):
@@ -102,6 +103,7 @@ tokenizer = bundle.get_tokenizer()
 aligner = bundle.get_aligner()
 uroman = ur.Uroman() # load uroman
 for line in sys.stdin:
+    torch.cuda.empty_cache() # This will not be OK for concurrent processes
     inp = json.loads(line)
     results = align(inp["audio_file"], inp["verses"])
     output = json.dumps(results)

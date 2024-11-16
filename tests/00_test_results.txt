@@ -33,14 +33,18 @@ mac ok  	dataset/tests	50.491s
 aws ok  	dataset/tests	17.304s, 30.
 
 # 13e_fa_word [PHM]
-go test ./tests -run TestFAVWordDirect
+go test ./tests -count=1 -run TestFAVWordDirect
 mac ok  	dataset/tests	76.812s, 111.623s
 aws ok  	dataset/tests	19.941s
+After clearing cuda cache
+mac ok      dataset/tests   110.952s, 113.351
 
 # 14a_mms_asr [PHM]
 go test -count=1 ./tests -run TestMMSASRDirect
 mac ok      dataset/tests   95.041s, 60.639s
 aws ok  	dataset/tests	25.839s
+After clearing cuda cache
+mac ok      dataset/tests   61.198s, 53.518
 
 # 14b_whisper
 go test ./tests -run TestWhisperDirect

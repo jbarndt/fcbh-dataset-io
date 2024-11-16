@@ -8,6 +8,7 @@ import torch
 
 ## Documentation used to write this program
 ## https://huggingface.co/docs/transformers/main/en/model_doc/mms
+## This program is NOT reentrant because of torch.cuda.empty_cache()
 
 def isSupportedLanguage(modelId:str, lang:str):
     processor = AutoProcessor.from_pretrained(modelId)
@@ -23,7 +24,6 @@ if len(sys.argv) < 2:
     sys.exit(1)
 lang = sys.argv[1]
 if torch.cuda.is_available():
-    torch.cuda.empty_cache() # This might not be OK for concurrent processes
     device = 'cuda'
 else:
     device = 'cpu'
@@ -36,6 +36,7 @@ model = Wav2Vec2ForCTC.from_pretrained(modelId, target_lang=lang, ignore_mismatc
 model = model.to(device)
 
 for line in sys.stdin:
+    torch.cuda.empty_cache() # This will not be OK for concurrent processes
     audioFile = line.strip()
     fromDict = Dataset.from_dict({"audio": [audioFile]})
     streamData = fromDict.cast_column("audio", Audio(sampling_rate=16000))
