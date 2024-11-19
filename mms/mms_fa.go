@@ -53,6 +53,7 @@ func (a *MMSFA) ProcessFiles(files []input.InputFile) dataset.Status {
 		return status
 	}
 	for _, file := range files {
+		log.Info(a.ctx, "Verse FA", file.BookId, file.Chapter)
 		status = a.processFile(file, writer, reader)
 		if status.IsErr {
 			return status

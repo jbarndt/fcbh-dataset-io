@@ -48,6 +48,7 @@ func (f *ForcedAlign) ProcessFiles(files []input.InputFile) dataset.Status {
 		return status
 	}
 	for _, file := range files {
+		log.Info(f.ctx, "Word FA", file.BookId, file.Chapter)
 		status = f.processFile(file, lang)
 		if status.IsErr {
 			return status

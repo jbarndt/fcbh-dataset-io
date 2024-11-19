@@ -72,6 +72,7 @@ func (c *Controller) processSteps() (string, dataset.Status) {
 	var filename string
 	var status dataset.Status
 	// Decode YAML Request File
+	log.Info(c.ctx, "Parse .yaml file.")
 	reqDecoder := request.NewRequestDecoder(c.ctx)
 	c.req, status = reqDecoder.Process(c.yamlRequest)
 	if status.IsErr {
@@ -79,6 +80,7 @@ func (c *Controller) processSteps() (string, dataset.Status) {
 	}
 	c.ctx = context.WithValue(c.ctx, `request`, string(c.yamlRequest))
 	// Get User
+	log.Info(c.ctx, "Fetch Bible Brain data.")
 	c.user, status = fetch.GetDBPUser(c.req)
 	if status.IsErr {
 		return filename, status
@@ -103,15 +105,21 @@ func (c *Controller) processSteps() (string, dataset.Status) {
 	}
 	// Collect Text Input
 	var textFiles []input.InputFile
-	textFiles, status = c.collectTextInput()
-	if status.IsErr {
-		return filename, status
+	if !c.req.TextData.NoText {
+		log.Info(c.ctx, "Load text files.")
+		textFiles, status = c.collectTextInput()
+		if status.IsErr {
+			return filename, status
+		}
 	}
 	// Collect Audio Input
 	var audioFiles []input.InputFile
-	audioFiles, status = c.collectAudioInput()
-	if status.IsErr {
-		return filename, status
+	if !c.req.AudioData.NoAudio {
+		log.Info(c.ctx, "Load audio files.")
+		audioFiles, status = c.collectAudioInput()
+		if status.IsErr {
+			return filename, status
+		}
 	}
 	// Update Ident Table
 	status = input.UpdateIdent(c.database, &c.ident, textFiles, audioFiles)
@@ -119,14 +127,20 @@ func (c *Controller) processSteps() (string, dataset.Status) {
 		return filename, status
 	}
 	// Read Text Data
-	status = c.readText(textFiles)
-	if status.IsErr {
-		return filename, status
+	if !c.req.TextData.NoText {
+		log.Info(c.ctx, "Read and parse text files.")
+		status = c.readText(textFiles)
+		if status.IsErr {
+			return filename, status
+		}
 	}
 	// Timestamps
-	status = c.timestamps(audioFiles)
-	if status.IsErr {
-		return filename, status
+	if !c.req.Timestamps.NoTimestamps {
+		log.Info(c.ctx, "Read or create audio timestamp data.")
+		status = c.timestamps(audioFiles)
+		if status.IsErr {
+			return filename, status
+		}
 	}
 	// Copy for STT
 	if !c.req.TextData.NoText &&
@@ -134,7 +148,7 @@ func (c *Controller) processSteps() (string, dataset.Status) {
 		!c.req.SpeechToText.NoSpeechToText {
 		c.req.Compare.BaseDataset = c.database.Project
 		// This makes a copy of database, and closes it.  Names the new database *_STT, and returns new
-		c.database, status = c.database.CopyDatabase(`_STT`)
+		c.database, status = c.database.CopyDatabase(`_audio`)
 		if status.IsErr {
 			return filename, status
 		}
@@ -144,26 +158,37 @@ func (c *Controller) processSteps() (string, dataset.Status) {
 		}
 	}
 	// Speech to Text
-	status = c.speechToText(audioFiles)
-	if status.IsErr {
-		return filename, status
+	if !c.req.SpeechToText.NoSpeechToText {
+		log.Info(c.ctx, "Perform speech to text.")
+		status = c.speechToText(audioFiles)
+		if status.IsErr {
+			return filename, status
+		}
 	}
 	// Encode Audio
-	status = c.encodeAudio(audioFiles)
-	if status.IsErr {
-		return filename, status
+	if !c.req.AudioEncoding.NoEncoding {
+		log.Info(c.ctx, "Perform audio encoding.")
+		status = c.encodeAudio(audioFiles)
+		if status.IsErr {
+			return filename, status
+		}
 	}
 	// Encode Text
-	status = c.encodeText()
-	if status.IsErr {
-		return filename, status
+	if !c.req.TextEncoding.NoEncoding {
+		log.Info(c.ctx, "Perform text encoding.")
+		status = c.encodeText()
+		if status.IsErr {
+			return filename, status
+		}
 	}
 	// Compare
 	if c.req.OutputFormat.HTML {
+		log.Info(c.ctx, "Perform text comparison.")
 		filename, status = c.matchText()
 		return filename, status // return whether success or not
 	}
 	// Prepare output
+	log.Info(c.ctx, "Generate output.")
 	if c.req.OutputFormat.Sqlite {
 		filename = c.database.DatabasePath
 	} else {
