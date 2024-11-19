@@ -4,6 +4,7 @@ import (
 	"context"
 	"dataset"
 	log "dataset/logger"
+	"math"
 	"os"
 	"strconv"
 	"time"
@@ -57,6 +58,8 @@ func (h *HTMLWriter) WriteHeading(baseDataset string) string {
     <tr>
         <th>Line</th>
         <th>Err %</th>
+		<th>Chars</th>
+		<th>Inbal</th>
 		<th>Error</th>
         <th>Ref</th>
 		<th>Text Comparison</th>
@@ -73,10 +76,10 @@ func (h *HTMLWriter) WriteVerseDiff(verse pair, inserts int, deletes int, errPct
 	_, _ = h.out.WriteString("<tr>\n")
 	h.writeCell(strconv.Itoa(h.lineNum))
 	h.writeCell(strconv.FormatFloat(errPct, 'f', 0, 64))
-	errors := `+` + strconv.Itoa(inserts) + ` -` + strconv.Itoa(deletes)
-	h.writeCell(errors)
-	ref := verse.bookId + ` ` + strconv.Itoa(verse.chapter) + `:` + verse.num
-	h.writeCell(ref)
+	h.writeCell(strconv.Itoa(inserts + deletes))
+	h.writeCell(strconv.Itoa(int(math.Abs(float64(inserts - deletes)))))
+	h.writeCell(`+` + strconv.Itoa(inserts) + ` -` + strconv.Itoa(deletes))
+	h.writeCell(verse.bookId + ` ` + strconv.Itoa(verse.chapter) + `:` + verse.num)
 	h.writeCell(diffHtml)
 	_, _ = h.out.WriteString("</tr>\n")
 }
@@ -86,10 +89,10 @@ func (h *HTMLWriter) WriteChapterDiff(bookId string, chapter int, inserts int, d
 	_, _ = h.out.WriteString("<tr>\n")
 	h.writeCell(strconv.Itoa(h.lineNum))
 	h.writeCell(strconv.FormatFloat(errPct, 'f', 0, 64))
-	errors := `+` + strconv.Itoa(inserts) + ` -` + strconv.Itoa(deletes)
-	h.writeCell(errors)
-	ref := bookId + ` ` + strconv.Itoa(chapter)
-	h.writeCell(ref)
+	h.writeCell(strconv.Itoa(inserts + deletes))
+	h.writeCell(strconv.Itoa(int(math.Abs(float64(inserts - deletes)))))
+	h.writeCell(`+` + strconv.Itoa(inserts) + ` -` + strconv.Itoa(deletes))
+	h.writeCell(bookId + ` ` + strconv.Itoa(chapter))
 	h.writeCell(diffHtml)
 	_, _ = h.out.WriteString("</tr>\n")
 }
@@ -98,10 +101,10 @@ func (h *HTMLWriter) WriteScriptLineDiff(bookId string, chapter int, line string
 	_, _ = h.out.WriteString("<tr>\n")
 	h.writeCell(line)
 	h.writeCell(strconv.FormatFloat(errPct, 'f', 0, 64))
-	errors := `+` + strconv.Itoa(inserts) + ` -` + strconv.Itoa(deletes)
-	h.writeCell(errors)
-	ref := bookId + ` ` + strconv.Itoa(chapter)
-	h.writeCell(ref)
+	h.writeCell(strconv.Itoa(inserts + deletes))
+	h.writeCell(strconv.Itoa(int(math.Abs(float64(inserts - deletes)))))
+	h.writeCell(`+` + strconv.Itoa(inserts) + ` -` + strconv.Itoa(deletes))
+	h.writeCell(bookId + ` ` + strconv.Itoa(chapter))
 	h.writeCell(diffHtml)
 	_, _ = h.out.WriteString("</tr>\n")
 }
@@ -156,7 +159,7 @@ func (h *HTMLWriter) WriteEnd(insertSum int, deleteSum int, diffCount int) {
 	_, _ = h.out.WriteString("    $(document).ready(function() {\n")
 	_, _ = h.out.WriteString("        $('#diffTable').DataTable({\n")
 	_, _ = h.out.WriteString(`           "columnDefs": [` + "\n")
-	_, _ = h.out.WriteString(`              { "orderable": false, "targets": [4] }` + "\n")
+	_, _ = h.out.WriteString(`              { "orderable": false, "targets": [4,6] }` + "\n")
 	_, _ = h.out.WriteString("            ],\n")
 	_, _ = h.out.WriteString(`            "pageLength": 10,` + "\n")
 	_, _ = h.out.WriteString(`	         "lengthMenu": [[5, 10, 25, 50, -1], [5, 10, 25, 50, "All"]]` + "\n")
