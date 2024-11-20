@@ -1,6 +1,9 @@
 
 
-Tests run Nov 7-13, 2024
+# 3a_zip_file
+go test ./tests -run TestZipFileDirect
+mac ok      dataset/tests   5.166s
+### This test will not run on AWS without setup.
 
  # 12a_librosa [MRK]
  go test ./tests -run TestLibrosaDirect

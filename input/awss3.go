@@ -79,6 +79,10 @@ func AWSS3Input(ctx context.Context, path string, testament request.Testament) (
 			}
 		}
 	}
+	files, status = Unzip(ctx, files)
+	if status.IsErr {
+		return files, status
+	}
 	for i := range files {
 		status = SetMediaType(ctx, &files[i])
 		if status.IsErr {

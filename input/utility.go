@@ -1,12 +1,16 @@
 package input
 
 import (
+	"archive/zip"
 	"context"
 	"dataset"
 	"dataset/db"
 	log "dataset/logger"
 	"dataset/request"
+	"io"
+	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -26,6 +30,56 @@ func Glob(ctx context.Context, search string) ([]InputFile, dataset.Status) {
 			input.Filename = filepath.Base(file)
 			results = append(results, input)
 		}
+	}
+	return results, status
+}
+
+func Unzip(ctx context.Context, files []InputFile) ([]InputFile, dataset.Status) {
+	var results []InputFile
+	var status dataset.Status
+	if len(files) == 1 && filepath.Ext(files[0].Filename) == `.zip` {
+		r, err := zip.OpenReader(files[0].FilePath())
+		if err != nil {
+			status = log.Error(ctx, 500, err, `Error unzipping file`)
+			return results, status
+		}
+		defer r.Close()
+		dest := files[0].Directory
+		for _, f := range r.File {
+			if f.FileInfo().Name()[0] == '.' {
+				continue
+			}
+			rc, err2 := f.Open()
+			if err2 != nil {
+				status = log.Error(ctx, 500, err2, `Error reading zip file`)
+				return results, status
+			}
+			defer rc.Close()
+			if f.FileInfo().IsDir() {
+				dest = filepath.Join(dest, f.FileInfo().Name())
+				os.MkdirAll(dest, f.Mode())
+				continue
+			}
+			path := filepath.Join(dest, f.FileInfo().Name())
+			outFile, err3 := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+			if err3 != nil {
+				status = log.Error(ctx, 500, err3, `Error opening file to unzip into`)
+				return results, status
+			}
+			defer outFile.Close()
+			_, err = io.Copy(outFile, rc)
+			_ = rc.Close()
+			if err != nil {
+				status = log.Error(ctx, 500, err, `Error copying file during unzip`)
+				return results, status
+			}
+			results = append(results, InputFile{Filename: f.FileInfo().Name(), Directory: dest})
+		}
+		sort.Slice(results, func(i, j int) bool {
+			return results[i].Filename < results[j].Filename
+		})
+	} else {
+		results = files
 	}
 	return results, status
 }

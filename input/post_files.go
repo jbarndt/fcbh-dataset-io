@@ -65,6 +65,10 @@ func (p *PostFiles) PostInput(ftype string, testament request.Testament) ([]Inpu
 	} else if ftype == "audio" {
 		files = p.audio
 	}
+	files, status = Unzip(p.ctx, files)
+	if status.IsErr {
+		return files, status
+	}
 	for i, _ := range files {
 		status = SetMediaType(p.ctx, &files[i])
 		if status.IsErr {

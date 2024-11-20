@@ -13,6 +13,10 @@ func FileInput(ctx context.Context, path string, testament request.Testament) ([
 	if status.IsErr {
 		return files, status
 	}
+	files, status = Unzip(ctx, files)
+	if status.IsErr {
+		return files, status
+	}
 	for i, _ := range files {
 		status = SetMediaType(ctx, &files[i])
 		if status.IsErr {
