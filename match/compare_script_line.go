@@ -63,7 +63,8 @@ func (c *Compare) scriptLineDiff(bookId string, chapter int, line string, baseTe
 		inserts, deletes := c.measure(diffs)
 		c.insertSum += inserts
 		c.deleteSum += deletes
-		errPct := float64((inserts+deletes)*100) / float64(len(baseText))
+		avgLen := float64(len(baseText)+len(text)) / 2.0
+		errPct := float64((inserts+deletes)*100) / avgLen
 		c.writer.WriteScriptLineDiff(bookId, chapter, line, inserts, deletes, errPct, diffMatch.DiffPrettyHtml(diffs))
 		c.diffCount++
 	}

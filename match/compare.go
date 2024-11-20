@@ -461,18 +461,19 @@ func (c *Compare) diff(verses1 []Verse, verses2 []Verse) {
 	}
 	// perform a match on pairs
 	diffMatch := diffmatchpatch.New()
-	for _, pair := range pairs {
-		if len(pair.text1) > 0 || len(pair.text2) > 0 {
-			pair.text1 = strings.TrimSpace(pair.text1)
-			pair.text2 = strings.TrimSpace(pair.text2)
-			diffs := diffMatch.DiffMain(pair.text1, pair.text2, false)
+	for _, par := range pairs {
+		if len(par.text1) > 0 || len(par.text2) > 0 {
+			par.text1 = strings.TrimSpace(par.text1)
+			par.text2 = strings.TrimSpace(par.text2)
+			diffs := diffMatch.DiffMain(par.text1, par.text2, false)
 			//diffs = diffMatch.DiffCleanupSemantic(diffs)
 			if !c.isMatch(diffs) {
 				inserts, deletes := c.measure(diffs)
 				c.insertSum += inserts
 				c.deleteSum += deletes
-				errPct := float64((inserts+deletes)*100) / float64(len(pair.text1))
-				c.writer.WriteVerseDiff(pair, inserts, deletes, errPct, diffMatch.DiffPrettyHtml(diffs))
+				avgLen := float64(len(par.text1)+len(par.text2)) / 2.0
+				errPct := float64((inserts+deletes)*100) / avgLen
+				c.writer.WriteVerseDiff(par, inserts, deletes, errPct, diffMatch.DiffPrettyHtml(diffs))
 				c.diffCount++
 			}
 		}
