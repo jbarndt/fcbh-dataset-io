@@ -53,6 +53,11 @@ func (h *HTMLWriter) WriteHeading(baseDataset string) string {
 	_, _ = h.out.WriteString(` only, while GREEN characters are in `)
 	_, _ = h.out.WriteString(h.datasetName)
 	_, _ = h.out.WriteString(" only</h3>\n")
+	checkbox := `<div style="text-align: center; margin: 10px;">
+		<input type="checkbox" id="hideVerse0"><label for="hideVerse0">Hide Headings</label>
+	</div>
+`
+	_, _ = h.out.WriteString(checkbox)
 	table := `<table id="diffTable" class="display">
     <thead>
     <tr>
@@ -155,19 +160,32 @@ func (h *HTMLWriter) WriteEnd(insertSum int, deleteSum int, diffCount int) {
 	</style>
 `
 	_, _ = h.out.WriteString(style)
-	_, _ = h.out.WriteString("<script>\n")
-	_, _ = h.out.WriteString("    $(document).ready(function() {\n")
-	_, _ = h.out.WriteString("        $('#diffTable').DataTable({\n")
-	_, _ = h.out.WriteString(`           "columnDefs": [` + "\n")
-	_, _ = h.out.WriteString(`              { "orderable": false, "targets": [4,6] }` + "\n")
-	_, _ = h.out.WriteString("            ],\n")
-	_, _ = h.out.WriteString(`            "pageLength": 10,` + "\n")
-	_, _ = h.out.WriteString(`	         "lengthMenu": [[5, 10, 25, 50, -1], [5, 10, 25, 50, "All"]]` + "\n")
-	_, _ = h.out.WriteString("        });\n")
-	_, _ = h.out.WriteString("    });\n")
-	_, _ = h.out.WriteString("</script>\n")
-	end := ` </body>
-</html>`
-	_, _ = h.out.WriteString(end)
+	script := `<script>
+    $(document).ready(function() {
+        var table = $('#diffTable').DataTable({
+            "columnDefs": [
+                { "orderable": false, "targets": [4,6] }
+				// { "visible": false, "targets": [7] }  
+            ],
+            "pageLength": 10,
+            "lengthMenu": [[5, 10, 25, 50, -1], [5, 10, 25, 50, "All"]]
+        });
+        $('#hideVerse0').on('change', function() {
+            if(this.checked) {
+                table.rows(function(idx, data, node) {
+					return data[5].endsWith(":0");
+                }).nodes().to$().hide();
+            } else {
+                table.rows().nodes().to$().show();
+            }
+            // Optional: redraw table to fix any layout issues
+            // table.draw();
+        });
+    });
+</script>
+</body>
+</html>
+`
+	_, _ = h.out.WriteString(script)
 	_ = h.out.Close()
 }
