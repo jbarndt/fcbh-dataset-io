@@ -17,9 +17,8 @@ output_file: abc/my_project.csv
 
 func TestRunBucket(t *testing.T) {
 	ctx := context.Background()
-	b := NewRunBucket(ctx)
+	b := NewRunBucket(ctx, []byte(runBucketTest))
 	b.isUnitTest = true
-	b.AddYaml([]byte(runBucketTest))
 	if b.username != "GaryNTest" {
 		t.Error("Username should be GaryNTest, it is: ", b.username)
 	}
@@ -42,7 +41,6 @@ func TestRunBucket(t *testing.T) {
 	b.AddDatabase(database2)
 	b.AddOutput("../tests/02__plain_text_edit_script.csv")
 	b.AddOutput("../tests/02__plain_text_edit_script.json")
-	b.AddDuration()
 	status = b.PersistToBucket()
 	if status.IsErr {
 		t.Fatal(status.String())

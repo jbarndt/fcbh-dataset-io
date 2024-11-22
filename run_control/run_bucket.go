@@ -28,21 +28,17 @@ type RunBucket struct {
 	logFile     string
 	databases   []string
 	outputs     []string
-	duration    string
 }
 
-func NewRunBucket(ctx context.Context) RunBucket {
+func NewRunBucket(ctx context.Context, yaml []byte) RunBucket {
 	var b RunBucket
 	b.ctx = ctx
 	b.start = time.Now()
 	b.bucket = "dataset-io"
-	return b
-}
-
-func (b *RunBucket) AddYaml(yaml []byte) {
 	b.yamlContent = string(yaml)
 	b.username = b.parseYaml(`username`)
 	b.dataset = b.parseYaml(`dataset_name`)
+	return b
 }
 
 func (b *RunBucket) AddLogFile(logPath string) {
@@ -55,10 +51,6 @@ func (b *RunBucket) AddDatabase(conn db.DBAdapter) {
 
 func (b *RunBucket) AddOutput(outputPath string) {
 	b.outputs = append(b.outputs, outputPath)
-}
-
-func (b *RunBucket) AddDuration() {
-	b.duration = time.Since(b.start).String()
 }
 
 func (b *RunBucket) PersistToBucket() dataset.Status {
@@ -91,7 +83,7 @@ func (b *RunBucket) PersistToBucket() dataset.Status {
 		}
 		status = b.uploadString(client, run, "runtime", b.start.String(), "")
 		allStatus = append(allStatus, status)
-		status = b.uploadString(client, run, "duration", b.duration, "")
+		status = b.uploadString(client, run, "duration", time.Since(b.start).String(), "")
 		allStatus = append(allStatus, status)
 		for _, stat := range allStatus {
 			if stat.IsErr {
