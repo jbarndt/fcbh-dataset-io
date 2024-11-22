@@ -466,14 +466,15 @@ func (c *Compare) diff(verses1 []Verse, verses2 []Verse) {
 			par.text1 = strings.TrimSpace(par.text1)
 			par.text2 = strings.TrimSpace(par.text2)
 			diffs := diffMatch.DiffMain(par.text1, par.text2, false)
-			//diffs = diffMatch.DiffCleanupSemantic(diffs)
+			diffMatch.DiffCleanupMerge(diffs) // required for measure to compute largest
 			if !c.isMatch(diffs) {
-				inserts, deletes := c.measure(diffs)
+				c.ensureClean(diffs)
+				inserts, deletes, largest := c.measure(diffs)
 				c.insertSum += inserts
 				c.deleteSum += deletes
 				avgLen := float64(len(par.text1)+len(par.text2)) / 2.0
 				errPct := float64((inserts+deletes)*100) / avgLen
-				c.writer.WriteVerseDiff(par, inserts, deletes, errPct, diffMatch.DiffPrettyHtml(diffs))
+				c.writer.WriteVerseDiff(par, inserts, deletes, largest, errPct, diffMatch.DiffPrettyHtml(diffs))
 				c.diffCount++
 			}
 		}
@@ -491,15 +492,33 @@ func (c *Compare) isMatch(diffs []diffmatchpatch.Diff) bool {
 	return true
 }
 
-func (c *Compare) measure(diffs []diffmatchpatch.Diff) (int, int) {
+func (c *Compare) ensureClean(diffs []diffmatchpatch.Diff) {
+	var prior diffmatchpatch.Operation
+	for _, diff := range diffs {
+		if diff.Type == prior {
+			log.Warn(c.ctx, "There are inserts and deletes together, must use diff_clean_merge")
+		}
+		prior = diff.Type
+	}
+}
+
+func (c *Compare) measure(diffs []diffmatchpatch.Diff) (int, int, int) {
 	var inserts = 0
 	var deletes = 0
+	var largest = 0
 	for _, diff := range diffs {
+		lenText := len(diff.Text)
 		if diff.Type == diffmatchpatch.DiffInsert {
-			inserts += len(diff.Text)
+			inserts += lenText
+			if lenText > largest {
+				largest = lenText
+			}
 		} else if diff.Type == diffmatchpatch.DiffDelete {
-			deletes += len(diff.Text)
+			deletes += lenText
+			if lenText > largest {
+				largest = lenText
+			}
 		}
 	}
-	return inserts, deletes
+	return inserts, deletes, largest
 }

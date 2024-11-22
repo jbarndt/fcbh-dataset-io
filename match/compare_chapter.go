@@ -56,7 +56,7 @@ func (c *Compare) chapterDiff(bookId string, chapter int, baseText string, text 
 	diffMatch := diffmatchpatch.New()
 	diffs := diffMatch.DiffMain(baseText, text, false)
 	if !c.isMatch(diffs) {
-		inserts, deletes := c.measure(diffs)
+		inserts, deletes, _ := c.measure(diffs)
 		c.insertSum += inserts
 		c.deleteSum += deletes
 		avgLen := float64(len(baseText)+len(text)) / 2.0

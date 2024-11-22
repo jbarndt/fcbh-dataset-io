@@ -54,7 +54,7 @@ func (h *HTMLWriter) WriteHeading(baseDataset string) string {
 	_, _ = h.out.WriteString(h.datasetName)
 	_, _ = h.out.WriteString(" only</h3>\n")
 	checkbox := `<div style="text-align: center; margin: 10px;">
-		<input type="checkbox" id="hideVerse0"><label for="hideVerse0">Hide Headings</label>
+		<input type="checkbox" id="hideVerse0" checked><label for="hideVerse0">Hide Headings</label>
 	</div>
 `
 	_, _ = h.out.WriteString(checkbox)
@@ -65,6 +65,7 @@ func (h *HTMLWriter) WriteHeading(baseDataset string) string {
         <th>Err %</th>
 		<th>Chars</th>
 		<th>Inbal</th>
+		<th>Len</th>
 		<th>Error</th>
         <th>Ref</th>
 		<th>Text Comparison</th>
@@ -76,13 +77,14 @@ func (h *HTMLWriter) WriteHeading(baseDataset string) string {
 	return h.out.Name()
 }
 
-func (h *HTMLWriter) WriteVerseDiff(verse pair, inserts int, deletes int, errPct float64, diffHtml string) {
+func (h *HTMLWriter) WriteVerseDiff(verse pair, inserts int, deletes int, largest int, errPct float64, diffHtml string) {
 	h.lineNum++
 	_, _ = h.out.WriteString("<tr>\n")
 	h.writeCell(strconv.Itoa(h.lineNum))
 	h.writeCell(strconv.FormatFloat(errPct, 'f', 0, 64))
 	h.writeCell(strconv.Itoa(inserts + deletes))
 	h.writeCell(strconv.Itoa(int(math.Abs(float64(inserts - deletes)))))
+	h.writeCell(strconv.Itoa(largest))
 	h.writeCell(`+` + strconv.Itoa(inserts) + ` -` + strconv.Itoa(deletes))
 	h.writeCell(verse.bookId + ` ` + strconv.Itoa(verse.chapter) + `:` + verse.num)
 	h.writeCell(diffHtml)
@@ -164,23 +166,23 @@ func (h *HTMLWriter) WriteEnd(insertSum int, deleteSum int, diffCount int) {
     $(document).ready(function() {
         var table = $('#diffTable').DataTable({
             "columnDefs": [
-                { "orderable": false, "targets": [4,6] }
-				// { "visible": false, "targets": [7] }  
+                { "orderable": false, "targets": [5,7] }
+				// { "visible": false, "targets": [8] }  
             ],
-            "pageLength": 10,
-            "lengthMenu": [[5, 10, 25, 50, -1], [5, 10, 25, 50, "All"]]
+            "pageLength": 50,
+            "lengthMenu": [[50, 500, -1], [50, 500, "All"]],
+			"order": [[ 4, "desc" ]]
         });
-        $('#hideVerse0').on('change', function() {
-            if(this.checked) {
-                table.rows(function(idx, data, node) {
-					return data[5].endsWith(":0");
-                }).nodes().to$().hide();
-            } else {
-                table.rows().nodes().to$().show();
-            }
-            // Optional: redraw table to fix any layout issues
-            // table.draw();
-        });
+    	$.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+        	var hideZeros = $('#hideVerse0').prop('checked');
+        	if (!hideZeros) return true;
+        	return !data[6].endsWith(":0"); 
+    	});
+    	$('#hideVerse0').prop('checked', true);
+    	table.draw();
+    	$('#hideVerse0').on('change', function() {
+        	table.draw(); 
+    	});
     });
 </script>
 </body>
