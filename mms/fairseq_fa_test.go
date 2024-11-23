@@ -12,10 +12,9 @@ import (
 
 func TestFairseqFA_ProcessFiles(t *testing.T) {
 	ctx := context.Background()
-	//user, _ := fetch.GetTestUser()
-	//conn, status := db.NewerDBAdapter(ctx, false, user.Username, "PlainTextEditScript_ENGWEB")
 	dbPath := filepath.Join(os.Getenv("GOPROJ"), "dataset", "mms", "fairseq_fa", "mrk.sqlite")
 	conn := db.NewDBAdapter(ctx, dbPath)
+	defer conn.Close()
 	count, status := conn.SelectScalarInt("select count(*) from scripts")
 	if status.IsErr {
 		t.Fatal(status)
@@ -36,6 +35,7 @@ func TestFairseqFA_ProcessFiles(t *testing.T) {
 	if status.IsErr {
 		t.Fatal(status)
 	}
+	compareDatabases(conn, t)
 }
 
 func TestFairseqFA_processPyOutput(t *testing.T) {
@@ -57,5 +57,47 @@ func TestFairseqFA_processPyOutput(t *testing.T) {
 	status = fa.processPyOutput(file, outputFile, references)
 	if status.IsErr {
 		t.Fatal(status)
+	}
+}
+
+func TestFairseqFA_compareDatabases(t *testing.T) {
+	ctx := context.Background()
+	dbPath := filepath.Join(os.Getenv("GOPROJ"), "dataset", "mms", "fairseq_fa", "mrk.sqlite")
+	conn := db.NewDBAdapter(ctx, dbPath)
+	defer conn.Close()
+	compareDatabases(conn, t)
+}
+
+func compareDatabases(conn db.DBAdapter, t *testing.T) {
+	ctx := context.Background()
+	dbPath := filepath.Join(os.Getenv("GOPROJ"), "dataset", "mms", "fairseq_fa", "mrk_base.sqlite")
+	baseConn := db.NewDBAdapter(ctx, dbPath)
+	defer baseConn.Close()
+	type chap struct {
+		bookId  string
+		chapter int
+	}
+	var chapters = []chap{{bookId: "MRK", chapter: 1}}
+	for _, ch := range chapters {
+		baseScripts, status := baseConn.SelectFAScriptTimestamps(ch.bookId, ch.chapter)
+		if status.IsErr {
+			t.Fatal(status)
+		}
+		scripts, status := conn.SelectFAScriptTimestamps(ch.bookId, ch.chapter)
+		if status.IsErr {
+			t.Fatal(status)
+		}
+		if len(scripts) != len(baseScripts) {
+			t.Error("Length of base and current not equal")
+		}
+		for i, base := range baseScripts {
+			curr := scripts[i]
+			if base.BeginTS != curr.BeginTS {
+				t.Error("Begin TS not equal", ch.bookId, ch.chapter, base.BeginTS, curr.BeginTS)
+			}
+			if base.EndTS != curr.EndTS {
+				t.Error("End TS not equal", ch.bookId, ch.chapter, base.EndTS, curr.EndTS)
+			}
+		}
 	}
 }
