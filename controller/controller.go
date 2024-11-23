@@ -13,6 +13,7 @@ import (
 	"dataset/output"
 	"dataset/read"
 	"dataset/request"
+	"dataset/run_control"
 	"dataset/speech_to_text"
 	"dataset/timestamp"
 	"os"
@@ -23,6 +24,7 @@ type Controller struct {
 	ctx         context.Context
 	yamlRequest []byte
 	req         request.Request
+	bucket      run_control.RunBucket
 	user        fetch.DBPUser
 	ident       db.Ident
 	database    db.DBAdapter
@@ -33,6 +35,8 @@ func NewController(ctx context.Context, yamlContent []byte) Controller {
 	var c Controller
 	c.ctx = ctx
 	c.yamlRequest = yamlContent
+	c.bucket = run_control.NewRunBucket(ctx, yamlContent)
+	c.bucket.IsUnitTest = false // set to true when testing to make RunBucket work.
 	return c
 }
 
@@ -55,6 +59,7 @@ func (c *Controller) Process() (string, dataset.Status) {
 	logFile := os.Getenv("FCBH_DATASET_LOG_FILE")
 	if logFile != `` {
 		log.SetOutput(c.ctx, logFile)
+		c.bucket.AddLogFile(logFile)
 	} else {
 		log.SetOutput(c.ctx, `stderr`)
 	}
@@ -63,6 +68,8 @@ func (c *Controller) Process() (string, dataset.Status) {
 	if status.IsErr {
 		filename = c.outputStatus(status)
 	}
+	c.bucket.AddOutput(filename)
+	c.bucket.PersistToBucket()
 	log.Info(c.ctx, "Duration", time.Since(start))
 	log.Debug(c.ctx)
 	return filename, status
@@ -91,6 +98,7 @@ func (c *Controller) processSteps() (string, dataset.Status) {
 		return filename, status
 	}
 	defer c.database.Close()
+	c.bucket.AddDatabase(c.database)
 	// Fetch Ident Data from Ident
 	c.ident, status = c.database.SelectIdent()
 	if status.IsErr {
@@ -147,11 +155,12 @@ func (c *Controller) processSteps() (string, dataset.Status) {
 		//c.req.Compare.BaseDataset == `` &&
 		!c.req.SpeechToText.NoSpeechToText {
 		c.req.Compare.BaseDataset = c.database.Project
-		// This makes a copy of database, and closes it.  Names the new database *_STT, and returns new
+		// This makes a copy of database, and closes it.  Names the new database *_audio, and returns new
 		c.database, status = c.database.CopyDatabase(`_audio`)
 		if status.IsErr {
 			return filename, status
 		}
+		c.bucket.AddDatabase(c.database)
 		status = c.database.UpdateEraseScriptText()
 		if status.IsErr {
 			return filename, status

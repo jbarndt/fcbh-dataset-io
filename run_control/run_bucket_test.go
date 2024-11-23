@@ -18,7 +18,7 @@ output_file: abc/my_project.csv
 func TestRunBucket(t *testing.T) {
 	ctx := context.Background()
 	b := NewRunBucket(ctx, []byte(runBucketTest))
-	b.isUnitTest = true
+	b.IsUnitTest = true
 	if b.username != "GaryNTest" {
 		t.Error("Username should be GaryNTest, it is: ", b.username)
 	}

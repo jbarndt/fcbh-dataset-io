@@ -18,7 +18,7 @@ import (
 
 type RunBucket struct {
 	ctx         context.Context
-	isUnitTest  bool // Set to true by run_bucket_test.
+	IsUnitTest  bool // Set to true by run_bucket_test.
 	start       time.Time
 	bucket      string
 	username    string
@@ -56,7 +56,7 @@ func (b *RunBucket) AddOutput(outputPath string) {
 func (b *RunBucket) PersistToBucket() dataset.Status {
 	var allStatus []dataset.Status
 	var status dataset.Status
-	if !testing.Testing() || b.isUnitTest {
+	if !testing.Testing() || b.IsUnitTest {
 		cfg, err := config.LoadDefaultConfig(b.ctx, config.WithRegion("us-west-2"))
 		if err != nil {
 			return log.Error(b.ctx, 500, err, "Error loading AWS config.")
@@ -70,7 +70,7 @@ func (b *RunBucket) PersistToBucket() dataset.Status {
 		allStatus = append(allStatus, status)
 		status = b.uploadFile(client, run, "log", b.logFile)
 		allStatus = append(allStatus, status)
-		if !status.IsErr && !b.isUnitTest {
+		if !status.IsErr && !b.IsUnitTest {
 			_ = os.Remove(b.logFile)
 		}
 		for _, database := range b.databases {
