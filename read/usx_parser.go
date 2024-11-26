@@ -10,7 +10,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strconv"
 	"strings"
 )
@@ -20,7 +19,7 @@ type Stack []string
 var hasStyle = map[string]bool{
 	`book`: true, `para`: true, `char`: true, `cell`: true, `ms`: true, `note`: true, `sidebar`: true, `figure`: true}
 
-var numericPattern = regexp.MustCompile(`^\d+`)
+//var numericPattern = regexp.MustCompile(`^\d+`)
 
 type USXParser struct {
 	ctx  context.Context
@@ -91,8 +90,8 @@ func (p *USXParser) decode(ctx context.Context, filename string) ([]db.Script, d
 			} else if tagName == `chapter` {
 				chapterNum = p.findIntAttr(se, `number`)
 			} else if tagName == `verse` {
-				verseNum = p.findIntAttr(se, `number`)
 				verseStr = p.findAttr(se, `number`)
+				verseNum = p.findIntAttr(se, `number`)
 			}
 			if hasStyle[tagName] {
 				usfmStyle = tagName + `.` + p.findAttr(se, `style`)
@@ -213,12 +212,7 @@ func (p *USXParser) findIntAttr(se xml.StartElement, name string) int {
 	if val == `` {
 		return 0
 	} else {
-		num := numericPattern.FindString(val)
-		result, err := strconv.Atoi(num)
-		if err != nil {
-			panic(err)
-		}
-		return result
+		return dataset.SafeVerseNum(val)
 	}
 }
 
