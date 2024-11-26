@@ -468,7 +468,6 @@ func (c *Compare) diff(verses1 []Verse, verses2 []Verse) {
 			diffs := diffMatch.DiffMain(par.text1, par.text2, false)
 			diffMatch.DiffCleanupMerge(diffs) // required for measure to compute largest
 			if !c.isMatch(diffs) {
-				c.ensureClean(diffs)
 				inserts, deletes, largest := c.measure(diffs)
 				c.insertSum += inserts
 				c.deleteSum += deletes
@@ -492,6 +491,7 @@ func (c *Compare) isMatch(diffs []diffmatchpatch.Diff) bool {
 	return true
 }
 
+// ensureClean is deprecated, we are using diff_clean_merge
 func (c *Compare) ensureClean(diffs []diffmatchpatch.Diff) {
 	var prior diffmatchpatch.Operation
 	for _, diff := range diffs {
