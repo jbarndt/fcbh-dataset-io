@@ -88,8 +88,11 @@ func (a *MMSASR) processFile(file input.InputFile, writer *bufio.Writer, reader 
 		fmt.Println(ts.BookId, ts.ChapterNum, ts.VerseStr, ts.ScriptId, response)
 		timestamps[i].Text = response
 	}
+	log.Debug(a.ctx, "Finished ASR", file.BookId, file.Chapter)
 	var recCount int
 	recCount, status = a.conn.UpdateScriptText(timestamps)
-	fmt.Println(file.BookId, file.Chapter, recCount)
+	if recCount != len(timestamps) {
+		log.Warn(a.ctx, "Timestamp update counts need investigation", recCount, len(timestamps))
+	}
 	return status
 }
