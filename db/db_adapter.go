@@ -361,7 +361,7 @@ func (d *DBAdapter) InsertAudioVerses(bookId string, chapter int, filename strin
 	return records, status
 }
 
-func (d *DBAdapter) InsertAudioWords(verse Audio, words []Audio) ([]Audio, dataset.Status) {
+func (d *DBAdapter) InsertAudioWords(words []Audio) ([]Audio, dataset.Status) {
 	var status dataset.Status
 	query := `REPLACE INTO words(script_id, word_seq, verse_num, word, uroman,
 			word_begin_ts, word_end_ts, fa_score)
@@ -369,7 +369,7 @@ func (d *DBAdapter) InsertAudioWords(verse Audio, words []Audio) ([]Audio, datas
 	tx, stmt := d.prepareDML(query)
 	defer d.closeDef(stmt, "InsertAudioWords stmt")
 	for i, rec := range words {
-		qry, err := stmt.Exec(verse.ScriptId, rec.WordSeq, rec.VerseSeq, rec.Text, rec.Uroman,
+		qry, err := stmt.Exec(rec.ScriptId, rec.WordSeq, rec.VerseSeq, rec.Text, rec.Uroman,
 			rec.BeginTS, rec.EndTS, rec.FAScore)
 		if err != nil {
 			status = log.Error(d.Ctx, 500, err, `Error while inserting Audio Word.`)
@@ -380,7 +380,6 @@ func (d *DBAdapter) InsertAudioWords(verse Audio, words []Audio) ([]Audio, datas
 			status = log.Error(d.Ctx, 500, err, `Error getting lastInsertId, while inserting Audio Word.`)
 			return words, status
 		}
-		words[i].ScriptId = verse.ScriptId
 	}
 	status = d.commitDML(tx, query)
 	return words, status
