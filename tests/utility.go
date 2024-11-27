@@ -76,7 +76,7 @@ func CLIExec(requestYaml string, t *testing.T) (string, string) {
 	}
 	_, _ = file.Write([]byte(requestYaml))
 	_ = file.Close()
-	var cmd = exec.Command(`go`, `run`, `../controller/cli/dataset.go`, file.Name())
+	var cmd = exec.Command(`go`, `run`, `../controller/dataset_cli/dataset.go`, file.Name())
 	var stdoutBuf, stderrBuf bytes.Buffer
 	cmd.Stdout = &stdoutBuf
 	cmd.Stderr = &stderrBuf
