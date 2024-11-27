@@ -53,7 +53,7 @@ func (r *RequestDecoder) Depend(req Request) {
 			// a problem the system could be changed to insert timestamp data without text.
 		}
 	}
-	if req.Timestamps.Aeneas || req.Timestamps.MMSFAVerse || req.Timestamps.MMSFAWord {
+	if req.Timestamps.Aeneas || req.Timestamps.MMSFAVerse || req.Timestamps.MMSAlign {
 		if req.TextData.NoText {
 			r.errors = append(r.errors, `Timestamp estimation requested, but there is no text data`)
 		}
