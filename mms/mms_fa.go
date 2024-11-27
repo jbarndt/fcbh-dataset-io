@@ -130,7 +130,7 @@ func (m *MMSFA) processPyOutput(file input.InputFile, response string) dataset.S
 		return status
 	}
 	for i := range verses {
-		_, status = m.conn.InsertAudioWords(verses[i], wordsByVerse[i])
+		_, status = m.conn.InsertAudioWordsOLD(verses[i], wordsByVerse[i])
 		if status.IsErr {
 			return status
 		}
