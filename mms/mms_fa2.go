@@ -9,7 +9,6 @@ import (
 	log "dataset/logger"
 	"dataset/timestamp"
 	"encoding/json"
-	"fmt"
 	"math"
 	"os"
 	"path/filepath"
@@ -96,13 +95,11 @@ func (m *MMSFA2) processFile(file input.InputFile, writer *bufio.Writer, reader 
 	if status.IsErr {
 		return status
 	}
-	fmt.Println("wordList", wordList)
-	fmt.Println("faInput", faInput)
 	content, err := json.Marshal(faInput)
 	if err != nil {
 		return log.Error(m.ctx, 500, err, `Error marshalling json`)
 	}
-	// temp
+	// development
 	//err2 := os.WriteFile("engweb_fa_inp.json", content, 0644)
 	//if err2 != nil {
 	//	panic(err2)
@@ -119,12 +116,12 @@ func (m *MMSFA2) processFile(file input.InputFile, writer *bufio.Writer, reader 
 	if err2 != nil {
 		return log.Error(m.ctx, 500, err2, `Error reading mms_fa.py response`)
 	}
-	fmt.Println(response)
-	//m.processPyOutput(file, wordList, response)
-	err = os.WriteFile("engweb_fa_out.json", []byte(response), 0644)
-	if err != nil {
-		panic(err)
-	}
+	m.processPyOutput(file, wordList, response)
+	// development
+	//err = os.WriteFile("engweb_fa_out.json", []byte(response), 0644)
+	//if err != nil {
+	//	panic(err)
+	//}
 	return status
 }
 
@@ -186,6 +183,7 @@ func (m *MMSFA2) processPyOutput(file input.InputFile, wordRefs []Word, response
 		word.ChapterNum = file.Chapter
 		word.AudioFile = file.Filename
 		word.ScriptId = ref.scriptId
+		//word.VerseSeq =
 		word.WordSeq = ref.wordSeq
 		word.Text = ref.word
 		word.Uroman = ref.uroman
