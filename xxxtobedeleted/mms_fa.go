@@ -1,4 +1,4 @@
-package mms
+package xxxtobedeleted
 
 import (
 	"bufio"
@@ -7,6 +7,7 @@ import (
 	"dataset/db"
 	"dataset/input"
 	log "dataset/logger"
+	"dataset/mms"
 	"dataset/timestamp"
 	"encoding/json"
 	"math"
@@ -43,12 +44,12 @@ func NewMMSFA(ctx context.Context, conn db.DBAdapter, lang string, sttLang strin
 
 // ProcessFiles will perform Forced Alignment on these files
 func (a *MMSFA) ProcessFiles(files []input.InputFile) dataset.Status {
-	lang, status := checkLanguage(a.ctx, a.lang, a.sttLang, "mms_asr")
+	lang, status := mms.checkLanguage(a.ctx, a.lang, a.sttLang, "mms_asr")
 	if status.IsErr {
 		return status
 	}
 	pythonScript := filepath.Join(os.Getenv("GOPROJ"), "dataset/mms/mms_fa.py")
-	writer, reader, status := callStdIOScript(a.ctx, os.Getenv(`FCBH_MMS_FA_PYTHON`), pythonScript, lang)
+	writer, reader, status := mms.callStdIOScript(a.ctx, os.Getenv(`FCBH_MMS_FA_PYTHON`), pythonScript, lang)
 	if status.IsErr {
 		return status
 	}
