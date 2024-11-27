@@ -15,6 +15,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"unicode"
 )
 
 type MMSFA_Input struct {
@@ -134,7 +135,7 @@ func (m *MMSFA) prepareText(lang string, scripts []db.Script) ([]string, []Word,
 	re2 := regexp.MustCompile(` +`)
 	var verses, uroman []string
 	for _, script := range scripts {
-		alphaText := m.convertDigits(script.ScriptText)
+		alphaText := m.cleanText(script.ScriptText)
 		verses = append(verses, alphaText)
 	}
 	uroman, status = URoman(m.ctx, lang, verses)
@@ -148,7 +149,10 @@ func (m *MMSFA) prepareText(lang string, scripts []db.Script) ([]string, []Word,
 		words := strings.Fields(verses[i])
 		urom := strings.Fields(uroman[i])
 		if len(words) != len(norm) {
-			status = log.ErrorNoErr(m.ctx, 500, "Word count did not match in MMS_FA prepareText", len(words), len(norm))
+			sc := scripts[i]
+			wdStr := strings.Join(words, " ")
+			nmStr := strings.Join(norm, " ")
+			status = log.ErrorNoErr(m.ctx, 500, "Word count did not match in MMS_FA prepareText", sc.BookId, sc.ChapterNum, sc.VerseStr, "WORDS:", wdStr, "NORM:", nmStr)
 		}
 		if len(words) != len(urom) {
 			status = log.ErrorNoErr(m.ctx, 500, "Uroman count did not match in MMS_FA prepareText", len(words), len(urom))
@@ -167,10 +171,12 @@ func (m *MMSFA) prepareText(lang string, scripts []db.Script) ([]string, []Word,
 	return textList, refList, status
 }
 
-func (m *MMSFA) convertDigits(text string) string {
+func (m *MMSFA) cleanText(text string) string {
 	var result []rune
 	for _, ch := range text {
-		if ch >= '0' && ch <= '9' {
+		if unicode.IsLetter(ch) || unicode.IsSpace(ch) {
+			result = append(result, ch)
+		} else if unicode.IsDigit(ch) {
 			num := []rune(num2words.Convert(int(ch) - 48))
 			var norm []rune
 			for _, n := range num {
@@ -179,8 +185,10 @@ func (m *MMSFA) convertDigits(text string) string {
 				}
 			}
 			result = append(result, norm...)
-		} else {
-			result = append(result, ch)
+		} else if ch == '\u0027' || ch == '\u2019' {
+			result = append(result, '\u0027') // replace any Apostrophe with std one
+		} else if ch == '\u002D' || ch == '\u2011' || ch == '\u2043' || ch == '\u00AD' { // hyphen
+			result = append(result, ' ') // replace any hyphen with space
 		}
 	}
 	return string(result)
