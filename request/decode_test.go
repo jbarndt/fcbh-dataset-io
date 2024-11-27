@@ -60,7 +60,7 @@ timestamps:
   aeneas: yes
   ts_bucket: yes
   mms_fa_verse: yes
-  mms_fa_word: yes
+  mms_align: yes
   no_timestamps: yes
 speech_to_text:
   mms_asr: Yes
@@ -126,7 +126,7 @@ compare:
 		req.Timestamps.Aeneas,
 		req.Timestamps.TSBucket,
 		req.Timestamps.MMSFAVerse,
-		req.Timestamps.MMSFAWord,
+		req.Timestamps.MMSAlign,
 		req.Timestamps.NoTimestamps,
 		req.SpeechToText.MMS,
 		req.SpeechToText.Whisper.Model.Large,

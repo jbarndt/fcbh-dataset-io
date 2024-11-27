@@ -9,6 +9,7 @@ import (
 	log "dataset/logger"
 	"dataset/timestamp"
 	"encoding/json"
+	"github.com/divan/num2words"
 	"math"
 	"os"
 	"path/filepath"
@@ -16,7 +17,7 @@ import (
 	"strings"
 )
 
-type MMSFA2_Input struct {
+type MMSFA_Input struct {
 	AudioFile string   `json:"audio_file"`
 	NormWords []string `json:"words"`
 }
@@ -35,15 +36,15 @@ type Timestamp struct {
 	Score float64 `json:"score"`
 }
 
-type MMSFA2 struct {
+type MMSFA struct {
 	ctx     context.Context
 	conn    db.DBAdapter // This database adapter must contain the text to be processed
 	lang    string
 	sttLang string // I don't know if this is useful
 }
 
-func NewMMSFA2(ctx context.Context, conn db.DBAdapter, lang string, sttLang string) MMSFA2 {
-	var m MMSFA2
+func NewMMSFA(ctx context.Context, conn db.DBAdapter, lang string, sttLang string) MMSFA {
+	var m MMSFA
 	m.ctx = ctx
 	m.conn = conn
 	m.lang = lang
@@ -52,12 +53,12 @@ func NewMMSFA2(ctx context.Context, conn db.DBAdapter, lang string, sttLang stri
 }
 
 // ProcessFiles will perform Forced Alignment on these files
-func (a *MMSFA2) ProcessFiles(files []input.InputFile) dataset.Status {
+func (a *MMSFA) ProcessFiles(files []input.InputFile) dataset.Status {
 	lang, status := checkLanguage(a.ctx, a.lang, a.sttLang, "mms_asr")
 	if status.IsErr {
 		return status
 	}
-	pythonScript := filepath.Join(os.Getenv("GOPROJ"), "dataset/mms/mms_fa2.py")
+	pythonScript := filepath.Join(os.Getenv("GOPROJ"), "dataset/mms/mms_align.py")
 	writer, reader, status := callStdIOScript(a.ctx, os.Getenv(`FCBH_MMS_FA_PYTHON`), pythonScript, lang)
 	if status.IsErr {
 		return status
@@ -73,14 +74,14 @@ func (a *MMSFA2) ProcessFiles(files []input.InputFile) dataset.Status {
 }
 
 // processFile will process one audio file through mms forced alignment
-func (m *MMSFA2) processFile(file input.InputFile, writer *bufio.Writer, reader *bufio.Reader) dataset.Status {
+func (m *MMSFA) processFile(file input.InputFile, writer *bufio.Writer, reader *bufio.Reader) dataset.Status {
 	var status dataset.Status
 	tempDir, err := os.MkdirTemp(os.Getenv(`FCBH_DATASET_TMP`), "mms_fa_")
 	if err != nil {
 		return log.Error(m.ctx, 500, err, `Error creating temp dir`)
 	}
 	defer os.RemoveAll(tempDir)
-	var faInput MMSFA2_Input
+	var faInput MMSFA_Input
 	faInput.AudioFile, status = timestamp.ConvertMp3ToWav(m.ctx, tempDir, file.FilePath())
 	if status.IsErr {
 		return status
@@ -106,15 +107,15 @@ func (m *MMSFA2) processFile(file input.InputFile, writer *bufio.Writer, reader 
 	//}
 	_, err = writer.WriteString(string(content) + "\n")
 	if err != nil {
-		return log.Error(m.ctx, 500, err, "Error writing to mms_fa.py")
+		return log.Error(m.ctx, 500, err, "Error writing to mms_align.py")
 	}
 	err = writer.Flush()
 	if err != nil {
-		return log.Error(m.ctx, 500, err, "Error flush to mms_fa.py")
+		return log.Error(m.ctx, 500, err, "Error flush to mms_align.py")
 	}
 	response, err2 := reader.ReadString('\n')
 	if err2 != nil {
-		return log.Error(m.ctx, 500, err2, `Error reading mms_fa.py response`)
+		return log.Error(m.ctx, 500, err2, `Error reading mms_align.py response`)
 	}
 	m.processPyOutput(file, wordList, response)
 	// development
@@ -125,7 +126,7 @@ func (m *MMSFA2) processFile(file input.InputFile, writer *bufio.Writer, reader 
 	return status
 }
 
-func (m *MMSFA2) prepareText(lang string, scripts []db.Script) ([]string, []Word, dataset.Status) {
+func (m *MMSFA) prepareText(lang string, scripts []db.Script) ([]string, []Word, dataset.Status) {
 	var textList []string
 	var refList []Word
 	var status dataset.Status
@@ -133,17 +134,18 @@ func (m *MMSFA2) prepareText(lang string, scripts []db.Script) ([]string, []Word
 	re2 := regexp.MustCompile(` +`)
 	var verses, uroman []string
 	for _, script := range scripts {
-		verses = append(verses, script.ScriptText)
+		alphaText := m.convertDigits(script.ScriptText)
+		verses = append(verses, alphaText)
 	}
 	uroman, status = URoman(m.ctx, lang, verses)
 	for i, text := range uroman {
 		text = strings.ToLower(text)
-		text = strings.ReplaceAll(text, "'", "'")
+		text = strings.ReplaceAll(text, "’", "'")
 		text = re1.ReplaceAllString(text, " ")
 		text = re2.ReplaceAllString(text, " ")
 		text = strings.TrimSpace(text)
 		norm := strings.Fields(text)
-		words := strings.Fields(scripts[i].ScriptText)
+		words := strings.Fields(verses[i])
 		urom := strings.Fields(uroman[i])
 		if len(words) != len(norm) {
 			status = log.ErrorNoErr(m.ctx, 500, "Word count did not match in MMS_FA prepareText", len(words), len(norm))
@@ -165,7 +167,26 @@ func (m *MMSFA2) prepareText(lang string, scripts []db.Script) ([]string, []Word
 	return textList, refList, status
 }
 
-func (m *MMSFA2) processPyOutput(file input.InputFile, wordRefs []Word, response string) dataset.Status {
+func (m *MMSFA) convertDigits(text string) string {
+	var result []rune
+	for _, ch := range text {
+		if ch >= '0' && ch <= '9' {
+			num := []rune(num2words.Convert(int(ch) - 48))
+			var norm []rune
+			for _, n := range num {
+				if n != ' ' && n != '-' {
+					norm = append(norm, n)
+				}
+			}
+			result = append(result, norm...)
+		} else {
+			result = append(result, ch)
+		}
+	}
+	return string(result)
+}
+
+func (m *MMSFA) processPyOutput(file input.InputFile, wordRefs []Word, response string) dataset.Status {
 	var status dataset.Status
 	response = strings.TrimRight(response, "\n")
 	var timestamps []Timestamp
@@ -174,7 +195,7 @@ func (m *MMSFA2) processPyOutput(file input.InputFile, wordRefs []Word, response
 		return log.Error(m.ctx, 500, err, `Error unmarshalling json`)
 	}
 	if len(timestamps) != len(wordRefs) {
-		return log.ErrorNoErr(m.ctx, 400, "Num words input to mms_fs:", len(wordRefs), ", num timestamps returned:", len(timestamps))
+		return log.ErrorNoErr(m.ctx, 400, "Num words input to mms_align:", len(wordRefs), ", num timestamps returned:", len(timestamps))
 	}
 	var words []db.Audio
 	for i, ref := range wordRefs {
@@ -206,7 +227,7 @@ func (m *MMSFA2) processPyOutput(file input.InputFile, wordRefs []Word, response
 	return status
 }
 
-func (m *MMSFA2) groupByVerse(words []db.Audio) [][]db.Audio {
+func (m *MMSFA) groupByVerse(words []db.Audio) [][]db.Audio {
 	var result [][]db.Audio
 	var verse []db.Audio
 	var verseSeq = 0
@@ -225,7 +246,7 @@ func (m *MMSFA2) groupByVerse(words []db.Audio) [][]db.Audio {
 	return result
 }
 
-func (m *MMSFA2) summarizeByVerse(chapter [][]db.Audio) []db.Audio {
+func (m *MMSFA) summarizeByVerse(chapter [][]db.Audio) []db.Audio {
 	var result []db.Audio
 	for _, verse := range chapter {
 		var vs = verse[0]
@@ -246,7 +267,7 @@ func (m *MMSFA2) summarizeByVerse(chapter [][]db.Audio) []db.Audio {
 	return result
 }
 
-func (m *MMSFA2) average(scores []float64, precision int) float64 {
+func (m *MMSFA) average(scores []float64, precision int) float64 {
 	var sum float64
 	for _, scr := range scores {
 		sum += scr
@@ -258,7 +279,7 @@ func (m *MMSFA2) average(scores []float64, precision int) float64 {
 }
 
 // addSpace eliminates time gaps between the end of one verse and the beginning of the next.
-func (m *MMSFA2) addSpace(parts []db.Audio) []db.Audio {
+func (m *MMSFA) addSpace(parts []db.Audio) []db.Audio {
 	for i := range parts {
 		if i == 0 {
 			parts[0].BeginTS = 0.0

@@ -9,11 +9,11 @@ import (
 	"testing"
 )
 
-func TestMMSFA2_ProcessFiles(t *testing.T) {
+func TestMMSFA_ProcessFiles(t *testing.T) {
 	ctx := context.Background()
 	user, _ := fetch.GetTestUser()
 	conn, status := db.NewerDBAdapter(ctx, false, user.Username, "PlainTextEditScript_ENGWEB")
-	fa := NewMMSFA2(ctx, conn, "eng", "")
+	fa := NewMMSFA(ctx, conn, "eng", "")
 	var files []input.InputFile
 	var file input.InputFile
 	file.BookId = "MRK"
@@ -29,14 +29,14 @@ func TestMMSFA2_ProcessFiles(t *testing.T) {
 	}
 }
 
-func TestMMSFA2_processPyOutput(t *testing.T) {
+func TestMMSFA_processPyOutput(t *testing.T) {
 	ctx := context.Background()
 	user, _ := fetch.GetTestUser()
 	conn, status := db.NewerDBAdapter(ctx, false, user.Username, "PlainTextEditScript_ENGWEB")
 	if status.IsErr {
 		t.Fatal(status)
 	}
-	fa := NewMMSFA2(ctx, conn, "eng", "")
+	fa := NewMMSFA(ctx, conn, "eng", "")
 	var file input.InputFile
 	file.BookId = "MRK"
 	file.Chapter = 1

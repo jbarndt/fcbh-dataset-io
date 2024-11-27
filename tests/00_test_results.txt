@@ -35,8 +35,8 @@ go test ./tests -run TestFAVerseDirect
 mac ok  	dataset/tests	50.491s
 aws ok  	dataset/tests	17.304s, 30.
 
-# 13e_fa_word [PHM]
-go test ./tests -count=1 -run TestFAVWordDirect
+# 13e_mms_align [PHM]
+go test ./tests -count=1 -run TestMMSAlignDirect
 mac ok  	dataset/tests	76.812s, 111.623s
 aws ok  	dataset/tests	19.941s
 After clearing cuda cache

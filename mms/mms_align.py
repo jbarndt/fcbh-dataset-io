@@ -20,15 +20,15 @@ import multiprocessing
 
 
 if len(sys.argv) < 2:
-    sys.stderr.write("Usage: mms_fa.py  {iso639-3}\n")
+    sys.stderr.write("Usage: mms_align.py  {iso639-3}\n")
     sys.exit(1)
 lang = sys.argv[1]
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = bundle.get_model(with_star=False)
 model.to(device)
 tokenizer = bundle.get_tokenizer()
-num_cores = multiprocessing.cpu_count()
-torch.set_num_threads(num_cores)
+#num_cores = multiprocessing.cpu_count()
+#torch.set_num_threads(num_cores)
 aligner = bundle.get_aligner()
 for line in sys.stdin:
     torch.cuda.empty_cache() # This will not be OK for concurrent processes
@@ -55,6 +55,6 @@ for line in sys.stdin:
 
 # Testing
 # conda activate mms_fa
-# time python mms_fa.py eng < engweb_fa_inp.json > engweb_fa_out.json
+# time python mms_align.py eng < engweb_fa_inp.json > engweb_fa_out.json
 
 

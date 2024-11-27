@@ -204,7 +204,7 @@ type Timestamps struct {
 	Aeneas       bool `yaml:"aeneas,omitempty"`
 	TSBucket     bool `yaml:"ts_bucket,omitempty"`
 	MMSFAVerse   bool `yaml:"mms_fa_verse,omitempty"`
-	MMSFAWord    bool `yaml:"mms_fa_word,omitempty"`
+	MMSAlign     bool `yaml:"mms_align,omitempty"`
 	NoTimestamps bool `yaml:"no_timestamps,omitempty"`
 }
 

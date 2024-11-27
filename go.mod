@@ -1,6 +1,6 @@
 module dataset
 
-go 1.22
+go 1.23.0
 
 toolchain go1.23.1
 
@@ -33,6 +33,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.27.0 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.31.0 // indirect
 	github.com/aws/smithy-go v1.21.0 // indirect
+	github.com/divan/num2words v1.0.1 // indirect
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
 	github.com/richardlehane/mscfb v1.0.4 // indirect
 	github.com/richardlehane/msoleps v1.0.4 // indirect

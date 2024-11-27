@@ -46,7 +46,7 @@ timestamps: # If timestamps are needed, mark Yes by source
   aeneas:  # This will cause aeneas to compute timestamps, audio and text are both required
   ts_bucket: # This will pull timestamp data from Sandeep's bucket
   mms_fa_verse: # This will compute timestamps using mms forced alignment
-  mms_fa_word: # This is a second method for computing timestamps.  It also provides a score for each word and verse.
+  mms_align: # This is a second method for computing timestamps.  It also provides a score for each word and verse.
   no_timestamps: # If time stamps are not needed
 # Default: no_timestamps
 

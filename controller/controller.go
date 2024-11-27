@@ -347,7 +347,7 @@ func (c *Controller) timestamps(audioFiles []input.InputFile) dataset.Status {
 		var ts mms.ForcedAlign
 		ts = mms.NewForcedAlign(c.ctx, c.database, c.ident.LanguageISO, c.req.AltLanguage)
 		status = ts.ProcessFiles(audioFiles)
-	} else if c.req.Timestamps.MMSFAWord {
+	} else if c.req.Timestamps.MMSAlign {
 		var ts mms.MMSFA
 		ts = mms.NewMMSFA(c.ctx, c.database, c.ident.LanguageISO, c.req.AltLanguage)
 		status = ts.ProcessFiles(audioFiles)
