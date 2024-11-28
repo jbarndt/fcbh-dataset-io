@@ -27,8 +27,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = bundle.get_model(with_star=False)
 model.to(device)
 tokenizer = bundle.get_tokenizer()
-num_cores = multiprocessing.cpu_count()
-torch.set_num_threads(num_cores - 2)
+#num_cores = multiprocessing.cpu_count()
+#torch.set_num_threads(num_cores - 2)
 aligner = bundle.get_aligner()
 for line in sys.stdin:
     torch.cuda.empty_cache() # This will not be OK for concurrent processes
