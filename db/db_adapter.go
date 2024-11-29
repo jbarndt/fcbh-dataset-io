@@ -739,6 +739,39 @@ func (d *DBAdapter) SelectFAScriptTimestamps(bookId string, chapter int) ([]Audi
 	return results, status
 }
 
+func (d *DBAdapter) SelectFAWordTimestamps() ([]Audio, dataset.Status) {
+	var results []Audio
+	var status dataset.Status
+	var query = `SELECT w.word_id, w.script_id, s.book_id, s.chapter_num, s.verse_str, 
+		s.verse_num, w.word_seq, w.word, w.uroman, w.word_begin_ts, w.word_end_ts, w.fa_score,
+		s.script_begin_ts, s.script_end_ts, s.fa_score
+		FROM words w JOIN scripts s ON w.script_id = s.script_id
+		WHERE w.ttype = 'W'
+		ORDER BY w.word_id`
+	rows, err := d.DB.Query(query)
+	if err != nil {
+		status = log.Error(d.Ctx, 500, err, "Error during SelectFAWordTimestamps By Book Chapter.")
+		return results, status
+	}
+	defer d.closeDef(rows, "SelectFAWordTimestamps stmt")
+	for rows.Next() {
+		var rec Audio
+		err = rows.Scan(&rec.WordId, &rec.ScriptId, &rec.BookId, &rec.ChapterNum, &rec.VerseStr,
+			&rec.VerseSeq, &rec.WordSeq, &rec.Text, &rec.Uroman, &rec.BeginTS, &rec.EndTS, &rec.FAScore,
+			&rec.ScriptBeginTS, &rec.ScriptEndTS, &rec.ScriptFAScore)
+		if err != nil {
+			status = log.Error(d.Ctx, 500, err, "Error during SelectFAWordTimestamps By Book Chapter.")
+			return results, status
+		}
+		results = append(results, rec)
+	}
+	err = rows.Err()
+	if err != nil {
+		log.Warn(d.Ctx, err, query)
+	}
+	return results, status
+}
+
 func (d *DBAdapter) SelectScriptTimestamps(bookId string, chapter int) ([]Timestamp, dataset.Status) {
 	query := `SELECT script_id, verse_str, script_begin_ts, script_end_ts
 		FROM scripts WHERE book_id = ? AND chapter_num = ? ORDER BY script_id`

@@ -84,6 +84,9 @@ type Audio struct {
 	Uroman          string  `json:"uroman"` // Is this useful?
 	Text            string  `json:"text"`
 	AudioFile       string  `json:"audio_file"`
-	AudioChapterWav string  `json:"-"` // Transient
-	AudioVerseWav   string  `json:"-"` // Transient
+	ScriptBeginTS   float64 `json:"script_begin_ts"` // Contains script TS when it is a word record
+	ScriptEndTS     float64 `json:"script_end_ts"`   // Contains script TS when it is a word record
+	ScriptFAScore   float64 `json:"script_fa_score"` // Contains script score when it is a word record
+	AudioChapterWav string  `json:"-"`               // Transient
+	AudioVerseWav   string  `json:"-"`               // Transient
 }
