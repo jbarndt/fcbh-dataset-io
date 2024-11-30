@@ -4,26 +4,26 @@ import (
 	"context"
 	"dataset"
 	"dataset/db"
+	"sort"
 )
 
 type FAverse struct {
-	scriptId    int64
-	bookId      string
-	chapter     int
-	verseStr    string
-	verseSeq    int
-	beginTS     float64
-	endTS       float64
-	faScore     float64
-	words       []db.Audio
-	critWords   []int
-	critScore   float64
-	questWords  []int
-	questScore  float64
-	startTSDiff float64
-	endTSDiff   float64
-	critDiff    bool
-	questDiff   bool
+	scriptId   int64
+	bookId     string
+	chapter    int
+	verseStr   string
+	verseSeq   int
+	beginTS    float64
+	endTS      float64
+	faScore    float64
+	words      []db.Audio
+	critWords  []int
+	critScore  float64
+	questWords []int
+	questScore float64
+	endTSDiff  float64
+	critDiff   bool
+	questDiff  bool
 }
 
 type AlignErrorCalc struct {
@@ -49,7 +49,7 @@ func (a *AlignErrorCalc) Process() ([]FAverse, dataset.Status) {
 	verses = a.createVerseSlice(words)
 	verseMap := a.createVerseMap(verses)
 	verses = a.addWordsToVerses(verseMap, words)
-	a.computeCritical(verses, 0.001)
+	a.computeCritical(verses, 0.0001)
 	a.computeQuestion(verses, 0.001)
 	a.computeTSDiff(verses)
 	a.markCriticalDiff(verses, 1.5)
@@ -99,6 +99,9 @@ func (a *AlignErrorCalc) addWordsToVerses(verseMap map[int64]FAverse, words []db
 	for _, vs := range verseMap {
 		result = append(result, vs)
 	}
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].scriptId < result[j].scriptId
+	})
 	return result
 }
 
@@ -120,7 +123,7 @@ func (a *AlignErrorCalc) findErrors(words []db.Audio, threshold float64) ([]int,
 	for i, w := range words {
 		if w.FAScore <= threshold {
 			results = append(results, i)
-			score += 1.0 - w.FAScore
+			score += (1.0 - w.FAScore) * float64(len(w.Text))
 		}
 	}
 	return results, score
@@ -128,8 +131,6 @@ func (a *AlignErrorCalc) findErrors(words []db.Audio, threshold float64) ([]int,
 
 func (a *AlignErrorCalc) computeTSDiff(verses []FAverse) {
 	for i := range verses {
-		firstWord := verses[i].words[0]
-		verses[i].startTSDiff = firstWord.BeginTS - verses[i].beginTS
 		lastWord := verses[i].words[len(verses[i].words)-1]
 		verses[i].endTSDiff = verses[i].endTS - lastWord.EndTS
 	}
@@ -137,7 +138,7 @@ func (a *AlignErrorCalc) computeTSDiff(verses []FAverse) {
 
 func (a *AlignErrorCalc) markCriticalDiff(verses []FAverse, threshold float64) {
 	for i := range verses {
-		if verses[i].startTSDiff >= threshold || verses[i].endTSDiff >= threshold {
+		if verses[i].endTSDiff >= threshold {
 			verses[i].critDiff = true
 		}
 	}
@@ -145,7 +146,7 @@ func (a *AlignErrorCalc) markCriticalDiff(verses []FAverse, threshold float64) {
 
 func (a *AlignErrorCalc) markQuestionDiff(verses []FAverse, threshold float64) {
 	for i := range verses {
-		if verses[i].startTSDiff >= threshold || verses[i].endTSDiff >= threshold {
+		if verses[i].endTSDiff >= threshold {
 			verses[i].questDiff = true
 		}
 	}
