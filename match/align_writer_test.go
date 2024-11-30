@@ -11,7 +11,9 @@ import (
 
 func TestAlignWriter(t *testing.T) {
 	ctx := context.Background()
-	dbPath := filepath.Join(os.Getenv("GOPROJ"), "dataset", "match", "N2YPM_JMD.db")
+	var dataset = "N2YPM_JMD"
+	//var dataset = "ENGWEB"
+	dbPath := filepath.Join(os.Getenv("GOPROJ"), "dataset", "match", dataset+".db")
 	conn := db.NewDBAdapter(ctx, dbPath)
 	calc := NewAlignErrorCalc(ctx, conn)
 	verses, status := calc.Process()
@@ -19,9 +21,9 @@ func TestAlignWriter(t *testing.T) {
 		t.Fatal(status)
 	}
 	writer := NewAlignWriter(ctx)
-	filename, status := writer.WriteReport("N2YPM_JMD", verses)
+	filename, status := writer.WriteReport(dataset, verses)
 	fmt.Println("Report Filename", filename)
-	revisedName := filepath.Join(os.Getenv("GOPROJ"), "dataset", "match", "N2YPM_JMD.html")
+	revisedName := filepath.Join(os.Getenv("GOPROJ"), "dataset", "match", dataset+".html")
 	_ = os.Rename(filename, revisedName)
 	fmt.Println("Report Filename", revisedName)
 }
