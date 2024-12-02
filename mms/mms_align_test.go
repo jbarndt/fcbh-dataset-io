@@ -57,7 +57,7 @@ func TestMMSFA_processPyOutput(t *testing.T) {
 		t.Fatal(err)
 	}
 	fa.processPyOutput(file, wordList, string(bytes))
-	scriptRows, status := conn.SelectScalarInt("select count(*) from scripts where script_begin_ts != 0.0")
+	scriptRows, status := conn.SelectScalarInt("select count(*) from scripts where script_end_ts != 0.0")
 	if status.IsErr {
 		t.Fatal(status)
 	}

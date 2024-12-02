@@ -90,3 +90,13 @@ type Audio struct {
 	AudioChapterWav string  `json:"-"`               // Transient
 	AudioVerseWav   string  `json:"-"`               // Transient
 }
+
+type Char struct {
+	CharId int64
+	WordId int64
+	Token  int
+	Start  float64
+	End    float64
+	Score  float64
+	Uroman rune
+}

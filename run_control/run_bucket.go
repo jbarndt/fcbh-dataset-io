@@ -81,7 +81,7 @@ func (b *RunBucket) PersistToBucket() dataset.Status {
 			status = b.uploadFile(client, run, "output", output)
 			allStatus = append(allStatus, status)
 		}
-		status = b.uploadString(client, run, "runtime", b.start.String(), "")
+		status = b.uploadString(client, run, "runtime", b.start.Format(`Mon Jan 2 2006 03:04:05 pm MST`), "")
 		allStatus = append(allStatus, status)
 		status = b.uploadString(client, run, "duration", time.Since(b.start).String(), "")
 		allStatus = append(allStatus, status)

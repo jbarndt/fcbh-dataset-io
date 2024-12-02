@@ -40,14 +40,19 @@ for line in sys.stdin:
         token_spans = aligner(emission[0], tokenizer(inp["words"]))
     num_frames = emission.size(1)
     ratio = waveform.size(1) / num_frames / sample_rate
-    result = []
+    chapter = []
     for spans in token_spans:
-        timestamp = {}
-        timestamp["start"] = round(spans[0].start * ratio, 3)
-        timestamp["end"] = round(spans[-1].end * ratio, 3)
-        score = sum(s.score * len(s) for s in spans) / sum(len(s) for s in spans)
-        timestamp["score"] = round(score, 4)
-        result.append(timestamp)
+        word = []
+        for token in spans:
+            char = [ token.token, token.start, token.end, round(token.score,4)]
+            word.append(char)
+        chapter.append(word)
+        word = []
+    result = {
+       'ratio': ratio,
+       #'dictionary': tokenizer.get_vocab(), TO BE DONE
+       'tokens': chapter
+    }
     output = json.dumps(result)
     sys.stdout.write(output)
     sys.stdout.write("\n")
@@ -56,5 +61,8 @@ for line in sys.stdin:
 # Testing
 # conda activate mms_fa
 # time python mms_align.py eng < engweb_fa_inp.json > engweb_fa_out.json
+
+# small sample
+# time python mms_align.py deu < german.json
 
 

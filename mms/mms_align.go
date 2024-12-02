@@ -194,16 +194,36 @@ func (m *MMSFA) cleanText(text string) string {
 	return string(result)
 }
 
+type MMSAlignResult struct {
+	Ratio  float64       `json:"ratio"`
+	Tokens [][][]float64 `json:"tokens"`
+}
+
 func (m *MMSFA) processPyOutput(file input.InputFile, wordRefs []Word, response string) dataset.Status {
 	var status dataset.Status
 	response = strings.TrimRight(response, "\n")
-	var timestamps []Timestamp
-	err := json.Unmarshal([]byte(response), &timestamps)
+	var mmsAlign MMSAlignResult
+	err := json.Unmarshal([]byte(response), &mmsAlign)
 	if err != nil {
 		return log.Error(m.ctx, 500, err, `Error unmarshalling json`)
 	}
-	if len(timestamps) != len(wordRefs) {
-		return log.ErrorNoErr(m.ctx, 400, "Num words input to mms_align:", len(wordRefs), ", num timestamps returned:", len(timestamps))
+	var faWords [][]db.Char
+	for _, wd := range mmsAlign.Tokens {
+		var word []db.Char
+		for _, ch := range wd {
+			var char db.Char
+			char.Token = int(ch[0])
+			char.Start = ch[1] * mmsAlign.Ratio
+			char.End = ch[2] * mmsAlign.Ratio
+			char.Score = ch[3]
+			//char.Uroman = decode token
+			word = append(word, char)
+		}
+		faWords = append(faWords, word)
+	}
+	//fmt.Println(response)
+	if len(faWords) != len(wordRefs) {
+		return log.ErrorNoErr(m.ctx, 400, "Num words input to mms_align:", len(wordRefs), ", num timestamps returned:", len(faWords))
 	}
 	var words []db.Audio
 	for i, ref := range wordRefs {
@@ -217,9 +237,13 @@ func (m *MMSFA) processPyOutput(file input.InputFile, wordRefs []Word, response 
 		word.Text = ref.word
 		word.Uroman = ref.uroman
 		//ref.normalized
-		word.BeginTS = timestamps[i].Start
-		word.EndTS = timestamps[i].End
-		word.FAScore = timestamps[i].Score
+		faWd := faWords[i]
+		word.BeginTS = faWd[0].Start
+		word.EndTS = faWd[len(faWd)-1].End
+		for _, ch := range faWd {
+			word.FAScore += ch.Score
+		}
+		word.FAScore = word.FAScore / float64(len(faWd))
 		words = append(words, word)
 	}
 	var wordsByVerse [][]db.Audio
