@@ -43,6 +43,9 @@ func NewRunBucket(ctx context.Context, yaml []byte) RunBucket {
 
 func (b *RunBucket) AddLogFile(logPath string) {
 	b.logFile = logPath
+	if !b.IsUnitTest {
+		_ = os.Remove(b.logFile)
+	}
 }
 
 func (b *RunBucket) AddDatabase(conn db.DBAdapter) {
@@ -70,9 +73,9 @@ func (b *RunBucket) PersistToBucket() dataset.Status {
 		allStatus = append(allStatus, status)
 		status = b.uploadFile(client, run, "log", b.logFile)
 		allStatus = append(allStatus, status)
-		if !status.IsErr && !b.IsUnitTest {
-			_ = os.Remove(b.logFile)
-		}
+		//if !status.IsErr && !b.IsUnitTest {
+		//	_ = os.Remove(b.logFile)
+		//}
 		for _, database := range b.databases {
 			status = b.uploadFile(client, run, "database", database)
 			allStatus = append(allStatus, status)
