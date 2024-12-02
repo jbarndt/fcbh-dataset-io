@@ -11,8 +11,8 @@ import (
 
 func TestAlignWriter(t *testing.T) {
 	ctx := context.Background()
-	var dataset = "N2YPM_JMD"
-	//var dataset = "ENGWEB"
+	//var dataset = "N2YPM_JMD"
+	var dataset = "ENGWEB"
 	dbPath := filepath.Join(os.Getenv("GOPROJ"), "dataset", "match", dataset+".db")
 	conn := db.NewDBAdapter(ctx, dbPath)
 	calc := NewAlignErrorCalc(ctx, conn)
