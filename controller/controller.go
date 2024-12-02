@@ -58,8 +58,8 @@ func (c *Controller) Process() (string, dataset.Status) {
 	}
 	logFile := os.Getenv("FCBH_DATASET_LOG_FILE")
 	if logFile != `` {
-		log.SetOutput(c.ctx, logFile)
 		c.bucket.AddLogFile(logFile)
+		log.SetOutput(c.ctx, logFile)
 	} else {
 		log.SetOutput(c.ctx, `stderr`)
 	}
