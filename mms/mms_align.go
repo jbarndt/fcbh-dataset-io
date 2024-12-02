@@ -244,6 +244,7 @@ func (m *MMSFA) processPyOutput(file input.InputFile, wordRefs []Word, response 
 			word.FAScore += ch.Score
 		}
 		word.FAScore = word.FAScore / float64(len(faWd))
+		word.Chars = faWd
 		words = append(words, word)
 	}
 	var wordsByVerse [][]db.Audio
@@ -256,6 +257,10 @@ func (m *MMSFA) processPyOutput(file input.InputFile, wordRefs []Word, response 
 		return status
 	}
 	words, status = m.conn.InsertAudioWords(words)
+	if status.IsErr {
+		return status
+	}
+	status = m.conn.InsertAudioChars(words)
 	return status
 }
 

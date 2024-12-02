@@ -10,6 +10,7 @@ import (
 	"dataset/request"
 	"encoding/csv"
 	"encoding/json"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -35,6 +36,7 @@ func DirectSqlTest(request string, tests []SqliteTest, t *testing.T) {
 	if status.IsErr {
 		t.Fatal(status.String())
 	}
+	fmt.Println("Test output", database)
 	conn, err := sql.Open("sqlite3", database)
 	if err != nil {
 		t.Fatal(err)

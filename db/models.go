@@ -83,6 +83,7 @@ type Audio struct {
 	FAScore         float64 `json:"fa_score"`
 	Uroman          string  `json:"uroman"` // Is this useful?
 	Text            string  `json:"text"`
+	Chars           []Char  `json:"-"`
 	AudioFile       string  `json:"audio_file"`
 	ScriptBeginTS   float64 `json:"script_begin_ts"` // Contains script TS when it is a word record
 	ScriptEndTS     float64 `json:"script_end_ts"`   // Contains script TS when it is a word record

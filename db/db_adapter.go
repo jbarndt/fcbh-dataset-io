@@ -197,6 +197,16 @@ func createDatabase(db *sql.DB) {
 		mfcc_json TEXT NOT NULL,
 		FOREIGN KEY (word_id) REFERENCES words(word_id)) STRICT`
 	execDDL(db, query)
+	query = `CREATE TABLE IF NOT EXISTS chars (
+		char_id INTEGER PRIMARY KEY,
+		word_id INTEGER NOT NULL,
+		token INTEGER NOT NULL,
+		start_ts REAL NOT NULL,
+		end_ts REAL NOT NULL,
+		fa_score REAL NOT NULL,
+		uroman INTEGER NOT NULL DEFAULT 0,
+		FOREIGN KEY (word_id) REFERENCES words(word_id)) STRICT`
+	execDDL(db, query)
 }
 
 // CopyDatabase copies a database, closes it and return a connection to the copy
@@ -385,16 +395,34 @@ func (d *DBAdapter) InsertAudioWords(words []Audio) ([]Audio, dataset.Status) {
 	return words, status
 }
 
+func (d *DBAdapter) InsertAudioChars(words []Audio) dataset.Status {
+	var status dataset.Status
+	query := `INSERT INTO chars(word_id, token, start_ts, end_ts, fa_score, uroman)
+		VALUES (?,?,?,?,?,?)`
+	tx, stmt := d.prepareDML(query)
+	defer d.closeDef(stmt, `InsertChars stmt`)
+	for _, wd := range words {
+		for _, ch := range wd.Chars {
+			_, err := stmt.Exec(wd.WordId, ch.Token, ch.Start, ch.End, ch.Score, ch.Uroman)
+			if err != nil {
+				return log.Error(d.Ctx, 500, err, `Error while inserting Chars.`)
+			}
+		}
+	}
+	status = d.commitDML(tx, query)
+	return status
+}
+
 func (d *DBAdapter) InsertReplaceIdent(id Ident) dataset.Status {
 	var status dataset.Status
 	query := `REPLACE INTO ident(dataset_id, bible_id, audio_OT_id, audio_NT_id, text_OT_id, text_NT_id,
 		text_source, language_iso, version_code, languge_id, 
 		rolv_id, alphabet, language_name, version_name) VALUES (1,?,?,?,?,?,?,?,?,?,?,?,?,?)`
 	stmt, err := d.DB.Prepare(query)
-	defer d.closeDef(stmt, `InsertIdent stmt`)
 	if err != nil {
 		return log.Error(d.Ctx, 500, err, `Error while preparing Ident stmt.`)
 	}
+	defer d.closeDef(stmt, `InsertIdent stmt`)
 	_, err = stmt.Exec(id.BibleId, id.AudioOTId, id.AudioNTId, id.TextOTId, id.TextNTId,
 		id.TextSource, id.LanguageISO, id.VersionCode, id.LanguageId,
 		id.RolvId, id.Alphabet, id.LanguageName, id.VersionName)
