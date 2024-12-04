@@ -52,8 +52,8 @@ for line in sys.stdin:
     sys.stdout.write(transcription)
     sys.stdout.write("\n")
     sys.stdout.flush()
-    memory = psutil.Process().memory_info().rss / 1024 / 1024 / 1024
-    print(f"mms_sr.py: {memory:.2f} GB", file=sys.stderr)
+    #memory = psutil.Process().memory_info().rss / 1024 / 1024 / 1024
+    #print(f"mms_sr.py: {memory:.2f} GB", file=sys.stderr)
 
 #$HOME + "/NPIDPI/NPIDPIN1DA/B02___01_Mark________NPIDPIN1DA.wav"
 
