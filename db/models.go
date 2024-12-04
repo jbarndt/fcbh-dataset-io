@@ -103,20 +103,22 @@ type Char struct {
 }
 
 type AlignChar struct {
-	ScriptId   int64
-	BookId     string
-	ChapterNum int
-	VerseStr   string
-	WordId     int64
-	WordSeq    int
-	Word       string
-	CharId     int64
-	CharSeq    int
-	BeginTS    float64
-	EndTS      float64
-	FAScore    float64
-	Duration   float64 // might not be needed
-	Silence    float64
-	SilencePos int
-	ErrorType  int
+	ScriptId     int64
+	BookId       string
+	ChapterNum   int
+	VerseStr     string
+	WordId       int64
+	WordSeq      int
+	Word         string
+	CharId       int64
+	CharSeq      int
+	BeginTS      float64
+	EndTS        float64
+	FAScore      float64
+	Duration     float64 // might not be needed
+	Silence      float64
+	SilencePos   int
+	ScoreError   int
+	DurationLong int
+	SilenceLong  int
 }

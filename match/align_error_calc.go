@@ -36,6 +36,14 @@ const (
 	betweenChapters
 )
 
+type AlignVerse struct {
+	chars        []db.AlignChar
+	critScore    int64
+	questScore   int64
+	longDuration int64
+	longSilence  int64
+}
+
 type AlignErrorCalc struct {
 	ctx  context.Context
 	conn db.DBAdapter
@@ -48,12 +56,13 @@ func NewAlignErrorCalc(ctx context.Context, conn db.DBAdapter) AlignErrorCalc {
 	return a
 }
 
-func (a *AlignErrorCalc) Process() ([]db.AlignChar, dataset.Status) {
+func (a *AlignErrorCalc) Process() ([]AlignVerse, dataset.Status) {
+	var faVerse []AlignVerse
 	var faChars []db.AlignChar
 	var status dataset.Status
 	faChars, status = a.conn.SelectFACharTimestamps()
 	if status.IsErr {
-		return faChars, status
+		return faVerse, status
 	}
 	for i := range faChars {
 		if faChars[i].FAScore <= criticalThreshold {
@@ -81,6 +90,7 @@ func (a *AlignErrorCalc) Process() ([]db.AlignChar, dataset.Status) {
 			// To be correct, I should add the silence of fileDuration - curr.EndTS
 		}
 	}
+	a.setCharSeq(faChars)
 	mean, stddev, mini, maxi := a.analyzeData(a.getDurations(faChars))
 	fmt.Println("Duration:", mean, stddev, mini, maxi)
 	a.markDurationOutliers(faChars, mean, stddev)
@@ -96,7 +106,9 @@ func (a *AlignErrorCalc) Process() ([]db.AlignChar, dataset.Status) {
 	mean, stddev, mini, maxi = a.analyzeData(a.getSilence(faChars, betweenChapters))
 	fmt.Println("Between Chapters:", mean, stddev, mini, maxi)
 	a.markSilenceOutliers(faChars, mean, stddev, betweenChapters, betweenChaptersLong)
-	return faChars, status
+	faVerse = a.groupByVerse(faChars)
+	a.addErrorCounts(faVerse)
+	return faVerse, status
 }
 
 func (a *AlignErrorCalc) getDurations(chars []db.AlignChar) []float64 {
@@ -130,6 +142,19 @@ func (a *AlignErrorCalc) analyzeData(data []float64) (mean, stddev, min, max flo
 	return mean, stddev, min, max
 }
 
+func (a *AlignErrorCalc) setCharSeq(chars []db.AlignChar) {
+	var charSeq = 0
+	var currWordId int64 = -1
+	for i := range chars {
+		if currWordId != chars[i].WordId {
+			currWordId = chars[i].WordId
+			charSeq = 0
+		}
+		chars[i].CharSeq = charSeq
+		charSeq++
+	}
+}
+
 func (a *AlignErrorCalc) markDurationOutliers(chars []db.AlignChar, mean float64, stddev float64) {
 	var pct95 = mean + 2.2*stddev
 	for i := range chars {
@@ -155,21 +180,75 @@ func (a *AlignErrorCalc) markSilenceOutliers(chars []db.AlignChar, mean float64,
 	}
 }
 
-func (a *AlignErrorCalc) countErrors(chars []db.AlignChar) {
+func (a *AlignErrorCalc) groupByVerse(chars []db.AlignChar) []AlignVerse {
+	var verses []AlignVerse
+	if len(chars) == 0 {
+		return verses
+	}
+	currBookId := chars[0].BookId
+	currChapter := chars[0].ChapterNum
+	currVerse := chars[0].VerseStr
+	start := 0
+	for i, ch := range chars {
+		if ch.BookId != currBookId || ch.ChapterNum != currChapter || ch.VerseStr != currVerse {
+			oneVerse := chars[start:i]
+			currBookId = ch.BookId
+			currChapter = ch.ChapterNum
+			currVerse = ch.VerseStr
+			start = i
+			var errCount int
+			for _, ch1 := range oneVerse {
+				if ch1.ScoreError > 0 || ch.DurationLong > 0 || ch.SilenceLong > 0 {
+					errCount++
+				}
+			}
+			if errCount > 0 {
+				var verse AlignVerse
+				verse.chars = oneVerse
+				verses = append(verses, verse)
+			}
+		}
+	}
+	return verses
+}
+
+func (a *AlignErrorCalc) addErrorCounts(verses []AlignVerse) {
+	for i := range verses {
+		for _, ch := range verses[i].chars {
+			if ch.ScoreError == int(scoreCritical) {
+				verses[i].critScore++
+			} else if ch.ScoreError == int(scoreQuestion) {
+				verses[i].questScore++
+			}
+			if ch.DurationLong > 0 {
+				verses[i].longDuration++
+			}
+			if ch.SilenceLong > 0 {
+				verses[i].longSilence++
+			}
+		}
+	}
+}
+
+func (a *AlignErrorCalc) countErrors(verses []AlignVerse) {
+	var total int
 	var critScoreError int
 	var questScoreError int
 	var durationLongCount int
 	var count = make([]int, 8)
-	for _, ch := range chars {
-		if ch.ScoreError == int(scoreCritical) {
-			critScoreError++
-		} else if ch.ScoreError == int(scoreQuestion) {
-			questScoreError++
+	for _, vs := range verses {
+		for _, ch := range vs.chars {
+			total++
+			if ch.ScoreError == int(scoreCritical) {
+				critScoreError++
+			} else if ch.ScoreError == int(scoreQuestion) {
+				questScoreError++
+			}
+			if ch.DurationLong > 0 {
+				durationLongCount++
+			}
+			count[ch.SilenceLong]++
 		}
-		if ch.DurationLong > 0 {
-			durationLongCount++
-		}
-		count[ch.SilenceLong]++
 	}
 	fmt.Println("NO Error\t", count[noError]-critScoreError-questScoreError-durationLongCount)
 	fmt.Println("ScoreCritical", critScoreError)
@@ -179,5 +258,5 @@ func (a *AlignErrorCalc) countErrors(chars []db.AlignChar) {
 	fmt.Println("BetweenWordsLong", count[betweenWordsLong])
 	fmt.Println("BetweenVersesLong", count[betweenVersesLong])
 	fmt.Println("BetweenChaptersLong", count[betweenChaptersLong])
-	fmt.Println("Total\t", len(chars))
+	fmt.Println("Total\t", total)
 }

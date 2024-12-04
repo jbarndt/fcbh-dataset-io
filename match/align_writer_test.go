@@ -16,12 +16,13 @@ func TestAlignWriter(t *testing.T) {
 	dbPath := filepath.Join(os.Getenv("GOPROJ"), "dataset", "match", dataset+".db")
 	conn := db.NewDBAdapter(ctx, dbPath)
 	calc := NewAlignErrorCalc(ctx, conn)
-	verses, status := calc.Process()
+	faVerses, status := calc.Process()
 	if status.IsErr {
 		t.Fatal(status)
 	}
+	fmt.Println(len(faVerses))
 	writer := NewAlignWriter(ctx)
-	filename, status := writer.WriteReport(dataset, verses)
+	filename, status := writer.WriteReport(dataset, faVerses)
 	fmt.Println("Report Filename", filename)
 	revisedName := filepath.Join(os.Getenv("GOPROJ"), "dataset", "match", dataset+".html")
 	_ = os.Rename(filename, revisedName)

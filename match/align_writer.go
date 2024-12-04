@@ -3,12 +3,32 @@ package match
 import (
 	"context"
 	"dataset"
+	"dataset/db"
 	log "dataset/logger"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 )
+
+type FAverse struct {
+	scriptId   int64
+	bookId     string
+	chapter    int
+	verseStr   string
+	verseSeq   int
+	beginTS    float64
+	endTS      float64
+	faScore    float64
+	words      []db.Audio
+	critWords  []int
+	critScore  float64
+	questWords []int
+	questScore float64
+	endTSDiff  float64
+	critDiff   bool
+	questDiff  bool
+}
 
 type AlignWriter struct {
 	ctx         context.Context
@@ -27,7 +47,7 @@ func NewAlignWriter(ctx context.Context) AlignWriter {
 	return a
 }
 
-func (a *AlignWriter) WriteReport(datasetName string, verses []FAverse) (string, dataset.Status) {
+func (a *AlignWriter) WriteReport(datasetName string, verses []AlignVerse) (string, dataset.Status) {
 	var filename string
 	var status dataset.Status
 	var err error
@@ -58,7 +78,8 @@ func (a *AlignWriter) WriteHeading() {
 	_, _ = a.out.WriteString(a.datasetName)
 	_, _ = a.out.WriteString("</h2>\n")
 	_, _ = a.out.WriteString(`<h3 style="text-align:center">`)
-	_, _ = a.out.WriteString(time.Now().Format(`Mon Jan 2 2006 03:04:05 pm MST`))
+	loc, _ := time.LoadLocation("America/Denver")
+	_, _ = a.out.WriteString(time.Now().In(loc).Format(`Mon Jan 2 2006 03:04:05 pm MST`))
 	_, _ = a.out.WriteString("</h3>\n")
 	checkbox := `<div style="text-align: center; margin: 10px;">
 		<input type="checkbox" id="hideVerse0" checked><label for="hideVerse0">Hide Headings</label>
@@ -69,9 +90,9 @@ func (a *AlignWriter) WriteHeading() {
     <thead>
     <tr>
         <th>Line</th>
-		<th>Combined<br>Error</th>
         <th>Align<br>Error</th>
-		<th>End<br>Gap</th>
+		<th>Duration<br>Long</th>
+		<th>Silence<br>Long</th>
 		<th>Start<br>TS</th>
 		<th>End<br>TS</th>
         <th>Ref</th>
@@ -83,46 +104,37 @@ func (a *AlignWriter) WriteHeading() {
 	_, _ = a.out.WriteString(table)
 }
 
-func (a *AlignWriter) WriteVerse(verse FAverse) {
+func (a *AlignWriter) WriteVerse(verse AlignVerse) {
+	var firstChar = verse.chars[0]
+	var lastChar = verse.chars[len(verse.chars)-1]
 	a.lineNum++
 	_, _ = a.out.WriteString("<tr>\n")
 	a.writeCell(strconv.Itoa(a.lineNum))
-	score := verse.critScore + verse.questScore + 5.0*verse.endTSDiff
-	a.writeCell(strconv.FormatFloat(score, 'f', 1, 64))
-	a.writeCell(strconv.FormatFloat(verse.questScore, 'f', 1, 64))
-	a.writeCell(strconv.FormatFloat(verse.endTSDiff, 'f', 2, 64))
-	a.writeCell(a.minSecFormat(verse.beginTS))
-	a.writeCell(a.minSecFormat(verse.endTS))
-	a.writeCell(verse.bookId + ` ` + strconv.Itoa(verse.chapter) + `:` + verse.verseStr)
-	var critical = a.createHighlightList(verse.critWords, len(verse.words))
-	var question = a.createHighlightList(verse.questWords, len(verse.words))
+	a.writeCell(strconv.FormatInt(verse.questScore, 10))
+	a.writeCell(strconv.FormatInt(verse.longDuration, 10))
+	a.writeCell(strconv.FormatInt(verse.longSilence, 10))
+	a.writeCell(a.minSecFormat(firstChar.BeginTS))
+	a.writeCell(a.minSecFormat(lastChar.EndTS))
+	a.writeCell(firstChar.BookId + ` ` + strconv.Itoa(firstChar.ChapterNum) + `:` + firstChar.VerseStr)
 	var text []string
-	for i, wd := range verse.words {
-		if critical[i] {
-			a.critErrors++
-			text = append(text, `<span class="red-box">`+wd.Text+`</span>`)
-		} else if question[i] {
-			a.questErrors++
-			text = append(text, `<span class="yellow-box">`+wd.Text+`</span>`)
+	for _, ch := range verse.chars {
+		char := string(ch.Word[ch.CharSeq])
+		if ch.CharSeq == 0 {
+			text = append(text, " ")
+		}
+		if ch.ScoreError == int(scoreCritical) {
+			text = append(text, `<span class="red-box">`+char+`</span>`)
+		} else if ch.ScoreError == int(scoreQuestion) {
+			text = append(text, `<span class="yellow-box">`+char+`</span>`)
+		} else if ch.DurationLong > 0 {
+			text = append(text, `<span class="green-box">`+char+`</span>`)
+		} else if ch.SilenceLong > 0 {
+			text = append(text, `<span class="blue-box">`+char+`</span>`)
 		} else {
-			text = append(text, wd.Text)
+			text = append(text, char)
 		}
 	}
-	var diff int
-	if verse.critDiff || verse.questDiff {
-		diff = int((verse.endTSDiff - 0.9) * 10.0) // subract 1sec, and convert to 1/10 sec per char
-		if diff > 0 {
-			spaces := strings.Repeat("&nbsp;", diff)
-			if verse.critDiff {
-				a.critGaps++
-				text = append(text, `<span class="red-box">`+spaces+`</span>`)
-			} else if verse.questDiff {
-				a.questGaps++
-				text = append(text, `<span class="yellow-box">`+spaces+`</span>`)
-			}
-		}
-	}
-	a.writeCell(strings.Join(text, " "))
+	a.writeCell(strings.Join(text, ""))
 	_, _ = a.out.WriteString("</tr>\n")
 }
 
@@ -182,13 +194,19 @@ func (a *AlignWriter) WriteEnd() {
 	}
 	.red-box { 
 		background-color: rgba(255, 0, 0, 0.4);
-		padding: 0 3px; /* 0 top/bottom, 3px left/right */ 
-		border-radius: 3px; /* rounded corners */ 
+		padding: 1px 0;
 	} 
 	.yellow-box { 
 		background-color: rgba(255, 255, 0, 0.8);
-		padding: 0 3px; 
-		border-radius: 3px; 
+		padding: 1px 0;
+	}
+	.blue-box { 
+		background-color: rgba(0, 0, 255, 0.4);
+		padding: 1px 0;
+	}
+	.green-box { 
+		background-color: rgba(0, 255, 0.4);
+		padding: 1px 0;
 	}
 	</style>
 `
@@ -232,6 +250,6 @@ func (a *AlignWriter) minSecFormat(duration float64) string {
 		minStr = strconv.FormatInt(int64(mins), 10)
 		delim = ":"
 	}
-	secStr := strconv.FormatFloat(secs, 'f', 2, 64)
+	secStr := strconv.FormatFloat(secs, 'f', 0, 64)
 	return minStr + delim + secStr
 }

@@ -16,12 +16,12 @@ func TestNewAlignErrorCalc(t *testing.T) {
 	dbPath := filepath.Join(os.Getenv("GOPROJ"), "dataset", "match", database)
 	conn := db.NewDBAdapter(ctx, dbPath)
 	calc := NewAlignErrorCalc(ctx, conn)
-	faChars, status := calc.Process()
+	faVerses, status := calc.Process()
 	if status.IsErr {
 		t.Fatal(status)
 	}
-	calc.countErrors(faChars)
-	fmt.Println(len(faChars))
+	calc.countErrors(faVerses)
+	fmt.Println(len(faVerses))
 }
 
 // TestComputeAvgIntervals is not a Test, but a routine to compute mean and std dev of time between timestamps
