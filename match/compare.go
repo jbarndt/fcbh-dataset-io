@@ -471,7 +471,8 @@ func (c *Compare) diff(verses1 []Verse, verses2 []Verse) {
 			diffs := diffMatch.DiffMain(par.text1, par.text2, false)
 			diffMatch.DiffCleanupMerge(diffs) // required for measure to compute largest
 			if !c.isMatch(diffs) {
-				inserts, deletes, largest := c.measure(diffs)
+				inserts, deletes := c.measure(diffs)
+				largest := c.largestLength(diffs)
 				c.insertSum += inserts
 				c.deleteSum += deletes
 				avgLen := float64(len(par.text1)+len(par.text2)) / 2.0
@@ -505,23 +506,35 @@ func (c *Compare) ensureClean(diffs []diffmatchpatch.Diff) {
 	}
 }
 
-func (c *Compare) measure(diffs []diffmatchpatch.Diff) (int, int, int) {
+func (c *Compare) measure(diffs []diffmatchpatch.Diff) (int, int) {
 	var inserts = 0
 	var deletes = 0
-	var largest = 0
 	for _, diff := range diffs {
 		lenText := len(diff.Text)
 		if diff.Type == diffmatchpatch.DiffInsert {
 			inserts += lenText
-			if lenText > largest {
-				largest = lenText
-			}
 		} else if diff.Type == diffmatchpatch.DiffDelete {
 			deletes += lenText
-			if lenText > largest {
-				largest = lenText
-			}
 		}
 	}
-	return inserts, deletes, largest
+	return inserts, deletes
+}
+
+func (c *Compare) largestLength(diffs []diffmatchpatch.Diff) int {
+	var result int
+	var length int
+	for _, diff := range diffs {
+		if diff.Type != diffmatchpatch.DiffEqual {
+			length += len(diff.Text)
+		} else {
+			if length > result {
+				result = length
+			}
+			length = 0
+		}
+	}
+	if length > result {
+		result = length
+	}
+	return result
 }
