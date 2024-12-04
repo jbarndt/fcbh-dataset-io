@@ -46,7 +46,8 @@ func (h *HTMLWriter) WriteHeading(baseDataset string) string {
 	_, _ = h.out.WriteString(h.datasetName)
 	_, _ = h.out.WriteString("</h2>\n")
 	_, _ = h.out.WriteString(`<h3 style="text-align:center">`)
-	_, _ = h.out.WriteString(time.Now().Format(`Mon Jan 2 2006 03:04:05 pm MST`))
+	loc, _ := time.LoadLocation("America/Denver")
+	_, _ = h.out.WriteString(time.Now().In(loc).Format(`Mon Jan 2 2006 03:04:05 pm MST`))
 	_, _ = h.out.WriteString("</h3>\n")
 	_, _ = h.out.WriteString(`<h3 style="text-align:center">RED characters are those in `)
 	_, _ = h.out.WriteString(baseDataset)
@@ -64,8 +65,9 @@ func (h *HTMLWriter) WriteHeading(baseDataset string) string {
         <th>Line</th>
         <th>Err %</th>
 		<th>Chars</th>
-		<th>Inbal</th>
+		<th>Imbal</th>
 		<th>Len</th>
+		<th>TS</th>
 		<th>Error</th>
         <th>Ref</th>
 		<th>Text Comparison</th>
@@ -85,6 +87,7 @@ func (h *HTMLWriter) WriteVerseDiff(verse pair, inserts int, deletes int, larges
 	h.writeCell(strconv.Itoa(inserts + deletes))
 	h.writeCell(strconv.Itoa(int(math.Abs(float64(inserts - deletes)))))
 	h.writeCell(strconv.Itoa(largest))
+	h.writeCell(h.minSecFormat(verse.beginTS))
 	h.writeCell(`+` + strconv.Itoa(inserts) + ` -` + strconv.Itoa(deletes))
 	h.writeCell(verse.bookId + ` ` + strconv.Itoa(verse.chapter) + `:` + verse.num)
 	h.writeCell(diffHtml)
@@ -166,7 +169,7 @@ func (h *HTMLWriter) WriteEnd(insertSum int, deleteSum int, diffCount int) {
     $(document).ready(function() {
         var table = $('#diffTable').DataTable({
             "columnDefs": [
-                { "orderable": false, "targets": [5,7] }
+                { "orderable": false, "targets": [5,6,8] }
 				// { "visible": false, "targets": [8] }  
             ],
             "pageLength": 50,
@@ -176,7 +179,7 @@ func (h *HTMLWriter) WriteEnd(insertSum int, deleteSum int, diffCount int) {
     	$.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
         	var hideZeros = $('#hideVerse0').prop('checked');
         	if (!hideZeros) return true;
-        	return !data[6].endsWith(":0"); 
+        	return !data[7].endsWith(":0"); 
     	});
     	$('#hideVerse0').prop('checked', true);
     	table.draw();
@@ -190,4 +193,22 @@ func (h *HTMLWriter) WriteEnd(insertSum int, deleteSum int, diffCount int) {
 `
 	_, _ = h.out.WriteString(script)
 	_ = h.out.Close()
+}
+
+func (a *HTMLWriter) minSecFormat(duration float64) string {
+	if duration > 0.5 {
+		duration -= 0.5
+	} else {
+		duration = 0.0
+	}
+	mins := int(duration / 60.0)
+	secs := duration - float64(mins)*60.0
+	var minStr string
+	var delim string
+	if int(mins) > 0 {
+		minStr = strconv.FormatInt(int64(mins), 10)
+		delim = ":"
+	}
+	secStr := strconv.FormatFloat(secs, 'f', 0, 64)
+	return minStr + delim + secStr
 }

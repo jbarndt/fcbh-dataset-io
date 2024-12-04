@@ -569,7 +569,7 @@ func (d *DBAdapter) SelectIdent() (Ident, dataset.Status) {
 func (d *DBAdapter) SelectScriptsByChapter(bookId string, chapterNum int) ([]Script, dataset.Status) {
 	var results []Script
 	var status dataset.Status
-	sqlStmt := `SELECT script_id, verse_str, script_text FROM scripts 
+	sqlStmt := `SELECT script_id, verse_str, script_text, script_begin_ts FROM scripts 
 			WHERE book_id=? AND chapter_num=?
 			ORDER BY script_id`
 	rows, err := d.DB.Query(sqlStmt, bookId, chapterNum)
@@ -582,7 +582,7 @@ func (d *DBAdapter) SelectScriptsByChapter(bookId string, chapterNum int) ([]Scr
 		var vs Script
 		vs.BookId = bookId
 		vs.ChapterNum = chapterNum
-		err = rows.Scan(&vs.ScriptId, &vs.VerseStr, &vs.ScriptText)
+		err = rows.Scan(&vs.ScriptId, &vs.VerseStr, &vs.ScriptText, &vs.ScriptBeginTS)
 		if err != nil {
 			status = log.Error(d.Ctx, 500, err, `Error scanning in ReadScriptByChapter`)
 			return results, status
@@ -765,6 +765,34 @@ func (d *DBAdapter) SelectFAScriptTimestamps(bookId string, chapter int) ([]Audi
 		log.Warn(d.Ctx, err, query)
 	}
 	return results, status
+}
+
+func (d *DBAdapter) SelectFACharTimestamps() ([]AlignChar, dataset.Status) {
+	var chars []AlignChar
+	var status dataset.Status
+	var query = `SELECT s.script_id, s.book_id, s.chapter_num, s.verse_str,
+				w.word_id, w.word_seq, w.word, 
+				c.char_id, c.start_ts, c.end_ts, c.fa_score
+				FROM scripts s JOIN words w ON s.script_id = w.script_id
+				JOIN chars c ON w.word_id = c.word_id`
+	rows, err := d.DB.Query(query)
+	if err != nil {
+		status = log.Error(d.Ctx, 500, err, "Error during SelectFACharTimestamps.")
+		return chars, status
+	}
+	defer d.closeDef(rows, "SelectFACharTimestamps stmt")
+	for rows.Next() {
+		var ch AlignChar
+		err = rows.Scan(&ch.ScriptId, &ch.BookId, &ch.ChapterNum, &ch.VerseStr,
+			&ch.WordId, &ch.WordSeq, &ch.Word,
+			&ch.CharId, &ch.BeginTS, &ch.EndTS, &ch.FAScore)
+		if err != nil {
+			status = log.Error(d.Ctx, 500, err, "Error in SelectFACharTimestamps.")
+			return chars, status
+		}
+		chars = append(chars, ch)
+	}
+	return chars, status
 }
 
 func (d *DBAdapter) SelectFAWordTimestamps() ([]Audio, dataset.Status) {

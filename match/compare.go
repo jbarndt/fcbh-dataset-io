@@ -38,6 +38,7 @@ type Verse struct {
 	verse    string
 	verseEnd string
 	text     string
+	beginTS  float64
 }
 
 func NewCompare(ctx context.Context, user fetch.DBPUser, baseDSet string, db db.DBAdapter,
@@ -152,6 +153,7 @@ func (c *Compare) process(conn db.DBAdapter, bookId string, chapterNum int) ([]V
 		vs.verse = script.VerseStr
 		vs.verseEnd = script.VerseEnd
 		vs.text = script.ScriptText
+		vs.beginTS = script.ScriptBeginTS
 		lines = append(lines, vs)
 	}
 	if ident.TextSource == request.TextScript {
@@ -259,7 +261,7 @@ func (c *Compare) consolidateUSX(verses []Verse) []Verse {
 			}
 			lastChapter = rec.chapter
 			lastVerse = rec.verse
-			verse = Verse{bookId: rec.bookId, chapter: rec.chapter, verse: rec.verse, text: ``}
+			verse = Verse{bookId: rec.bookId, chapter: rec.chapter, verse: rec.verse, text: ``, beginTS: rec.beginTS}
 		}
 		if !strings.HasSuffix(verse.text, ` `) && !strings.HasPrefix(rec.text, ` `) {
 			verse.text += ` ` + rec.text
@@ -428,6 +430,7 @@ type pair struct {
 	bookId  string
 	chapter int
 	num     string
+	beginTS float64
 	text1   string
 	text2   string
 }
@@ -448,14 +451,14 @@ func (c *Compare) diff(verses1 []Verse, verses2 []Verse) {
 		if ok {
 			didMatch[vs1.verse] = true
 		}
-		p := pair{bookId: vs1.bookId, chapter: vs1.chapter, num: vs1.verse, text1: vs1.text, text2: vs2.text}
+		p := pair{bookId: vs1.bookId, chapter: vs1.chapter, num: vs1.verse, beginTS: vs1.beginTS, text1: vs1.text, text2: vs2.text}
 		pairs = append(pairs, p)
 	}
 	// pick up any verse2 that did not match verse1
 	for _, vs2 := range verses2 {
 		_, ok := didMatch[vs2.verse]
 		if !ok {
-			p := pair{bookId: vs2.bookId, chapter: vs2.chapter, num: vs2.verse, text1: ``, text2: vs2.text}
+			p := pair{bookId: vs2.bookId, chapter: vs2.chapter, num: vs2.verse, beginTS: vs2.beginTS, text1: ``, text2: vs2.text}
 			pairs = append(pairs, p)
 		}
 	}
