@@ -7,11 +7,15 @@ import (
 	"fmt"
 	"gonum.org/v1/gonum/stat"
 	"math"
+	"strconv"
+	"strings"
 )
 
 const (
-	criticalThreshold = 0.001
-	questionThreshold = 0.01
+	criticalThreshold = 0.0001 // 0.001
+	questionThreshold = 0.001  // 0.01
+	durationStdevs    = 4.0    // intended to make it rare
+	silenceStdevs     = 4.0    // intended to make it rare
 )
 
 type ErrorType int
@@ -38,10 +42,10 @@ const (
 
 type AlignVerse struct {
 	chars        []db.AlignChar
-	critScore    int64
-	questScore   int64
-	longDuration int64
-	longSilence  int64
+	critScore    float64
+	questScore   float64
+	longDuration float64
+	longSilence  float64
 }
 
 type AlignErrorCalc struct {
@@ -56,13 +60,13 @@ func NewAlignErrorCalc(ctx context.Context, conn db.DBAdapter) AlignErrorCalc {
 	return a
 }
 
-func (a *AlignErrorCalc) Process() ([]AlignVerse, dataset.Status) {
+func (a *AlignErrorCalc) Process() ([]AlignVerse, string, dataset.Status) {
 	var faVerse []AlignVerse
 	var faChars []db.AlignChar
 	var status dataset.Status
 	faChars, status = a.conn.SelectFACharTimestamps()
 	if status.IsErr {
-		return faVerse, status
+		return faVerse, "", status
 	}
 	for i := range faChars {
 		if faChars[i].FAScore <= criticalThreshold {
@@ -108,7 +112,8 @@ func (a *AlignErrorCalc) Process() ([]AlignVerse, dataset.Status) {
 	a.markSilenceOutliers(faChars, mean, stddev, betweenChapters, betweenChaptersLong)
 	faVerse = a.groupByVerse(faChars)
 	a.addErrorCounts(faVerse)
-	return faVerse, status
+	filenameMap, status := a.generateBookChapterFilenameMap()
+	return faVerse, filenameMap, status
 }
 
 func (a *AlignErrorCalc) getDurations(chars []db.AlignChar) []float64 {
@@ -156,7 +161,7 @@ func (a *AlignErrorCalc) setCharSeq(chars []db.AlignChar) {
 }
 
 func (a *AlignErrorCalc) markDurationOutliers(chars []db.AlignChar, mean float64, stddev float64) {
-	var pct95 = mean + 2.2*stddev
+	var pct95 = mean + durationStdevs*stddev
 	for i := range chars {
 		if chars[i].Duration > pct95 {
 			chars[i].DurationLong = int(durationLong)
@@ -166,7 +171,7 @@ func (a *AlignErrorCalc) markDurationOutliers(chars []db.AlignChar, mean float64
 
 func (a *AlignErrorCalc) markSilenceOutliers(chars []db.AlignChar, mean float64, stddev float64,
 	silencePos SilencePosition, errorType ErrorType) {
-	var pct95 = mean + 2.0*stddev
+	var pct95 = mean + silenceStdevs*stddev
 	for i := range chars {
 		if chars[i].SilencePos == int(silencePos) {
 			if chars[i].Silence > pct95 {
@@ -216,9 +221,9 @@ func (a *AlignErrorCalc) addErrorCounts(verses []AlignVerse) {
 	for i := range verses {
 		for _, ch := range verses[i].chars {
 			if ch.ScoreError == int(scoreCritical) {
-				verses[i].critScore++
+				verses[i].critScore += 1 - ch.FAScore
 			} else if ch.ScoreError == int(scoreQuestion) {
-				verses[i].questScore++
+				verses[i].questScore += 1 - ch.FAScore
 			}
 			if ch.DurationLong > 0 {
 				verses[i].longDuration++
@@ -228,6 +233,25 @@ func (a *AlignErrorCalc) addErrorCounts(verses []AlignVerse) {
 			}
 		}
 	}
+}
+
+func (a *AlignErrorCalc) generateBookChapterFilenameMap() (string, dataset.Status) {
+	chapters, status := a.conn.SelectBookChapterFilename()
+	if status.IsErr {
+		return "", status
+	}
+	var result []string
+	result = append(result, "let fileMap = {\n")
+	for i, ch := range chapters {
+		key := ch.BookId + strconv.Itoa(ch.ChapterNum)
+		result = append(result, "\t'"+key+"': '"+ch.AudioFile+"'")
+		if i < len(chapters)-1 {
+			result = append(result, ",\n")
+		} else {
+			result = append(result, "};\n")
+		}
+	}
+	return strings.Join(result, ""), status
 }
 
 func (a *AlignErrorCalc) countErrors(verses []AlignVerse) {

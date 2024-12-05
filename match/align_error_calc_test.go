@@ -16,10 +16,11 @@ func TestNewAlignErrorCalc(t *testing.T) {
 	dbPath := filepath.Join(os.Getenv("GOPROJ"), "dataset", "match", database)
 	conn := db.NewDBAdapter(ctx, dbPath)
 	calc := NewAlignErrorCalc(ctx, conn)
-	faVerses, status := calc.Process()
+	faVerses, filenameMap, status := calc.Process()
 	if status.IsErr {
 		t.Fatal(status)
 	}
+	fmt.Println(filenameMap)
 	calc.countErrors(faVerses)
 	fmt.Println(len(faVerses))
 }

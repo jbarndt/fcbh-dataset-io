@@ -47,7 +47,7 @@ func NewAlignWriter(ctx context.Context) AlignWriter {
 	return a
 }
 
-func (a *AlignWriter) WriteReport(datasetName string, verses []AlignVerse) (string, dataset.Status) {
+func (a *AlignWriter) WriteReport(datasetName string, verses []AlignVerse, filenameMap string) (string, dataset.Status) {
 	var filename string
 	var status dataset.Status
 	var err error
@@ -60,7 +60,7 @@ func (a *AlignWriter) WriteReport(datasetName string, verses []AlignVerse) (stri
 	for _, vers := range verses {
 		a.WriteVerse(vers)
 	}
-	a.WriteEnd()
+	a.WriteEnd(filenameMap)
 	return a.out.Name(), status
 }
 
@@ -74,6 +74,7 @@ func (a *AlignWriter) WriteHeading() {
 	_, _ = a.out.WriteString(head)
 	_, _ = a.out.WriteString(`<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.css">`)
 	_, _ = a.out.WriteString("</head><body>\n")
+	_, _ = a.out.WriteString("<audio id='validateAudio'></audio>\n")
 	_, _ = a.out.WriteString(`<h2 style="text-align:center">Audio to Text Alignment Report For `)
 	_, _ = a.out.WriteString(a.datasetName)
 	_, _ = a.out.WriteString("</h2>\n")
@@ -90,11 +91,12 @@ func (a *AlignWriter) WriteHeading() {
     <thead>
     <tr>
         <th>Line</th>
-        <th>Align<br>Error</th>
+        <th>Critical<br>Error</th>
+		<th>Question<br>Error</th>
 		<th>Duration<br>Long</th>
 		<th>Silence<br>Long</th>
 		<th>Start<br>TS</th>
-		<th>End<br>TS</th>
+		<th>Button</th>
         <th>Ref</th>
 		<th>Script</th>
     </tr>
@@ -110,11 +112,17 @@ func (a *AlignWriter) WriteVerse(verse AlignVerse) {
 	a.lineNum++
 	_, _ = a.out.WriteString("<tr>\n")
 	a.writeCell(strconv.Itoa(a.lineNum))
-	a.writeCell(strconv.FormatInt(verse.questScore, 10))
-	a.writeCell(strconv.FormatInt(verse.longDuration, 10))
-	a.writeCell(strconv.FormatInt(verse.longSilence, 10))
+	a.writeCell(strconv.FormatFloat(verse.critScore, 'f', 2, 64))
+	a.writeCell(strconv.FormatFloat(verse.questScore, 'f', 2, 64))
+	a.writeCell(strconv.FormatFloat(verse.longDuration, 'f', 2, 64))
+	a.writeCell(strconv.FormatFloat(verse.longSilence, 'f', 0, 64))
 	a.writeCell(a.minSecFormat(firstChar.BeginTS))
-	a.writeCell(a.minSecFormat(lastChar.EndTS))
+	var params []string
+	params = append(params, "'"+firstChar.BookId+"'")
+	params = append(params, strconv.Itoa(firstChar.ChapterNum))
+	params = append(params, strconv.FormatFloat(firstChar.BeginTS, 'f', 4, 64))
+	params = append(params, strconv.FormatFloat(lastChar.EndTS, 'f', 4, 64))
+	a.writeCell("<button onclick=\"playVerse(" + strings.Join(params, ",") + ")\">Play</button>")
 	a.writeCell(firstChar.BookId + ` ` + strconv.Itoa(firstChar.ChapterNum) + `:` + firstChar.VerseStr)
 	var text []string
 	for _, ch := range verse.chars {
@@ -152,7 +160,7 @@ func (a *AlignWriter) writeCell(content string) {
 	_, _ = a.out.WriteString(`</td>`)
 }
 
-func (a *AlignWriter) WriteEnd() {
+func (a *AlignWriter) WriteEnd(filenameMap string) {
 	table := `</tbody>
 	</table>
 `
@@ -215,7 +223,7 @@ func (a *AlignWriter) WriteEnd() {
     $(document).ready(function() {
         var table = $('#diffTable').DataTable({
             "columnDefs": [
-                { "orderable": false, "targets": [6,7] }
+                { "orderable": false, "targets": [5,6,7,8] }
 				// { "visible": false, "targets": [8] }  
             ],
             "pageLength": 50,
@@ -225,7 +233,7 @@ func (a *AlignWriter) WriteEnd() {
     	$.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
         	var hideZeros = $('#hideVerse0').prop('checked');
         	if (!hideZeros) return true;
-        	return !data[6].endsWith(":0"); 
+        	return !data[7].endsWith(":0"); 
     	});
     	$('#hideVerse0').prop('checked', true);
     	table.draw();
@@ -233,11 +241,30 @@ func (a *AlignWriter) WriteEnd() {
         	table.draw(); 
     	});
     });
-</script>
+	function playVerse(book, chapter, startTime, endTime) {
+`
+	_, _ = a.out.WriteString(script)
+	_, _ = a.out.WriteString("\t" + filenameMap)
+	script = `filename = fileMap[book + chapter]
+		audioFile = './../../../../FCBH2024/download/ENGWEB/ENGWEBN2DA-mp3-64/' + filename
+		console.log("audioFile", audioFile);
+		const audio = document.getElementById('validateAudio');
+		audio.src = audioFile;
+		audio.playbackRate = 0.75;
+		audio.currentTime = startTime;
+		audio.play();
+		audio.ontimeupdate = function() {
+			if (audio.currentTime >= endTime) {
+				audio.pause();
+				audio.ontimeupdate = null;
+			}
+		}
+	}
+    </script>
 </body>
 </html>
 `
-	_, _ = a.out.WriteString(script)
+	_, _ = a.out.WriteString("\t" + script)
 	_ = a.out.Close()
 }
 

@@ -143,7 +143,7 @@ func createDatabase(db *sql.DB) {
 		book_id TEXT NOT NULL,
 		chapter_num INTEGER NOT NULL,
 		chapter_end INTEGER NOT NULL,
-		audio_file TEXT NOT NULL, -- questionable now that audio filesetId is in ident
+		audio_file TEXT NOT NULL, 
 		script_num TEXT NOT NULL,
 		usfm_style TEXT NOT NULL DEFAULT '',
 		person TEXT NOT NULL DEFAULT '',
@@ -530,6 +530,32 @@ func (d *DBAdapter) SelectBookChapter() ([]Script, dataset.Status) {
 	err = rows.Err()
 	if err != nil {
 		status = log.Error(d.Ctx, 500, err, `Error at end of rows in SelectBookChapter`)
+	}
+	return results, status
+}
+
+func (d *DBAdapter) SelectBookChapterFilename() ([]Script, dataset.Status) {
+	var results []Script
+	var status dataset.Status
+	query := `SELECT distinct book_id, chapter_num, audio_file FROM scripts WHERE audio_file != ''`
+	rows, err := d.DB.Query(query)
+	if err != nil {
+		status = log.Error(d.Ctx, 500, err, `Error reading rows in SelectBookChapter`)
+		return results, status
+	}
+	defer d.closeDef(rows, `SelectBookChapterFilename`)
+	for rows.Next() {
+		var scp Script
+		err = rows.Scan(&scp.BookId, &scp.ChapterNum, &scp.AudioFile)
+		if err != nil {
+			status = log.Error(d.Ctx, 500, err, `Error scanning in SelectBookChapterFilename`)
+			return results, status
+		}
+		results = append(results, scp)
+	}
+	err = rows.Err()
+	if err != nil {
+		status = log.Error(d.Ctx, 500, err, `Error at end of rows in SelectBookChapterFilename`)
 	}
 	return results, status
 }
