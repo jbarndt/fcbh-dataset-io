@@ -7,10 +7,11 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 )
 
 const USXTextEditScript = `is_new: yes
-dataset_name: USX Text Edit Script_{bibleId}
+dataset_name: USXTextEditScript_{bibleId}
 bible_id: {bibleId}
 username: GaryNTest
 email: gary@shortsands.com
@@ -29,11 +30,13 @@ func TestUSXTextEditScriptAPI(t *testing.T) {
 }
 
 func TestUSXTextEditScriptCLI(t *testing.T) {
+	start := time.Now()
 	var bibleId = `ENGWEB`
 	var req = strings.Replace(USXTextEditScript, `{bibleId}`, bibleId, 2)
 	stdout, stderr := CLIExec(req, t)
 	fmt.Println(`STDOUT:`, stdout)
 	fmt.Println(`STDERR:`, stderr)
+	fmt.Println("Duration:", time.Since(start))
 	filename := ExtractFilename(req)
 	numLines := NumJSONFileLines(filename, t)
 	expected := 9588

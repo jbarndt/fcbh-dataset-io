@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 )
 
 const PlainTextEditScript = `is_new: yes
@@ -18,6 +19,8 @@ output_file: 02__plain_text_edit_script.json
 text_data:
   bible_brain:
     text_plain_edit: yes
+detail:
+  words: yes
 `
 
 func TestPlainTextEditScriptAPI(t *testing.T) {
@@ -28,12 +31,15 @@ func TestPlainTextEditScriptAPI(t *testing.T) {
 }
 
 func TestPlainTextEditScriptCLI(t *testing.T) {
+	var start = time.Now()
 	var bibleId = `ENGWEB`
-	var expected = 8218
+	//var expected = 8218 // when detail = lines
+	var expected = 175829 // when detail = words
 	var req = strings.Replace(PlainTextEditScript, `{bibleId}`, bibleId, 2)
 	stdout, stderr := CLIExec(req, t)
 	fmt.Println(`STDOUT:`, stdout)
 	fmt.Println(`STDERR:`, stderr)
+	fmt.Println("Duration:", time.Since(start))
 	filename := ExtractFilename(req)
 	numLines := NumJSONFileLines(filename, t)
 	if numLines != expected {
