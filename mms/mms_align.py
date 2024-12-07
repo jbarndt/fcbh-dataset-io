@@ -44,13 +44,15 @@ for line in sys.stdin:
     for spans in token_spans:
         word = []
         for token in spans:
-            char = [ token.token, token.start, token.end, round(token.score,4)]
+            #char = [ token.token, token.start, token.end, round(token.score,4)]
+            char = [ token.token, token.start, token.end, token.score]
             word.append(char)
         chapter.append(word)
         word = []
     result = {
        'ratio': ratio,
        #'dictionary': tokenizer.get_vocab(), TO BE DONE
+       'dictionary': bundle.get_dict(),
        'tokens': chapter
     }
     output = json.dumps(result)
