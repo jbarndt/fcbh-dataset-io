@@ -9,11 +9,11 @@ import (
 	log "dataset/logger"
 	"dataset/timestamp"
 	"encoding/json"
+	"fmt"
 	"github.com/divan/num2words"
 	"math"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"unicode"
 )
@@ -24,18 +24,18 @@ type MMSFA_Input struct {
 }
 
 type Word struct {
-	scriptId   int64
-	wordSeq    int
-	word       string
-	uroman     string
-	normalized string
+	scriptId int64
+	wordId   int64
+	wordSeq  int
+	word     string
+	uroman   string
 }
 
-type Timestamp struct {
-	Start float64 `json:"start"`
-	End   float64 `json:"end"`
-	Score float64 `json:"score"`
-}
+//type Timestamp struct {
+//	Start float64 `json:"start"`
+//	End   float64 `json:"end"`
+//	Score float64 `json:"score"`
+//}
 
 type MMSFA struct {
 	ctx     context.Context
@@ -87,13 +87,8 @@ func (m *MMSFA) processFile(file input.InputFile, writer *bufio.Writer, reader *
 	if status.IsErr {
 		return status
 	}
-	var verses []db.Script
-	verses, status = m.conn.SelectScriptsByChapter(file.BookId, file.Chapter)
-	if status.IsErr {
-		return status
-	}
 	var wordList []Word
-	faInput.NormWords, wordList, status = m.prepareText(m.lang, verses)
+	faInput.NormWords, wordList, status = m.prepareText(m.lang, file.BookId, file.Chapter)
 	if status.IsErr {
 		return status
 	}
@@ -118,6 +113,7 @@ func (m *MMSFA) processFile(file input.InputFile, writer *bufio.Writer, reader *
 	if err2 != nil {
 		return log.Error(m.ctx, 500, err2, `Error reading mms_align.py response`)
 	}
+	fmt.Println(len(wordList)) // temp
 	m.processPyOutput(file, wordList, response)
 	// development
 	//err = os.WriteFile("engweb_fa_out.json", []byte(response), 0644)
@@ -127,45 +123,47 @@ func (m *MMSFA) processFile(file input.InputFile, writer *bufio.Writer, reader *
 	return status
 }
 
-func (m *MMSFA) prepareText(lang string, scripts []db.Script) ([]string, []Word, dataset.Status) {
+func (m *MMSFA) prepareText(lang string, bookId string, chapter int) ([]string, []Word, dataset.Status) {
 	var textList []string
 	var refList []Word
 	var status dataset.Status
-	re1 := regexp.MustCompile(`[^a-z' ]`)
-	re2 := regexp.MustCompile(` +`)
-	var verses, uroman []string
-	for _, script := range scripts {
-		alphaText := m.cleanText(script.ScriptText)
-		verses = append(verses, alphaText)
+	var dbWords []db.Word
+	dbWords, status = m.conn.SelectWordsByBookChapter(bookId, chapter)
+	if status.IsErr {
+		return textList, refList, status
 	}
-	uroman, status = URoman(m.ctx, lang, verses)
-	for i, text := range uroman {
-		text = strings.ToLower(text)
-		text = strings.ReplaceAll(text, "’", "'")
-		text = re1.ReplaceAllString(text, " ")
-		text = re2.ReplaceAllString(text, " ")
-		text = strings.TrimSpace(text)
-		norm := strings.Fields(text)
-		words := strings.Fields(verses[i])
-		urom := strings.Fields(uroman[i])
-		if len(words) != len(norm) {
-			sc := scripts[i]
-			wdStr := strings.Join(words, " ")
-			nmStr := strings.Join(norm, " ")
-			status = log.ErrorNoErr(m.ctx, 500, "Word count did not match in MMS_FA prepareText", sc.BookId, sc.ChapterNum, sc.VerseStr, "WORDS:", wdStr, "NORM:", nmStr)
-		}
-		if len(words) != len(urom) {
-			status = log.ErrorNoErr(m.ctx, 500, "Uroman count did not match in MMS_FA prepareText", len(words), len(urom))
-		}
-		for w := range words {
-			textList = append(textList, norm[w])
+	for _, word := range dbWords {
+		cleanWd := m.cleanText(word.Word)
+		results := strings.FieldsFunc(cleanWd, func(r rune) bool { // split on hyphen
+			return r == '\u002D' || r == '\u2011' || r == '\u2043' || r == '\u00AD'
+		})
+		for _, part := range results {
 			var ref Word
-			ref.scriptId = int64(scripts[i].ScriptId)
-			ref.wordSeq = w
-			ref.word = words[w]
-			ref.uroman = urom[w]
-			ref.normalized = norm[w]
+			ref.scriptId = int64(word.ScriptId)
+			ref.wordId = int64(word.WordId)
+			ref.wordSeq = word.WordSeq
+			ref.word = strings.ReplaceAll(part, "\u2019", "'")
 			refList = append(refList, ref)
+			textList = append(textList, ref.word)
+		}
+	}
+	uRoman, status2 := URoman(m.ctx, lang, textList)
+	for i := range uRoman {
+		uRoman[i] = strings.ToLower(uRoman[i])
+	}
+	if status2.IsErr {
+		return textList, refList, status2
+	}
+	if len(uRoman) != len(refList) {
+		status = log.ErrorNoErr(m.ctx, 500, "Word count did not match in MMS_FA prepareText", bookId, chapter, refList[0].scriptId)
+		return textList, refList, status
+	}
+	textList = nil
+	for i := range refList {
+		textList = append(textList, uRoman[i])
+		refList[i].uroman = uRoman[i]
+		if len(refList[i].word) != len(uRoman[i]) {
+			status = log.ErrorNoErr(m.ctx, 500, "Character count did not match in MMS_FA prepareText", bookId, chapter, refList[i].scriptId)
 		}
 	}
 	return textList, refList, status
@@ -173,30 +171,28 @@ func (m *MMSFA) prepareText(lang string, scripts []db.Script) ([]string, []Word,
 
 func (m *MMSFA) cleanText(text string) string {
 	var result []rune
-	for _, ch := range text {
+	for _, ch := range []rune(text) {
 		if unicode.IsLetter(ch) || unicode.IsSpace(ch) {
 			result = append(result, ch)
 		} else if unicode.IsDigit(ch) {
 			num := []rune(num2words.Convert(int(ch) - 48))
-			var norm []rune
-			for _, n := range num {
-				if n != ' ' && n != '-' {
-					norm = append(norm, n)
-				}
-			}
-			result = append(result, norm...)
+			result = append(result, num...)
 		} else if ch == '\u0027' || ch == '\u2019' {
 			result = append(result, '\u0027') // replace any Apostrophe with std one
 		} else if ch == '\u002D' || ch == '\u2011' || ch == '\u2043' || ch == '\u00AD' { // hyphen
-			result = append(result, ' ') // replace any hyphen with space
+			result = append(result, ch)
+		} else {
+			log.Warn(m.ctx, "Discarded Char in mms_fa.cleanText", string(ch))
+			fmt.Println("Discarded char: ", string(ch))
 		}
 	}
 	return string(result)
 }
 
 type MMSAlignResult struct {
-	Ratio  float64       `json:"ratio"`
-	Tokens [][][]float64 `json:"tokens"`
+	Ratio      float64        `json:"ratio"`
+	Dictionary map[string]int `json:"dictionary"`
+	Tokens     [][][]float64  `json:"tokens"`
 }
 
 func (m *MMSFA) processPyOutput(file input.InputFile, wordRefs []Word, response string) dataset.Status {
@@ -207,6 +203,10 @@ func (m *MMSFA) processPyOutput(file input.InputFile, wordRefs []Word, response 
 	if err != nil {
 		return log.Error(m.ctx, 500, err, `Error unmarshalling json`)
 	}
+	var tokenDict = make(map[int]string)
+	for chr, token := range mmsAlign.Dictionary {
+		tokenDict[token] = chr
+	}
 	var faWords [][]db.Char
 	for _, wd := range mmsAlign.Tokens {
 		var word []db.Char
@@ -216,7 +216,11 @@ func (m *MMSFA) processPyOutput(file input.InputFile, wordRefs []Word, response 
 			char.Start = ch[1] * mmsAlign.Ratio
 			char.End = ch[2] * mmsAlign.Ratio
 			char.Score = ch[3]
-			//char.Uroman = decode token
+			var ok bool
+			char.Uroman, ok = tokenDict[char.Token]
+			if !ok {
+				log.Warn(m.ctx, "Character not found in tokenDict", char.Token)
+			}
 			word = append(word, char)
 		}
 		faWords = append(faWords, word)
@@ -232,11 +236,10 @@ func (m *MMSFA) processPyOutput(file input.InputFile, wordRefs []Word, response 
 		word.ChapterNum = file.Chapter
 		word.AudioFile = file.Filename
 		word.ScriptId = ref.scriptId
-		//word.VerseSeq =
+		word.WordId = ref.wordId // because hypenated words were split, multiple words can have the same wordId
 		word.WordSeq = ref.wordSeq
 		word.Text = ref.word
 		word.Uroman = ref.uroman
-		//ref.normalized
 		faWd := faWords[i]
 		word.BeginTS = faWd[0].Start
 		word.EndTS = faWd[len(faWd)-1].End
@@ -269,7 +272,7 @@ func (m *MMSFA) groupByVerse(words []db.Audio) [][]db.Audio {
 	var verse []db.Audio
 	var verseSeq = 0
 	for i, word := range words {
-		if word.WordSeq == 0 {
+		if word.WordSeq == 1 {
 			if i > 0 {
 				result = append(result, verse)
 				verse = nil
@@ -298,7 +301,7 @@ func (m *MMSFA) summarizeByVerse(chapter [][]db.Audio) []db.Audio {
 		}
 		vs.Text = strings.Join(text, " ")
 		vs.Uroman = strings.Join(uroman, " ")
-		vs.FAScore = m.average(scores, 3)
+		vs.FAScore = m.average(scores, 5)
 		result = append(result, vs)
 	}
 	return result

@@ -204,7 +204,7 @@ func createDatabase(db *sql.DB) {
 		start_ts REAL NOT NULL,
 		end_ts REAL NOT NULL,
 		fa_score REAL NOT NULL,
-		uroman INTEGER NOT NULL DEFAULT 0,
+		uroman TEXT NOT NULL DEFAULT '',
 		FOREIGN KEY (word_id) REFERENCES words(word_id)) STRICT`
 	execDDL(db, query)
 }
@@ -922,11 +922,11 @@ func (d *DBAdapter) SelectWords() ([]Word, dataset.Status) {
 	return results, status
 }
 
-// SelectWordsByBookChapter is used by Aeneas
+// SelectWordsByBookChapter is used by Aeneas and mms_fa
 func (d *DBAdapter) SelectWordsByBookChapter(bookId string, chapter int) ([]Word, dataset.Status) {
 	var results []Word
 	var status dataset.Status
-	var query = `SELECT w.word_id, w.word
+	var query = `SELECT w.script_id, w.word_id, w.word_seq, w.word
 		FROM words w JOIN scripts s ON w.script_id = s.script_id
 		WHERE w.ttype = 'W' AND s.book_id = ? AND s.chapter_num = ? ORDER BY w.word_id`
 	rows, err := d.DB.Query(query, bookId, chapter)
@@ -937,7 +937,7 @@ func (d *DBAdapter) SelectWordsByBookChapter(bookId string, chapter int) ([]Word
 	defer d.closeDef(rows, "SelectWordsByBookChapter stmt")
 	for rows.Next() {
 		var rec Word
-		err = rows.Scan(&rec.WordId, &rec.Word)
+		err = rows.Scan(&rec.ScriptId, &rec.WordId, &rec.WordSeq, &rec.Word)
 		if err != nil {
 			status = log.Error(d.Ctx, 500, err, "Error during Select Words By Book Chapter.")
 			return results, status
@@ -1035,6 +1035,28 @@ func (d *DBAdapter) UpdateScriptFATimestamps(audio []Audio) dataset.Status {
 		res, err := stmt.Exec(rec.AudioFile, rec.BeginTS, rec.EndTS, rec.FAScore, rec.Uroman, rec.ScriptId)
 		if err != nil {
 			return log.Error(d.Ctx, 500, err, `Error while updating script FA timestamps.`)
+		}
+		affected, _ := res.RowsAffected()
+		rowsUpdated += affected
+	}
+	status = d.commitDML(tx, query)
+	if int(rowsUpdated) != len(audio) {
+		status = log.ErrorNoErr(d.Ctx, 400, strconv.Itoa(len(audio))+" rows updated "+strconv.Itoa(int(rowsUpdated)))
+	}
+	return status
+}
+
+func (d *DBAdapter) UpdateWordFATimestamps(audio []Audio) dataset.Status {
+	var status dataset.Status
+	query := `UPDATE words SET word_begin_ts = ?,
+		word_end_ts = ?, fa_score = ?, uroman = ? WHERE word_id = ?`
+	tx, stmt := d.prepareDML(query)
+	defer d.closeDef(stmt, "UpdateWordFATimestamps stmt")
+	var rowsUpdated int64
+	for _, rec := range audio {
+		res, err := stmt.Exec(rec.BeginTS, rec.EndTS, rec.FAScore, rec.Uroman, rec.WordId)
+		if err != nil {
+			return log.Error(d.Ctx, 500, err, `Error while updating word FA timestamps.`)
 		}
 		affected, _ := res.RowsAffected()
 		rowsUpdated += affected

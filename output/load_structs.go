@@ -75,7 +75,7 @@ func (o *Output) LoadWordStruct(d db.DBAdapter) ([]Word, dataset.Status) {
 		var mfccRows sql.NullInt64
 		var mfccCols sql.NullInt64
 		var mfccJson sql.NullString
-		var wordJson sql.NullString
+		var wordJson string
 		err = rows.Scan(&wd.WordId, &wd.ScriptId, &wd.BookId, &wd.ChapterNum, &wd.ChapterEnd,
 			&wd.VerseStr, &wd.VerseEnd, &wd.VerseNum, &wd.UsfmStyle, &wd.Person, &wd.Actor,
 			&wd.WordSeq, &wd.Word, &wd.WordBeginTS, &wd.WordEndTS,
@@ -93,8 +93,8 @@ func (o *Output) LoadWordStruct(d db.DBAdapter) ([]Word, dataset.Status) {
 				return results, status
 			}
 		}
-		if wordJson.Valid {
-			err = json.Unmarshal([]byte(wordJson.String), &wd.WordEnc)
+		if len(wordJson) > 0 {
+			err = json.Unmarshal([]byte(wordJson), &wd.WordEnc)
 			if err != nil {
 				status = log.Error(d.Ctx, 500, err, "Error in Unmarshalling WordEnc")
 				return results, status

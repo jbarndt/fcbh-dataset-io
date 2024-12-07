@@ -8,6 +8,9 @@ import (
 func (r *RequestDecoder) Prereq(req *Request) {
 	//	r.mfccPrereq(req)
 	r.setOutputType(req)
+	if req.Timestamps.MMSAlign {
+		req.Detail.Words = true
+	}
 }
 
 //func (r *RequestDecoder) mfccPrereq(req *Request) {

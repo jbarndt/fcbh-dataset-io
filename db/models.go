@@ -99,7 +99,7 @@ type Char struct {
 	Start  float64
 	End    float64
 	Score  float64
-	Uroman rune
+	Uroman string
 }
 
 type AlignChar struct {

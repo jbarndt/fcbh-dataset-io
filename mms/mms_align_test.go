@@ -9,6 +9,10 @@ import (
 	"testing"
 )
 
+// These tests are dependent upon test 02_plain_text_edit_script_test.go
+// which creates the database: /Users/gary/FCBH2024/GaryNTest/PlainTextEditScript_ENGWEB.db
+// It is best to rerun test 02 in order to have a clean database
+
 func TestMMSFA_ProcessFiles(t *testing.T) {
 	ctx := context.Background()
 	user, _ := fetch.GetTestUser()
@@ -43,12 +47,8 @@ func TestMMSFA_processPyOutput(t *testing.T) {
 	file.MediaId = "ENGWEBN2DA"
 	file.Directory = os.Getenv("FCBH_DATASET_FILES") + "/ENGWEB/ENGWEBN2DA-mp3-64/"
 	file.Filename = "B02___01_Mark________ENGWEBN2DA.mp3"
-	verses, status := conn.SelectScriptsByChapter(file.BookId, file.Chapter)
-	if status.IsErr {
-		t.Fatal(status)
-	}
 	var wordList []Word
-	_, wordList, status = fa.prepareText("eng", verses)
+	_, wordList, status = fa.prepareText("eng", file.BookId, file.Chapter)
 	if status.IsErr {
 		t.Fatal(status)
 	}
@@ -64,7 +64,7 @@ func TestMMSFA_processPyOutput(t *testing.T) {
 	if scriptRows != 46 {
 		t.Error("scriptRows is", scriptRows, "it should be 46")
 	}
-	wordRows, status := conn.SelectScalarInt("select count(*) from words")
+	wordRows, status := conn.SelectScalarInt("select count(*) from words where fa_score != 0.0")
 	if status.IsErr {
 		t.Fatal(status)
 	}
