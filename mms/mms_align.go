@@ -135,7 +135,7 @@ func (m *MMSFA) prepareText(lang string, bookId string, chapter int) ([]string, 
 	for _, word := range dbWords {
 		cleanWd := m.cleanText(word.Word)
 		results := strings.FieldsFunc(cleanWd, func(r rune) bool { // split on hyphen
-			return r == '\u002D' || r == '\u2011' || r == '\u2043' || r == '\u00AD'
+			return r == '\u002D' || (r >= '\u2010' && r <= '\u2014')
 		})
 		for _, part := range results {
 			var ref Word
@@ -260,7 +260,7 @@ func (m *MMSFA) processPyOutput(file input.InputFile, wordRefs []Word, response 
 	if status.IsErr {
 		return status
 	}
-	words, status = m.conn.InsertAudioWords(words)
+	status = m.conn.UpdateWordFATimestamps(words)
 	if status.IsErr {
 		return status
 	}
