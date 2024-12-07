@@ -5,7 +5,9 @@ import (
 	"dataset/db"
 	"dataset/fetch"
 	"dataset/input"
+	"fmt"
 	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -30,6 +32,29 @@ func TestMMSFA_ProcessFiles(t *testing.T) {
 	status = fa.ProcessFiles(files)
 	if status.IsErr {
 		t.Fatal(status)
+	}
+}
+
+func TestMMSFA_prepareText(t *testing.T) {
+	ctx := context.Background()
+	//user, _ := fetch.GetTestUser()
+	//conn, status := db.NewerDBAdapter(ctx, false, user.Username, "PlainTextEditScript_ENGWEB")
+	database := filepath.Join(os.Getenv("GOPROJ"), "dataset", "match", "ENGWEB_align.db")
+	fmt.Println(database)
+	conn := db.NewDBAdapter(ctx, database)
+	//if status.IsErr {
+	//	t.Fatal(status)
+	//}
+	fa := NewMMSFA(ctx, conn, "eng", "")
+	for _, bookId := range db.BookNT {
+		lastChap := db.BookChapterMap[bookId]
+		for chap := 1; chap <= lastChap; chap++ {
+			textList, refList, status := fa.prepareText("eng", bookId, chap)
+			if status.IsErr {
+				t.Fatal(status)
+			}
+			fmt.Println(bookId, chap, len(textList), len(refList))
+		}
 	}
 }
 

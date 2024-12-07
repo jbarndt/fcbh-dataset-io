@@ -800,7 +800,9 @@ func (d *DBAdapter) SelectFACharTimestamps() ([]AlignChar, dataset.Status) {
 				w.word_id, w.word_seq, w.word, 
 				c.char_id, c.start_ts, c.end_ts, c.fa_score
 				FROM scripts s JOIN words w ON s.script_id = w.script_id
-				JOIN chars c ON w.word_id = c.word_id`
+				JOIN chars c ON w.word_id = c.word_id
+				WHERE w.ttype = 'W'
+				ORDER BY c.char_id`
 	rows, err := d.DB.Query(query)
 	if err != nil {
 		status = log.Error(d.Ctx, 500, err, "Error during SelectFACharTimestamps.")

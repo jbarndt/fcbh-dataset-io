@@ -179,10 +179,11 @@ func (m *MMSFA) cleanText(text string) string {
 			result = append(result, num...)
 		} else if ch == '\u0027' || ch == '\u2019' {
 			result = append(result, '\u0027') // replace any Apostrophe with std one
-		} else if ch == '\u002D' || ch == '\u2011' || ch == '\u2043' || ch == '\u00AD' { // hyphen
+		} else if ch == '\u002D' || (ch >= '\u2010' && ch <= '\u2014') { // hyphen
 			result = append(result, ch)
 		} else {
-			log.Warn(m.ctx, "Discarded Char in mms_fa.cleanText", string(ch))
+			log.Warn(m.ctx, "Discarded Char in mms_fa.cleanText", string(ch), ch)
+			fmt.Printf("%U\n", ch)
 			fmt.Println("Discarded char: ", string(ch))
 		}
 	}
