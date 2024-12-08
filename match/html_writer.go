@@ -102,7 +102,7 @@ func (h *HTMLWriter) WriteVerseDiff(verse pair, inserts int, deletes int, larges
 		params = append(params, strconv.Itoa(verse.chapter))
 		params = append(params, strconv.FormatFloat(verse.beginTS, 'f', 4, 64))
 		params = append(params, strconv.FormatFloat(verse.endTS, 'f', 4, 64))
-		h.writeCell("<button onclick=\"playVerse(" + strings.Join(params, ",") + ")\">Play</button>")
+		h.writeCell("<button title=\"" + h.minSecFormat(verse.beginTS) + "\" onclick=\"playVerse(" + strings.Join(params, ",") + ")\">Play</button>")
 		h.writeCell(`+` + strconv.Itoa(inserts) + ` -` + strconv.Itoa(deletes))
 		h.writeCell(verse.bookId + ` ` + strconv.Itoa(verse.chapter) + `:` + verse.num)
 		h.writeCell(diffHtml)
