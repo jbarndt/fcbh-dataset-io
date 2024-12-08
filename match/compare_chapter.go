@@ -30,8 +30,9 @@ func (c *Compare) CompareChapters() (string, dataset.Status) {
 		text = c.cleanup(text)
 		c.chapterDiff(scp.BookId, scp.ChapterNum, baseText, text)
 	}
+	filenameMap, status := c.generateBookChapterFilenameMap()
 	c.baseDb.Close()
-	c.writer.WriteEnd(c.insertSum, c.deleteSum, c.diffCount)
+	c.writer.WriteEnd(filenameMap, c.insertSum, c.deleteSum, c.diffCount)
 	return filename, status
 }
 

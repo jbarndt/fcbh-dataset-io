@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -35,4 +36,13 @@ func TestTwoCompareDirect(t *testing.T) {
 	//tests = append(tests, SqliteTest{"SELECT count(*) FROM scripts", 26})
 	//tests = append(tests, SqliteTest{"SELECT count(*) FROM scripts WHERE script_begin_ts != 0.0", 25})
 	DirectSqlTest(compareOnly, tests, t)
+}
+
+func TestTwoCompareEnglistDirect(t *testing.T) {
+	var yaml = compareOnly
+	yaml = strings.Replace(yaml, "JMDYPM_audio", "AudioWhisperJson_ENGWEB_STT", 1)
+	yaml = strings.Replace(yaml, "JMDYPM", "ENGWEB", 1)
+	yaml = strings.Replace(yaml, "[MAT,MRK,LUK,JHN,ACT]", "[PHM]", 1)
+	yaml = strings.Replace(yaml, "JMDYPM_text", "AudioWhisperJson_ENGWEB", 1)
+	DirectSqlTest(yaml, []SqliteTest{}, t)
 }

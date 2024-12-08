@@ -7,6 +7,7 @@ import (
 	"math"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -59,6 +60,12 @@ func (h *HTMLWriter) WriteHeading(baseDataset string) string {
 	</div>
 `
 	_, _ = h.out.WriteString(checkbox)
+	directoryInput := `<div style="text-align: center; margin: 10px;">
+		<label for="directory">Directory of Audio Files: </label><input type="text" id="directory" size="100" value="./">
+	</div>`
+
+	_, _ = h.out.WriteString(directoryInput)
+	_, _ = h.out.WriteString("<audio id='validateAudio'></audio>\n")
 	table := `<table id="diffTable" class="display">
     <thead>
     <tr>
@@ -67,7 +74,7 @@ func (h *HTMLWriter) WriteHeading(baseDataset string) string {
 		<th>Chars</th>
 		<th>Imbal</th>
 		<th>Len</th>
-		<th>TS</th>
+		<th>Button</th>
 		<th>Error</th>
         <th>Ref</th>
 		<th>Text Comparison</th>
@@ -80,18 +87,27 @@ func (h *HTMLWriter) WriteHeading(baseDataset string) string {
 }
 
 func (h *HTMLWriter) WriteVerseDiff(verse pair, inserts int, deletes int, largest int, errPct float64, diffHtml string) {
-	h.lineNum++
-	_, _ = h.out.WriteString("<tr>\n")
-	h.writeCell(strconv.Itoa(h.lineNum))
-	h.writeCell(strconv.FormatFloat(errPct, 'f', 0, 64))
-	h.writeCell(strconv.Itoa(inserts + deletes))
-	h.writeCell(strconv.Itoa(int(math.Abs(float64(inserts - deletes)))))
-	h.writeCell(strconv.Itoa(largest))
-	h.writeCell(h.minSecFormat(verse.beginTS))
-	h.writeCell(`+` + strconv.Itoa(inserts) + ` -` + strconv.Itoa(deletes))
-	h.writeCell(verse.bookId + ` ` + strconv.Itoa(verse.chapter) + `:` + verse.num)
-	h.writeCell(diffHtml)
-	_, _ = h.out.WriteString("</tr>\n")
+	if largest > 2 {
+		h.lineNum++
+		_, _ = h.out.WriteString("<tr>\n")
+		h.writeCell(strconv.Itoa(h.lineNum))
+		h.writeCell(strconv.FormatFloat(errPct, 'f', 0, 64))
+		h.writeCell(strconv.Itoa(inserts + deletes))
+		h.writeCell(strconv.Itoa(int(math.Abs(float64(inserts - deletes)))))
+		h.writeCell(strconv.Itoa(largest))
+		//h.writeCell(h.minSecFormat(verse.beginTS))
+		var params []string
+		params = append(params, "this")
+		params = append(params, "'"+verse.bookId+"'")
+		params = append(params, strconv.Itoa(verse.chapter))
+		params = append(params, strconv.FormatFloat(verse.beginTS, 'f', 4, 64))
+		params = append(params, strconv.FormatFloat(verse.endTS, 'f', 4, 64))
+		h.writeCell("<button onclick=\"playVerse(" + strings.Join(params, ",") + ")\">Play</button>")
+		h.writeCell(`+` + strconv.Itoa(inserts) + ` -` + strconv.Itoa(deletes))
+		h.writeCell(verse.bookId + ` ` + strconv.Itoa(verse.chapter) + `:` + verse.num)
+		h.writeCell(diffHtml)
+		_, _ = h.out.WriteString("</tr>\n")
+	}
 }
 
 func (h *HTMLWriter) WriteChapterDiff(bookId string, chapter int, inserts int, deletes int, errPct float64, diffHtml string) {
@@ -125,7 +141,7 @@ func (h *HTMLWriter) writeCell(content string) {
 	_, _ = h.out.WriteString(`</td>`)
 }
 
-func (h *HTMLWriter) WriteEnd(insertSum int, deleteSum int, diffCount int) {
+func (h *HTMLWriter) WriteEnd(filenameMap string, insertSum int, deleteSum int, diffCount int) {
 	table := `</tbody>
 	</table>
 `
@@ -145,12 +161,12 @@ func (h *HTMLWriter) WriteEnd(insertSum int, deleteSum int, diffCount int) {
 	_, _ = h.out.WriteString("\n")
 	style := `<style>
 	.dataTables_length select {
-	width: auto;
-	display: inline-block;
-	padding: 5px;
+		width: auto;
+		display: inline-block;
+		padding: 5px;
 		margin-left: 5px;
 		border-radius: 4px;
-	border: 1px solid #ccc;
+		border: 1px solid #ccc;
 	}
 	.dataTables_filter input {
 		width: auto;
@@ -187,7 +203,31 @@ func (h *HTMLWriter) WriteEnd(insertSum int, deleteSum int, diffCount int) {
         	table.draw(); 
     	});
     });
-</script>
+	function playVerse(button, book, chapter, startTime, endTime) {
+`
+	_, _ = h.out.WriteString(script)
+	_, _ = h.out.WriteString("\t" + filenameMap)
+	script = `filename = fileMap[book + chapter]
+		let directory = document.getElementById("directory").value
+		audioFile = directory + '/' + filename;
+		const audio = document.getElementById('validateAudio');
+		/* const rect = button.getBoundingClientRect();
+    	audio.style.position = 'fixed';
+    	audio.style.left = rect.left + window.scrollX + 'px';
+    	audio.style.top = (rect.bottom + window.scrollY + 5) + 'px'; */
+		audio.src = audioFile;
+		audio.playbackRate = 0.75;
+		audio.currentTime = startTime;
+		audio.controls = false;
+		audio.play();
+		audio.ontimeupdate = function() {
+			if (audio.currentTime >= endTime) {
+				audio.pause();
+				audio.ontimeupdate = null;
+			}
+		}
+	}
+    </script>
 </body>
 </html>
 `

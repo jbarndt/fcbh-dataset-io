@@ -10,6 +10,7 @@ import (
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"golang.org/x/text/unicode/norm"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -39,6 +40,7 @@ type Verse struct {
 	verseEnd string
 	text     string
 	beginTS  float64
+	endTS    float64
 }
 
 func NewCompare(ctx context.Context, user fetch.DBPUser, baseDSet string, db db.DBAdapter,
@@ -129,8 +131,9 @@ func (c *Compare) CompareVerses() (string, dataset.Status) {
 			chapter++
 		}
 	}
+	filenameMap, status := c.generateBookChapterFilenameMap()
 	c.baseDb.Close()
-	c.writer.WriteEnd(c.insertSum, c.deleteSum, c.diffCount)
+	c.writer.WriteEnd(filenameMap, c.insertSum, c.deleteSum, c.diffCount)
 	return filename, status
 }
 
@@ -154,6 +157,7 @@ func (c *Compare) process(conn db.DBAdapter, bookId string, chapterNum int) ([]V
 		vs.verseEnd = script.VerseEnd
 		vs.text = script.ScriptText
 		vs.beginTS = script.ScriptBeginTS
+		vs.endTS = script.ScriptEndTS
 		lines = append(lines, vs)
 	}
 	if ident.TextSource == request.TextScript {
@@ -261,7 +265,7 @@ func (c *Compare) consolidateUSX(verses []Verse) []Verse {
 			}
 			lastChapter = rec.chapter
 			lastVerse = rec.verse
-			verse = Verse{bookId: rec.bookId, chapter: rec.chapter, verse: rec.verse, text: ``, beginTS: rec.beginTS}
+			verse = Verse{bookId: rec.bookId, chapter: rec.chapter, verse: rec.verse, text: ``, beginTS: rec.beginTS, endTS: rec.endTS}
 		}
 		if !strings.HasSuffix(verse.text, ` `) && !strings.HasPrefix(rec.text, ` `) {
 			verse.text += ` ` + rec.text
@@ -269,6 +273,7 @@ func (c *Compare) consolidateUSX(verses []Verse) []Verse {
 		} else {
 			verse.text += rec.text
 		}
+		verse.endTS = rec.endTS
 	}
 	if len(verse.text) > 0 {
 		results = append(results, verse)
@@ -431,6 +436,7 @@ type pair struct {
 	chapter int
 	num     string
 	beginTS float64
+	endTS   float64
 	text1   string
 	text2   string
 }
@@ -451,14 +457,14 @@ func (c *Compare) diff(verses1 []Verse, verses2 []Verse) {
 		if ok {
 			didMatch[vs1.verse] = true
 		}
-		p := pair{bookId: vs1.bookId, chapter: vs1.chapter, num: vs1.verse, beginTS: vs1.beginTS, text1: vs1.text, text2: vs2.text}
+		p := pair{bookId: vs1.bookId, chapter: vs1.chapter, num: vs1.verse, beginTS: vs1.beginTS, endTS: vs1.endTS, text1: vs1.text, text2: vs2.text}
 		pairs = append(pairs, p)
 	}
 	// pick up any verse2 that did not match verse1
 	for _, vs2 := range verses2 {
 		_, ok := didMatch[vs2.verse]
 		if !ok {
-			p := pair{bookId: vs2.bookId, chapter: vs2.chapter, num: vs2.verse, beginTS: vs2.beginTS, text1: ``, text2: vs2.text}
+			p := pair{bookId: vs2.bookId, chapter: vs2.chapter, num: vs2.verse, beginTS: vs2.beginTS, endTS: vs2.endTS, text1: ``, text2: vs2.text}
 			pairs = append(pairs, p)
 		}
 	}
@@ -537,4 +543,23 @@ func (c *Compare) largestLength(diffs []diffmatchpatch.Diff) int {
 		result = length
 	}
 	return result
+}
+
+func (c *Compare) generateBookChapterFilenameMap() (string, dataset.Status) {
+	chapters, status := c.database.SelectBookChapterFilename()
+	if status.IsErr {
+		return "", status
+	}
+	var result []string
+	result = append(result, "let fileMap = {\n")
+	for i, ch := range chapters {
+		key := ch.BookId + strconv.Itoa(ch.ChapterNum)
+		result = append(result, "\t'"+key+"': '"+ch.AudioFile+"'")
+		if i < len(chapters)-1 {
+			result = append(result, ",\n")
+		} else {
+			result = append(result, "};\n")
+		}
+	}
+	return strings.Join(result, ""), status
 }

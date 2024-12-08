@@ -51,8 +51,9 @@ func (c *Compare) CompareScriptLines() (string, dataset.Status) {
 		}
 		c.scriptLineDiff(comp.BookId, comp.ChapterNum, comp.ScriptNum, "", compText)
 	}
+	filenameMap, status := c.generateBookChapterFilenameMap()
 	c.baseDb.Close()
-	c.writer.WriteEnd(c.insertSum, c.deleteSum, c.diffCount)
+	c.writer.WriteEnd(filenameMap, c.insertSum, c.deleteSum, c.diffCount)
 	return filename, status
 }
 
