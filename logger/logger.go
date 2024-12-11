@@ -93,7 +93,7 @@ func Fatal(ctx context.Context, param ...any) {
 	fatalLog.Println(param, requestInfo(ctx))
 	fatalLog.Println(dumpLines())
 	runType := ctx.Value(`runType`)
-	if runType == `server` {
+	if runType != `cli` {
 		runtime.Goexit()
 	} else {
 		os.Exit(1)

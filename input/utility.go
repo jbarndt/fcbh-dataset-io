@@ -98,12 +98,16 @@ func SetMediaType(ctx context.Context, file *InputFile) dataset.Status {
 		file.MediaType = request.TextScript
 	} else if strings.HasSuffix(fN, `.csv`) {
 		file.MediaType = request.TextCSV
+	} else if (fN[0] == 'N' || fN[0] == 'O' || fN[0] == 'P') && fN[1] == '1' && fN[2] == '_' {
+		file.MediaType = request.Audio
+	} else if (fN[0] == 'N' || fN[0] == 'O' || fN[0] == 'P') && fN[1] == '2' && fN[2] == '_' {
+		file.MediaType = request.AudioDrama
 	} else {
 		parts := strings.Split(fN, `_`)
 		if len(parts) > 2 {
 			ord := parts[1]
 			if (ord[0] == 'A' || ord[0] == 'B') && (ord[1] >= '0' && ord[1] <= '9') {
-				file.MediaType = `audio`
+				file.MediaType = request.Audio
 			}
 		}
 	}
@@ -143,7 +147,9 @@ func ParseFilenames(ctx context.Context, file *InputFile) dataset.Status {
 		file.FileExt = filepath.Ext(file.Filename)
 	} else if file.MediaType == request.Audio || file.MediaType == request.AudioDrama {
 		fN := file.Filename
-		if (fN[0] == 'A' || fN[0] == 'B') && (fN[1] >= '0' && fN[1] <= '9') {
+		if strings.HasSuffix(fN, `VOX.mp3`) {
+			status = ParseVOXAudioFilename(ctx, file)
+		} else if (fN[0] == 'A' || fN[0] == 'B') && (fN[1] >= '0' && fN[1] <= '9') {
 			status = ParseV2AudioFilename(ctx, file)
 		} else {
 			status = ParseV4AudioFilename(ctx, file)
@@ -218,6 +224,35 @@ func ParseV4AudioFilename(ctx context.Context, file *InputFile) dataset.Status {
 	if len(parts) > 6 {
 		file.VerseEnd = parts[6]
 	}
+	return status
+}
+
+func ParseVOXAudioFilename(ctx context.Context, file *InputFile) dataset.Status {
+	var status dataset.Status
+	var err error
+	parts := strings.Split(file.Filename, `_`)
+	if len(parts) != 7 {
+		return log.ErrorNoErr(ctx, 500, "A VOX. filename is expected to have 7 parts", parts)
+	}
+	if parts[0][0] == 'N' {
+		file.Testament = `NT`
+	} else if parts[0][0] == 'O' {
+		file.Testament = `OT`
+	} else if parts[0][0] == 'P' {
+		file.Testament = `PT` // what should this really be
+	} else {
+		return log.ErrorNoErr(ctx, 500, "Unknown media type", parts[0])
+	}
+	drama := parts[0]
+	versionCode := parts[1]
+	langCode := parts[2]
+	file.BookSeq = parts[3]
+	file.BookId = parts[4]
+	file.Chapter, err = strconv.Atoi(parts[5])
+	if err != nil {
+		return log.Error(ctx, 500, err, `Error convert chapter to int`, parts[5])
+	}
+	file.MediaId = langCode + versionCode + drama + "DA"
 	return status
 }
 

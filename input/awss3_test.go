@@ -55,10 +55,6 @@ func TestAWSAudio3(t *testing.T) {
 	AWSS3Audio(`s3://dbp-prod/audio/ENGWEB/ENGWEBN2DA/`, 267, t)
 }
 
-func TestAWSAudioZip(t *testing.T) {
-
-}
-
 func AWSS3Audio(key string, expect int, t *testing.T) {
 	ctx := context.Background()
 	testament := request.Testament{NT: true}
