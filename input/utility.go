@@ -244,8 +244,8 @@ func ParseVOXAudioFilename(ctx context.Context, file *InputFile) dataset.Status 
 		return log.ErrorNoErr(ctx, 500, "Unknown media type", parts[0])
 	}
 	drama := parts[0]
-	versionCode := parts[1]
-	langCode := parts[2]
+	langCode := parts[1]
+	versionCode := parts[2]
 	file.BookSeq = parts[3]
 	file.BookId = parts[4]
 	file.Chapter, err = strconv.Atoi(parts[5])
