@@ -69,9 +69,9 @@ func (c *Controller) Process() (string, dataset.Status) {
 		filename = c.outputStatus(status)
 	}
 	c.bucket.AddOutput(filename)
-	c.bucket.PersistToBucket()
 	log.Info(c.ctx, "Duration", time.Since(start))
 	log.Debug(c.ctx)
+	c.bucket.PersistToBucket()
 	return filename, status
 }
 

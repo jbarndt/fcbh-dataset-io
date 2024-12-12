@@ -44,7 +44,7 @@ func NewRunBucket(ctx context.Context, yaml []byte) RunBucket {
 func (b *RunBucket) AddLogFile(logPath string) {
 	b.logFile = logPath
 	if !b.IsUnitTest {
-		_ = os.Remove(b.logFile)
+		_ = os.Truncate(b.logFile, 0)
 	}
 }
 
