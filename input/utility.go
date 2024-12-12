@@ -324,15 +324,16 @@ var corrections = map[string]string{
 	"NAH": "NAM", // Nahum
 	"PSM": "PSA", // Psalms
 	"SOS": "SNG", // Song of Solomon
-	"TTL": "TIT"} // Titus
+	"TTL": "TIT", // Titus
+	"TTS": "TIT"} // Titus
 
 func validateBookId(ctx context.Context, bookId string) (string, dataset.Status) {
 	var status dataset.Status
-	corrected, ok := corrections[bookId]
-	if ok {
+	corrected, found := corrections[bookId]
+	if found {
 		bookId = corrected
 	}
-	_, ok = db.BookChapterMap[bookId]
+	_, ok := db.BookChapterMap[bookId]
 	if !ok {
 		status = log.ErrorNoErr(ctx, 500, "BookId", bookId, "is not known. Corrections:", corrections)
 	}
