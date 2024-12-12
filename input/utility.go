@@ -317,23 +317,24 @@ func updateIdentAudio(ident *db.Ident, files []InputFile) bool {
 	return result
 }
 
+var corrections = map[string]string{
+	"EZE": "EZK", // Ezekiel
+	"JMS": "JAS", // James
+	"JOE": "JOL", // Joel
+	"NAH": "NAM", // Nahum
+	"PSM": "PSA", // Psalms
+	"SOS": "SNG", // Song of Solomon
+	"TTL": "TIT"} // Titus
+
 func validateBookId(ctx context.Context, bookId string) (string, dataset.Status) {
 	var status dataset.Status
-	var corrections = map[string]string{
-		"EZE": "EZK", // Ezekiel
-		"JMS": "JAS", // James
-		"JOE": "JOL", // Joel
-		"NAH": "NAM", // Nahum
-		"PSM": "PSA", // Psalms
-		"SOS": "SNG", // Song of Solomon
-		"TTL": "TIT"} // Titus
 	corrected, ok := corrections[bookId]
 	if ok {
 		bookId = corrected
 	}
 	_, ok = db.BookChapterMap[bookId]
 	if !ok {
-		status = log.ErrorNoErr(ctx, 500, "BookId ", bookId, " is not known.")
+		status = log.ErrorNoErr(ctx, 500, "BookId", bookId, "is not known. Corrections:", corrections)
 	}
 	return bookId, status
 }

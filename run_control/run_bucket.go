@@ -157,7 +157,8 @@ func (b *RunBucket) uploadFile(client *s3.Client, run int, typ string, filePath 
 	var status dataset.Status
 	file, err := os.Open(filePath)
 	if err != nil {
-		return log.Error(b.ctx, 500, err, "Error opening file to upload to S3.")
+		log.Warn(b.ctx, 500, err, "Error opening file to upload to S3.")
+		return status
 	}
 	defer file.Close()
 	key := b.createKey(run, typ, filepath.Base(filePath))
