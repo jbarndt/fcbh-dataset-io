@@ -102,7 +102,7 @@ func getOldestObject(ctx context.Context, client *s3.Client, bucket string) ([]b
 func moveToFailed(ctx context.Context, client *s3.Client, bucket, key string) dataset.Status {
 	var status dataset.Status
 	source := bucket + "/" + key
-	target := bucket + "/" + strings.Split(key, "/")[1] + failedFolder
+	target := failedFolder + strings.Split(key, "/")[1]
 	_, err := client.CopyObject(ctx, &s3.CopyObjectInput{
 		Bucket:     &bucket,
 		CopySource: &source,

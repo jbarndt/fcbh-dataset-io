@@ -38,6 +38,10 @@ func NewRunBucket(ctx context.Context, yaml []byte) RunBucket {
 	b.yamlContent = string(yaml)
 	b.username = b.parseYaml(`username`)
 	b.dataset = b.parseYaml(`dataset_name`)
+	logFile := os.Getenv("FCBH_DATASET_LOG_FILE")
+	if logFile != `` {
+		b.AddLogFile(logFile)
+	}
 	return b
 }
 
@@ -73,9 +77,6 @@ func (b *RunBucket) PersistToBucket() dataset.Status {
 		allStatus = append(allStatus, status)
 		status = b.uploadFile(client, run, "log", b.logFile)
 		allStatus = append(allStatus, status)
-		//if !status.IsErr && !b.IsUnitTest {
-		//	_ = os.Remove(b.logFile)
-		//}
 		for _, database := range b.databases {
 			status = b.uploadFile(client, run, "database", database)
 			allStatus = append(allStatus, status)

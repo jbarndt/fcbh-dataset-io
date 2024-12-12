@@ -40,10 +40,22 @@ var debugLog *log.Logger
 
 func init() {
 	setFile(os.Stderr)
+	logLevel := os.Getenv("FCBH_DATASET_LOG_LEVEL")
+	if logLevel != `` {
+		SetLevel(logLevel)
+	} else {
+		SetLevel(`INFO`)
+	}
+	logFile := os.Getenv("FCBH_DATASET_LOG_FILE")
+	if logFile != `` {
+		SetOutput(logFile)
+	} else {
+		SetOutput(`stderr`)
+	}
 }
 
 // SetOutput accepts: stdout, stderr, or a filePath
-func SetOutput(ctx context.Context, filePath string) {
+func SetOutput(filePath string) {
 	if filePath == "stdout" {
 		setFile(os.Stdout)
 	} else if filePath == "stderr" {
@@ -51,7 +63,7 @@ func SetOutput(ctx context.Context, filePath string) {
 	} else {
 		file, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 		if err != nil {
-			Warn(ctx, 0, "log.SetOutput failed", err)
+			Warn(context.TODO(), 0, "log.SetOutput failed", err)
 		} else {
 			setFile(file)
 		}

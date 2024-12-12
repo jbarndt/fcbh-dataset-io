@@ -16,7 +16,6 @@ import (
 	"dataset/run_control"
 	"dataset/speech_to_text"
 	"dataset/timestamp"
-	"os"
 	"time"
 )
 
@@ -48,20 +47,6 @@ func (c *Controller) Process() (string, dataset.Status) {
 	var start = time.Now()
 	if c.postFiles != nil {
 		defer c.postFiles.RemoveDir()
-	}
-	// Isn't this in the wrong place, shouldn't it be executed once?
-	logLevel := os.Getenv("FCBH_DATASET_LOG_LEVEL")
-	if logLevel != `` {
-		log.SetLevel(logLevel)
-	} else {
-		log.SetLevel(`INFO`)
-	}
-	logFile := os.Getenv("FCBH_DATASET_LOG_FILE")
-	if logFile != `` {
-		c.bucket.AddLogFile(logFile)
-		log.SetOutput(c.ctx, logFile)
-	} else {
-		log.SetOutput(c.ctx, `stderr`)
 	}
 	log.Debug(c.ctx)
 	var filename, status = c.processSteps()
