@@ -132,7 +132,10 @@ func ParseFilenames(ctx context.Context, file *InputFile) dataset.Status {
 	} else if file.MediaType == request.TextUSXEdit {
 		parts := strings.Split(file.Directory, `/`)
 		file.MediaId = parts[len(parts)-1]
-		file.BookId = file.Filename[3:6]
+		file.BookId, status = validateBookId(ctx, file.Filename[3:6])
+		if status.IsErr {
+			return status
+		}
 		file.BookSeq = file.Filename[0:3]
 		file.Testament = db.Testament(file.BookId)
 		file.FileExt = filepath.Ext(file.Filename)
@@ -204,7 +207,10 @@ func ParseV4AudioFilename(ctx context.Context, file *InputFile) dataset.Status {
 		file.BookSeq = parts[1][1:]
 	}
 	if len(parts) > 2 {
-		file.BookId = parts[2]
+		file.BookId, status = validateBookId(ctx, parts[2])
+		if status.IsErr {
+			return status
+		}
 	}
 	if len(parts) > 3 {
 		file.Chapter, err = strconv.Atoi(parts[3])
@@ -247,7 +253,10 @@ func ParseVOXAudioFilename(ctx context.Context, file *InputFile) dataset.Status 
 	langCode := parts[1]
 	versionCode := parts[2]
 	file.BookSeq = parts[3]
-	file.BookId = parts[4]
+	file.BookId, status = validateBookId(ctx, parts[4])
+	if status.IsErr {
+		return status
+	}
 	file.Chapter, err = strconv.Atoi(parts[5])
 	if err != nil {
 		return log.Error(ctx, 500, err, `Error convert chapter to int`, parts[5])
@@ -306,6 +315,27 @@ func updateIdentAudio(ident *db.Ident, files []InputFile) bool {
 		}
 	}
 	return result
+}
+
+func validateBookId(ctx context.Context, bookId string) (string, dataset.Status) {
+	var status dataset.Status
+	var corrections = map[string]string{
+		"EZE": "EZK", // Ezekiel
+		"JMS": "JAS", // James
+		"JOE": "JOL", // Joel
+		"NAH": "NAM", // Nahum
+		"PSM": "PSA", // Psalms
+		"SOS": "SNG", // Song of Solomon
+		"TTL": "TIT"} // Titus
+	corrected, ok := corrections[bookId]
+	if ok {
+		bookId = corrected
+	}
+	_, ok = db.BookChapterMap[bookId]
+	if !ok {
+		status = log.ErrorNoErr(ctx, 500, "BookId ", bookId, " is not known.")
+	}
+	return bookId, status
 }
 
 // Parse DBP4 Audio names
