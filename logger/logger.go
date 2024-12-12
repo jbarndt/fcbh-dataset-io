@@ -52,6 +52,8 @@ func init() {
 	} else {
 		SetOutput(`stderr`)
 	}
+	_ = os.Setenv("TZ", "America/New_York")
+	//_ = os.Setenv("TZ", "America/Denver")
 }
 
 // SetOutput accepts: stdout, stderr, or a filePath

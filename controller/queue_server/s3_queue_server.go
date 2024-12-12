@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"io"
 	"os"
+	"runtime"
 	"sort"
 	"strings"
 	"time"
@@ -19,6 +20,7 @@ import (
 const (
 	bucketName   = `dataset-queue`
 	inputFolder  = `input/`
+	sucessFolder = `success/`
 	failedFolder = `failed/`
 )
 
@@ -32,7 +34,6 @@ func main() {
 		os.Exit(1)
 	}
 	client := s3.NewFromConfig(cfg)
-	bucket := bucketName
 	first := true
 	for {
 		object, key, status := getOldestObject(ctx, client, bucketName)
@@ -44,19 +45,13 @@ func main() {
 		if !status.IsErr && object != nil {
 			var control = controller.NewController(ctx, object)
 			_, status = control.Process()
+			var folder string
 			if status.IsErr {
-				status = moveToFailed(ctx, client, bucketName, key)
-				if status.IsErr {
-					continue
-				}
+				folder = failedFolder
+			} else {
+				folder = sucessFolder
 			}
-			_, err = client.DeleteObject(ctx, &s3.DeleteObjectInput{
-				Bucket: &bucket,
-				Key:    &key,
-			})
-			if err != nil {
-				log.Error(ctx, 500, err, "Error Deleting Object in Queue Input Folder")
-			}
+			_ = moveOnCompletion(ctx, client, bucketName, key, folder)
 		}
 		time.Sleep(time.Second * 10)
 	}
@@ -66,9 +61,13 @@ func getOldestObject(ctx context.Context, client *s3.Client, bucket string) ([]b
 	var content []byte
 	var key string
 	var status dataset.Status
+	var inFolder = inputFolder
+	if runtime.GOOS == "darwin" {
+		inFolder = "input_test/"
+	}
 	input := &s3.ListObjectsV2Input{
 		Bucket: &bucket,
-		Prefix: aws.String(inputFolder),
+		Prefix: aws.String(inFolder),
 	}
 	result, err := client.ListObjectsV2(ctx, input)
 	if err != nil {
@@ -92,24 +91,32 @@ func getOldestObject(ctx context.Context, client *s3.Client, bucket string) ([]b
 		return content, key, status
 	}
 	content, err = io.ReadAll(object.Body)
-	object.Body.Close()
+	_ = object.Body.Close()
 	if err != nil {
 		status = log.Error(ctx, 500, err, "Error reading yaml file from Queue Input Folder.")
 	}
 	return content, key, status
 }
 
-func moveToFailed(ctx context.Context, client *s3.Client, bucket, key string) dataset.Status {
+func moveOnCompletion(ctx context.Context, client *s3.Client, bucket, key string, folder string) dataset.Status {
 	var status dataset.Status
 	source := bucket + "/" + key
-	target := failedFolder + strings.Split(key, "/")[1]
+	dateTime := time.Now().Local().Format("2006-01-02T15:04:05")
+	target := folder + dateTime + "-" + strings.Split(key, "/")[1]
 	_, err := client.CopyObject(ctx, &s3.CopyObjectInput{
 		Bucket:     &bucket,
 		CopySource: &source,
 		Key:        &target,
 	})
 	if err != nil {
-		status = log.Error(ctx, 500, err, "Error Moving File to Failed Queue")
+		status = log.Error(ctx, 500, err, "Error Moving File to", folder, "Folder")
+	}
+	_, err = client.DeleteObject(ctx, &s3.DeleteObjectInput{
+		Bucket: &bucket,
+		Key:    &key,
+	})
+	if err != nil {
+		status = log.Error(ctx, 500, err, "Error Deleting Object in Queue Input Folder")
 	}
 	return status
 }
