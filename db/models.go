@@ -1,6 +1,9 @@
 package db
 
-import "dataset/request"
+import (
+	"dataset/generic"
+	"dataset/request"
+)
 
 type Ident struct {
 	DatasetId    int64
@@ -69,37 +72,27 @@ type MFCC struct {
 }
 
 type Audio struct {
-	WordId          int64   `json:"word_id,omitempty"` // Used only for Word table
-	ScriptId        int64   `json:"script_id"`
-	BookId          string  `json:"book_id"`
-	ChapterNum      int     `json:"chapter_num"`
-	ChapterEnd      int     `json:"chapter_end"`
-	VerseStr        string  `json:"verse_str"`
-	VerseEnd        string  `json:"verse_end"`
-	VerseSeq        int     `json:"verse_seq"`
-	WordSeq         int     `json:"word_seq"` // Used by Words, not Verses
-	BeginTS         float64 `json:"begin_ts"`
-	EndTS           float64 `json:"end_ts"`
-	FAScore         float64 `json:"fa_score"`
-	Uroman          string  `json:"uroman"` // Is this useful?
-	Text            string  `json:"text"`
-	Chars           []Char  `json:"-"`
-	AudioFile       string  `json:"audio_file"`
-	ScriptBeginTS   float64 `json:"script_begin_ts"` // Contains script TS when it is a word record
-	ScriptEndTS     float64 `json:"script_end_ts"`   // Contains script TS when it is a word record
-	ScriptFAScore   float64 `json:"script_fa_score"` // Contains script score when it is a word record
-	AudioChapterWav string  `json:"-"`               // Transient
-	AudioVerseWav   string  `json:"-"`               // Transient
-}
-
-type Char struct {
-	CharId int64
-	WordId int64
-	Token  int
-	Start  float64
-	End    float64
-	Score  float64
-	Uroman string
+	WordId          int64          `json:"word_id,omitempty"` // Used only for Word table
+	ScriptId        int64          `json:"script_id"`
+	BookId          string         `json:"book_id"`
+	ChapterNum      int            `json:"chapter_num"`
+	ChapterEnd      int            `json:"chapter_end"`
+	VerseStr        string         `json:"verse_str"`
+	VerseEnd        string         `json:"verse_end"`
+	VerseSeq        int            `json:"verse_seq"`
+	WordSeq         int            `json:"word_seq"` // Used by Words, not Verses
+	BeginTS         float64        `json:"begin_ts"`
+	EndTS           float64        `json:"end_ts"`
+	FAScore         float64        `json:"fa_score"`
+	Uroman          string         `json:"uroman"` // Is this useful?
+	Text            string         `json:"text"`
+	Chars           []generic.Char `json:"-"`
+	AudioFile       string         `json:"audio_file"`
+	ScriptBeginTS   float64        `json:"script_begin_ts"` // Contains script TS when it is a word record
+	ScriptEndTS     float64        `json:"script_end_ts"`   // Contains script TS when it is a word record
+	ScriptFAScore   float64        `json:"script_fa_score"` // Contains script score when it is a word record
+	AudioChapterWav string         `json:"-"`               // Transient
+	AudioVerseWav   string         `json:"-"`               // Transient
 }
 
 type AlignChar struct {
@@ -112,6 +105,8 @@ type AlignChar struct {
 	Word         string
 	CharId       int64
 	CharSeq      int
+	CharNorm     rune
+	CharUroman   rune
 	BeginTS      float64
 	EndTS        float64
 	FAScore      float64

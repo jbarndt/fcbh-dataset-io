@@ -200,11 +200,13 @@ func createDatabase(db *sql.DB) {
 	query = `CREATE TABLE IF NOT EXISTS chars (
 		char_id INTEGER PRIMARY KEY,
 		word_id INTEGER NOT NULL,
+		seq INTEGER NOT NULL,
+		norm INTEGER NOT NULL DEFAULT 0,
+		uroman INTEGER NOT NULL DEFAULT 0,
 		token INTEGER NOT NULL,
 		start_ts REAL NOT NULL,
 		end_ts REAL NOT NULL,
 		fa_score REAL NOT NULL,
-		uroman TEXT NOT NULL DEFAULT '',
 		FOREIGN KEY (word_id) REFERENCES words(word_id)) STRICT`
 	execDDL(db, query)
 }
@@ -397,13 +399,12 @@ func (d *DBAdapter) InsertAudioWords(words []Audio) ([]Audio, dataset.Status) {
 
 func (d *DBAdapter) InsertAudioChars(words []Audio) dataset.Status {
 	var status dataset.Status
-	query := `INSERT INTO chars(word_id, token, start_ts, end_ts, fa_score, uroman)
-		VALUES (?,?,?,?,?,?)`
+	query := `INSERT INTO chars(word_id, seq, norm, uroman, token, start_ts, end_ts, fa_score) VALUES (?,?,?,?,?,?,?,?)`
 	tx, stmt := d.prepareDML(query)
 	defer d.closeDef(stmt, `InsertChars stmt`)
 	for _, wd := range words {
 		for _, ch := range wd.Chars {
-			_, err := stmt.Exec(wd.WordId, ch.Token, ch.Start, ch.End, ch.Score, ch.Uroman)
+			_, err := stmt.Exec(wd.WordId, ch.Seq, ch.Norm, ch.Uroman, ch.Token, ch.Start, ch.End, ch.Score)
 			if err != nil {
 				return log.Error(d.Ctx, 500, err, `Error while inserting Chars.`)
 			}
@@ -798,7 +799,7 @@ func (d *DBAdapter) SelectFACharTimestamps() ([]AlignChar, dataset.Status) {
 	var status dataset.Status
 	var query = `SELECT s.script_id, s.book_id, s.chapter_num, s.verse_str,
 				w.word_id, w.word_seq, w.word, 
-				c.char_id, c.start_ts, c.end_ts, c.fa_score
+				c.char_id, c.seq, c.norm, c.uroman, c.start_ts, c.end_ts, c.fa_score
 				FROM scripts s JOIN words w ON s.script_id = w.script_id
 				JOIN chars c ON w.word_id = c.word_id
 				WHERE w.ttype = 'W'
@@ -813,7 +814,7 @@ func (d *DBAdapter) SelectFACharTimestamps() ([]AlignChar, dataset.Status) {
 		var ch AlignChar
 		err = rows.Scan(&ch.ScriptId, &ch.BookId, &ch.ChapterNum, &ch.VerseStr,
 			&ch.WordId, &ch.WordSeq, &ch.Word,
-			&ch.CharId, &ch.BeginTS, &ch.EndTS, &ch.FAScore)
+			&ch.CharId, &ch.CharSeq, &ch.CharNorm, &ch.CharUroman, &ch.BeginTS, &ch.EndTS, &ch.FAScore)
 		if err != nil {
 			status = log.Error(d.Ctx, 500, err, "Error in SelectFACharTimestamps.")
 			return chars, status

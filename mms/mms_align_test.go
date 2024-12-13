@@ -7,7 +7,6 @@ import (
 	"dataset/input"
 	"fmt"
 	"os"
-	"path/filepath"
 	"testing"
 )
 
@@ -37,14 +36,12 @@ func TestMMSFA_ProcessFiles(t *testing.T) {
 
 func TestMMSFA_prepareText(t *testing.T) {
 	ctx := context.Background()
-	//user, _ := fetch.GetTestUser()
-	//conn, status := db.NewerDBAdapter(ctx, false, user.Username, "PlainTextEditScript_ENGWEB")
-	database := filepath.Join(os.Getenv("GOPROJ"), "dataset", "match", "ENGWEB_align.db")
-	fmt.Println(database)
-	conn := db.NewDBAdapter(ctx, database)
-	//if status.IsErr {
-	//	t.Fatal(status)
-	//}
+	user, _ := fetch.GetTestUser()
+	database := "USXTextEditScript_ENGWEB"
+	conn, status := db.NewerDBAdapter(ctx, false, user.Username, database)
+	if status.IsErr {
+		t.Fatal(status)
+	}
 	fa := NewMMSFA(ctx, conn, "eng", "")
 	for _, bookId := range db.BookNT {
 		lastChap := db.BookChapterMap[bookId]

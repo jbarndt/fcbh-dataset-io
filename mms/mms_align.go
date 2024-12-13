@@ -5,6 +5,7 @@ import (
 	"context"
 	"dataset"
 	"dataset/db"
+	"dataset/generic"
 	"dataset/input"
 	log "dataset/logger"
 	"dataset/timestamp"
@@ -30,12 +31,6 @@ type Word struct {
 	word     string
 	uroman   string
 }
-
-//type Timestamp struct {
-//	Start float64 `json:"start"`
-//	End   float64 `json:"end"`
-//	Score float64 `json:"score"`
-//}
 
 type MMSFA struct {
 	ctx     context.Context
@@ -142,9 +137,9 @@ func (m *MMSFA) prepareText(lang string, bookId string, chapter int) ([]string, 
 			ref.scriptId = int64(word.ScriptId)
 			ref.wordId = int64(word.WordId)
 			ref.wordSeq = word.WordSeq
-			ref.word = strings.ReplaceAll(part, "\u2019", "'")
+			ref.word = part
 			refList = append(refList, ref)
-			textList = append(textList, ref.word)
+			textList = append(textList, strings.ReplaceAll(part, "\u2019", "'"))
 		}
 	}
 	uRoman, status2 := URoman(m.ctx, lang, textList)
@@ -183,8 +178,6 @@ func (m *MMSFA) cleanText(text string) string {
 			result = append(result, ch)
 		} else {
 			log.Warn(m.ctx, "Discarded Char in mms_fa.cleanText", string(ch), ch)
-			fmt.Printf("%U\n", ch)
-			fmt.Println("Discarded char: ", string(ch))
 		}
 	}
 	return string(result)
@@ -204,20 +197,20 @@ func (m *MMSFA) processPyOutput(file input.InputFile, wordRefs []Word, response 
 	if err != nil {
 		return log.Error(m.ctx, 500, err, `Error unmarshalling json`)
 	}
-	var tokenDict = make(map[int]string)
+	var tokenDict = make(map[int]rune)
 	for chr, token := range mmsAlign.Dictionary {
-		tokenDict[token] = chr
+		tokenDict[token] = []rune(chr)[0]
 	}
-	var faWords [][]db.Char
+	var ok bool
+	var faWords [][]generic.Char
 	for _, wd := range mmsAlign.Tokens {
-		var word []db.Char
+		var word []generic.Char
 		for _, ch := range wd {
-			var char db.Char
+			var char generic.Char
 			char.Token = int(ch[0])
 			char.Start = ch[1] * mmsAlign.Ratio
 			char.End = ch[2] * mmsAlign.Ratio
 			char.Score = ch[3]
-			var ok bool
 			char.Uroman, ok = tokenDict[char.Token]
 			if !ok {
 				log.Warn(m.ctx, "Character not found in tokenDict", char.Token)
@@ -244,8 +237,15 @@ func (m *MMSFA) processPyOutput(file input.InputFile, wordRefs []Word, response 
 		faWd := faWords[i]
 		word.BeginTS = faWd[0].Start
 		word.EndTS = faWd[len(faWd)-1].End
-		for _, ch := range faWd {
+		wordChars := []rune(ref.word)
+		uromanChars := []rune(ref.uroman)
+		for j, ch := range faWd {
 			word.FAScore += ch.Score
+			faWd[j].Seq = j
+			faWd[j].Norm = wordChars[j]
+			if faWd[j].Uroman != uromanChars[j] {
+				log.ErrorNoErr(m.ctx, 500, "Norm", ref.uroman, "does not match")
+			}
 		}
 		word.FAScore = word.FAScore / float64(len(faWd))
 		word.Chars = faWd
