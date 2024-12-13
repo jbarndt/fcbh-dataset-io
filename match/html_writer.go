@@ -51,9 +51,9 @@ func (h *HTMLWriter) WriteHeading(baseDataset string) string {
 	_, _ = h.out.WriteString(time.Now().In(loc).Format(`Mon Jan 2 2006 03:04:05 pm MST`))
 	_, _ = h.out.WriteString("</h3>\n")
 	_, _ = h.out.WriteString(`<h3 style="text-align:center">RED characters are those in `)
-	_, _ = h.out.WriteString(baseDataset)
-	_, _ = h.out.WriteString(` only, while GREEN characters are in `)
 	_, _ = h.out.WriteString(h.datasetName)
+	_, _ = h.out.WriteString(` only, while GREEN characters are in `)
+	_, _ = h.out.WriteString(baseDataset)
 	_, _ = h.out.WriteString(" only</h3>\n")
 	checkbox := `<div style="text-align: center; margin: 10px;">
 		<input type="checkbox" id="hideVerse0" checked><label for="hideVerse0">Hide Headings</label>
