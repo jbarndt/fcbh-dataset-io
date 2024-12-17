@@ -132,11 +132,21 @@ func ParseFilenames(ctx context.Context, file *InputFile) dataset.Status {
 	} else if file.MediaType == request.TextUSXEdit {
 		parts := strings.Split(file.Directory, `/`)
 		file.MediaId = parts[len(parts)-1]
-		file.BookId, status = validateBookId(ctx, file.Filename[3:6])
+		var tmpBookId, tmpBookSeq string
+		if len(file.Filename) == 10 {
+			tmpBookId = file.Filename[3:6]
+			tmpBookSeq = file.Filename[0:3]
+		} else if len(file.Filename) == 7 {
+			tmpBookId = file.Filename[0:3]
+			tmpBookSeq = strconv.Itoa(db.BookSeqMap[tmpBookId])
+		} else {
+			return log.ErrorNoErr(ctx, 400, `USX files are expected in the format 001GEN.usx or GEN.usx`)
+		}
+		file.BookId, status = validateBookId(ctx, tmpBookId)
 		if status.IsErr {
 			return status
 		}
-		file.BookSeq = file.Filename[0:3]
+		file.BookSeq = tmpBookSeq
 		file.Testament = db.Testament(file.BookId)
 		file.FileExt = filepath.Ext(file.Filename)
 	} else if file.MediaType == request.TextScript {
@@ -322,6 +332,7 @@ var corrections = map[string]string{
 	"JMS": "JAS", // James
 	"JOE": "JOL", // Joel
 	"NAH": "NAM", // Nahum
+	"PRV": "PRO", // Proverbs
 	"PSM": "PSA", // Psalms
 	"SOS": "SNG", // Song of Solomon
 	"TTL": "TIT", // Titus
