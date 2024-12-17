@@ -13,8 +13,7 @@ import (
 
 const (
 	criticalThreshold = 0.0001 // 0.001
-	questionThreshold = 0.001  // 0.01
-	durationStdevs    = 4.0    // intended to make it rare
+	questionThreshold = 0.01   // 0.01
 	silenceStdevs     = 4.0    // intended to make it rare
 )
 
@@ -24,7 +23,6 @@ const (
 	noError ErrorType = iota
 	scoreCritical
 	scoreQuestion
-	durationLong
 	betweenCharsLong
 	betweenWordsLong
 	betweenVersesLong
@@ -41,11 +39,7 @@ const (
 )
 
 type AlignVerse struct {
-	chars        []db.AlignChar
-	critScore    float64
-	questScore   float64
-	longDuration float64
-	longSilence  float64
+	chars []db.AlignChar
 }
 
 type AlignErrorCalc struct {
@@ -75,9 +69,6 @@ func (a *AlignErrorCalc) Process() ([]AlignVerse, string, dataset.Status) {
 			faChars[i].ScoreError = int(scoreQuestion)
 		}
 	}
-	for i := range faChars {
-		faChars[i].Duration = faChars[i].EndTS - faChars[i].BeginTS
-	}
 	for i := 0; i < len(faChars)-1; i++ {
 		var curr = faChars[i]
 		var next = faChars[i+1]
@@ -94,11 +85,7 @@ func (a *AlignErrorCalc) Process() ([]AlignVerse, string, dataset.Status) {
 			// To be correct, I should add the silence of fileDuration - curr.EndTS
 		}
 	}
-	a.setCharSeq(faChars)
-	mean, stddev, mini, maxi := a.analyzeData(a.getDurations(faChars))
-	fmt.Println("Duration:", mean, stddev, mini, maxi)
-	a.markDurationOutliers(faChars, mean, stddev)
-	mean, stddev, mini, maxi = a.analyzeData(a.getSilence(faChars, betweenChars))
+	mean, stddev, mini, maxi := a.analyzeData(a.getSilence(faChars, betweenChars))
 	fmt.Println("Between Chars:", mean, stddev, mini, maxi)
 	a.markSilenceOutliers(faChars, mean, stddev, betweenChars, betweenCharsLong)
 	mean, stddev, mini, maxi = a.analyzeData(a.getSilence(faChars, betweenWords))
@@ -111,7 +98,6 @@ func (a *AlignErrorCalc) Process() ([]AlignVerse, string, dataset.Status) {
 	fmt.Println("Between Chapters:", mean, stddev, mini, maxi)
 	a.markSilenceOutliers(faChars, mean, stddev, betweenChapters, betweenChaptersLong)
 	faVerse = a.groupByVerse(faChars)
-	a.addErrorCounts(faVerse)
 	filenameMap, status := a.generateBookChapterFilenameMap()
 	return faVerse, filenameMap, status
 }
@@ -136,6 +122,9 @@ func (a *AlignErrorCalc) getSilence(chars []db.AlignChar, pos SilencePosition) [
 }
 
 func (a *AlignErrorCalc) analyzeData(data []float64) (mean, stddev, min, max float64) {
+	if len(data) == 0 {
+		return 0.0, 0.0, 0.0, 0.0
+	}
 	mean = stat.Mean(data, nil)
 	stddev = stat.StdDev(data, nil)
 	min = data[0]
@@ -145,28 +134,6 @@ func (a *AlignErrorCalc) analyzeData(data []float64) (mean, stddev, min, max flo
 		max = math.Max(max, v)
 	}
 	return mean, stddev, min, max
-}
-
-func (a *AlignErrorCalc) setCharSeq(chars []db.AlignChar) {
-	var charSeq = 0
-	var currWordId int64 = -1
-	for i := range chars {
-		if currWordId != chars[i].WordId {
-			currWordId = chars[i].WordId
-			charSeq = 0
-		}
-		chars[i].CharSeq = charSeq
-		charSeq++
-	}
-}
-
-func (a *AlignErrorCalc) markDurationOutliers(chars []db.AlignChar, mean float64, stddev float64) {
-	var pct95 = mean + durationStdevs*stddev
-	for i := range chars {
-		if chars[i].Duration > pct95 {
-			chars[i].DurationLong = int(durationLong)
-		}
-	}
 }
 
 func (a *AlignErrorCalc) markSilenceOutliers(chars []db.AlignChar, mean float64, stddev float64,
@@ -215,24 +182,6 @@ func (a *AlignErrorCalc) groupByVerse(chars []db.AlignChar) []AlignVerse {
 		}
 	}
 	return verses
-}
-
-func (a *AlignErrorCalc) addErrorCounts(verses []AlignVerse) {
-	for i := range verses {
-		for _, ch := range verses[i].chars {
-			if ch.ScoreError == int(scoreCritical) {
-				verses[i].critScore += 1 - ch.FAScore
-			} else if ch.ScoreError == int(scoreQuestion) {
-				verses[i].questScore += 1 - ch.FAScore
-			}
-			if ch.DurationLong > 0 {
-				verses[i].longDuration++
-			}
-			if ch.SilenceLong > 0 {
-				verses[i].longSilence++
-			}
-		}
-	}
 }
 
 func (a *AlignErrorCalc) generateBookChapterFilenameMap() (string, dataset.Status) {

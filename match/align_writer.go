@@ -3,32 +3,13 @@ package match
 import (
 	"context"
 	"dataset"
-	"dataset/db"
 	log "dataset/logger"
+	"math"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 )
-
-type FAverse struct {
-	scriptId   int64
-	bookId     string
-	chapter    int
-	verseStr   string
-	verseSeq   int
-	beginTS    float64
-	endTS      float64
-	faScore    float64
-	words      []db.Audio
-	critWords  []int
-	critScore  float64
-	questWords []int
-	questScore float64
-	endTSDiff  float64
-	critDiff   bool
-	questDiff  bool
-}
 
 type AlignWriter struct {
 	ctx         context.Context
@@ -74,7 +55,7 @@ func (a *AlignWriter) WriteHeading() {
 	_, _ = a.out.WriteString(head)
 	_, _ = a.out.WriteString(`<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.css">`)
 	_, _ = a.out.WriteString("</head><body>\n")
-	_, _ = a.out.WriteString("<audio id='validateAudio'></audio>\n")
+	_, _ = a.out.WriteString("<audio id='validateAudio' controls></audio>\n")
 	_, _ = a.out.WriteString(`<h2 style="text-align:center">Audio to Text Alignment Report For `)
 	_, _ = a.out.WriteString(a.datasetName)
 	_, _ = a.out.WriteString("</h2>\n")
@@ -92,8 +73,6 @@ func (a *AlignWriter) WriteHeading() {
     <tr>
         <th>Line</th>
         <th>Critical<br>Error</th>
-		<th>Question<br>Error</th>
-		<th>Duration<br>Long</th>
 		<th>Silence<br>Long</th>
 		<th>Start<br>TS</th>
 		<th>Button</th>
@@ -112,10 +91,24 @@ func (a *AlignWriter) WriteVerse(verse AlignVerse) {
 	a.lineNum++
 	_, _ = a.out.WriteString("<tr>\n")
 	a.writeCell(strconv.Itoa(a.lineNum))
-	a.writeCell(strconv.FormatFloat(verse.critScore, 'f', 2, 64))
-	a.writeCell(strconv.FormatFloat(verse.questScore, 'f', 2, 64))
-	a.writeCell(strconv.FormatFloat(verse.longDuration, 'f', 2, 64))
-	a.writeCell(strconv.FormatFloat(verse.longSilence, 'f', 0, 64))
+	var logTotal float64
+	//var errors []string
+	var criticalThresh = criticalThreshold
+	var questionThresh = questionThreshold
+	var maxSilence = 0.0
+	for _, ch := range verse.chars {
+		if ch.FAScore <= criticalThresh {
+			logScore := -math.Log10(ch.FAScore)
+			logTotal += logScore
+			//errors = append(errors, strconv.FormatFloat(logScore, 'f', 2, 64))
+		}
+		if ch.SilenceLong > 0 && ch.Silence > maxSilence {
+			maxSilence = ch.Silence
+		}
+	}
+	a.writeCell(strconv.FormatFloat(logTotal, 'f', 2, 64))
+	//a.writeCell(strings.Join(errors, "<br>"))
+	a.writeCell(strconv.FormatFloat(maxSilence*12.0, 'f', 0, 64))
 	a.writeCell(a.minSecFormat(firstChar.BeginTS))
 	var params []string
 	params = append(params, "'"+firstChar.BookId+"'")
@@ -126,18 +119,20 @@ func (a *AlignWriter) WriteVerse(verse AlignVerse) {
 	a.writeCell(firstChar.BookId + ` ` + strconv.Itoa(firstChar.ChapterNum) + `:` + firstChar.VerseStr)
 	var text []string
 	for _, ch := range verse.chars {
-		char := string(ch.Word[ch.CharSeq])
+		char := string(ch.CharNorm)
 		if ch.CharSeq == 0 {
 			text = append(text, " ")
 		}
-		if ch.ScoreError == int(scoreCritical) {
+		if ch.FAScore <= criticalThresh {
 			text = append(text, `<span class="red-box">`+char+`</span>`)
-		} else if ch.ScoreError == int(scoreQuestion) {
+		} else if ch.FAScore <= questionThresh {
 			text = append(text, `<span class="yellow-box">`+char+`</span>`)
-		} else if ch.DurationLong > 0 {
-			text = append(text, `<span class="green-box">`+char+`</span>`)
 		} else if ch.SilenceLong > 0 {
-			text = append(text, `<span class="blue-box">`+char+`</span>`)
+			text = append(text, char)
+			width := ch.Silence * 120.0 // 12 chars per sec, 10 px per char
+			widPx := strconv.FormatFloat(width, 'f', 0, 64) + `px;`
+			span := `<span class="blank-box" style="width:` + widPx + `"></span>`
+			text = append(text, span)
 		} else {
 			text = append(text, char)
 		}
@@ -208,13 +203,12 @@ func (a *AlignWriter) WriteEnd(filenameMap string) {
 		background-color: rgba(255, 255, 0, 0.8);
 		padding: 1px 0;
 	}
-	.blue-box { 
+	.blank-box {
+		display: inline-block;
+		height: 1em; 
 		background-color: rgba(0, 0, 255, 0.4);
-		padding: 1px 0;
-	}
-	.green-box { 
-		background-color: rgba(0, 255, 0.4);
-		padding: 1px 0;
+		padding: 2px 0;
+		vertical-align: -4px;
 	}
 	</style>
 `
@@ -223,7 +217,7 @@ func (a *AlignWriter) WriteEnd(filenameMap string) {
     $(document).ready(function() {
         var table = $('#diffTable').DataTable({
             "columnDefs": [
-                { "orderable": false, "targets": [5,6,7,8] }
+                { "orderable": false, "targets": [3,4,5,6] }
 				// { "visible": false, "targets": [8] }  
             ],
             "pageLength": 50,
@@ -233,7 +227,7 @@ func (a *AlignWriter) WriteEnd(filenameMap string) {
     	$.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
         	var hideZeros = $('#hideVerse0').prop('checked');
         	if (!hideZeros) return true;
-        	return !data[7].endsWith(":0"); 
+        	return !data[5].endsWith(":0"); 
     	});
     	$('#hideVerse0').prop('checked', true);
     	table.draw();
@@ -250,6 +244,7 @@ func (a *AlignWriter) WriteEnd(filenameMap string) {
 		console.log("audioFile", audioFile);
 		const audio = document.getElementById('validateAudio');
 		audio.src = audioFile;
+		audio.controls = true;
 		audio.playbackRate = 0.75;
 		audio.currentTime = startTime;
 		audio.play();

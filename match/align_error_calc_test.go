@@ -12,7 +12,7 @@ import (
 func TestNewAlignErrorCalc(t *testing.T) {
 	ctx := context.Background()
 	//var database = "N2YPM_JMD.db"
-	var database = "ENGWEB.db"
+	var database = "ENGWEB_align.db"
 	dbPath := filepath.Join(os.Getenv("GOPROJ"), "dataset", "match", database)
 	conn := db.NewDBAdapter(ctx, dbPath)
 	calc := NewAlignErrorCalc(ctx, conn)
