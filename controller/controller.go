@@ -205,7 +205,7 @@ func (c *Controller) fetchData() (db.Ident, dataset.Status) {
 	if status.IsErr {
 		return c.ident, status
 	}
-	c.ident = client.UpdateIdent(c.ident, info, c.req.TextData.BibleBrain.TextType())
+	c.ident, status = client.UpdateIdent(c.ident, info, c.req)
 	return c.ident, status
 }
 

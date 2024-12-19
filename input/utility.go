@@ -303,10 +303,8 @@ func updateIdentText(ident *db.Ident, files []InputFile) bool {
 		result = true
 		if f.Testament == `OT` {
 			ident.TextOTId = f.MediaId
-			ident.LanguageISO = strings.ToLower(ident.TextOTId[:3])
 		} else if f.Testament == `NT` {
 			ident.TextNTId = f.MediaId
-			ident.LanguageISO = strings.ToLower(ident.TextNTId[:3])
 		}
 	}
 	return result
@@ -318,10 +316,8 @@ func updateIdentAudio(ident *db.Ident, files []InputFile) bool {
 		result = true
 		if f.Testament == `OT` {
 			ident.AudioOTId = f.MediaId
-			ident.LanguageISO = strings.ToLower(ident.AudioOTId[:3])
 		} else if f.Testament == `NT` {
 			ident.AudioNTId = f.MediaId
-			ident.LanguageISO = strings.ToLower(ident.AudioNTId[:3])
 		}
 	}
 	return result

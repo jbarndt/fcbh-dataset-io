@@ -155,14 +155,19 @@ func (d *APIDBPClient) searchAudio(info *BibleInfoType, size string, audioType s
 	return FilesetType{}
 }
 
-func (d *APIDBPClient) UpdateIdent(id db.Ident, info BibleInfoType, textType request.MediaType) db.Ident {
-	id.BibleId = info.BibleId
+func (d *APIDBPClient) UpdateIdent(id db.Ident, info BibleInfoType, req request.Request) (db.Ident, dataset.Status) {
+	var status dataset.Status
+	if id.BibleId != `` && id.BibleId != req.BibleId {
+		return id, log.ErrorNoErr(d.ctx, 400, "Request.yaml has BibleId:", req.BibleId, ", but dataset has BibleId:", id.BibleId)
+	}
+	id.BibleId = req.BibleId
 	if info.AudioOTFileset.Id != `` {
 		id.AudioOTId = info.AudioOTFileset.Id
 	}
 	if info.AudioNTFileset.Id != `` {
 		id.AudioNTId = info.AudioNTFileset.Id
 	}
+	textType := req.TextData.BibleBrain.TextType()
 	if textType == request.TextPlain || textType == request.TextPlainEdit {
 		if info.TextOTPlainFileset.Id != `` {
 			id.TextOTId = info.TextOTPlainFileset.Id
@@ -180,6 +185,9 @@ func (d *APIDBPClient) UpdateIdent(id db.Ident, info BibleInfoType, textType req
 	}
 	if info.LanguageISO != `` {
 		id.LanguageISO = info.LanguageISO
+	}
+	if id.LanguageISO == `` {
+		id.LanguageISO = strings.ToLower(id.BibleId[:3])
 	}
 	if info.VersionCode != `` {
 		id.VersionCode = info.VersionCode
@@ -205,5 +213,5 @@ func (d *APIDBPClient) UpdateIdent(id db.Ident, info BibleInfoType, textType req
 	if textType != request.TextNone {
 		id.TextSource = textType
 	}
-	return id
+	return id, status
 }
