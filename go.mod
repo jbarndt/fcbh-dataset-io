@@ -25,6 +25,7 @@ require (
 	fyne.io/fyne/v2 v2.5.2 // indirect
 	fyne.io/systray v1.11.0 // indirect
 	github.com/BurntSushi/toml v1.4.0 // indirect
+	github.com/aws/aws-sdk-go v1.38.20 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.6.5 // indirect
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.34 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.14 // indirect
@@ -64,6 +65,8 @@ require (
 	github.com/srwiley/oksvg v0.0.0-20221011165216-be6e8873101c // indirect
 	github.com/srwiley/rasterx v0.0.0-20220730225603-2ab79fcdd4ef // indirect
 	github.com/stretchr/testify v1.8.4 // indirect
+	github.com/u2takey/ffmpeg-go v0.5.0 // indirect
+	github.com/u2takey/go-utils v0.3.1 // indirect
 	github.com/xuri/efp v0.0.0-20240408161823-9ad904a10d6d // indirect
 	github.com/xuri/nfp v0.0.0-20240318013403-ab9948c2c4a7 // indirect
 	github.com/yuin/goldmark v1.7.1 // indirect
