@@ -19,7 +19,7 @@ import (
 	"unicode"
 )
 
-type MMSFA_Input struct {
+type MMSAlign_Input struct {
 	AudioFile string   `json:"audio_file"`
 	NormWords []string `json:"words"`
 }
@@ -32,15 +32,15 @@ type Word struct {
 	uroman   string
 }
 
-type MMSFA struct {
+type MMSAlign struct {
 	ctx     context.Context
 	conn    db.DBAdapter // This database adapter must contain the text to be processed
 	lang    string
-	sttLang string // I don't know if this is useful
+	sttLang string
 }
 
-func NewMMSFA(ctx context.Context, conn db.DBAdapter, lang string, sttLang string) MMSFA {
-	var m MMSFA
+func NewMMSAlign(ctx context.Context, conn db.DBAdapter, lang string, sttLang string) MMSAlign {
+	var m MMSAlign
 	m.ctx = ctx
 	m.conn = conn
 	m.lang = lang
@@ -49,7 +49,7 @@ func NewMMSFA(ctx context.Context, conn db.DBAdapter, lang string, sttLang strin
 }
 
 // ProcessFiles will perform Forced Alignment on these files
-func (a *MMSFA) ProcessFiles(files []input.InputFile) dataset.Status {
+func (a *MMSAlign) ProcessFiles(files []input.InputFile) dataset.Status {
 	lang, status := checkLanguage(a.ctx, a.lang, a.sttLang, "mms_asr")
 	if status.IsErr {
 		return status
@@ -70,14 +70,14 @@ func (a *MMSFA) ProcessFiles(files []input.InputFile) dataset.Status {
 }
 
 // processFile will process one audio file through mms forced alignment
-func (m *MMSFA) processFile(file input.InputFile, writer *bufio.Writer, reader *bufio.Reader) dataset.Status {
+func (m *MMSAlign) processFile(file input.InputFile, writer *bufio.Writer, reader *bufio.Reader) dataset.Status {
 	var status dataset.Status
 	tempDir, err := os.MkdirTemp(os.Getenv(`FCBH_DATASET_TMP`), "mms_fa_")
 	if err != nil {
 		return log.Error(m.ctx, 500, err, `Error creating temp dir`)
 	}
 	defer os.RemoveAll(tempDir)
-	var faInput MMSFA_Input
+	var faInput MMSAlign_Input
 	faInput.AudioFile, status = timestamp.ConvertMp3ToWav(m.ctx, tempDir, file.FilePath())
 	if status.IsErr {
 		return status
@@ -118,7 +118,7 @@ func (m *MMSFA) processFile(file input.InputFile, writer *bufio.Writer, reader *
 	return status
 }
 
-func (m *MMSFA) prepareText(lang string, bookId string, chapter int) ([]string, []Word, dataset.Status) {
+func (m *MMSAlign) prepareText(lang string, bookId string, chapter int) ([]string, []Word, dataset.Status) {
 	var textList []string
 	var refList []Word
 	var status dataset.Status
@@ -164,7 +164,7 @@ func (m *MMSFA) prepareText(lang string, bookId string, chapter int) ([]string, 
 	return textList, refList, status
 }
 
-func (m *MMSFA) cleanText(text string) string {
+func (m *MMSAlign) cleanText(text string) string {
 	var result []rune
 	for _, ch := range []rune(text) {
 		if unicode.IsLetter(ch) || unicode.IsSpace(ch) {
@@ -189,7 +189,7 @@ type MMSAlignResult struct {
 	Tokens     [][][]float64  `json:"tokens"`
 }
 
-func (m *MMSFA) processPyOutput(file input.InputFile, wordRefs []Word, response string) dataset.Status {
+func (m *MMSAlign) processPyOutput(file input.InputFile, wordRefs []Word, response string) dataset.Status {
 	var status dataset.Status
 	response = strings.TrimRight(response, "\n")
 	var mmsAlign MMSAlignResult
@@ -268,26 +268,30 @@ func (m *MMSFA) processPyOutput(file input.InputFile, wordRefs []Word, response 
 	return status
 }
 
-func (m *MMSFA) groupByVerse(words []db.Audio) [][]db.Audio {
+func (m *MMSAlign) groupByVerse(words []db.Audio) [][]db.Audio {
 	var result [][]db.Audio
+	if len(words) == 0 {
+		return result
+	}
+	var currId = words[0].ScriptId
 	var verse []db.Audio
 	var verseSeq = 0
-	for i, word := range words {
-		if word.WordSeq == 1 {
-			if i > 0 {
-				result = append(result, verse)
-				verse = nil
-				verseSeq++
-			}
+	for _, word := range words {
+		if word.ScriptId != currId {
+			currId = word.ScriptId
+			result = append(result, verse)
+			verse = nil
+			verseSeq++
+		} else {
+			word.VerseSeq = verseSeq
+			verse = append(verse, word)
 		}
-		word.VerseSeq = verseSeq
-		verse = append(verse, word)
 	}
 	result = append(result, verse)
 	return result
 }
 
-func (m *MMSFA) summarizeByVerse(chapter [][]db.Audio) []db.Audio {
+func (m *MMSAlign) summarizeByVerse(chapter [][]db.Audio) []db.Audio {
 	var result []db.Audio
 	for _, verse := range chapter {
 		var vs = verse[0]
@@ -308,7 +312,7 @@ func (m *MMSFA) summarizeByVerse(chapter [][]db.Audio) []db.Audio {
 	return result
 }
 
-func (m *MMSFA) average(scores []float64, precision int) float64 {
+func (m *MMSAlign) average(scores []float64, precision int) float64 {
 	var sum float64
 	for _, scr := range scores {
 		sum += scr
@@ -320,7 +324,7 @@ func (m *MMSFA) average(scores []float64, precision int) float64 {
 }
 
 // addSpace eliminates time gaps between the end of one verse and the beginning of the next.
-func (m *MMSFA) addSpace(parts []db.Audio) []db.Audio {
+func (m *MMSAlign) addSpace(parts []db.Audio) []db.Audio {
 	for i := range parts {
 		if i == 0 {
 			parts[0].BeginTS = 0.0

@@ -18,7 +18,7 @@ func TestMMSFA_ProcessFiles(t *testing.T) {
 	ctx := context.Background()
 	user, _ := fetch.GetTestUser()
 	conn, status := db.NewerDBAdapter(ctx, false, user.Username, "PlainTextEditScript_ENGWEB")
-	fa := NewMMSFA(ctx, conn, "eng", "")
+	fa := NewMMSAlign(ctx, conn, "eng", "")
 	var files []input.InputFile
 	var file input.InputFile
 	file.BookId = "MRK"
@@ -42,7 +42,7 @@ func TestMMSFA_prepareText(t *testing.T) {
 	if status.IsErr {
 		t.Fatal(status)
 	}
-	fa := NewMMSFA(ctx, conn, "eng", "")
+	fa := NewMMSAlign(ctx, conn, "eng", "")
 	for _, bookId := range db.BookNT {
 		lastChap := db.BookChapterMap[bookId]
 		for chap := 1; chap <= lastChap; chap++ {
@@ -62,7 +62,7 @@ func TestMMSFA_processPyOutput(t *testing.T) {
 	if status.IsErr {
 		t.Fatal(status)
 	}
-	fa := NewMMSFA(ctx, conn, "eng", "")
+	fa := NewMMSAlign(ctx, conn, "eng", "")
 	var file input.InputFile
 	file.BookId = "MRK"
 	file.Chapter = 1
