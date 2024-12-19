@@ -4,6 +4,8 @@ import (
 	"context"
 	"dataset"
 	"dataset/db"
+	"dataset/generic"
+	"dataset/mms"
 	"fmt"
 	"gonum.org/v1/gonum/stat"
 	"math"
@@ -38,25 +40,25 @@ const (
 	betweenChapters
 )
 
-type AlignVerse struct {
-	chars []db.AlignChar
-}
-
 type AlignErrorCalc struct {
-	ctx  context.Context
-	conn db.DBAdapter
+	ctx     context.Context
+	conn    db.DBAdapter
+	lang    string
+	altLang string
 }
 
-func NewAlignErrorCalc(ctx context.Context, conn db.DBAdapter) AlignErrorCalc {
+func NewAlignErrorCalc(ctx context.Context, conn db.DBAdapter, lang string, altLang string) AlignErrorCalc {
 	var a AlignErrorCalc
 	a.ctx = ctx
 	a.conn = conn
+	a.lang = lang
+	a.altLang = altLang
 	return a
 }
 
-func (a *AlignErrorCalc) Process() ([]AlignVerse, string, dataset.Status) {
-	var faVerse []AlignVerse
-	var faChars []db.AlignChar
+func (a *AlignErrorCalc) Process(directory string) ([]generic.AlignLine, string, dataset.Status) {
+	var faVerse []generic.AlignLine
+	var faChars []generic.AlignChar
 	var status dataset.Status
 	faChars, status = a.conn.SelectFACharTimestamps()
 	if status.IsErr {
@@ -75,9 +77,9 @@ func (a *AlignErrorCalc) Process() ([]AlignVerse, string, dataset.Status) {
 		faChars[i].Silence = next.BeginTS - curr.EndTS
 		if curr.WordId == next.WordId {
 			faChars[i].SilencePos = int(betweenChars)
-		} else if curr.ScriptId == next.ScriptId {
+		} else if curr.LineId == next.LineId {
 			faChars[i].SilencePos = int(betweenWords)
-		} else if curr.BookId == next.BookId && curr.ChapterNum == next.ChapterNum {
+		} else if curr.AudioFile == next.AudioFile {
 			faChars[i].SilencePos = int(betweenVerses)
 		} else {
 			faChars[i].SilencePos = int(betweenChapters)
@@ -99,10 +101,12 @@ func (a *AlignErrorCalc) Process() ([]AlignVerse, string, dataset.Status) {
 	a.markSilenceOutliers(faChars, mean, stddev, betweenChapters, betweenChaptersLong)
 	faVerse = a.groupByVerse(faChars)
 	filenameMap, status := a.generateBookChapterFilenameMap()
+	asr := mms.NewMMSASR(a.ctx, a.conn, a.lang, a.altLang)
+	asr.ProcessAlignSilence(directory, faVerse)
 	return faVerse, filenameMap, status
 }
 
-func (a *AlignErrorCalc) getDurations(chars []db.AlignChar) []float64 {
+func (a *AlignErrorCalc) getDurations(chars []generic.AlignChar) []float64 {
 	var data []float64
 	for _, ch := range chars {
 		data = append(data, float64(ch.Duration))
@@ -110,7 +114,7 @@ func (a *AlignErrorCalc) getDurations(chars []db.AlignChar) []float64 {
 	return data
 }
 
-func (a *AlignErrorCalc) getSilence(chars []db.AlignChar, pos SilencePosition) []float64 {
+func (a *AlignErrorCalc) getSilence(chars []generic.AlignChar, pos SilencePosition) []float64 {
 	var data []float64
 	posInt := int(pos)
 	for _, ch := range chars {
@@ -136,7 +140,7 @@ func (a *AlignErrorCalc) analyzeData(data []float64) (mean, stddev, min, max flo
 	return mean, stddev, min, max
 }
 
-func (a *AlignErrorCalc) markSilenceOutliers(chars []db.AlignChar, mean float64, stddev float64,
+func (a *AlignErrorCalc) markSilenceOutliers(chars []generic.AlignChar, mean float64, stddev float64,
 	silencePos SilencePosition, errorType ErrorType) {
 	var pct95 = mean + silenceStdevs*stddev
 	for i := range chars {
@@ -152,36 +156,32 @@ func (a *AlignErrorCalc) markSilenceOutliers(chars []db.AlignChar, mean float64,
 	}
 }
 
-func (a *AlignErrorCalc) groupByVerse(chars []db.AlignChar) []AlignVerse {
-	var verses []AlignVerse
+func (a *AlignErrorCalc) groupByVerse(chars []generic.AlignChar) []generic.AlignLine {
+	var result []generic.AlignLine
 	if len(chars) == 0 {
-		return verses
+		return result
 	}
-	currBookId := chars[0].BookId
-	currChapter := chars[0].ChapterNum
-	currVerse := chars[0].VerseStr
+	currRef := chars[0].LineRef
 	start := 0
 	for i, ch := range chars {
-		if ch.BookId != currBookId || ch.ChapterNum != currChapter || ch.VerseStr != currVerse {
-			oneVerse := chars[start:i]
-			currBookId = ch.BookId
-			currChapter = ch.ChapterNum
-			currVerse = ch.VerseStr
+		if ch.LineRef != currRef {
+			currRef = ch.LineRef
+			oneLine := chars[start:i]
 			start = i
 			var errCount int
-			for _, ch1 := range oneVerse {
-				if ch1.ScoreError > 0 || ch.DurationLong > 0 || ch.SilenceLong > 0 {
+			for _, ch1 := range oneLine {
+				if ch1.ScoreError > 0 || ch.SilenceLong > 0 {
 					errCount++
 				}
 			}
 			if errCount > 0 {
-				var verse AlignVerse
-				verse.chars = oneVerse
-				verses = append(verses, verse)
+				var line generic.AlignLine
+				line.Chars = oneLine
+				result = append(result, line)
 			}
 		}
 	}
-	return verses
+	return result
 }
 
 func (a *AlignErrorCalc) generateBookChapterFilenameMap() (string, dataset.Status) {
@@ -203,30 +203,25 @@ func (a *AlignErrorCalc) generateBookChapterFilenameMap() (string, dataset.Statu
 	return strings.Join(result, ""), status
 }
 
-func (a *AlignErrorCalc) countErrors(verses []AlignVerse) {
+func (a *AlignErrorCalc) countErrors(lines []generic.AlignLine) {
 	var total int
 	var critScoreError int
 	var questScoreError int
-	var durationLongCount int
 	var count = make([]int, 8)
-	for _, vs := range verses {
-		for _, ch := range vs.chars {
+	for _, vs := range lines {
+		for _, ch := range vs.Chars {
 			total++
 			if ch.ScoreError == int(scoreCritical) {
 				critScoreError++
 			} else if ch.ScoreError == int(scoreQuestion) {
 				questScoreError++
 			}
-			if ch.DurationLong > 0 {
-				durationLongCount++
-			}
 			count[ch.SilenceLong]++
 		}
 	}
-	fmt.Println("NO Error\t", count[noError]-critScoreError-questScoreError-durationLongCount)
+	fmt.Println("NO Error\t", count[noError]-critScoreError-questScoreError)
 	fmt.Println("ScoreCritical", critScoreError)
 	fmt.Println("ScoreQuestion", questScoreError)
-	fmt.Println("DurationLong", durationLongCount)
 	fmt.Println("BetweenCharsLong", count[betweenCharsLong])
 	fmt.Println("BetweenWordsLong", count[betweenWordsLong])
 	fmt.Println("BetweenVersesLong", count[betweenVersesLong])

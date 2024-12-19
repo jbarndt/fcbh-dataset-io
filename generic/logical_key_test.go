@@ -4,22 +4,24 @@ import (
 	"testing"
 )
 
-func TestReference_ByKey(t *testing.T) {
-	var a = RefByKey("NUM 22:12")
-	if a.BookId() != "NUM" {
+func TestLineRef_Parse(t *testing.T) {
+	var b LineRef
+	a := b.ParseKey("NUM 22:12").(LineRef)
+	if a.BookId != "NUM" {
 		t.Error("BookId should be NUM")
 	}
-	if a.ChapterNum() != 22 {
+	if a.ChapterNum != 22 {
 		t.Error("ChapterNum should be 22")
 	}
-	if a.VerseStr() != "12" {
+	if a.VerseStr != "12" {
 		t.Error("VerseStr should be 12")
 	}
 }
 
-func TestReference_ByParts(t *testing.T) {
-	var a = RefByParts("NUM", 22, "12", "", 0)
-	if a.LogicalKey() != "NUM 22:12" {
+func TestLineRef_Compose(t *testing.T) {
+	a := LineRef{BookId: "NUM", ChapterNum: 22, VerseStr: "12"}
+	b := a.ComposeKey()
+	if b != "NUM 22:12" {
 		t.Error("BookId should be NUM 22:12")
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"dataset"
+	"dataset/generic"
 	log "dataset/logger"
 	"encoding/json"
 	_ "github.com/mattn/go-sqlite3"
@@ -794,12 +795,11 @@ func (d *DBAdapter) SelectFAScriptTimestamps(bookId string, chapter int) ([]Audi
 	return results, status
 }
 
-func (d *DBAdapter) SelectFACharTimestamps() ([]AlignChar, dataset.Status) {
-	var chars []AlignChar
+func (d *DBAdapter) SelectFACharTimestamps() ([]generic.AlignChar, dataset.Status) {
+	var chars []generic.AlignChar
 	var status dataset.Status
-	var query = `SELECT s.script_id, s.book_id, s.chapter_num, s.verse_str,
-				w.word_id, w.word_seq, w.word, 
-				c.char_id, c.seq, c.norm, c.uroman, c.start_ts, c.end_ts, c.fa_score
+	var query = `SELECT s.audio_file, s.script_id, s.book_id, s.chapter_num, s.verse_str,
+				w.word_id, c.char_id, c.seq, c.norm, c.uroman, c.start_ts, c.end_ts, c.fa_score
 				FROM scripts s JOIN words w ON s.script_id = w.script_id
 				JOIN chars c ON w.word_id = c.word_id
 				WHERE w.ttype = 'W'
@@ -810,15 +810,17 @@ func (d *DBAdapter) SelectFACharTimestamps() ([]AlignChar, dataset.Status) {
 		return chars, status
 	}
 	defer d.closeDef(rows, "SelectFACharTimestamps stmt")
+	var ref generic.LineRef
 	for rows.Next() {
-		var ch AlignChar
-		err = rows.Scan(&ch.ScriptId, &ch.BookId, &ch.ChapterNum, &ch.VerseStr,
-			&ch.WordId, &ch.WordSeq, &ch.Word,
-			&ch.CharId, &ch.CharSeq, &ch.CharNorm, &ch.CharUroman, &ch.BeginTS, &ch.EndTS, &ch.FAScore)
+		var ch generic.AlignChar
+		err = rows.Scan(&ch.AudioFile, &ch.LineId, &ref.BookId, &ref.ChapterNum, &ref.VerseStr,
+			&ch.WordId, &ch.CharId, &ch.CharSeq, &ch.CharNorm, &ch.CharUroman, &ch.BeginTS, &ch.EndTS,
+			&ch.FAScore)
 		if err != nil {
 			status = log.Error(d.Ctx, 500, err, "Error in SelectFACharTimestamps.")
 			return chars, status
 		}
+		ch.LineRef = ref.ComposeKey()
 		chars = append(chars, ch)
 	}
 	return chars, status

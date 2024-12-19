@@ -3,6 +3,7 @@ package match
 import (
 	"context"
 	"dataset"
+	"dataset/generic"
 	log "dataset/logger"
 	"math"
 	"os"
@@ -28,7 +29,7 @@ func NewAlignWriter(ctx context.Context) AlignWriter {
 	return a
 }
 
-func (a *AlignWriter) WriteReport(datasetName string, verses []AlignVerse, filenameMap string) (string, dataset.Status) {
+func (a *AlignWriter) WriteReport(datasetName string, verses []generic.AlignLine, filenameMap string) (string, dataset.Status) {
 	var filename string
 	var status dataset.Status
 	var err error
@@ -39,7 +40,7 @@ func (a *AlignWriter) WriteReport(datasetName string, verses []AlignVerse, filen
 	}
 	a.WriteHeading()
 	for _, vers := range verses {
-		a.WriteVerse(vers)
+		a.WriteLine(vers)
 	}
 	a.WriteEnd(filenameMap)
 	return a.out.Name(), status
@@ -85,9 +86,9 @@ func (a *AlignWriter) WriteHeading() {
 	_, _ = a.out.WriteString(table)
 }
 
-func (a *AlignWriter) WriteVerse(verse AlignVerse) {
-	var firstChar = verse.chars[0]
-	var lastChar = verse.chars[len(verse.chars)-1]
+func (a *AlignWriter) WriteLine(line generic.AlignLine) {
+	var firstChar = line.Chars[0]
+	var lastChar = line.Chars[len(line.Chars)-1]
 	a.lineNum++
 	_, _ = a.out.WriteString("<tr>\n")
 	a.writeCell(strconv.Itoa(a.lineNum))
@@ -95,30 +96,38 @@ func (a *AlignWriter) WriteVerse(verse AlignVerse) {
 	//var errors []string
 	var criticalThresh = criticalThreshold
 	var questionThresh = questionThreshold
-	var maxSilence = 0.0
-	for _, ch := range verse.chars {
+	//var maxSilence = 0.0
+	var asrChars int
+	for _, ch := range line.Chars {
 		if ch.FAScore <= criticalThresh {
 			logScore := -math.Log10(ch.FAScore)
 			logTotal += logScore
 			//errors = append(errors, strconv.FormatFloat(logScore, 'f', 2, 64))
 		}
-		if ch.SilenceLong > 0 && ch.Silence > maxSilence {
-			maxSilence = ch.Silence
+		if ch.IsASR {
+			asrChars++
 		}
+		//if ch.SilenceLong > 0 && ch.Silence > maxSilence {
+		//	maxSilence = ch.Silence
+		//}
 	}
 	a.writeCell(strconv.FormatFloat(logTotal, 'f', 2, 64))
 	//a.writeCell(strings.Join(errors, "<br>"))
-	a.writeCell(strconv.FormatFloat(maxSilence*12.0, 'f', 0, 64))
+	//a.writeCell(strconv.FormatFloat(maxSilence*12.0, 'f', 0, 64))
+	a.writeCell(strconv.FormatInt(int64(asrChars), 10))
 	a.writeCell(a.minSecFormat(firstChar.BeginTS))
+	var lineRef generic.LineRef
+	ref := lineRef.ParseKey(firstChar.LineRef).(generic.LineRef)
 	var params []string
-	params = append(params, "'"+firstChar.BookId+"'")
-	params = append(params, strconv.Itoa(firstChar.ChapterNum))
+	params = append(params, "'"+ref.BookId+"'")
+	params = append(params, strconv.Itoa(ref.ChapterNum))
 	params = append(params, strconv.FormatFloat(firstChar.BeginTS, 'f', 4, 64))
 	params = append(params, strconv.FormatFloat(lastChar.EndTS, 'f', 4, 64))
 	a.writeCell("<button onclick=\"playVerse(" + strings.Join(params, ",") + ")\">Play</button>")
-	a.writeCell(firstChar.BookId + ` ` + strconv.Itoa(firstChar.ChapterNum) + `:` + firstChar.VerseStr)
+	//a.writeCell(firstChar.BookId + ` ` + strconv.Itoa(firstChar.ChapterNum) + `:` + firstChar.VerseStr)
+	a.writeCell(firstChar.LineRef)
 	var text []string
-	for _, ch := range verse.chars {
+	for _, ch := range line.Chars {
 		char := string(ch.CharNorm)
 		if ch.CharSeq == 0 {
 			text = append(text, " ")
@@ -127,12 +136,16 @@ func (a *AlignWriter) WriteVerse(verse AlignVerse) {
 			text = append(text, `<span class="red-box">`+char+`</span>`)
 		} else if ch.FAScore <= questionThresh {
 			text = append(text, `<span class="yellow-box">`+char+`</span>`)
-		} else if ch.SilenceLong > 0 {
-			text = append(text, char)
-			width := ch.Silence * 120.0 // 12 chars per sec, 10 px per char
-			widPx := strconv.FormatFloat(width, 'f', 0, 64) + `px;`
-			span := `<span class="blank-box" style="width:` + widPx + `"></span>`
-			text = append(text, span)
+		} else if ch.IsASR {
+			text = append(text, `<span class="blue-box">`+char+`</span>`)
+			//}
+			//} else if ch.SilenceLong > 0 {
+			//	// This will be rewritten not as silence, but as STT added characters
+			//	text = append(text, char)
+			//	width := ch.Silence * 120.0 // 12 chars per sec, 10 px per char
+			//	widPx := strconv.FormatFloat(width, 'f', 0, 64) + `px;`
+			//	span := `<span class="blank-box" style="width:` + widPx + `"></span>`
+			//	text = append(text, span)
 		} else {
 			text = append(text, char)
 		}
@@ -203,13 +216,17 @@ func (a *AlignWriter) WriteEnd(filenameMap string) {
 		background-color: rgba(255, 255, 0, 0.8);
 		padding: 1px 0;
 	}
-	.blank-box {
+	.blue-box {
+		background-color: rgba(0, 0, 255, 0.4);
+		padding: 1px 0;
+	}
+	/*.blank-box {
 		display: inline-block;
 		height: 1em; 
 		background-color: rgba(0, 0, 255, 0.4);
 		padding: 2px 0;
 		vertical-align: -4px;
-	}
+	}*/
 	</style>
 `
 	_, _ = a.out.WriteString(style)
