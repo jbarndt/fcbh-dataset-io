@@ -5,19 +5,23 @@ import (
 )
 
 const test1 = `is_new: yes
-dataset_name: O2LISNVS
-bible_id: NVSLIS
+dataset_name: ENGWEB_align_wav
+bible_id: ENGWEB
 username: GaryNTest
 email: gary@shortsands.com
-output_file: O2LISNVS.json
+output_file: ENGWEB_align_wav.json
 text_data:
-  aws_s3: s3://pretest-audio/LISNVS [T]/O2LISNVS Transliterated Text/*.usx
+  bible_brain:
+    text_usx_edit: yes
 audio_data:
-  aws_s3: s3://pretest-audio/LISNVS [T]/LISNVS Chapter VOX/*.mp3
-#timestamps:
-#  mms_fa_verse: yes
+  aws_s3: s3://pretest-audio/N2ENGWEB English (ENG)/N2ENGWEB Chapter VOX/*.wav
+timestamps:
+  mms_fa_verse: yes
+speech_to_text:
+  mms_asr: yes
 testament:
-  ot: yes
+  nt: 
+  nt_books: [LUK]
 `
 
 func TestRandomDirect(t *testing.T) {

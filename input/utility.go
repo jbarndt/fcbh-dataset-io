@@ -160,7 +160,7 @@ func ParseFilenames(ctx context.Context, file *InputFile) dataset.Status {
 		file.FileExt = filepath.Ext(file.Filename)
 	} else if file.MediaType == request.Audio || file.MediaType == request.AudioDrama {
 		fN := file.Filename
-		if strings.HasSuffix(fN, `VOX.mp3`) {
+		if strings.HasSuffix(fN, `VOX.mp3`) || strings.HasSuffix(fN, `VOX.wav`) {
 			status = ParseVOXAudioFilename(ctx, file)
 		} else if (fN[0] == 'A' || fN[0] == 'B') && (fN[1] >= '0' && fN[1] <= '9') {
 			status = ParseV2AudioFilename(ctx, file)
