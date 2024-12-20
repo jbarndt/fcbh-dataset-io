@@ -79,6 +79,7 @@ func ConvertMp3ToWav(ctx context.Context, tempDir string, inputFile string) (str
 	err := ffmpeg.Input(inputFile).Output(outputPath, ffmpeg.KwArgs{
 		"acodec": "pcm_s16le",
 		"ar":     "16000",
+		"ac":     "1",
 	}).OverWriteOutput().Run()
 	if err != nil {
 		status = log.Error(ctx, 500, err, "Error ")
@@ -99,6 +100,7 @@ func OldConvertMp3ToWav(ctx context.Context, tempDir string, filePath string) (s
 		`-i`, filePath,
 		`-acodec`, `pcm_s16le`,
 		`-ar`, `16000`,
+		`-ac`, `1`,
 		outputPath)
 	var stdoutBuf, stderrBuf bytes.Buffer
 	cmd.Stdout = &stdoutBuf
