@@ -197,6 +197,7 @@ func (c *Controller) fetchData() (db.Ident, dataset.Status) {
 	client := fetch.NewAPIDBPClient(c.ctx, c.req.BibleId)
 	info, status = client.BibleInfo()
 	if status.IsErr {
+		c.ident, status = client.UpdateIdent(c.ident, info, c.req)
 		return c.ident, status
 	}
 	client.FindFilesets(&info, c.req.AudioData.BibleBrain, c.req.TextData.BibleBrain, c.req.Testament)
