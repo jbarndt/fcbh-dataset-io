@@ -56,7 +56,7 @@ func NewAlignErrorCalc(ctx context.Context, conn db.DBAdapter, lang string, altL
 	return a
 }
 
-func (a *AlignErrorCalc) Process(directory string) ([]generic.AlignLine, string, dataset.Status) {
+func (a *AlignErrorCalc) Process(audioDirectory string) ([]generic.AlignLine, string, dataset.Status) {
 	var faVerse []generic.AlignLine
 	var faChars []generic.AlignChar
 	var status dataset.Status
@@ -102,7 +102,7 @@ func (a *AlignErrorCalc) Process(directory string) ([]generic.AlignLine, string,
 	faVerse = a.groupByVerse(faChars)
 	filenameMap, status := a.generateBookChapterFilenameMap()
 	asr := mms.NewMMSASR(a.ctx, a.conn, a.lang, a.altLang)
-	asr.ProcessAlignSilence(directory, faVerse)
+	asr.ProcessAlignSilence(audioDirectory, faVerse)
 	return faVerse, filenameMap, status
 }
 
@@ -166,7 +166,8 @@ func (a *AlignErrorCalc) groupByVerse(chars []generic.AlignChar) []generic.Align
 	for i, ch := range chars {
 		if ch.LineRef != currRef {
 			currRef = ch.LineRef
-			oneLine := chars[start:i]
+			oneLine := make([]generic.AlignChar, i-start)
+			copy(oneLine, chars[start:i])
 			start = i
 			var errCount int
 			for _, ch1 := range oneLine {
