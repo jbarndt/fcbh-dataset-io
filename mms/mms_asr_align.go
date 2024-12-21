@@ -32,9 +32,9 @@ func (a *MMSASR) ProcessAlignSilence(directory string, lines []generic.AlignLine
 	var priorAudioFile string
 	for i, line := range lines {
 		var newLine []generic.AlignChar
-		for i, ch := range line.Chars {
+		for _, ch := range line.Chars {
 			newLine = append(newLine, ch)
-			if ch.SilenceLong != 0 && i < len(line.Chars)-2 {
+			if ch.SilenceLong != 0 {
 				if priorAudioFile != ch.AudioFile {
 					priorAudioFile = ch.AudioFile
 					filePath := filepath.Join(directory, ch.AudioFile)
@@ -43,8 +43,8 @@ func (a *MMSASR) ProcessAlignSilence(directory string, lines []generic.AlignLine
 						return lines, status
 					}
 				}
-				next := line.Chars[i+1]
-				audioFragment, status3 := timestamp.ChopOneSegment(a.ctx, tempDir, wavFile, ch.EndTS, next.BeginTS)
+				endSilenceTS := ch.EndTS + ch.Silence
+				audioFragment, status3 := timestamp.ChopOneSegment(a.ctx, tempDir, wavFile, ch.EndTS, endSilenceTS)
 				if status3.IsErr {
 					return lines, status3
 				}
@@ -63,19 +63,21 @@ func (a *MMSASR) ProcessAlignSilence(directory string, lines []generic.AlignLine
 				response = strings.TrimRight(response, "\n")
 				fmt.Println(ch.LineRef, ch.WordId, response)
 				for _, resp := range response {
-					newCh := ch
-					newCh.CharId = 0
-					newCh.BeginTS = 0.0
-					newCh.EndTS = 0.0
-					newCh.FAScore = 1.0
-					newCh.CharNorm = resp
-					newCh.IsASR = true
-					newLine = append(newLine, newCh)
+					var newChar generic.AlignChar
+					newChar.AudioFile = ch.AudioFile
+					newChar.LineId = ch.LineId
+					newChar.LineRef = ch.LineRef
+					//newChar.WordId = ch.WordId // might not be correct
+					newChar.CharNorm = resp
+					newChar.BeginTS = ch.EndTS
+					newChar.EndTS = endSilenceTS // It a number of chars are found they have the same TS
+					newChar.FAScore = 1.0
+					newChar.IsASR = true
+					newLine = append(newLine, newChar)
 				}
 			}
 		}
 		lines[i].Chars = newLine
-		newLine = nil
 	}
 	log.Debug(a.ctx, "Finished ASR Align")
 	bytes, err := json.Marshal(lines)

@@ -129,6 +129,9 @@ func (a *AlignWriter) WriteLine(line generic.AlignLine) {
 	var text []string
 	for _, ch := range line.Chars {
 		char := string(ch.CharNorm)
+		if ch.SilenceLong != 0 {
+			char += `<sub>` + strconv.Itoa(ch.SilencePos) + `</sub>`
+		}
 		if ch.CharSeq == 0 {
 			text = append(text, " ")
 		}
@@ -138,14 +141,6 @@ func (a *AlignWriter) WriteLine(line generic.AlignLine) {
 			text = append(text, `<span class="yellow-box">`+char+`</span>`)
 		} else if ch.IsASR {
 			text = append(text, `<span class="blue-box">`+char+`</span>`)
-			//}
-			//} else if ch.SilenceLong > 0 {
-			//	// This will be rewritten not as silence, but as STT added characters
-			//	text = append(text, char)
-			//	width := ch.Silence * 120.0 // 12 chars per sec, 10 px per char
-			//	widPx := strconv.FormatFloat(width, 'f', 0, 64) + `px;`
-			//	span := `<span class="blank-box" style="width:` + widPx + `"></span>`
-			//	text = append(text, span)
 		} else {
 			text = append(text, char)
 		}

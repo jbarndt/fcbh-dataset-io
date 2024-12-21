@@ -63,7 +63,7 @@ func ChopOneSegment(ctx context.Context, tempDir string, inputFile string, begin
 		"y":       "",
 		"ss":      beginTS,
 		"to":      endTS,
-	}).OverWriteOutput().Run()
+	}).Silent(true).OverWriteOutput().Run()
 	if err != nil {
 		status = log.Error(ctx, 500, err, "Error in ChopOneSegment")
 	}
@@ -80,7 +80,7 @@ func ConvertMp3ToWav(ctx context.Context, tempDir string, inputFile string) (str
 		"acodec": "pcm_s16le",
 		"ar":     "16000",
 		"ac":     "1",
-	}).OverWriteOutput().Run()
+	}).Silent(true).OverWriteOutput().Run()
 	if err != nil {
 		status = log.Error(ctx, 500, err, "Error ")
 	}

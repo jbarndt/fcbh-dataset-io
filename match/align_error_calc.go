@@ -60,7 +60,12 @@ func (a *AlignErrorCalc) Process(audioDirectory string) ([]generic.AlignLine, st
 	var faVerse []generic.AlignLine
 	var faChars []generic.AlignChar
 	var status dataset.Status
-	faChars, status = a.conn.SelectFACharTimestamps()
+	faCharsTmp, status := a.conn.SelectFACharTimestamps()
+	for _, tmp := range faCharsTmp {
+		if strings.HasPrefix(tmp.LineRef, "MRK") {
+			faChars = append(faChars, tmp)
+		}
+	}
 	if status.IsErr {
 		return faVerse, "", status
 	}
