@@ -28,7 +28,6 @@ if torch.cuda.is_available():
     device = 'cuda'
 else:
     device = 'cpu'
-print("Using device:", device, file=sys.stderr)
 modelId = "facebook/mms-1b-all"
 if not isSupportedLanguage(modelId, lang):
     print(lang, "is not supported by", modelId)
@@ -52,12 +51,8 @@ for line in sys.stdin:
     sys.stdout.write(transcription)
     sys.stdout.write("\n")
     sys.stdout.flush()
-    #memory = psutil.Process().memory_info().rss / 1024 / 1024 / 1024
-    #print(f"mms_sr.py: {memory:.2f} GB", file=sys.stderr)
 
-#$HOME + "/NPIDPI/NPIDPIN1DA/B02___01_Mark________NPIDPIN1DA.wav"
 
-# /Users/gary/FCBH2024/download/NPIDPI/NPIDPIN1DA/B02___01_Mark________NPIDPIN1DA.wav
 
 ## Testing
 ## cd Documents/go2/dataset/mms
