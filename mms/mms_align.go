@@ -297,9 +297,6 @@ func (m *MMSAlign) groupByVerse(words []db.Audio) [][]db.Audio {
 
 func (m *MMSAlign) summarizeByVerse(chapter [][]db.Audio) []db.Audio {
 	var result []db.Audio
-	fmt.Println("chapter1", chapter[0])
-	fmt.Println("chapter2", chapter[1])
-	fmt.Println("chapter3", chapter[3])
 	for _, verse := range chapter {
 		var vs = verse[0]
 		vs.EndTS = verse[len(verse)-1].EndTS
