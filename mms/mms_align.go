@@ -10,7 +10,6 @@ import (
 	log "dataset/logger"
 	"dataset/timestamp"
 	"encoding/json"
-	"fmt"
 	"github.com/divan/num2words"
 	"math"
 	"os"
@@ -108,9 +107,9 @@ func (m *MMSAlign) processFile(file input.InputFile, writer *bufio.Writer, reade
 	if err2 != nil {
 		return log.Error(m.ctx, 500, err2, `Error reading mms_align.py response`)
 	}
-	fmt.Println(len(wordList)) // temp
 	m.processPyOutput(file, wordList, response)
 	// development
+	//fmt.Println(len(wordList)) // temp
 	//err = os.WriteFile("engweb_fa_out.json", []byte(response), 0644)
 	//if err != nil {
 	//	panic(err)
