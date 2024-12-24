@@ -17,7 +17,7 @@ audio_data:
   bible_brain:
     mp3_64: yes
 timestamps:
-  mms_fa_verse:
+  mms_align:
   bible_brain: yes
 testament:
   nt_books: [PHM]

@@ -279,20 +279,27 @@ func (m *MMSAlign) groupByVerse(words []db.Audio) [][]db.Audio {
 	for _, word := range words {
 		if word.ScriptId != currId {
 			currId = word.ScriptId
-			result = append(result, verse)
-			verse = nil
-			verseSeq++
+			if len(verse) > 0 {
+				result = append(result, verse)
+				verse = nil
+				verseSeq++
+			}
 		} else {
 			word.VerseSeq = verseSeq
 			verse = append(verse, word)
 		}
 	}
-	result = append(result, verse)
+	if len(verse) > 0 {
+		result = append(result, verse)
+	}
 	return result
 }
 
 func (m *MMSAlign) summarizeByVerse(chapter [][]db.Audio) []db.Audio {
 	var result []db.Audio
+	fmt.Println("chapter1", chapter[0])
+	fmt.Println("chapter2", chapter[1])
+	fmt.Println("chapter3", chapter[3])
 	for _, verse := range chapter {
 		var vs = verse[0]
 		vs.EndTS = verse[len(verse)-1].EndTS

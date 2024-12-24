@@ -61,10 +61,29 @@ compare:
     diacritical_marks:
       normalize_nfd: y
 `
+const test3 = `is_new: yes
+dataset_name: N2ENGWEB
+bible_id: ENGWEB
+username: GaryNTest
+email: gary@shortsands.com
+output_file: N2ENGWEB.sqlite
+text_data:
+  bible_brain:
+    text_usx_edit: yes
+audio_data:
+  bible_brain:
+    mp3_64: yes
+timestamps:
+  mms_align: yes
+testament:
+  nt: yes
+speech_to_text:
+  mms_asr: yes
+`
 
 func TestRandomDirect(t *testing.T) {
 	var tests []SqliteTest
 	//tests = append(tests, SqliteTest{"SELECT count(*) FROM scripts", 26})
 	//tests = append(tests, SqliteTest{"SELECT count(*) FROM scripts WHERE script_begin_ts != 0.0", 25})
-	DirectSqlTest(test2, tests, t)
+	DirectSqlTest(test3, tests, t)
 }
