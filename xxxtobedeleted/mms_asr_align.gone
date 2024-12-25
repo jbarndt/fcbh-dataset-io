@@ -1,7 +1,8 @@
-package mms
+package xxxtobedeleted
 
 import (
 	"bufio"
+	"context"
 	"dataset"
 	"dataset/generic"
 	log "dataset/logger"
@@ -13,6 +14,19 @@ import (
 	"path/filepath"
 	"strings"
 )
+
+type MMSASR struct {
+	ctx context.Context
+	lang string
+	sttLang string
+}
+
+func checkLanguage(ctx context.Context, lang string, sttLang string, aiTool string) (string, dataset.Status) {	
+	return "", dataset.Status{}
+}
+func callStdIOScript(ctx context.Context, path string, script string, lang string) (*bufio.Writer, *bufio.Reader, dataset.Status) {
+	return nil, nil, dataset.Status{}
+}
 
 // ProcessAlignSilence will perform Auto Speech Recognition on the silent parts audio gaps
 func (a *MMSASR) ProcessAlignSilence(directory string, chars []generic.AlignChar) ([]generic.AlignChar, dataset.Status) {
