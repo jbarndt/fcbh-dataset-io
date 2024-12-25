@@ -5,7 +5,7 @@ import (
 	"dataset"
 	"dataset/db"
 	"dataset/generic"
-	"dataset/mms"
+	"dataset/timestamp"
 	"fmt"
 	"gonum.org/v1/gonum/stat"
 	"math"
@@ -43,43 +43,33 @@ const (
 type AlignErrorCalc struct {
 	ctx     context.Context
 	conn    db.DBAdapter
+	asrConn db.DBAdapter
 	lang    string
 	altLang string
 }
 
-func NewAlignErrorCalc(ctx context.Context, conn db.DBAdapter, lang string, altLang string) AlignErrorCalc {
+func NewAlignErrorCalc(ctx context.Context, conn db.DBAdapter, asrConn db.DBAdapter, lang string, altLang string) AlignErrorCalc {
 	var a AlignErrorCalc
 	a.ctx = ctx
 	a.conn = conn
+	a.asrConn = asrConn
 	a.lang = lang
 	a.altLang = altLang
 	return a
 }
 
 func (a *AlignErrorCalc) Process(audioDirectory string) ([]generic.AlignLine, string, dataset.Status) {
-	var faVerse []generic.AlignLine
-	var faChars []generic.AlignChar
+	var faLines []generic.AlignLine
 	var status dataset.Status
-	faCharsTmp, status := a.conn.SelectFACharTimestamps()
-	for _, tmp := range faCharsTmp {
-		if strings.HasPrefix(tmp.LineRef, "MRK") {
-			faChars = append(faChars, tmp)
-		}
-	}
+	faChars, status := a.conn.SelectFACharTimestamps()
 	if status.IsErr {
-		return faVerse, "", status
-	}
-	for i := range faChars {
-		if faChars[i].FAScore <= criticalThreshold {
-			faChars[i].ScoreError = int(scoreCritical)
-		} else if faChars[i].FAScore <= questionThreshold {
-			faChars[i].ScoreError = int(scoreQuestion)
-		}
+		return faLines, "", status
 	}
 	for i := 0; i < len(faChars)-1; i++ {
+		faChars[i].Duration = faChars[i].EndTS - faChars[i].BeginTS
 		var curr = faChars[i]
 		var next = faChars[i+1]
-		faChars[i].Silence = next.BeginTS - curr.EndTS
+		faChars[i].Silence = faChars[i+1].BeginTS - faChars[i].EndTS
 		if curr.WordId == next.WordId {
 			faChars[i].SilencePos = int(betweenChars)
 		} else if curr.LineId == next.LineId {
@@ -88,27 +78,30 @@ func (a *AlignErrorCalc) Process(audioDirectory string) ([]generic.AlignLine, st
 			faChars[i].SilencePos = int(betweenVerses)
 		} else {
 			faChars[i].SilencePos = int(betweenChapters)
-			faChars[i].Silence = next.BeginTS
-			// To be correct, I should add the silence of fileDuration - curr.EndTS
+			var duration float64
+			duration, status = timestamp.GetAudioDuration(a.ctx, audioDirectory, faChars[i].AudioFile)
+			faChars[i].Silence = duration - curr.EndTS
 		}
 	}
-	mean, stddev, mini, maxi := a.analyzeData(a.getSilence(faChars, betweenChars))
+	mean, stddev, mini, maxi := a.analyzeData(a.getDurations(faChars))
+	fmt.Println("Char Widths:", mean, stddev, mini, maxi)
+	mean, stddev, mini, maxi = a.analyzeData(a.getSilence(faChars, betweenChars))
 	fmt.Println("Between Chars:", mean, stddev, mini, maxi)
-	a.markSilenceOutliers(faChars, mean, stddev, betweenChars, betweenCharsLong)
+	var charLimit = 1.0
 	mean, stddev, mini, maxi = a.analyzeData(a.getSilence(faChars, betweenWords))
 	fmt.Println("Between Words:", mean, stddev, mini, maxi)
-	a.markSilenceOutliers(faChars, mean, stddev, betweenWords, betweenWordsLong)
+	var wordLimit = 1.8
 	mean, stddev, mini, maxi = a.analyzeData(a.getSilence(faChars, betweenVerses))
 	fmt.Println("Between Verses:", mean, stddev, mini, maxi)
-	a.markSilenceOutliers(faChars, mean, stddev, betweenVerses, betweenVersesLong)
+	var verseLimit = 2.8
 	mean, stddev, mini, maxi = a.analyzeData(a.getSilence(faChars, betweenChapters))
 	fmt.Println("Between Chapters:", mean, stddev, mini, maxi)
-	a.markSilenceOutliers(faChars, mean, stddev, betweenChapters, betweenChaptersLong)
-	faVerse = a.groupByVerse(faChars)
+	var chapLimit = 4.0
+	a.markSilenceOutliers(faChars, charLimit, wordLimit, verseLimit, chapLimit)
+	faLines = a.groupByLine(faChars)
+	//a.compareLines2ASR(faLines, a.asrConn)
 	filenameMap, status := a.generateBookChapterFilenameMap()
-	asr := mms.NewMMSASR(a.ctx, a.conn, a.lang, a.altLang)
-	asr.ProcessAlignSilence(audioDirectory, faVerse)
-	return faVerse, filenameMap, status
+	return faLines, filenameMap, status
 }
 
 func (a *AlignErrorCalc) getDurations(chars []generic.AlignChar) []float64 {
@@ -145,23 +138,30 @@ func (a *AlignErrorCalc) analyzeData(data []float64) (mean, stddev, min, max flo
 	return mean, stddev, min, max
 }
 
-func (a *AlignErrorCalc) markSilenceOutliers(chars []generic.AlignChar, mean float64, stddev float64,
-	silencePos SilencePosition, errorType ErrorType) {
-	var pct95 = mean + silenceStdevs*stddev
-	for i := range chars {
-		if chars[i].SilencePos == int(silencePos) {
-			if chars[i].Silence > pct95 {
-				if chars[i].SilenceLong == 0 {
-					chars[i].SilenceLong = int(errorType)
-				} else {
-					fmt.Println("Skip Long Silence", silencePos, chars[i])
-				}
+func (a *AlignErrorCalc) markSilenceOutliers(chars []generic.AlignChar, charLimit, wordLimit, verseLimit, chapLimit float64) { //, mean float64, stddev float64,
+	for i, ch := range chars {
+		switch SilencePosition(ch.SilencePos) {
+		case betweenChars:
+			if ch.Silence >= charLimit {
+				chars[i].SilenceLong = int(betweenCharsLong)
+			}
+		case betweenWords:
+			if ch.Silence >= wordLimit {
+				chars[i].SilenceLong = int(betweenWordsLong)
+			}
+		case betweenVerses:
+			if ch.Silence >= verseLimit {
+				chars[i].SilenceLong = int(betweenVersesLong)
+			}
+		case betweenChapters:
+			if ch.Silence >= chapLimit {
+				chars[i].SilenceLong = int(betweenChaptersLong)
 			}
 		}
 	}
 }
 
-func (a *AlignErrorCalc) groupByVerse(chars []generic.AlignChar) []generic.AlignLine {
+func (a *AlignErrorCalc) groupByLine(chars []generic.AlignChar) []generic.AlignLine {
 	var result []generic.AlignLine
 	if len(chars) == 0 {
 		return result
@@ -169,22 +169,14 @@ func (a *AlignErrorCalc) groupByVerse(chars []generic.AlignChar) []generic.Align
 	currRef := chars[0].LineRef
 	start := 0
 	for i, ch := range chars {
-		if ch.LineRef != currRef {
+		if ch.LineRef != currRef { // compare on line ref makes verse a unique key
 			currRef = ch.LineRef
 			oneLine := make([]generic.AlignChar, i-start)
 			copy(oneLine, chars[start:i])
 			start = i
-			var errCount int
-			for _, ch1 := range oneLine {
-				if ch1.ScoreError > 0 || ch.SilenceLong > 0 {
-					errCount++
-				}
-			}
-			if errCount > 0 {
-				var line generic.AlignLine
-				line.Chars = oneLine
-				result = append(result, line)
-			}
+			var line generic.AlignLine
+			line.Chars = oneLine
+			result = append(result, line)
 		}
 	}
 	return result
@@ -214,8 +206,8 @@ func (a *AlignErrorCalc) countErrors(lines []generic.AlignLine) {
 	var critScoreError int
 	var questScoreError int
 	var count = make([]int, 8)
-	for _, vs := range lines {
-		for _, ch := range vs.Chars {
+	for _, line := range lines {
+		for _, ch := range line.Chars {
 			total++
 			if ch.ScoreError == int(scoreCritical) {
 				critScoreError++

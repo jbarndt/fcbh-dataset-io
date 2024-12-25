@@ -11,17 +11,16 @@ import (
 
 func TestNewAlignErrorCalc(t *testing.T) {
 	ctx := context.Background()
-	//var database = "N2YPM_JMD.db"
-	var database = "ENGWEB_align_mp3.db"
-	dbPath := filepath.Join(os.Getenv("GOPROJ"), "dataset", "match", database)
-	conn := db.NewDBAdapter(ctx, dbPath)
-	calc := NewAlignErrorCalc(ctx, conn, "eng", "")
+	dbDir := filepath.Join(os.Getenv("GOPROJ"), "dataset", "match")
+	conn := db.NewDBAdapter(ctx, filepath.Join(dbDir, "N2ENGWEB.db"))
+	asrConn := db.NewDBAdapter(ctx, filepath.Join(dbDir, "N2ENGWEB_audio.db"))
+	calc := NewAlignErrorCalc(ctx, conn, asrConn, "eng", "")
 	audioDir := filepath.Join(os.Getenv("FCBH_DATASET_FILES"), "ENGWEB", "ENGWEBN2DA-mp3-64")
-	faVerses, filenameMap, status := calc.Process(audioDir)
+	faLines, filenameMap, status := calc.Process(audioDir)
 	if status.IsErr {
 		t.Fatal(status)
 	}
-	fmt.Println(filenameMap)
-	calc.countErrors(faVerses)
-	fmt.Println(len(faVerses))
+	fmt.Println(len(filenameMap))
+	calc.countErrors(faLines)
+	fmt.Println(len(faLines))
 }

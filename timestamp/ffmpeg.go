@@ -6,6 +6,7 @@ import (
 	"dataset"
 	"dataset/db"
 	log "dataset/logger"
+	"encoding/json"
 	"fmt"
 	ffmpeg "github.com/u2takey/ffmpeg-go"
 	"os/exec"
@@ -110,4 +111,32 @@ func OldConvertMp3ToWav(ctx context.Context, tempDir string, filePath string) (s
 		status = log.Error(ctx, 500, err, stderrBuf.String())
 	}
 	return outputPath, status
+}
+
+func GetAudioDuration(ctx context.Context, directory string, filename string) (float64, dataset.Status) {
+	var result float64
+	var status dataset.Status
+	type probeFormat struct {
+		Duration string `json:"duration"`
+	}
+	type probeData struct {
+		Format probeFormat `json:"format"`
+	}
+	filePath := filepath.Join(directory, filename)
+	data, err := ffmpeg.Probe(filePath)
+	if err != nil {
+		status = log.Error(ctx, 500, err, "Error in timestamp.GetAudioDuration")
+		return result, status
+	}
+	pd := probeData{}
+	err = json.Unmarshal([]byte(data), &pd)
+	if err != nil {
+		status = log.Error(ctx, 500, err, "Error in timestamp.GetAudioDuration")
+		return result, status
+	}
+	result, err = strconv.ParseFloat(pd.Format.Duration, 64)
+	if err != nil {
+		status = log.Error(ctx, 500, err, "Error in timestamp.GetAudioDuration")
+	}
+	return result, status
 }

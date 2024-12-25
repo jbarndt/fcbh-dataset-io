@@ -29,7 +29,7 @@ func NewAlignWriter(ctx context.Context) AlignWriter {
 	return a
 }
 
-func (a *AlignWriter) WriteReport(datasetName string, verses []generic.AlignLine, filenameMap string) (string, dataset.Status) {
+func (a *AlignWriter) WriteReport(datasetName string, lines []generic.AlignLine, filenameMap string) (string, dataset.Status) {
 	var filename string
 	var status dataset.Status
 	var err error
@@ -39,8 +39,8 @@ func (a *AlignWriter) WriteReport(datasetName string, verses []generic.AlignLine
 		return filename, log.Error(a.ctx, 500, err, `Error creating output file for align writer`)
 	}
 	a.WriteHeading()
-	for _, vers := range verses {
-		a.WriteLine(vers)
+	for _, line := range lines {
+		a.WriteLine(line.Chars)
 	}
 	a.WriteEnd(filenameMap)
 	return a.out.Name(), status
@@ -86,31 +86,26 @@ func (a *AlignWriter) WriteHeading() {
 	_, _ = a.out.WriteString(table)
 }
 
-func (a *AlignWriter) WriteLine(line generic.AlignLine) {
-	var firstChar = line.Chars[0]
-	var lastChar = line.Chars[len(line.Chars)-1]
+func (a *AlignWriter) WriteLine(chars []generic.AlignChar) {
+	var logTotal float64
+	var asrChars int
+	for i, char := range chars {
+		if chars[i].FAScore <= criticalThreshold {
+			chars[i].ScoreError = int(scoreCritical)
+			logScore := -math.Log10(chars[i].FAScore)
+			logTotal += logScore
+		} else if chars[i].FAScore <= questionThreshold {
+			chars[i].ScoreError = int(scoreQuestion)
+		}
+		if char.IsASR {
+			asrChars++
+		}
+	}
+	var firstChar = chars[0]
+	var lastChar = chars[len(chars)-1]
 	a.lineNum++
 	_, _ = a.out.WriteString("<tr>\n")
 	a.writeCell(strconv.Itoa(a.lineNum))
-	var logTotal float64
-	//var errors []string
-	var criticalThresh = criticalThreshold
-	var questionThresh = questionThreshold
-	//var maxSilence = 0.0
-	var asrChars int
-	for _, ch := range line.Chars {
-		if ch.FAScore <= criticalThresh {
-			logScore := -math.Log10(ch.FAScore)
-			logTotal += logScore
-			//errors = append(errors, strconv.FormatFloat(logScore, 'f', 2, 64))
-		}
-		if ch.IsASR {
-			asrChars++
-		}
-		//if ch.SilenceLong > 0 && ch.Silence > maxSilence {
-		//	maxSilence = ch.Silence
-		//}
-	}
 	a.writeCell(strconv.FormatFloat(logTotal, 'f', 2, 64))
 	//a.writeCell(strings.Join(errors, "<br>"))
 	//a.writeCell(strconv.FormatFloat(maxSilence*12.0, 'f', 0, 64))
@@ -127,7 +122,7 @@ func (a *AlignWriter) WriteLine(line generic.AlignLine) {
 	//a.writeCell(firstChar.BookId + ` ` + strconv.Itoa(firstChar.ChapterNum) + `:` + firstChar.VerseStr)
 	a.writeCell(firstChar.LineRef)
 	var text []string
-	for _, ch := range line.Chars {
+	for _, ch := range chars {
 		char := string(ch.CharNorm)
 		if ch.SilenceLong != 0 {
 			char += `<sub>` + strconv.Itoa(ch.SilencePos) + `</sub>`
@@ -135,9 +130,9 @@ func (a *AlignWriter) WriteLine(line generic.AlignLine) {
 		if ch.CharSeq == 0 {
 			text = append(text, " ")
 		}
-		if ch.FAScore <= criticalThresh {
+		if ch.ScoreError == int(scoreCritical) {
 			text = append(text, `<span class="red-box">`+char+`</span>`)
-		} else if ch.FAScore <= questionThresh {
+		} else if ch.ScoreError == int(scoreQuestion) {
 			text = append(text, `<span class="yellow-box">`+char+`</span>`)
 		} else if ch.IsASR {
 			text = append(text, `<span class="blue-box">`+char+`</span>`)
