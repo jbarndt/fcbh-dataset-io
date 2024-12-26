@@ -40,7 +40,7 @@ const (
 	betweenChapters
 )
 
-type AlignErrorCalc struct {
+type AlignSilence struct {
 	ctx     context.Context
 	conn    db.DBAdapter
 	asrConn db.DBAdapter
@@ -48,8 +48,8 @@ type AlignErrorCalc struct {
 	altLang string
 }
 
-func NewAlignErrorCalc(ctx context.Context, conn db.DBAdapter, asrConn db.DBAdapter, lang string, altLang string) AlignErrorCalc {
-	var a AlignErrorCalc
+func NewAlignSilence(ctx context.Context, conn db.DBAdapter, asrConn db.DBAdapter, lang string, altLang string) AlignSilence {
+	var a AlignSilence
 	a.ctx = ctx
 	a.conn = conn
 	a.asrConn = asrConn
@@ -58,7 +58,7 @@ func NewAlignErrorCalc(ctx context.Context, conn db.DBAdapter, asrConn db.DBAdap
 	return a
 }
 
-func (a *AlignErrorCalc) Process(audioDirectory string) ([]generic.AlignLine, string, dataset.Status) {
+func (a *AlignSilence) Process(audioDirectory string) ([]generic.AlignLine, string, dataset.Status) {
 	var faLines []generic.AlignLine
 	var status dataset.Status
 	faChars, status := a.conn.SelectFACharTimestamps()
@@ -107,7 +107,7 @@ func (a *AlignErrorCalc) Process(audioDirectory string) ([]generic.AlignLine, st
 	return faLines, filenameMap, status
 }
 
-func (a *AlignErrorCalc) getDurations(chars []generic.AlignChar) []float64 {
+func (a *AlignSilence) getDurations(chars []generic.AlignChar) []float64 {
 	var data []float64
 	for _, ch := range chars {
 		data = append(data, ch.Duration)
@@ -115,7 +115,7 @@ func (a *AlignErrorCalc) getDurations(chars []generic.AlignChar) []float64 {
 	return data
 }
 
-func (a *AlignErrorCalc) getSilence(chars []generic.AlignChar, pos SilencePosition) []float64 {
+func (a *AlignSilence) getSilence(chars []generic.AlignChar, pos SilencePosition) []float64 {
 	var data []float64
 	posInt := int(pos)
 	for _, ch := range chars {
@@ -126,7 +126,7 @@ func (a *AlignErrorCalc) getSilence(chars []generic.AlignChar, pos SilencePositi
 	return data
 }
 
-func (a *AlignErrorCalc) analyzeData(data []float64) (mean, stddev, min, max float64) {
+func (a *AlignSilence) analyzeData(data []float64) (mean, stddev, min, max float64) {
 	if len(data) == 0 {
 		return 0.0, 0.0, 0.0, 0.0
 	}
@@ -141,7 +141,7 @@ func (a *AlignErrorCalc) analyzeData(data []float64) (mean, stddev, min, max flo
 	return mean, stddev, min, max
 }
 
-func (a *AlignErrorCalc) markSilenceOutliers(chars []generic.AlignChar, charLimit, wordLimit, verseLimit, chapLimit float64) { //, mean float64, stddev float64,
+func (a *AlignSilence) markSilenceOutliers(chars []generic.AlignChar, charLimit, wordLimit, verseLimit, chapLimit float64) { //, mean float64, stddev float64,
 	for i, ch := range chars {
 		switch SilencePosition(ch.SilencePos) {
 		case betweenChars:
@@ -164,7 +164,7 @@ func (a *AlignErrorCalc) markSilenceOutliers(chars []generic.AlignChar, charLimi
 	}
 }
 
-func (a *AlignErrorCalc) groupByLine(chars []generic.AlignChar) []generic.AlignLine {
+func (a *AlignSilence) groupByLine(chars []generic.AlignChar) []generic.AlignLine {
 	var result []generic.AlignLine
 	if len(chars) == 0 {
 		return result
@@ -185,7 +185,7 @@ func (a *AlignErrorCalc) groupByLine(chars []generic.AlignChar) []generic.AlignL
 	return result
 }
 
-func (a *AlignErrorCalc) generateBookChapterFilenameMap() (string, dataset.Status) {
+func (a *AlignSilence) generateBookChapterFilenameMap() (string, dataset.Status) {
 	chapters, status := a.conn.SelectBookChapterFilename()
 	if status.IsErr {
 		return "", status
@@ -204,7 +204,7 @@ func (a *AlignErrorCalc) generateBookChapterFilenameMap() (string, dataset.Statu
 	return strings.Join(result, ""), status
 }
 
-func (a *AlignErrorCalc) countErrors(lines []generic.AlignLine) {
+func (a *AlignSilence) countErrors(lines []generic.AlignLine) {
 	var total int
 	var critScoreError int
 	var questScoreError int

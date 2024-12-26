@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func (a *AlignErrorCalc) compareLines2ASR(lines []generic.AlignLine, asrConn db.DBAdapter) ([]generic.AlignLine, dataset.Status) {
+func (a *AlignSilence) compareLines2ASR(lines []generic.AlignLine, asrConn db.DBAdapter) ([]generic.AlignLine, dataset.Status) {
 	var result []generic.AlignLine
 	var status dataset.Status
 	for _, line := range lines {
@@ -66,7 +66,7 @@ func (a *AlignErrorCalc) compareLines2ASR(lines []generic.AlignLine, asrConn db.
 	return result, status
 }
 
-func (a *AlignErrorCalc) InsertSpaces(chars []generic.AlignChar) []generic.AlignChar {
+func (a *AlignSilence) InsertSpaces(chars []generic.AlignChar) []generic.AlignChar {
 	var result []generic.AlignChar
 	for i, char := range chars {
 		if i > 0 && char.CharSeq == 0 {
@@ -85,7 +85,7 @@ func (a *AlignErrorCalc) InsertSpaces(chars []generic.AlignChar) []generic.Align
 	return result
 }
 
-func (a *AlignErrorCalc) FindSilencePos(chars []generic.AlignChar) []int {
+func (a *AlignSilence) FindSilencePos(chars []generic.AlignChar) []int {
 	var silencePos []int
 	for i, char := range chars {
 		if char.SilenceLong > 0 {
@@ -95,7 +95,7 @@ func (a *AlignErrorCalc) FindSilencePos(chars []generic.AlignChar) []int {
 	return silencePos
 }
 
-func (a *AlignErrorCalc) GetOriginalText(chars []generic.AlignChar) (string, string) {
+func (a *AlignSilence) GetOriginalText(chars []generic.AlignChar) (string, string) {
 	var alNorm []rune
 	var alUroman []rune
 	for _, char := range chars {
@@ -112,7 +112,7 @@ type CDiff struct {
 	Char rune
 }
 
-func (a *AlignErrorCalc) DiffMatchPatch(lineRef string, text string, asrText string) []CDiff {
+func (a *AlignSilence) DiffMatchPatch(lineRef string, text string, asrText string) []CDiff {
 	var result []CDiff
 	diffMatch := diffmatchpatch.New()
 	text = strings.TrimSpace(text)
@@ -134,7 +134,7 @@ func (a *AlignErrorCalc) DiffMatchPatch(lineRef string, text string, asrText str
 	return result
 }
 
-func (a *AlignErrorCalc) FindPositionInDiff(cDiffs []CDiff, charPos int) int {
+func (a *AlignSilence) FindPositionInDiff(cDiffs []CDiff, charPos int) int {
 	var diffPos = -1
 	for i, ch := range cDiffs {
 		if ch.Type != diffmatchpatch.DiffInsert {
