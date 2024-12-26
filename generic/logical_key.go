@@ -12,8 +12,8 @@ import (
 // for the Bible to use a Bible reference and be certain it has a consistent meaning.
 
 type LogicalKey interface {
+	IsLogicalKey()
 	ComposeKey() string
-	ParseKey(key string) LogicalKey
 }
 
 type LineRef struct {
@@ -23,6 +23,8 @@ type LineRef struct {
 	ChapterEnd int
 	VerseEnd   string
 }
+
+func (r LineRef) IsLogicalKey() {}
 
 func (r LineRef) ComposeKey() string {
 	var result string
@@ -41,7 +43,8 @@ func (r LineRef) ComposeKey() string {
 	return result
 }
 
-func (r LineRef) ParseKey(key string) LogicalKey {
+func NewLineRef(key string) LineRef {
+	var r LineRef
 	parts := strings.Split(key, ` `)
 	r.BookId = parts[0]
 	if len(parts) > 1 {
@@ -75,5 +78,6 @@ type Publish struct {
 	sequence   int
 }
 
-func (p Publish) ComposeKey() string             { return "" }
-func (p Publish) ParseKey(key string) LogicalKey { return p }
+func (p Publish) IsLogicalKey()      {}
+func (p Publish) ComposeKey() string { return "" }
+func NewPublish(key string) Publish  { return Publish{} }

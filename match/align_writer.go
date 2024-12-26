@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 )
 
 type AlignWriter struct {
@@ -97,7 +98,7 @@ func (a *AlignWriter) WriteLine(chars []generic.AlignChar) {
 		} else if chars[i].FAScore <= questionThreshold {
 			chars[i].ScoreError = int(scoreQuestion)
 		}
-		if char.IsASR {
+		if char.IsASR && !unicode.IsSpace(char.CharNorm) {
 			asrChars++
 		}
 	}
@@ -107,36 +108,27 @@ func (a *AlignWriter) WriteLine(chars []generic.AlignChar) {
 	_, _ = a.out.WriteString("<tr>\n")
 	a.writeCell(strconv.Itoa(a.lineNum))
 	a.writeCell(strconv.FormatFloat(logTotal, 'f', 2, 64))
-	//a.writeCell(strings.Join(errors, "<br>"))
-	//a.writeCell(strconv.FormatFloat(maxSilence*12.0, 'f', 0, 64))
 	a.writeCell(strconv.FormatInt(int64(asrChars), 10))
 	a.writeCell(a.minSecFormat(firstChar.BeginTS))
-	var lineRef generic.LineRef
-	ref := lineRef.ParseKey(firstChar.LineRef).(generic.LineRef)
+	ref := generic.NewLineRef(firstChar.LineRef)
 	var params []string
 	params = append(params, "'"+ref.BookId+"'")
 	params = append(params, strconv.Itoa(ref.ChapterNum))
 	params = append(params, strconv.FormatFloat(firstChar.BeginTS, 'f', 4, 64))
 	params = append(params, strconv.FormatFloat(lastChar.EndTS, 'f', 4, 64))
 	a.writeCell("<button onclick=\"playVerse(" + strings.Join(params, ",") + ")\">Play</button>")
-	//a.writeCell(firstChar.BookId + ` ` + strconv.Itoa(firstChar.ChapterNum) + `:` + firstChar.VerseStr)
 	a.writeCell(firstChar.LineRef)
 	var text []string
 	for _, ch := range chars {
 		char := string(ch.CharNorm)
-		if ch.SilenceLong != 0 {
-			char += `<sub>` + strconv.Itoa(ch.SilencePos) + `</sub>`
-		}
-		if ch.CharSeq == 0 {
-			text = append(text, " ")
-		}
 		if ch.ScoreError == int(scoreCritical) {
 			text = append(text, `<span class="red-box">`+char+`</span>`)
 		} else if ch.ScoreError == int(scoreQuestion) {
 			text = append(text, `<span class="yellow-box">`+char+`</span>`)
 		} else if ch.SilenceLong > 0 {
+			char += `<sub>` + strconv.Itoa(ch.SilencePos) + `</sub>`
 			text = append(text, `<span class="green-box">`+char+`</span>`)
-		} else if ch.IsASR {
+		} else if ch.IsASR && !unicode.IsSpace(ch.CharNorm) {
 			text = append(text, `<span class="blue-box">`+char+`</span>`)
 		} else {
 			text = append(text, char)

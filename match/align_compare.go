@@ -13,10 +13,12 @@ func (a *AlignErrorCalc) compareLines2ASR(lines []generic.AlignLine, asrConn db.
 	var result []generic.AlignLine
 	var status dataset.Status
 	for _, line := range lines {
+		line.Chars = a.InsertSpaces(line.Chars)
 		var silencePos = a.FindSilencePos(line.Chars)
 		if len(silencePos) == 0 {
 			result = append(result, line)
 		} else {
+			//result = append(result, line) // Duplicate line for debugging
 			var newLine generic.AlignLine
 			lineRef := line.Chars[0].LineRef
 			var asrText string
@@ -27,18 +29,14 @@ func (a *AlignErrorCalc) compareLines2ASR(lines []generic.AlignLine, asrConn db.
 			alignNorm, alignUroman := a.GetOriginalText(line.Chars)
 			fmt.Println(len(alignUroman))
 			cDiffs := a.DiffMatchPatch(lineRef, alignNorm, asrText)
-			if len(cDiffs) == 0 {
-				continue
-			}
 			for _, silPos := range silencePos {
-				diffPos := a.FindPositionInDiff(cDiffs, silPos)
-				//for _, ch := range line.Chars {
-				for i := 0; i < silPos; i++ {
+				for i := 0; i <= silPos; i++ {
+					// This is a bug, it should start from where it left off not zero
 					newLine.Chars = append(newLine.Chars, line.Chars[i])
 				}
 				curr := line.Chars[silPos]
+				diffPos := a.FindPositionInDiff(cDiffs, silPos)
 				fmt.Println(silPos, string(alignNorm[silPos]), string(cDiffs[diffPos].Char))
-				// Add every insert character after this
 				for i := diffPos + 1; i < len(cDiffs); i++ {
 					if cDiffs[i].Type == diffmatchpatch.DiffInsert {
 						fmt.Println("add char ASR char", string(cDiffs[i].Char))
@@ -46,20 +44,20 @@ func (a *AlignErrorCalc) compareLines2ASR(lines []generic.AlignLine, asrConn db.
 						newChar.AudioFile = curr.AudioFile
 						newChar.LineId = curr.LineId
 						newChar.LineRef = curr.LineRef
-						//newChar.WordId = ch.WordId // might not be correct
 						newChar.CharNorm = cDiffs[i].Char
 						//newChar.CharUroman =
-						//newChar.BeginTS = beginTS
-						//newChar.EndTS = endTS // It a number of chars are found they have the same TS
-						//newChar.FAScore = 1.0
+						newChar.BeginTS = curr.EndTS
+						newChar.EndTS = curr.EndTS + curr.Silence
+						newChar.FAScore = 1.0
 						newChar.IsASR = true
 						newLine.Chars = append(newLine.Chars, newChar)
 					} else {
 						break
 					}
 				}
+				//result = append(result, newLine)
 			}
-			for i := silencePos[len(silencePos)-1]; i < len(newLine.Chars); i++ {
+			for i := silencePos[len(silencePos)-1] + 1; i < len(line.Chars); i++ {
 				newLine.Chars = append(newLine.Chars, line.Chars[i])
 			}
 			result = append(result, newLine)
@@ -68,17 +66,30 @@ func (a *AlignErrorCalc) compareLines2ASR(lines []generic.AlignLine, asrConn db.
 	return result, status
 }
 
-func (a *AlignErrorCalc) FindSilencePos(chars []generic.AlignChar) []int {
-	var silencePos []int
-	var pos = -1
+func (a *AlignErrorCalc) InsertSpaces(chars []generic.AlignChar) []generic.AlignChar {
+	var result []generic.AlignChar
 	for i, char := range chars {
 		if i > 0 && char.CharSeq == 0 {
-			pos += 2
-		} else {
-			pos += 1
+			var newChar generic.AlignChar
+			newChar.AudioFile = char.AudioFile
+			newChar.LineId = char.LineId
+			newChar.LineRef = char.LineRef
+			newChar.CharNorm = ' '
+			newChar.CharUroman = ' '
+			newChar.FAScore = 1.0
+			result = append(result, newChar)
 		}
+		result = append(result, char)
+
+	}
+	return result
+}
+
+func (a *AlignErrorCalc) FindSilencePos(chars []generic.AlignChar) []int {
+	var silencePos []int
+	for i, char := range chars {
 		if char.SilenceLong > 0 {
-			silencePos = append(silencePos, pos)
+			silencePos = append(silencePos, i)
 		}
 	}
 	return silencePos
@@ -87,11 +98,7 @@ func (a *AlignErrorCalc) FindSilencePos(chars []generic.AlignChar) []int {
 func (a *AlignErrorCalc) GetOriginalText(chars []generic.AlignChar) (string, string) {
 	var alNorm []rune
 	var alUroman []rune
-	for i, char := range chars {
-		if i > 0 && char.CharSeq == 0 {
-			alNorm = append(alNorm, ' ')
-			alUroman = append(alUroman, ' ')
-		}
+	for _, char := range chars {
 		alNorm = append(alNorm, char.CharNorm)
 		alUroman = append(alUroman, char.CharUroman)
 	}
@@ -112,9 +119,6 @@ func (a *AlignErrorCalc) DiffMatchPatch(lineRef string, text string, asrText str
 	asrText = strings.TrimSpace(asrText)
 	diffs := diffMatch.DiffMain(text, asrText, false)
 	diffs = diffMatch.DiffCleanupSemantic(diffs)
-	if len(diffs) == 1 && diffs[0].Type == diffmatchpatch.DiffEqual {
-		return result
-	}
 	fmt.Println(lineRef, asrText)
 	fmt.Println(lineRef, text)
 	fmt.Println(lineRef, diffMatch.DiffPrettyText(diffs))

@@ -99,7 +99,10 @@ func (a *AlignErrorCalc) Process(audioDirectory string) ([]generic.AlignLine, st
 	var chapLimit = 4.0
 	a.markSilenceOutliers(faChars, charLimit, wordLimit, verseLimit, chapLimit)
 	faLines = a.groupByLine(faChars)
-	a.compareLines2ASR(faLines, a.asrConn)
+	faLines, status = a.compareLines2ASR(faLines, a.asrConn)
+	if status.IsErr {
+		return faLines, "", status
+	}
 	filenameMap, status := a.generateBookChapterFilenameMap()
 	return faLines, filenameMap, status
 }
