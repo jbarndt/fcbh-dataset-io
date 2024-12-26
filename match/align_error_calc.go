@@ -16,7 +16,7 @@ import (
 const (
 	criticalThreshold = 0.0001 // 0.001
 	questionThreshold = 0.01   // 0.01
-	silenceStdevs     = 4.0    // intended to make it rare
+	//silenceStdevs     = 4.0    // intended to make it rare
 )
 
 type ErrorType int
@@ -99,7 +99,7 @@ func (a *AlignErrorCalc) Process(audioDirectory string) ([]generic.AlignLine, st
 	var chapLimit = 4.0
 	a.markSilenceOutliers(faChars, charLimit, wordLimit, verseLimit, chapLimit)
 	faLines = a.groupByLine(faChars)
-	//a.compareLines2ASR(faLines, a.asrConn)
+	a.compareLines2ASR(faLines, a.asrConn)
 	filenameMap, status := a.generateBookChapterFilenameMap()
 	return faLines, filenameMap, status
 }
@@ -107,7 +107,7 @@ func (a *AlignErrorCalc) Process(audioDirectory string) ([]generic.AlignLine, st
 func (a *AlignErrorCalc) getDurations(chars []generic.AlignChar) []float64 {
 	var data []float64
 	for _, ch := range chars {
-		data = append(data, float64(ch.Duration))
+		data = append(data, ch.Duration)
 	}
 	return data
 }
@@ -117,7 +117,7 @@ func (a *AlignErrorCalc) getSilence(chars []generic.AlignChar, pos SilencePositi
 	posInt := int(pos)
 	for _, ch := range chars {
 		if ch.SilencePos == posInt {
-			data = append(data, float64(ch.Silence))
+			data = append(data, ch.Silence)
 		}
 	}
 	return data
@@ -169,7 +169,7 @@ func (a *AlignErrorCalc) groupByLine(chars []generic.AlignChar) []generic.AlignL
 	currRef := chars[0].LineRef
 	start := 0
 	for i, ch := range chars {
-		if ch.LineRef != currRef { // compare on line ref makes verse a unique key
+		if ch.LineRef != currRef { // compare on lineRef makes verse a unique key
 			currRef = ch.LineRef
 			oneLine := make([]generic.AlignChar, i-start)
 			copy(oneLine, chars[start:i])

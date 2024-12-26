@@ -134,6 +134,8 @@ func (a *AlignWriter) WriteLine(chars []generic.AlignChar) {
 			text = append(text, `<span class="red-box">`+char+`</span>`)
 		} else if ch.ScoreError == int(scoreQuestion) {
 			text = append(text, `<span class="yellow-box">`+char+`</span>`)
+		} else if ch.SilenceLong > 0 {
+			text = append(text, `<span class="green-box">`+char+`</span>`)
 		} else if ch.IsASR {
 			text = append(text, `<span class="blue-box">`+char+`</span>`)
 		} else {
@@ -208,6 +210,10 @@ func (a *AlignWriter) WriteEnd(filenameMap string) {
 	}
 	.blue-box {
 		background-color: rgba(0, 0, 255, 0.4);
+		padding: 1px 0;
+	}
+	.green-box {
+		background-color: rgba(0, 255, 0, 0.4);
 		padding: 1px 0;
 	}
 	/*.blank-box {
