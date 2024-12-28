@@ -29,10 +29,11 @@ func (a *AlignSilence) compareLines2ASR(lines []generic.AlignLine, asrConn db.DB
 			alignNorm, alignUroman := a.GetOriginalText(line.Chars)
 			fmt.Println(len(alignUroman))
 			cDiffs := a.DiffMatchPatch(lineRef, alignNorm, asrText)
+			var silStart = 0
 			for _, silPos := range silencePos {
-				for i := 0; i <= silPos; i++ {
-					// This is a bug, it should start from where it left off not zero
+				for i := silStart; i <= silPos; i++ {
 					newLine.Chars = append(newLine.Chars, line.Chars[i])
+					silStart = i + 1
 				}
 				curr := line.Chars[silPos]
 				diffPos := a.FindPositionInDiff(cDiffs, silPos)

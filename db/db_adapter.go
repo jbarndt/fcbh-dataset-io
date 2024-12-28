@@ -13,7 +13,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"unicode"
 )
 
 // GetDBPath is not correct with user/project database names
@@ -619,7 +618,7 @@ func (d *DBAdapter) SelectIdent() (Ident, dataset.Status) {
 	return results, status
 }
 
-// SelectLine selects by book, chapter, verseStr, and combines to one line of text
+// SelectLine selects by book, chapter, verseStr, and returns one line of script text
 func (d *DBAdapter) SelectLine(lineRef string) (string, dataset.Status) {
 	var result string
 	var status dataset.Status
@@ -631,26 +630,18 @@ func (d *DBAdapter) SelectLine(lineRef string) (string, dataset.Status) {
 		return result, status
 	}
 	defer d.closeDef(rows, `SelectLine`)
-	for rows.Next() {
-		var text string
-		err = rows.Scan(&text)
+	if rows.Next() {
+		err = rows.Scan(&result)
 		if err != nil {
 			status = log.Error(d.Ctx, 500, err, `Error scanning in SelectLine`)
 			return result, status
-		}
-		if len(text) > 0 {
-			if len(result) == 0 || unicode.IsSpace(rune(result[len(result)-1])) || unicode.IsSpace(rune(text[0])) {
-				result += text
-			} else {
-				result += " " + text
-			}
 		}
 	}
 	err = rows.Err()
 	if err != nil {
 		status = log.Error(d.Ctx, 500, err, `Error at end of rows in SelectLine`)
 	}
-	result = strings.ReplaceAll(result, "\n", " ")
+	//result = strings.ReplaceAll(result, "\n", " ")
 	return result, status
 }
 
