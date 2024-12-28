@@ -57,8 +57,8 @@ func SafeStringJoin(texts []string) string {
 	var lastIsAlpha = false
 	for _, txt := range texts {
 		sc := []rune(txt)
-		firstChar := sc[0]
-		if lastIsAlpha && !unicode.IsSpace(firstChar) {
+		beginSpace := unicode.IsSpace(sc[0])
+		if lastIsAlpha && !beginSpace {
 			result = append(result, ' ')
 		}
 		result = append(result, sc...)
