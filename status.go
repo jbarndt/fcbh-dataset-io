@@ -53,17 +53,32 @@ func SafeStringJoin(texts []string) string {
 	if len(texts) == 1 {
 		return texts[0]
 	}
+	var openPunctMap = map[rune]bool{'(': true,
+		'\u2018': true, // opening single quote mark
+		'\u201C': true, // opening double quote
+		'\u2039': true, // something like <
+		'\u00AB': true, // something like <<
+	}
+	var endPunctMap = map[rune]bool{'?': true, '.': true, ',': true, ':': true, ';': true, ')': true,
+		'\u2019': true, // closing single quote mark
+		'\u201D': true, // closing double quote
+		'\u201E': true, // closing low double quote
+		'\u203A': true, // something like >
+		'\u00BB': true, // something like >>
+	}
 	var result []rune
 	var lastIsAlpha = false
 	for _, txt := range texts {
 		sc := []rune(txt)
-		beginSpace := unicode.IsSpace(sc[0])
+		_, isEndPunct := endPunctMap[sc[0]]
+		beginSpace := unicode.IsSpace(sc[0]) || isEndPunct
 		if lastIsAlpha && !beginSpace {
 			result = append(result, ' ')
 		}
 		result = append(result, sc...)
 		lastChar := sc[len(sc)-1]
-		lastIsAlpha = !unicode.IsSpace(lastChar)
+		_, isOpenPunct := openPunctMap[lastChar]
+		lastIsAlpha = !(unicode.IsSpace(lastChar) || isOpenPunct)
 	}
 	return string(result)
 }

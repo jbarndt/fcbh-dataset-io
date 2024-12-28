@@ -78,8 +78,12 @@ func DifferenceTest(database1 string, database2 string) int {
 		plainTxt := rec.ScriptText
 		re := regexp.MustCompile(`\n\s+`)
 		plainTxt = re.ReplaceAllString(plainTxt, " ")
+		usxTxt = strings.ReplaceAll(usxTxt, "  ", " ")
+		plainTxt = strings.ReplaceAll(plainTxt, "   ", " ")
+		plainTxt = strings.ReplaceAll(plainTxt, "  ", " ")
 		diffs := diffMatch.DiffMain(usxTxt, plainTxt, false)
 		diffs = diffMatch.DiffCleanupMerge(diffs)
+		//diffs = removeWhitespaceErrors(diffs)
 		if len(diffs) > 1 || len(diffs) > 0 && diffs[0].Type != diffmatchpatch.DiffEqual {
 			diffCount++
 			fmt.Println(lineRef, "usxTxt", usxTxt)
@@ -91,4 +95,22 @@ func DifferenceTest(database1 string, database2 string) int {
 	}
 	fmt.Println("DiffCount", diffCount)
 	return diffCount
+}
+
+func removeWhitespaceErrors(diffs []diffmatchpatch.Diff) []diffmatchpatch.Diff {
+	var cleanDiffs []diffmatchpatch.Diff
+	unEqualCount := 0
+	for _, d := range diffs {
+		if d.Type == diffmatchpatch.DiffEqual {
+			cleanDiffs = append(cleanDiffs, d)
+		} else if len(strings.TrimSpace(d.Text)) > 0 {
+			cleanDiffs = append(cleanDiffs, d)
+			unEqualCount++
+		}
+	}
+	if unEqualCount > 0 {
+		return cleanDiffs
+	} else {
+		return []diffmatchpatch.Diff{}
+	}
 }
