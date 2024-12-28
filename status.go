@@ -3,6 +3,7 @@ package dataset
 import (
 	"strconv"
 	"strings"
+	"unicode"
 )
 
 type Status struct {
@@ -30,6 +31,7 @@ func (e *Status) String() string {
 	return strings.Join(result, ",")
 }
 
+// SafeVerseNum returns a numeric value for a string by ignoring alpha characters without error
 func SafeVerseNum(number string) int {
 	var result []rune
 	for _, chr := range number {
@@ -41,4 +43,27 @@ func SafeVerseNum(number string) int {
 	}
 	num, _ := strconv.Atoi(string(result))
 	return num
+}
+
+// SafeStringJoin preserve existing whitespace, while ensuring that strings are joined with whitespace between
+func SafeStringJoin(texts []string) string {
+	if len(texts) == 0 {
+		return ""
+	}
+	if len(texts) == 1 {
+		return texts[0]
+	}
+	var result []rune
+	var lastIsAlpha = false
+	for _, txt := range texts {
+		sc := []rune(txt)
+		firstChar := sc[0]
+		if lastIsAlpha && !unicode.IsSpace(firstChar) {
+			result = append(result, ' ')
+		}
+		result = append(result, sc...)
+		lastChar := sc[len(sc)-1]
+		lastIsAlpha = !unicode.IsSpace(lastChar)
+	}
+	return string(result)
 }

@@ -26,7 +26,7 @@ func TestUSXParser(t *testing.T) {
 	parser := NewUSXParser(conn)
 	status = parser.ProcessFiles(files)
 	if status.IsErr {
-		t.Error(status.Message)
+		t.Fatal(status)
 	}
 	count, stat2 := conn.CountScriptRows()
 	if stat2.IsErr {

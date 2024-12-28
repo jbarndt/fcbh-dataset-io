@@ -31,7 +31,7 @@ type SqliteTest struct {
 }
 
 // CLISqlTest requires a sqlite database as output to perform tests on the result
-func DirectSqlTest(request string, tests []SqliteTest, t *testing.T) {
+func DirectSqlTest(request string, tests []SqliteTest, t *testing.T) string {
 	database, status := controller.CLIProcessEntry([]byte(request))
 	if status.IsErr {
 		t.Fatal(status)
@@ -49,6 +49,7 @@ func DirectSqlTest(request string, tests []SqliteTest, t *testing.T) {
 			t.Error("Count was " + strconv.Itoa(count) + ", expected " + strconv.Itoa(tst.Count) + " ON: " + tst.Query)
 		}
 	}
+	return database
 }
 
 func SelectScalarInt(conn *sql.DB, sql string, t *testing.T) int {

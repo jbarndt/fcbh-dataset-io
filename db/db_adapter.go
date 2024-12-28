@@ -145,14 +145,14 @@ func createDatabase(db *sql.DB) {
 		book_id TEXT NOT NULL,
 		chapter_num INTEGER NOT NULL,
 		chapter_end INTEGER NOT NULL,
+		verse_str TEXT NOT NULL, /* e.g. 6-10 7,8 6a */
+		verse_end TEXT NOT NULL,
+		verse_num INTEGER NOT NULL,
 		audio_file TEXT NOT NULL, 
 		script_num TEXT NOT NULL,
 		usfm_style TEXT NOT NULL DEFAULT '',
 		person TEXT NOT NULL DEFAULT '',
-		actor TEXT NOT NULL DEFAULT '',  
-		verse_num INTEGER NOT NULL,
-		verse_str TEXT NOT NULL, /* e.g. 6-10 7,8 6a */
-		verse_end TEXT NOT NULL,
+		actor TEXT NOT NULL DEFAULT '',
 		script_text TEXT NOT NULL,
 		uroman TEXT NOT NULL DEFAULT '',
 		script_begin_ts REAL NOT NULL DEFAULT 0.0,
@@ -161,7 +161,7 @@ func createDatabase(db *sql.DB) {
 		FOREIGN KEY(dataset_id) REFERENCES ident(dataset_id)) STRICT`
 	execDDL(db, query)
 	query = `CREATE UNIQUE INDEX IF NOT EXISTS scripts_idx
-		ON scripts (book_id, chapter_num, script_num)`
+		ON scripts (book_id, chapter_num, verse_str)`
 	execDDL(db, query)
 	query = `CREATE INDEX IF NOT EXISTS scripts_file_idx ON scripts (audio_file)`
 	execDDL(db, query)
@@ -453,8 +453,33 @@ func (d *DBAdapter) insertMFCCS(query string, mfccs []MFCC) dataset.Status {
 	return status
 }
 
+func (d *DBAdapter) CheckScriptInserts(records []Script) dataset.Status {
+	var status dataset.Status
+	var duplicates []string
+	var keyMap = make(map[generic.LineRef]bool)
+	for _, rec := range records {
+		var key generic.LineRef
+		key.BookId = rec.BookId
+		key.ChapterNum = rec.ChapterNum
+		key.VerseStr = rec.VerseStr
+		_, found := keyMap[key]
+		if found {
+			duplicates = append(duplicates, key.ComposeKey())
+		}
+		keyMap[key] = true
+	}
+	if len(duplicates) > 0 {
+		status = log.ErrorNoErr(d.Ctx, 500, "Duplicate Keys:", strings.Join(duplicates, "\n"))
+	}
+	return status
+}
+
 func (d *DBAdapter) InsertScripts(records []Script) dataset.Status {
 	var status dataset.Status
+	status = d.CheckScriptInserts(records)
+	if status.IsErr {
+		return status
+	}
 	query := `INSERT INTO scripts(dataset_id, book_id, chapter_num, chapter_end, audio_file, script_num, usfm_style, 
 			person, actor, verse_num, verse_str, verse_end, script_text, script_begin_ts, script_end_ts) 
 			VALUES (1,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
@@ -462,7 +487,7 @@ func (d *DBAdapter) InsertScripts(records []Script) dataset.Status {
 	defer d.closeDef(stmt, "InsertScripts stmt")
 	for _, rec := range records {
 		rec.ScriptNum = zeroFill(rec.ScriptNum, 5)
-		text := strings.Join(rec.ScriptTexts, ``)
+		text := dataset.SafeStringJoin(rec.ScriptTexts)
 		_, err := stmt.Exec(rec.BookId, rec.ChapterNum, rec.ChapterEnd, rec.AudioFile, rec.ScriptNum,
 			rec.UsfmStyle, rec.Person, rec.Actor, rec.VerseNum, rec.VerseStr, rec.VerseEnd, text,
 			rec.ScriptBeginTS, rec.ScriptEndTS)

@@ -28,14 +28,14 @@ type Script struct {
 	BookId        string
 	ChapterNum    int
 	ChapterEnd    int
+	VerseStr      string
+	VerseEnd      string
+	VerseNum      int
 	AudioFile     string
 	ScriptNum     string
 	UsfmStyle     string
 	Person        string
 	Actor         string
-	VerseNum      int
-	VerseStr      string
-	VerseEnd      string
 	ScriptText    string
 	ScriptTexts   []string
 	ScriptBeginTS float64
