@@ -102,6 +102,9 @@ func (a *AlignWriter) WriteLine(chars []generic.AlignChar) {
 			asrChars++
 		}
 	}
+	if logTotal == 0.0 && asrChars == 0 {
+		return
+	}
 	var firstChar = chars[0]
 	var lastChar = chars[len(chars)-1]
 	a.lineNum++

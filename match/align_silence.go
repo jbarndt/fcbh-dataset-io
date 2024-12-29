@@ -87,16 +87,16 @@ func (a *AlignSilence) Process(audioDirectory string) ([]generic.AlignLine, stri
 	fmt.Println("Char Widths:", mean, stddev, mini, maxi)
 	mean, stddev, mini, maxi = a.analyzeData(a.getSilence(faChars, betweenChars))
 	fmt.Println("Between Chars:", mean, stddev, mini, maxi)
-	var charLimit = 1.0
+	var charLimit = mean + (4.0 * stddev)
 	mean, stddev, mini, maxi = a.analyzeData(a.getSilence(faChars, betweenWords))
 	fmt.Println("Between Words:", mean, stddev, mini, maxi)
-	var wordLimit = 1.8
+	var wordLimit = mean + (4.0 * stddev)
 	mean, stddev, mini, maxi = a.analyzeData(a.getSilence(faChars, betweenVerses))
 	fmt.Println("Between Verses:", mean, stddev, mini, maxi)
-	var verseLimit = 2.8
+	var verseLimit = mean + (4.0 * stddev)
 	mean, stddev, mini, maxi = a.analyzeData(a.getSilence(faChars, betweenChapters))
 	fmt.Println("Between Chapters:", mean, stddev, mini, maxi)
-	var chapLimit = 4.0
+	var chapLimit = mean + (3.0 * stddev)
 	a.markSilenceOutliers(faChars, charLimit, wordLimit, verseLimit, chapLimit)
 	faLines = a.groupByLine(faChars)
 	faLines, status = a.compareLines2ASR(faLines, a.asrConn)
@@ -104,6 +104,7 @@ func (a *AlignSilence) Process(audioDirectory string) ([]generic.AlignLine, stri
 		return faLines, "", status
 	}
 	filenameMap, status := a.generateBookChapterFilenameMap()
+	a.countErrors(faLines)
 	return faLines, filenameMap, status
 }
 
