@@ -52,13 +52,13 @@ func (a *AlignWriter) WriteHeading() {
 <html>
  <head>
   <meta charset="utf-8">
-  <title>Alignment Error Report</title>
+  <title>Audio Proofing Report</title>
 `
 	_, _ = a.out.WriteString(head)
 	_, _ = a.out.WriteString(`<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.css">`)
 	_, _ = a.out.WriteString("</head><body>\n")
-	_, _ = a.out.WriteString("<audio id='validateAudio' controls></audio>\n")
-	_, _ = a.out.WriteString(`<h2 style="text-align:center">Audio to Text Alignment Report For `)
+	_, _ = a.out.WriteString("<audio id='validateAudio'></audio>\n")
+	_, _ = a.out.WriteString(`<h2 style="text-align:center">Audio to Text Proofing Report For `)
 	_, _ = a.out.WriteString(a.datasetName)
 	_, _ = a.out.WriteString("</h2>\n")
 	_, _ = a.out.WriteString(`<h3 style="text-align:center">`)
@@ -70,12 +70,16 @@ func (a *AlignWriter) WriteHeading() {
 	</div>
 `
 	_, _ = a.out.WriteString(checkbox)
+	directoryInput := `<div style="text-align: center; margin: 10px;">
+		<label for="directory">Directory of Audio Files: </label><input type="text" id="directory" size="100" value="./">
+	</div>`
+
+	_, _ = a.out.WriteString(directoryInput)
 	table := `<table id="diffTable" class="display">
     <thead>
     <tr>
         <th>Line</th>
-        <th>Critical<br>Error</th>
-		<th>Silence<br>Long</th>
+        <th>Score</th>
 		<th>Start<br>TS</th>
 		<th>Button</th>
         <th>Ref</th>
@@ -90,11 +94,13 @@ func (a *AlignWriter) WriteHeading() {
 func (a *AlignWriter) WriteLine(chars []generic.AlignChar) {
 	var logTotal float64
 	var asrChars int
+	var logMap = make(map[int64][]float64)
+	var countMap = a.countCharsInWords(chars)
 	for i, char := range chars {
 		if chars[i].FAScore <= criticalThreshold {
 			chars[i].ScoreError = int(scoreCritical)
 			logScore := -math.Log10(chars[i].FAScore)
-			logTotal += logScore
+			logMap[char.WordId] = append(logMap[char.WordId], logScore)
 		} else if chars[i].FAScore <= questionThreshold {
 			chars[i].ScoreError = int(scoreQuestion)
 		}
@@ -102,7 +108,9 @@ func (a *AlignWriter) WriteLine(chars []generic.AlignChar) {
 			asrChars++
 		}
 	}
-	if logTotal == 0.0 && asrChars == 0 {
+	logTotal = a.findHighestScore(logMap, countMap)
+	logTotal += float64(asrChars) * 5.0
+	if logTotal == 0.0 {
 		return
 	}
 	var firstChar = chars[0]
@@ -111,7 +119,7 @@ func (a *AlignWriter) WriteLine(chars []generic.AlignChar) {
 	_, _ = a.out.WriteString("<tr>\n")
 	a.writeCell(strconv.Itoa(a.lineNum))
 	a.writeCell(strconv.FormatFloat(logTotal, 'f', 2, 64))
-	a.writeCell(strconv.FormatInt(int64(asrChars), 10))
+	//a.writeCell(strconv.FormatInt(int64(asrChars), 10))
 	a.writeCell(a.minSecFormat(firstChar.BeginTS))
 	ref := generic.NewLineRef(firstChar.LineRef)
 	var params []string
@@ -129,7 +137,7 @@ func (a *AlignWriter) WriteLine(chars []generic.AlignChar) {
 		} else if ch.ScoreError == int(scoreQuestion) {
 			text = append(text, `<span class="yellow-box">`+char+`</span>`)
 		} else if ch.SilenceLong > 0 {
-			char += `<sub>` + strconv.Itoa(ch.SilencePos) + `</sub>`
+			//char += `<sub>` + strconv.Itoa(ch.SilencePos) + `</sub>`
 			text = append(text, `<span class="green-box">`+char+`</span>`)
 		} else if ch.IsASR && !unicode.IsSpace(ch.CharNorm) {
 			text = append(text, `<span class="blue-box">`+char+`</span>`)
@@ -139,6 +147,36 @@ func (a *AlignWriter) WriteLine(chars []generic.AlignChar) {
 	}
 	a.writeCell(strings.Join(text, ""))
 	_, _ = a.out.WriteString("</tr>\n")
+}
+
+func (a *AlignWriter) countCharsInWords(chars []generic.AlignChar) map[int64]int {
+	var results = make(map[int64]int)
+	for _, char := range chars {
+		if char.WordId > 0 {
+			results[char.WordId] += 1
+		}
+	}
+	return results
+}
+
+func (a *AlignWriter) findHighestScore(logMap map[int64][]float64, chars map[int64]int) float64 {
+	var maxLen = 0
+	var bestKey int64
+	for key, value := range logMap {
+		if len(value) > maxLen {
+			maxLen = len(value)
+			bestKey = key
+		}
+	}
+	var logTotal float64
+	values, _ := logMap[bestKey]
+	for _, value := range values {
+		logTotal += value
+	}
+	if len(values) >= chars[bestKey] {
+		logTotal *= 2.0
+	}
+	return logTotal
 }
 
 func (a *AlignWriter) createHighlightList(indexes []int, length int) []bool {
@@ -225,7 +263,7 @@ func (a *AlignWriter) WriteEnd(filenameMap string) {
     $(document).ready(function() {
         var table = $('#diffTable').DataTable({
             "columnDefs": [
-                { "orderable": false, "targets": [3,4,5,6] }
+                { "orderable": false, "targets": [2,3,4,5] }
 				// { "visible": false, "targets": [8] }  
             ],
             "pageLength": 50,
@@ -235,7 +273,7 @@ func (a *AlignWriter) WriteEnd(filenameMap string) {
     	$.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
         	var hideZeros = $('#hideVerse0').prop('checked');
         	if (!hideZeros) return true;
-        	return !data[5].endsWith(":0"); 
+        	return !data[4].endsWith(":0"); 
     	});
     	$('#hideVerse0').prop('checked', true);
     	table.draw();
@@ -248,11 +286,11 @@ func (a *AlignWriter) WriteEnd(filenameMap string) {
 	_, _ = a.out.WriteString(script)
 	_, _ = a.out.WriteString("\t" + filenameMap)
 	script = `filename = fileMap[book + chapter]
-		audioFile = './../../../../FCBH2024/download/ENGWEB/ENGWEBN2DA-mp3-64/' + filename
-		console.log("audioFile", audioFile);
+		let directory = document.getElementById("directory").value
+		audioFile = directory + '/' + filename;
 		const audio = document.getElementById('validateAudio');
 		audio.src = audioFile;
-		audio.controls = true;
+		audio.controls = false;
 		audio.playbackRate = 0.75;
 		audio.currentTime = startTime;
 		audio.play();

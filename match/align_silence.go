@@ -8,7 +8,6 @@ import (
 	"dataset/timestamp"
 	"fmt"
 	"gonum.org/v1/gonum/stat"
-	"math"
 	"strconv"
 	"strings"
 )
@@ -83,19 +82,19 @@ func (a *AlignSilence) Process(audioDirectory string) ([]generic.AlignLine, stri
 			faChars[i].Silence = duration - curr.EndTS
 		}
 	}
-	mean, stddev, mini, maxi := a.analyzeData(a.getDurations(faChars))
-	fmt.Println("Char Widths:", mean, stddev, mini, maxi)
-	mean, stddev, mini, maxi = a.analyzeData(a.getSilence(faChars, betweenChars))
-	fmt.Println("Between Chars:", mean, stddev, mini, maxi)
+	mean, stddev := a.analyzeData(a.getDurations(faChars))
+	//fmt.Println("Char Widths:", mean, stddev, mini, maxi)
+	mean, stddev = a.analyzeData(a.getSilence(faChars, betweenChars))
+	//fmt.Println("Between Chars:", mean, stddev, mini, maxi)
 	var charLimit = mean + (4.0 * stddev)
-	mean, stddev, mini, maxi = a.analyzeData(a.getSilence(faChars, betweenWords))
-	fmt.Println("Between Words:", mean, stddev, mini, maxi)
+	mean, stddev = a.analyzeData(a.getSilence(faChars, betweenWords))
+	//fmt.Println("Between Words:", mean, stddev, mini, maxi)
 	var wordLimit = mean + (4.0 * stddev)
-	mean, stddev, mini, maxi = a.analyzeData(a.getSilence(faChars, betweenVerses))
-	fmt.Println("Between Verses:", mean, stddev, mini, maxi)
+	mean, stddev = a.analyzeData(a.getSilence(faChars, betweenVerses))
+	//fmt.Println("Between Verses:", mean, stddev, mini, maxi)
 	var verseLimit = mean + (4.0 * stddev)
-	mean, stddev, mini, maxi = a.analyzeData(a.getSilence(faChars, betweenChapters))
-	fmt.Println("Between Chapters:", mean, stddev, mini, maxi)
+	mean, stddev = a.analyzeData(a.getSilence(faChars, betweenChapters))
+	//fmt.Println("Between Chapters:", mean, stddev, mini, maxi)
 	var chapLimit = mean + (3.0 * stddev)
 	a.markSilenceOutliers(faChars, charLimit, wordLimit, verseLimit, chapLimit)
 	faLines = a.groupByLine(faChars)
@@ -104,7 +103,7 @@ func (a *AlignSilence) Process(audioDirectory string) ([]generic.AlignLine, stri
 		return faLines, "", status
 	}
 	filenameMap, status := a.generateBookChapterFilenameMap()
-	a.countErrors(faLines)
+	//a.countErrors(faLines)
 	return faLines, filenameMap, status
 }
 
@@ -127,19 +126,13 @@ func (a *AlignSilence) getSilence(chars []generic.AlignChar, pos SilencePosition
 	return data
 }
 
-func (a *AlignSilence) analyzeData(data []float64) (mean, stddev, min, max float64) {
+func (a *AlignSilence) analyzeData(data []float64) (mean, stddev float64) {
 	if len(data) == 0 {
-		return 0.0, 0.0, 0.0, 0.0
+		return 0.0, 0.0
 	}
 	mean = stat.Mean(data, nil)
 	stddev = stat.StdDev(data, nil)
-	min = data[0]
-	max = data[0]
-	for _, v := range data[1:] {
-		min = math.Min(min, v)
-		max = math.Max(max, v)
-	}
-	return mean, stddev, min, max
+	return mean, stddev
 }
 
 func (a *AlignSilence) markSilenceOutliers(chars []generic.AlignChar, charLimit, wordLimit, verseLimit, chapLimit float64) { //, mean float64, stddev float64,

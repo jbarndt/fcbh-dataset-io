@@ -4,7 +4,6 @@ import (
 	"dataset"
 	"dataset/db"
 	"dataset/generic"
-	"fmt"
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"strings"
 )
@@ -26,8 +25,8 @@ func (a *AlignSilence) compareLines2ASR(lines []generic.AlignLine, asrConn db.DB
 			if status.IsErr {
 				return result, status
 			}
-			alignNorm, alignUroman := a.GetOriginalText(line.Chars)
-			fmt.Println(len(alignUroman))
+			alignNorm, _ := a.GetOriginalText(line.Chars) // returns alignNorm & alignUroman
+			//fmt.Println(len(alignUroman))
 			cDiffs := a.DiffMatchPatch(lineRef, alignNorm, asrText)
 			var silStart = 0
 			for _, silPos := range silencePos {
@@ -37,10 +36,10 @@ func (a *AlignSilence) compareLines2ASR(lines []generic.AlignLine, asrConn db.DB
 				}
 				curr := line.Chars[silPos]
 				diffPos := a.FindPositionInDiff(cDiffs, silPos)
-				fmt.Println(silPos, string(alignNorm[silPos]), string(cDiffs[diffPos].Char))
+				//fmt.Println(silPos, string(alignNorm[silPos]), string(cDiffs[diffPos].Char))
 				for i := diffPos + 1; i < len(cDiffs); i++ {
 					if cDiffs[i].Type == diffmatchpatch.DiffInsert {
-						fmt.Println("add char ASR char", string(cDiffs[i].Char))
+						//fmt.Println("add char ASR char", string(cDiffs[i].Char))
 						var newChar generic.AlignChar
 						newChar.AudioFile = curr.AudioFile
 						newChar.LineId = curr.LineId
@@ -120,10 +119,10 @@ func (a *AlignSilence) DiffMatchPatch(lineRef string, text string, asrText strin
 	asrText = strings.TrimSpace(asrText)
 	diffs := diffMatch.DiffMain(text, asrText, false)
 	diffs = diffMatch.DiffCleanupSemantic(diffs)
-	fmt.Println(lineRef, asrText)
-	fmt.Println(lineRef, text)
-	fmt.Println(lineRef, diffMatch.DiffPrettyText(diffs))
-	fmt.Println(diffs)
+	//fmt.Println(lineRef, asrText)
+	//fmt.Println(lineRef, text)
+	//fmt.Println(lineRef, diffMatch.DiffPrettyText(diffs))
+	//fmt.Println(diffs)
 	for _, df := range diffs {
 		for _, ch := range df.Text {
 			var cDiff CDiff
