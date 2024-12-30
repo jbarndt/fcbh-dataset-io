@@ -6,13 +6,15 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"os"
+	"path/filepath"
 	"strconv"
 )
 
 func (o *Output) JSONStatus(status dataset.Status, debug bool) (string, dataset.Status) {
 	var filename string
 	var errStatus dataset.Status
-	file, err := os.CreateTemp(os.Getenv(`FCBH_DATASET_TMP`), o.requestName+"_*.json")
+	file, err := os.Create(filepath.Join(os.Getenv(`FCBH_DATASET_TMP`), o.requestName+".json"))
+	//file, err := os.CreateTemp(os.Getenv(`FCBH_DATASET_TMP`), o.requestName+"_*.json")
 	if err != nil {
 		errStatus = log.Error(o.ctx, 500, err, status.Err)
 		return filename, errStatus
@@ -34,7 +36,8 @@ func (o *Output) JSONStatus(status dataset.Status, debug bool) (string, dataset.
 func (o *Output) CSVStatus(status dataset.Status, debug bool) (string, dataset.Status) {
 	var filename string
 	var errStatus dataset.Status
-	file, err := os.CreateTemp(os.Getenv(`FCBH_DATASET_TMP`), o.requestName+"_*.csv")
+	file, err := os.Create(filepath.Join(os.Getenv(`FCBH_DATASET_TMP`), o.requestName+".csv"))
+	//file, err := os.CreateTemp(os.Getenv(`FCBH_DATASET_TMP`), o.requestName+"_*.csv")
 	if err != nil {
 		errStatus = log.Error(o.ctx, 500, err, status.Err)
 		return filename, errStatus

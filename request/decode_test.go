@@ -81,6 +81,9 @@ audio_encoding:
 text_encoding:
   fast_text: yes
   no_encoding: yes
+audio_proof:
+  html_report: yes
+  base_dataset: UseProject1
 compare:
   base_dataset: UseProject1
   compare_settings:

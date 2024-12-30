@@ -57,7 +57,9 @@ func (b *RunBucket) AddDatabase(conn db.DBAdapter) {
 }
 
 func (b *RunBucket) AddOutput(outputPath string) {
-	b.outputs = append(b.outputs, outputPath)
+	if len(outputPath) > 0 {
+		b.outputs = append(b.outputs, outputPath)
+	}
 }
 
 func (b *RunBucket) PersistToBucket() dataset.Status {

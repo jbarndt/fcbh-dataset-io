@@ -77,6 +77,10 @@ text_encoding:
   no_encoding:
 # Default: no_encoding
 
+audio_proof:
+  html_report: # Mark yes to receive proof report
+  base_dataset: # Use only when is_new: false to identify the USX dataset, the dataset_name must be the ASR dataset
+
 compare: # To do a compare, put the names of the two projects here
   base_dataset:  # Name of dataset to compare to this one
 ## compare entries go here

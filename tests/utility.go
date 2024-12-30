@@ -30,7 +30,7 @@ type SqliteTest struct {
 	Count int
 }
 
-// CLISqlTest requires a sqlite database as output to perform tests on the result
+// DirectSqlTest requires a sqlite database as output to perform tests on the result
 func DirectSqlTest(request string, tests []SqliteTest, t *testing.T) string {
 	database, status := controller.CLIProcessEntry([]byte(request))
 	if status.IsErr {

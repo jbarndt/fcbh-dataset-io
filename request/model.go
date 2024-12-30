@@ -17,6 +17,7 @@ type Request struct {
 	AudioEncoding AudioEncoding `yaml:"audio_encoding,omitempty"`
 	TextEncoding  TextEncoding  `yaml:"text_encoding,omitempty"`
 	OutputFormat  OutputFormat  `yaml:"output_format,omitempty"` // Set by request.Depend, not user
+	AudioProof    AudioProof    `yaml:"audio_proof,omitempty"`
 	Compare       Compare       `yaml:"compare,omitempty"`
 }
 
@@ -223,6 +224,11 @@ type OutputFormat struct {
 	JSON   bool `yaml:"json,omitempty"`
 	Sqlite bool `yaml:"sqlite,omitempty"`
 	HTML   bool `yaml:"html,omitempty"`
+}
+
+type AudioProof struct {
+	HTMLReport  bool   `yaml:"html_report,omitempty"`
+	BaseDataset string `yaml:"base_dataset,omitempty"`
 }
 
 type Compare struct {

@@ -52,8 +52,8 @@ func (c *Controller) Process() (string, dataset.Status) {
 	var filename, status = c.processSteps()
 	if status.IsErr {
 		filename = c.outputStatus(status)
+		c.bucket.AddOutput(filename)
 	}
-	c.bucket.AddOutput(filename)
 	log.Info(c.ctx, "Duration", time.Since(start))
 	log.Debug(c.ctx)
 	c.bucket.PersistToBucket()
@@ -175,11 +175,23 @@ func (c *Controller) processSteps() (string, dataset.Status) {
 			return filename, status
 		}
 	}
+	// Audio Proofing
+	if c.req.AudioProof.HTMLReport {
+		log.Info(c.ctx, "Perform audio proof Report.")
+		filename, status = c.audioProofing(audioFiles)
+		if status.IsErr {
+			return filename, status
+		}
+		c.bucket.AddOutput(filename)
+	}
 	// Compare
 	if c.req.OutputFormat.HTML {
 		log.Info(c.ctx, "Perform text comparison.")
 		filename, status = c.matchText()
-		return filename, status // return whether success or not
+		if status.IsErr {
+			return filename, status
+		}
+		c.bucket.AddOutput(filename)
 	}
 	// Prepare output
 	log.Info(c.ctx, "Generate output.")
@@ -187,6 +199,7 @@ func (c *Controller) processSteps() (string, dataset.Status) {
 		filename = c.database.DatabasePath
 	} else {
 		filename, status = c.output()
+		c.bucket.AddOutput(filename)
 	}
 	return filename, status
 }
@@ -390,6 +403,30 @@ func (c *Controller) encodeText() dataset.Status {
 		status = fast.Process()
 	}
 	return status
+}
+
+func (c *Controller) audioProofing(audioFiles []input.InputFile) (string, dataset.Status) {
+	// Using audioFiles here should be tempoary, once the timestamps are updated with duration
+	// there should be no need for the audio files to be present.
+	var filename string
+	var status dataset.Status
+	if len(audioFiles) == 0 {
+		return filename, log.ErrorNoErr(c.ctx, 400, "There are no audio files to AudioProof")
+	}
+	audioDir := audioFiles[0].Directory
+	var textConn db.DBAdapter
+	textConn, status = db.NewerDBAdapter(c.ctx, false, c.user.Username, c.req.AudioProof.BaseDataset)
+	if status.IsErr {
+		return filename, status
+	}
+	calc := match.NewAlignSilence(c.ctx, textConn, c.database) // c.database is ASR result
+	faLines, filenameMap, status := calc.Process(audioDir)
+	if status.IsErr {
+		return filename, status
+	}
+	writer := match.NewAlignWriter(c.ctx)
+	filename, status = writer.WriteReport(c.req.DatasetName, faLines, filenameMap)
+	return filename, status
 }
 
 func (c *Controller) matchText() (string, dataset.Status) {

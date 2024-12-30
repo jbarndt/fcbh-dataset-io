@@ -5,6 +5,7 @@ import (
 	log "dataset/logger"
 	"encoding/csv"
 	"os"
+	"path/filepath"
 	"reflect"
 	"strconv"
 )
@@ -12,7 +13,8 @@ import (
 func (o *Output) WriteCSV(structs []any, meta []Meta) (string, dataset.Status) {
 	var filename string
 	var status dataset.Status
-	file, err := os.CreateTemp(os.Getenv(`FCBH_DATASET_TMP`), o.requestName+"_*.csv")
+	file, err := os.Create(filepath.Join(os.Getenv(`FCBH_DATASET_TMP`), o.requestName+".csv"))
+	//file, err := os.CreateTemp(os.Getenv(`FCBH_DATASET_TMP`), o.requestName+"_*.csv")
 	if err != nil {
 		status = log.Error(o.ctx, 500, err, `failed to create temp file`)
 		return filename, status

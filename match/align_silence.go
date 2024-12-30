@@ -14,7 +14,7 @@ import (
 
 const (
 	criticalThreshold = 0.0001 // 0.001
-	questionThreshold = 0.01   // 0.01
+	questionThreshold = 0.001  // 0.001
 	//silenceStdevs     = 4.0    // intended to make it rare
 )
 
@@ -43,17 +43,13 @@ type AlignSilence struct {
 	ctx     context.Context
 	conn    db.DBAdapter
 	asrConn db.DBAdapter
-	lang    string
-	altLang string
 }
 
-func NewAlignSilence(ctx context.Context, conn db.DBAdapter, asrConn db.DBAdapter, lang string, altLang string) AlignSilence {
+func NewAlignSilence(ctx context.Context, conn db.DBAdapter, asrConn db.DBAdapter) AlignSilence {
 	var a AlignSilence
 	a.ctx = ctx
 	a.conn = conn
 	a.asrConn = asrConn
-	a.lang = lang
-	a.altLang = altLang
 	return a
 }
 

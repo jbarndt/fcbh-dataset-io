@@ -6,6 +6,7 @@ import (
 	log "dataset/logger"
 	"math"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -24,7 +25,8 @@ func NewHTMLWriter(ctx context.Context, datasetName string) (HTMLWriter, dataset
 	h.datasetName = datasetName
 	var status dataset.Status
 	var err error
-	h.out, err = os.CreateTemp(os.Getenv(`FCBH_DATASET_TMP`), datasetName+"_*.html")
+	h.out, err = os.Create(filepath.Join(os.Getenv(`FCBH_DATASET_TMP`), datasetName+"_compare.html"))
+	//h.out, err = os.CreateTemp(os.Getenv(`FCBH_DATASET_TMP`), datasetName+"_compare.html")
 	if err != nil {
 		status = log.Error(ctx, 500, err, `Error creating output file for diff`)
 	}

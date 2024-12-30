@@ -7,6 +7,7 @@ import (
 	log "dataset/logger"
 	"math"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -35,7 +36,8 @@ func (a *AlignWriter) WriteReport(datasetName string, lines []generic.AlignLine,
 	var status dataset.Status
 	var err error
 	a.datasetName = datasetName
-	a.out, err = os.CreateTemp(os.Getenv(`FCBH_DATASET_TMP`), datasetName+"_*.html")
+	a.out, err = os.Create(filepath.Join(os.Getenv(`FCBH_DATASET_TMP`), datasetName+"_proof.html"))
+	//a.out, err = os.CreateTemp(os.Getenv(`FCBH_DATASET_TMP`), datasetName+"_proof_*.html")
 	if err != nil {
 		return filename, log.Error(a.ctx, 500, err, `Error creating output file for align writer`)
 	}
