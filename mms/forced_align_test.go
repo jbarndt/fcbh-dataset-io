@@ -13,15 +13,16 @@ import (
 func TestForcedAlign_ProcessFiles(t *testing.T) {
 	ctx := context.Background()
 	user, _ := fetch.GetTestUser()
-	conn, status := db.NewerDBAdapter(ctx, false, user.Username, "PlainTextEditScript_ENGWEB")
+	conn, status := db.NewerDBAdapter(ctx, false, user.Username, "01c_usx_text_edit_ENGWEB_copy")
 	fa := NewForcedAlign(ctx, conn, "eng", "")
 	var files []input.InputFile
 	var file input.InputFile
-	file.BookId = "MRK"
-	file.Chapter = 1
+	file.BookId = "MAT"
+	file.Chapter = 22
 	file.MediaId = "ENGWEBN2DA"
 	file.Directory = os.Getenv("FCBH_DATASET_FILES") + "/ENGWEB/ENGWEBN2DA-mp3-64/"
-	file.Filename = "B02___01_Mark________ENGWEBN2DA.mp3"
+	//file.Filename = "B02___01_Mark________ENGWEBN2DA.mp3"
+	file.Filename = "B01___22_Matthew_____ENGWEBN2DA.mp3"
 	files = append(files, file)
 	status = fa.ProcessFiles(files)
 	if status.IsErr {
