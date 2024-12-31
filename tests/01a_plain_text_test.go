@@ -7,26 +7,37 @@ import (
 	"testing"
 )
 
-const PlainTextScript = `is_new: yes
-dataset_name: PlainTextScript_{bibleId}
+const plainTextScript = `is_new: yes
+dataset_name: 01a_plain_text_{bibleId}
 bible_id: {bibleId}
 username: GaryNTest
 email: gary@shortsands.com
-output_file: 01__plain_text_script.csv
+output_file: 01a_plain_text_{bibleId}.sqlite
 text_data:
   bible_brain:
     text_plain: yes
+detail:
+  words: yes
 `
+
+func TestPlainTextDirect(t *testing.T) {
+	var tests []SqliteTest
+	tests = append(tests, SqliteTest{"SELECT count(*) FROM scripts", 7958})
+	testName := strings.Replace(plainTextScript, "{bibleId}", "ENGWEB", -1)
+	DirectSqlTest(testName, tests, t)
+}
+
+// The tests below need csv output to work
 
 func TestPlainTextScriptAPI(t *testing.T) {
 	var cases []APITest
 	cases = append(cases, APITest{BibleId: `ENGWEB`, Expected: 7959, Diff: 0})
-	APITestUtility(PlainTextScript, cases, t)
+	APITestUtility(plainTextScript, cases, t)
 }
 
 func TestPlainTextScriptCLI(t *testing.T) {
 	var bibleId = `ENGWEB`
-	var req = strings.Replace(PlainTextScript, `{bibleId}`, bibleId, 2)
+	var req = strings.Replace(plainTextScript, `{bibleId}`, bibleId, -1)
 	stdout, stderr := CLIExec(req, t)
 	fmt.Println(`STDOUT:`, stdout)
 	fmt.Println(`STDERR:`, stderr)

@@ -34,10 +34,12 @@ compare:
       normalize_nfd: y
 `
 
+// TestProofAndCompare is not compatible with the debugger, but puts results in bucket
 func TestProofAndCompare(t *testing.T) {
 	CLIExec(proofCompare, t)
 }
 
+// TestProofAndCompareWithDebugger does not put output in the bucket
 func TestProofAndCompareWithDebugger(t *testing.T) {
 	DirectSqlTest(proofCompare, []SqliteTest{}, t)
 }
