@@ -136,10 +136,9 @@ func (c *Controller) processSteps() (string, dataset.Status) {
 		}
 	}
 	// Copy for STT
-	if !c.req.TextData.NoText &&
-		//c.req.Compare.BaseDataset == `` &&
-		!c.req.SpeechToText.NoSpeechToText {
+	if !c.req.TextData.NoText && !c.req.SpeechToText.NoSpeechToText {
 		c.req.Compare.BaseDataset = c.database.Project
+		c.req.AudioProof.BaseDataset = c.database.Project // ? should there be one BaseDataset ?
 		// This makes a copy of database, and closes it.  Names the new database *_audio, and returns new
 		c.database, status = c.database.CopyDatabase(`_audio`)
 		if status.IsErr {
