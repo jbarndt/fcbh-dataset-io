@@ -250,10 +250,10 @@ func (m *MMSAlign) processPyOutput(file input.InputFile, wordRefs []Word, respon
 		word.Chars = faWd
 		words = append(words, word)
 	}
-	var wordsByVerse [][]db.Audio
-	wordsByVerse = m.groupByVerse(words)
+	var wordsByLine [][]db.Audio
+	wordsByLine = m.groupByLine(words)
 	var verses []db.Audio
-	verses = m.summarizeByVerse(wordsByVerse)
+	verses = m.summarizeByVerse(wordsByLine)
 	verses = m.addSpace(verses)
 	status = m.conn.UpdateScriptFATimestamps(verses)
 	if status.IsErr {
@@ -267,6 +267,31 @@ func (m *MMSAlign) processPyOutput(file input.InputFile, wordRefs []Word, respon
 	return status
 }
 
+func (a *MMSAlign) groupByLine(words []db.Audio) [][]db.Audio {
+	var result [][]db.Audio
+	if len(words) == 0 {
+		return result
+	}
+	currWd := words[0].ScriptId
+	start := 0
+	for i, wd := range words {
+		if wd.ScriptId != currWd {
+			currWd = wd.ScriptId
+			oneLine := make([]db.Audio, i-start)
+			copy(oneLine, words[start:i])
+			result = append(result, oneLine)
+			start = i
+		}
+	}
+	if start != len(words) {
+		lastLine := make([]db.Audio, len(words)-start)
+		copy(lastLine, words[start:])
+		result = append(result, lastLine)
+	}
+	return result
+}
+
+/*
 func (m *MMSAlign) groupByVerse(words []db.Audio) [][]db.Audio {
 	var result [][]db.Audio
 	if len(words) == 0 {
@@ -293,6 +318,8 @@ func (m *MMSAlign) groupByVerse(words []db.Audio) [][]db.Audio {
 	}
 	return result
 }
+*
+*/
 
 func (m *MMSAlign) summarizeByVerse(chapter [][]db.Audio) []db.Audio {
 	var result []db.Audio
