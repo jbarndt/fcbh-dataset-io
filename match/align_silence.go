@@ -172,6 +172,13 @@ func (a *AlignSilence) groupByLine(chars []generic.AlignChar) []generic.AlignLin
 			result = append(result, line)
 		}
 	}
+	if start < len(chars) {
+		lastLine := make([]generic.AlignChar, len(chars)-start)
+		copy(lastLine, chars[start:])
+		var line generic.AlignLine
+		line.Chars = lastLine
+		result = append(result, line)
+	}
 	return result
 }
 
