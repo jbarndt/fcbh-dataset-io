@@ -16,6 +16,7 @@ import (
 	"path/filepath"
 	"strings"
 	"unicode"
+	"unicode/utf8"
 )
 
 type MMSAlign_Input struct {
@@ -156,7 +157,7 @@ func (m *MMSAlign) prepareText(lang string, bookId string, chapter int) ([]strin
 	for i := range refList {
 		textList = append(textList, uRoman[i])
 		refList[i].uroman = uRoman[i]
-		if len(refList[i].word) != len(uRoman[i]) {
+		if utf8.RuneCountInString(refList[i].word) != utf8.RuneCountInString(uRoman[i]) {
 			status = log.ErrorNoErr(m.ctx, 500, "Character count did not match in MMS_FA prepareText", bookId, chapter, refList[i].scriptId)
 		}
 	}
@@ -290,36 +291,6 @@ func (a *MMSAlign) groupByLine(words []db.Audio) [][]db.Audio {
 	}
 	return result
 }
-
-/*
-func (m *MMSAlign) groupByVerse(words []db.Audio) [][]db.Audio {
-	var result [][]db.Audio
-	if len(words) == 0 {
-		return result
-	}
-	var currId = words[0].ScriptId
-	var verse []db.Audio
-	var verseSeq = 0
-	for _, word := range words {
-		if word.ScriptId != currId {
-			currId = word.ScriptId
-			if len(verse) > 0 {
-				result = append(result, verse)
-				verse = nil
-				verseSeq++
-			}
-		} else {
-			word.VerseSeq = verseSeq
-			verse = append(verse, word)
-		}
-	}
-	if len(verse) > 0 {
-		result = append(result, verse)
-	}
-	return result
-}
-*
-*/
 
 func (m *MMSAlign) summarizeByVerse(chapter [][]db.Audio) []db.Audio {
 	var result []db.Audio
