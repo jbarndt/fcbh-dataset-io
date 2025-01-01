@@ -162,10 +162,6 @@ func (c *Compare) process(conn db.DBAdapter, bookId string, chapterNum int) ([]V
 	}
 	if ident.TextSource == request.TextScript {
 		lines = c.consolidateScript(lines)
-		//} else if ident.TextSource == request.TextUSXEdit {
-		//	lines = c.consolidateUSX(lines)
-		//} else if ident.TextSource == request.TextPlainEdit {
-		//	lines = c.consolidatePlainEdit(lines)
 	}
 	lines = c.cleanUpVerses(lines)
 	return lines, status
@@ -249,67 +245,6 @@ func (c *Compare) consolidateScript(verses []Verse) []Verse {
 	return results
 }
 
-/*
-func (c *Compare) consolidateUSX(verses []Verse) []Verse {
-	var sumInput = 0
-	var sumOutput = 0
-	var results = make([]Verse, 0, len(verses))
-	var lastChapter = -1
-	var lastVerse = ``
-	var verse Verse
-	for _, rec := range verses {
-		sumInput += len(rec.text)
-		if rec.chapter != lastChapter || rec.verse != lastVerse {
-			if lastChapter != -1 {
-				results = append(results, verse)
-				sumOutput += len(verse.text)
-			}
-			lastChapter = rec.chapter
-			lastVerse = rec.verse
-			verse = Verse{bookId: rec.bookId, chapter: rec.chapter, verse: rec.verse, text: ``, beginTS: rec.beginTS, endTS: rec.endTS}
-		}
-		if !strings.HasSuffix(verse.text, ` `) && !strings.HasPrefix(rec.text, ` `) {
-			verse.text += ` ` + rec.text
-			sumOutput--
-		} else {
-			verse.text += rec.text
-		}
-		verse.endTS = rec.endTS
-	}
-	if len(verse.text) > 0 {
-		results = append(results, verse)
-		sumOutput += len(verse.text)
-	}
-	if sumInput != sumOutput {
-		log.Warn(c.ctx, "Bug: Not all data processed by consolidateUSX input:", sumInput, " output:", sumOutput)
-	}
-	return results
-}
-*/
-/*
-func (c *Compare) consolidatePlainEdit(verses []Verse) []Verse {
-	var results = make([]Verse, 0, len(verses))
-	var first Verse
-	for pos, rec := range verses {
-		if pos == 0 {
-			first = rec
-		} else if rec.verse == `0` {
-			if !strings.HasSuffix(first.text, ` `) && !strings.HasPrefix(rec.text, ` `) {
-				first.text += ` ` + rec.text
-			} else {
-				first.text += rec.text
-			}
-		} else {
-			if len(first.text) > 0 {
-				results = append(results, first)
-				first = Verse{}
-			}
-			results = append(results, rec)
-		}
-	}
-	return results
-}
-*/
 func (c *Compare) cleanUpSetup() *strings.Replacer {
 	var replace []string
 	cfg := c.settings

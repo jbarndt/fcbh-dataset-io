@@ -16,7 +16,6 @@ import (
 	"path/filepath"
 	"strings"
 	"unicode"
-	"unicode/utf8"
 )
 
 type MMSAlign_Input struct {
@@ -157,9 +156,9 @@ func (m *MMSAlign) prepareText(lang string, bookId string, chapter int) ([]strin
 	for i := range refList {
 		textList = append(textList, uRoman[i])
 		refList[i].uroman = uRoman[i]
-		if utf8.RuneCountInString(refList[i].word) != utf8.RuneCountInString(uRoman[i]) {
-			status = log.ErrorNoErr(m.ctx, 500, "Character count did not match in MMS_FA prepareText", bookId, chapter, refList[i].scriptId)
-		}
+		//if utf8.RuneCountInString(refList[i].word) != utf8.RuneCountInString(uRoman[i]) {
+		//	status = log.ErrorNoErr(m.ctx, 500, "Character count did not match in MMS_FA prepareText", bookId, chapter, refList[i].scriptId)
+		//}
 	}
 	return textList, refList, status
 }
@@ -255,7 +254,7 @@ func (m *MMSAlign) processPyOutput(file input.InputFile, wordRefs []Word, respon
 	wordsByLine = m.groupByLine(words)
 	var verses []db.Audio
 	verses = m.summarizeByVerse(wordsByLine)
-	verses = m.addSpace(verses)
+	verses = m.midPoint(verses)
 	status = m.conn.UpdateScriptFATimestamps(verses)
 	if status.IsErr {
 		return status
@@ -324,8 +323,8 @@ func (m *MMSAlign) average(scores []float64, precision int) float64 {
 	return result
 }
 
-// addSpace eliminates time gaps between the end of one verse and the beginning of the next.
-func (m *MMSAlign) addSpace(parts []db.Audio) []db.Audio {
+// midPoint eliminates time gaps between the end of one verse and the beginning of the next.
+func (m *MMSAlign) midPoint(parts []db.Audio) []db.Audio {
 	for i := range parts {
 		if i == 0 {
 			parts[0].BeginTS = 0.0
