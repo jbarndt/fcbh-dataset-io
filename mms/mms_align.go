@@ -16,6 +16,7 @@ import (
 	"path/filepath"
 	"strings"
 	"unicode"
+	"unicode/utf8"
 )
 
 type MMSAlign_Input struct {
@@ -131,6 +132,8 @@ func (m *MMSAlign) prepareText(lang string, bookId string, chapter int) ([]strin
 		results := strings.FieldsFunc(cleanWd, func(r rune) bool { // split on hyphen
 			return r == '\u002D' || (r >= '\u2010' && r <= '\u2014')
 		})
+		// Because the parts are all given the same wordId, they are treated as the same
+		// word.  Simply discarding th hyphen would do the same thing.
 		for _, part := range results {
 			var ref Word
 			ref.scriptId = int64(word.ScriptId)
@@ -156,9 +159,9 @@ func (m *MMSAlign) prepareText(lang string, bookId string, chapter int) ([]strin
 	for i := range refList {
 		textList = append(textList, uRoman[i])
 		refList[i].uroman = uRoman[i]
-		//if utf8.RuneCountInString(refList[i].word) != utf8.RuneCountInString(uRoman[i]) {
-		//	status = log.ErrorNoErr(m.ctx, 500, "Character count did not match in MMS_FA prepareText", bookId, chapter, refList[i].scriptId)
-		//}
+		if utf8.RuneCountInString(refList[i].word) > utf8.RuneCountInString(uRoman[i]) {
+			status = log.ErrorNoErr(m.ctx, 500, "Character count did not match in MMS_FA prepareText", bookId, chapter, refList[i].word, uRoman[i])
+		}
 	}
 	return textList, refList, status
 }
@@ -241,7 +244,9 @@ func (m *MMSAlign) processPyOutput(file input.InputFile, wordRefs []Word, respon
 		for j, ch := range faWd {
 			word.FAScore += ch.Score
 			faWd[j].Seq = j
-			faWd[j].Norm = wordChars[j]
+			if j < len(wordChars) { // This assumes uroman can be longer, but not shorter than source word
+				faWd[j].Norm = wordChars[j]
+			}
 			if faWd[j].Uroman != uromanChars[j] {
 				log.ErrorNoErr(m.ctx, 500, "Norm", ref.uroman, "does not match")
 			}
