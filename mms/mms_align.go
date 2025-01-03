@@ -11,6 +11,7 @@ import (
 	"dataset/timestamp"
 	"encoding/json"
 	"github.com/divan/num2words"
+	"golang.org/x/text/unicode/norm"
 	"math"
 	"os"
 	"path/filepath"
@@ -128,7 +129,8 @@ func (m *MMSAlign) prepareText(lang string, bookId string, chapter int) ([]strin
 		return textList, refList, status
 	}
 	for _, word := range dbWords {
-		cleanWd := m.cleanText(word.Word)
+		cleanWd := norm.NFC.String(word.Word)
+		cleanWd = m.cleanText(cleanWd)
 		results := strings.FieldsFunc(cleanWd, func(r rune) bool { // split on hyphen
 			return r == '\u002D' || (r >= '\u2010' && r <= '\u2014')
 		})
