@@ -7,6 +7,7 @@ import (
 	"dataset/input"
 	log "dataset/logger"
 	"encoding/xml"
+	"golang.org/x/text/unicode/norm"
 	"io"
 	"os"
 	"path/filepath"
@@ -113,6 +114,7 @@ func (p *USXParser) decode(ctx context.Context, filename string) ([]db.Script, t
 					text = strings.Replace(text, `{`, `(`, -1)
 					text = strings.Replace(text, `}`, `)`, -1)
 				}
+				text = norm.NFC.String(text)
 				if usfmStyle == `para.h` {
 					titles.heading = text
 				} else if usfmStyle == `para.mt` || usfmStyle == `para.mt1` || usfmStyle == `para.mt2` || usfmStyle == `para.mt3` {

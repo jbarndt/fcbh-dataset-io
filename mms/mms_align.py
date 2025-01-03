@@ -3,7 +3,7 @@ import json
 import torch
 import torchaudio
 from torchaudio.pipelines import MMS_FA as bundle
-import multiprocessing
+#import multiprocessing
 
 
 # mms_forced_aligner was developed with the following documentation
@@ -19,16 +19,14 @@ import multiprocessing
 # This program is NOT reentrant because of torch.cuda.empty_cache()
 
 
-if len(sys.argv) < 2:
-    sys.stderr.write("Usage: mms_align.py  {iso639-3}\n")
-    sys.exit(1)
-lang = sys.argv[1]
+#if len(sys.argv) < 2:
+#    sys.stderr.write("Usage: mms_align.py  {iso639-3}\n")
+#    sys.exit(1)
+#lang = sys.argv[1]
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = bundle.get_model(with_star=False)
 model.to(device)
 tokenizer = bundle.get_tokenizer()
-#num_cores = multiprocessing.cpu_count()
-#torch.set_num_threads(num_cores - 2)
 aligner = bundle.get_aligner()
 for line in sys.stdin:
     torch.cuda.empty_cache() # This will not be OK for concurrent processes
@@ -44,14 +42,12 @@ for line in sys.stdin:
     for spans in token_spans:
         word = []
         for token in spans:
-            #char = [ token.token, token.start, token.end, round(token.score,4)]
             char = [ token.token, token.start, token.end, token.score]
             word.append(char)
         chapter.append(word)
         word = []
     result = {
        'ratio': ratio,
-       #'dictionary': tokenizer.get_vocab(), TO BE DONE
        'dictionary': bundle.get_dict(),
        'tokens': chapter
     }
