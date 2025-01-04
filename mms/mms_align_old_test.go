@@ -14,7 +14,7 @@ import (
 // which creates the database: /Users/gary/FCBH2024/GaryNTest/01c_usx_text_edit_ENGWEB.db
 // It is best to rerun test 02 in order to have a clean database
 
-func TestMMSFAV2_ProcessFiles(t *testing.T) {
+func TestMMSFAOLD_ProcessFiles(t *testing.T) {
 	ctx := context.Background()
 	user, _ := fetch.GetTestUser()
 	conn, status := db.NewerDBAdapter(ctx, false, user.Username, "01c_usx_text_edit_ENGWEB")
@@ -37,7 +37,7 @@ func TestMMSFAV2_ProcessFiles(t *testing.T) {
 	}
 }
 
-func TestMMSFAV2_prepareText(t *testing.T) {
+func TestMMSFAOld_prepareText(t *testing.T) {
 	ctx := context.Background()
 	user, _ := fetch.GetTestUser()
 	database := "01c_usx_text_edit_ENGWEB"
@@ -58,7 +58,7 @@ func TestMMSFAV2_prepareText(t *testing.T) {
 	}
 }
 
-func TestMMSFAV2_processPyOutput(t *testing.T) {
+func TestMMSFAOld_processPyOutput(t *testing.T) {
 	ctx := context.Background()
 	user, _ := fetch.GetTestUser()
 	conn, status := db.NewerDBAdapter(ctx, false, user.Username, "01c_usx_text_edit_ENGWEB")

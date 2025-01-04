@@ -2,11 +2,14 @@ package mms
 
 import (
 	"context"
+	"dataset"
 	"dataset/db"
 	"dataset/fetch"
 	"dataset/input"
+	"dataset/utility"
 	"fmt"
 	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -39,13 +42,15 @@ func TestMMSFA_ProcessFiles(t *testing.T) {
 
 func TestMMSFA_prepareText(t *testing.T) {
 	ctx := context.Background()
-	user, _ := fetch.GetTestUser()
-	database := "01c_usx_text_edit_ENGWEB"
-	conn, status := db.NewerDBAdapter(ctx, false, user.Username, database)
+	database := "../match/N2HOYWFW.db"
+	conn := db.NewDBAdapter(ctx, database)
+	fa := NewMMSAlign(ctx, conn, "eng", "")
+	var status dataset.Status
+	uromanPath := filepath.Join(os.Getenv("GOPROJ"), "dataset", "mms", "uroman_stdio.py")
+	fa.uroman, status = utility.NewStdioExec(ctx, os.Getenv(`FCBH_MMS_FA_PYTHON`), uromanPath)
 	if status.IsErr {
 		t.Fatal(status)
 	}
-	fa := NewMMSAlign(ctx, conn, "eng", "")
 	for _, bookId := range db.BookNT {
 		lastChap := db.BookChapterMap[bookId]
 		for chap := 1; chap <= lastChap; chap++ {
@@ -66,13 +71,19 @@ func TestMMSFA_processPyOutput(t *testing.T) {
 		t.Fatal(status)
 	}
 	fa := NewMMSAlign(ctx, conn, "eng", "")
+	uromanPath := filepath.Join(os.Getenv("GOPROJ"), "dataset", "mms", "uroman_stdio.py")
+	fa.uroman, status = utility.NewStdioExec(ctx, os.Getenv(`FCBH_MMS_FA_PYTHON`), uromanPath)
+	if status.IsErr {
+		t.Fatal(status)
+	}
 	var file input.InputFile
-	file.BookId = "MAT"
-	file.Chapter = 22
+	file.BookId = "TIT"
+	file.Chapter = 1
 	file.MediaId = "ENGWEBN2DA"
 	file.Directory = os.Getenv("FCBH_DATASET_FILES") + "/ENGWEB/ENGWEBN2DA-mp3-64/"
 	//file.Filename = "B02___01_Mark________ENGWEBN2DA.mp3"
-	file.Filename = "B01___22_Matthew_____ENGWEBN2DA.mp3"
+	//file.Filename = "B01___22_Matthew_____ENGWEBN2DA.mp3" // I think it doesn't matter
+	file.Filename = "TestFile.mp3"
 	var wordList []Word
 	_, wordList, status = fa.prepareText("eng", file.BookId, file.Chapter)
 	if status.IsErr {

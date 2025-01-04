@@ -11,7 +11,6 @@ import (
 	"dataset/timestamp"
 	"encoding/json"
 	"github.com/divan/num2words"
-	"golang.org/x/text/unicode/norm"
 	"math"
 	"os"
 	"path/filepath"
@@ -26,6 +25,7 @@ import (
 //}
 
 //type Word struct {
+//	verseStr string
 //	scriptId int64
 //	wordId   int64
 //	wordSeq  int
@@ -33,15 +33,15 @@ import (
 //	uroman   string
 //}
 
-type MMSAlignV2 struct {
+type MMSAlignOLD struct {
 	ctx     context.Context
 	conn    db.DBAdapter // This database adapter must contain the text to be processed
 	lang    string
 	sttLang string
 }
 
-func NewMMSAlignV2(ctx context.Context, conn db.DBAdapter, lang string, sttLang string) MMSAlignV2 {
-	var m MMSAlignV2
+func NewMMSAlignOld(ctx context.Context, conn db.DBAdapter, lang string, sttLang string) MMSAlignOLD {
+	var m MMSAlignOLD
 	m.ctx = ctx
 	m.conn = conn
 	m.lang = lang
@@ -50,7 +50,7 @@ func NewMMSAlignV2(ctx context.Context, conn db.DBAdapter, lang string, sttLang 
 }
 
 // ProcessFiles will perform Forced Alignment on these files
-func (a *MMSAlignV2) ProcessFiles(files []input.InputFile) dataset.Status {
+func (a *MMSAlignOLD) ProcessFiles(files []input.InputFile) dataset.Status {
 	lang, status := checkLanguage(a.ctx, a.lang, a.sttLang, "mms_asr")
 	if status.IsErr {
 		return status
@@ -71,7 +71,7 @@ func (a *MMSAlignV2) ProcessFiles(files []input.InputFile) dataset.Status {
 }
 
 // processFile will process one audio file through mms forced alignment
-func (m *MMSAlignV2) processFile(file input.InputFile, writer *bufio.Writer, reader *bufio.Reader) dataset.Status {
+func (m *MMSAlignOLD) processFile(file input.InputFile, writer *bufio.Writer, reader *bufio.Reader) dataset.Status {
 	var status dataset.Status
 	tempDir, err := os.MkdirTemp(os.Getenv(`FCBH_DATASET_TMP`), "mms_fa_")
 	if err != nil {
@@ -119,7 +119,7 @@ func (m *MMSAlignV2) processFile(file input.InputFile, writer *bufio.Writer, rea
 	return status
 }
 
-func (m *MMSAlignV2) prepareText(lang string, bookId string, chapter int) ([]string, []Word, dataset.Status) {
+func (m *MMSAlignOLD) prepareText(lang string, bookId string, chapter int) ([]string, []Word, dataset.Status) {
 	var textList []string
 	var refList []Word
 	var status dataset.Status
@@ -129,8 +129,7 @@ func (m *MMSAlignV2) prepareText(lang string, bookId string, chapter int) ([]str
 		return textList, refList, status
 	}
 	for _, word := range dbWords {
-		cleanWd := norm.NFC.String(word.Word)
-		cleanWd = m.cleanText(cleanWd)
+		cleanWd := m.cleanText(word.Word)
 		results := strings.FieldsFunc(cleanWd, func(r rune) bool { // split on hyphen
 			return r == '\u002D' || (r >= '\u2010' && r <= '\u2014')
 		})
@@ -168,7 +167,7 @@ func (m *MMSAlignV2) prepareText(lang string, bookId string, chapter int) ([]str
 	return textList, refList, status
 }
 
-func (m *MMSAlignV2) cleanText(text string) string {
+func (m *MMSAlignOLD) cleanText(text string) string {
 	var result []rune
 	for _, ch := range []rune(text) {
 		if unicode.IsLetter(ch) || unicode.IsSpace(ch) {
@@ -193,7 +192,7 @@ func (m *MMSAlignV2) cleanText(text string) string {
 //	Tokens     [][][]float64  `json:"tokens"`
 //}
 
-func (m *MMSAlignV2) processPyOutput(file input.InputFile, wordRefs []Word, response string) dataset.Status {
+func (m *MMSAlignOLD) processPyOutput(file input.InputFile, wordRefs []Word, response string) dataset.Status {
 	var status dataset.Status
 	response = strings.TrimRight(response, "\n")
 	var mmsAlign MMSAlignResult
@@ -274,7 +273,7 @@ func (m *MMSAlignV2) processPyOutput(file input.InputFile, wordRefs []Word, resp
 	return status
 }
 
-func (a *MMSAlignV2) groupByLine(words []db.Audio) [][]db.Audio {
+func (a *MMSAlignOLD) groupByLine(words []db.Audio) [][]db.Audio {
 	var result [][]db.Audio
 	if len(words) == 0 {
 		return result
@@ -298,7 +297,7 @@ func (a *MMSAlignV2) groupByLine(words []db.Audio) [][]db.Audio {
 	return result
 }
 
-func (m *MMSAlignV2) summarizeByVerse(chapter [][]db.Audio) []db.Audio {
+func (m *MMSAlignOLD) summarizeByVerse(chapter [][]db.Audio) []db.Audio {
 	var result []db.Audio
 	for _, verse := range chapter {
 		var vs = verse[0]
@@ -319,7 +318,7 @@ func (m *MMSAlignV2) summarizeByVerse(chapter [][]db.Audio) []db.Audio {
 	return result
 }
 
-func (m *MMSAlignV2) average(scores []float64, precision int) float64 {
+func (m *MMSAlignOLD) average(scores []float64, precision int) float64 {
 	var sum float64
 	for _, scr := range scores {
 		sum += scr
@@ -331,7 +330,7 @@ func (m *MMSAlignV2) average(scores []float64, precision int) float64 {
 }
 
 // midPoint eliminates time gaps between the end of one verse and the beginning of the next.
-func (m *MMSAlignV2) midPoint(parts []db.Audio) []db.Audio {
+func (m *MMSAlignOLD) midPoint(parts []db.Audio) []db.Audio {
 	for i := range parts {
 		if i == 0 {
 			parts[0].BeginTS = 0.0

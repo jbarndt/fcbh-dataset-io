@@ -16,6 +16,7 @@ func TestURoman(t *testing.T) {
 		"comma: \u3001 period: \u3002 corners: \u300C\u300D reference: \u203B middle dot: \u30FB",
 		"closing double quote: \u030B inverted caret: \u030C upper right: \u031A", // diacriticals are ignored
 		"NFC: \u00FC NFD: u\u0308", // NFC processed, NFD diacritical ignored
+		"क\u0947", "क", "\u0947",
 	}
 	results, status := URoman(ctx, "rus", input)
 	if status.IsErr {

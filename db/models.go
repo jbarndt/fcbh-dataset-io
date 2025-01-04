@@ -43,6 +43,7 @@ type Script struct {
 }
 
 type Word struct {
+	VerseStr    string
 	WordId      int
 	ScriptId    int
 	WordSeq     int

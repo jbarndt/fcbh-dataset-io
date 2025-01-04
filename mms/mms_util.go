@@ -38,7 +38,8 @@ func checkLanguage(ctx context.Context, lang string, sttLang string, aiTool stri
 	return result, status
 }
 
-// callPythonScript will exec the python script, and setup pipes on stdin and stdout
+// deprecated - use utility.StdioExec
+// callStdIOScript will exec the python script, and setup pipes on stdin and stdout
 func callStdIOScript(ctx context.Context, command string, arg ...string) (*bufio.Writer, *bufio.Reader, dataset.Status) {
 	var writer *bufio.Writer
 	var reader *bufio.Reader
