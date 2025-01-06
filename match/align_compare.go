@@ -21,13 +21,13 @@ func (a *AlignSilence) compareLines2ASR(lines []generic.AlignLine, asrConn db.DB
 			var newLine generic.AlignLine
 			lineRef := line.Chars[0].LineRef
 			var asrText string
-			asrText, status = asrConn.SelectLine(lineRef)
+			asrText, status = asrConn.SelectUromanLine(lineRef)
 			if status.IsErr {
 				return result, status
 			}
-			alignNorm, _ := a.GetOriginalText(line.Chars) // returns alignNorm & alignUroman
+			alignedText := a.GetOriginalText(line.Chars)
 			//fmt.Println(len(alignUroman))
-			cDiffs := a.DiffMatchPatch(lineRef, alignNorm, asrText)
+			cDiffs := a.DiffMatchPatch(lineRef, alignedText, asrText)
 			var silStart = 0
 			for _, silPos := range silencePos {
 				for i := silStart; i <= silPos; i++ {
@@ -44,8 +44,7 @@ func (a *AlignSilence) compareLines2ASR(lines []generic.AlignLine, asrConn db.DB
 						newChar.AudioFile = curr.AudioFile
 						newChar.LineId = curr.LineId
 						newChar.LineRef = curr.LineRef
-						newChar.CharNorm = cDiffs[i].Char
-						//newChar.CharUroman =
+						newChar.Uroman = cDiffs[i].Char
 						newChar.BeginTS = curr.EndTS
 						newChar.EndTS = curr.EndTS + curr.Silence
 						newChar.FAScore = 1.0
@@ -74,8 +73,7 @@ func (a *AlignSilence) InsertSpaces(chars []generic.AlignChar) []generic.AlignCh
 			newChar.AudioFile = char.AudioFile
 			newChar.LineId = char.LineId
 			newChar.LineRef = char.LineRef
-			newChar.CharNorm = ' '
-			newChar.CharUroman = ' '
+			newChar.Uroman = ' '
 			newChar.FAScore = 1.0
 			result = append(result, newChar)
 		}
@@ -95,16 +93,12 @@ func (a *AlignSilence) FindSilencePos(chars []generic.AlignChar) []int {
 	return silencePos
 }
 
-func (a *AlignSilence) GetOriginalText(chars []generic.AlignChar) (string, string) {
-	var alNorm []rune
+func (a *AlignSilence) GetOriginalText(chars []generic.AlignChar) string {
 	var alUroman []rune
 	for _, char := range chars {
-		alNorm = append(alNorm, char.CharNorm)
-		alUroman = append(alUroman, char.CharUroman)
+		alUroman = append(alUroman, char.Uroman)
 	}
-	alignNorm := strings.ToLower(string(alNorm))
-	alignUroman := string(alUroman)
-	return alignNorm, alignUroman
+	return string(alUroman)
 }
 
 type CDiff struct {

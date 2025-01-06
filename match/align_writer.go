@@ -37,7 +37,6 @@ func (a *AlignWriter) WriteReport(datasetName string, lines []generic.AlignLine,
 	var err error
 	a.datasetName = datasetName
 	a.out, err = os.Create(filepath.Join(os.Getenv(`FCBH_DATASET_TMP`), datasetName+"_proof.html"))
-	//a.out, err = os.CreateTemp(os.Getenv(`FCBH_DATASET_TMP`), datasetName+"_proof_*.html")
 	if err != nil {
 		return filename, log.Error(a.ctx, 500, err, `Error creating output file for align writer`)
 	}
@@ -106,7 +105,7 @@ func (a *AlignWriter) WriteLine(chars []generic.AlignChar) {
 		} else if chars[i].FAScore <= questionThreshold {
 			chars[i].ScoreError = int(scoreQuestion)
 		}
-		if char.IsASR && !unicode.IsSpace(char.CharNorm) {
+		if char.IsASR && !unicode.IsSpace(char.Uroman) {
 			asrChars++
 		}
 	}
@@ -133,7 +132,7 @@ func (a *AlignWriter) WriteLine(chars []generic.AlignChar) {
 	a.writeCell(firstChar.LineRef)
 	var text []string
 	for _, ch := range chars {
-		char := string(ch.CharNorm)
+		char := string(ch.Uroman)
 		if ch.ScoreError == int(scoreCritical) {
 			text = append(text, `<span class="red-box">`+char+`</span>`)
 		} else if ch.ScoreError == int(scoreQuestion) {
@@ -141,7 +140,7 @@ func (a *AlignWriter) WriteLine(chars []generic.AlignChar) {
 		} else if ch.SilenceLong > 0 {
 			//char += `<sub>` + strconv.Itoa(ch.SilencePos) + `</sub>`
 			text = append(text, `<span class="green-box">`+char+`</span>`)
-		} else if ch.IsASR && !unicode.IsSpace(ch.CharNorm) {
+		} else if ch.IsASR && !unicode.IsSpace(ch.Uroman) {
 			text = append(text, `<span class="blue-box">`+char+`</span>`)
 		} else {
 			text = append(text, char)

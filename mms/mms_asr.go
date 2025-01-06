@@ -8,6 +8,7 @@ import (
 	"dataset/input"
 	log "dataset/logger"
 	"dataset/timestamp"
+	"dataset/utility"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -19,6 +20,7 @@ type MMSASR struct {
 	conn    db.DBAdapter
 	lang    string
 	sttLang string
+	uroman  utility.StdioExec
 }
 
 func NewMMSASR(ctx context.Context, conn db.DBAdapter, lang string, sttLang string) MMSASR {
@@ -41,6 +43,12 @@ func (a *MMSASR) ProcessFiles(files []input.InputFile) dataset.Status {
 	if status.IsErr {
 		return status
 	}
+	uromanPath := filepath.Join(os.Getenv("GOPROJ"), "dataset", "mms", "uroman_stdio.py")
+	a.uroman, status = utility.NewStdioExec(a.ctx, os.Getenv(`FCBH_MMS_FA_PYTHON`), uromanPath, "-l", a.lang)
+	if status.IsErr {
+		return status
+	}
+	defer a.uroman.Close()
 	for _, file := range files {
 		log.Info(a.ctx, "MMS ASR", file.BookId, file.Chapter)
 		status = a.processFile(file, writer, reader)
@@ -87,6 +95,11 @@ func (a *MMSASR) processFile(file input.InputFile, writer *bufio.Writer, reader 
 		response = strings.TrimRight(response, "\n")
 		fmt.Println(ts.BookId, ts.ChapterNum, ts.VerseStr, ts.ScriptId, response)
 		timestamps[i].Text = response
+		uRoman, status2 := a.uroman.Process(response)
+		if status2.IsErr {
+			return status2
+		}
+		timestamps[i].Uroman = uRoman
 	}
 	//log.Debug(a.ctx, "Finished ASR", file.BookId, file.Chapter)
 	var recCount int

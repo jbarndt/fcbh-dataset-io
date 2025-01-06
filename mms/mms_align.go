@@ -64,7 +64,7 @@ func (m *MMSAlign) ProcessFiles(files []input.InputFile) dataset.Status {
 	}
 	defer os.RemoveAll(m.tempDir)
 	uromanPath := filepath.Join(os.Getenv("GOPROJ"), "dataset", "mms", "uroman_stdio.py")
-	m.uroman, status = utility.NewStdioExec(m.ctx, os.Getenv(`FCBH_MMS_FA_PYTHON`), uromanPath)
+	m.uroman, status = utility.NewStdioExec(m.ctx, os.Getenv(`FCBH_MMS_FA_PYTHON`), uromanPath, "-l", m.lang)
 	if status.IsErr {
 		return status
 	}
@@ -186,7 +186,6 @@ type MMSAlignResult struct {
 
 func (m *MMSAlign) processPyOutput(file input.InputFile, wordRefs []Word, response string) dataset.Status {
 	var status dataset.Status
-	//response = strings.TrimRight(response, "\n")
 	var mmsAlign MMSAlignResult
 	err := json.Unmarshal([]byte(response), &mmsAlign)
 	if err != nil {
@@ -202,19 +201,18 @@ func (m *MMSAlign) processPyOutput(file input.InputFile, wordRefs []Word, respon
 		var word []generic.Char
 		for _, ch := range wd {
 			var char generic.Char
-			char.Token = int(ch[0])
+			token := int(ch[0])
 			char.Start = ch[1] * mmsAlign.Ratio
 			char.End = ch[2] * mmsAlign.Ratio
 			char.Score = ch[3]
-			char.Uroman, ok = tokenDict[char.Token]
+			char.Uroman, ok = tokenDict[token]
 			if !ok {
-				log.Warn(m.ctx, "Character not found in tokenDict", char.Token)
+				log.Warn(m.ctx, "Character not found in tokenDict", token)
 			}
 			word = append(word, char)
 		}
 		faWords = append(faWords, word)
 	}
-	//fmt.Println(response)
 	if len(faWords) != len(wordRefs) {
 		return log.ErrorNoErr(m.ctx, 400, "Num words input to mms_align:", len(wordRefs), ", num timestamps returned:", len(faWords))
 	}
@@ -232,14 +230,10 @@ func (m *MMSAlign) processPyOutput(file input.InputFile, wordRefs []Word, respon
 		faWd := faWords[i]
 		word.BeginTS = faWd[0].Start
 		word.EndTS = faWd[len(faWd)-1].End
-		wordChars := []rune(ref.word)
 		uromanChars := []rune(ref.uroman)
 		for j, ch := range faWd {
 			word.FAScore += ch.Score
 			faWd[j].Seq = j
-			if j < len(wordChars) { // This assumes uroman can be longer, but not shorter than source word
-				faWd[j].Norm = wordChars[j]
-			}
 			if faWd[j].Uroman != uromanChars[j] {
 				log.ErrorNoErr(m.ctx, 500, "Norm", ref.uroman, "does not match")
 			}

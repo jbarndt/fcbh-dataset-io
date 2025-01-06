@@ -1,10 +1,11 @@
-package mms
+package xxxtobedeleted
 
 import (
 	"context"
 	"dataset/db"
 	"dataset/fetch"
 	"dataset/input"
+	"dataset/mms"
 	"fmt"
 	"os"
 	"testing"
@@ -21,7 +22,7 @@ func TestMMSFAOLD_ProcessFiles(t *testing.T) {
 	if status.IsErr {
 		t.Fatal(status)
 	}
-	fa := NewMMSAlign(ctx, conn, "eng", "")
+	fa := mms.NewMMSAlign(ctx, conn, "eng", "")
 	var files []input.InputFile
 	var file input.InputFile
 	file.BookId = "MAT"
@@ -45,7 +46,7 @@ func TestMMSFAOld_prepareText(t *testing.T) {
 	if status.IsErr {
 		t.Fatal(status)
 	}
-	fa := NewMMSAlign(ctx, conn, "eng", "")
+	fa := mms.NewMMSAlign(ctx, conn, "eng", "")
 	for _, bookId := range db.BookNT {
 		lastChap := db.BookChapterMap[bookId]
 		for chap := 1; chap <= lastChap; chap++ {
@@ -65,7 +66,7 @@ func TestMMSFAOld_processPyOutput(t *testing.T) {
 	if status.IsErr {
 		t.Fatal(status)
 	}
-	fa := NewMMSAlign(ctx, conn, "eng", "")
+	fa := mms.NewMMSAlign(ctx, conn, "eng", "")
 	var file input.InputFile
 	file.BookId = "MAT"
 	file.Chapter = 22
@@ -73,7 +74,7 @@ func TestMMSFAOld_processPyOutput(t *testing.T) {
 	file.Directory = os.Getenv("FCBH_DATASET_FILES") + "/ENGWEB/ENGWEBN2DA-mp3-64/"
 	//file.Filename = "B02___01_Mark________ENGWEBN2DA.mp3"
 	file.Filename = "B01___22_Matthew_____ENGWEBN2DA.mp3"
-	var wordList []Word
+	var wordList []mms.Word
 	_, wordList, status = fa.prepareText("eng", file.BookId, file.Chapter)
 	if status.IsErr {
 		t.Fatal(status)

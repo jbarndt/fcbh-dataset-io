@@ -202,9 +202,7 @@ func createDatabase(db *sql.DB) {
 		char_id INTEGER PRIMARY KEY,
 		word_id INTEGER NOT NULL,
 		seq INTEGER NOT NULL,
-		norm INTEGER NOT NULL DEFAULT 0,
-		uroman INTEGER NOT NULL DEFAULT 0,
-		token INTEGER NOT NULL,
+		uroman INTEGER NOT NULL,
 		start_ts REAL NOT NULL,
 		end_ts REAL NOT NULL,
 		fa_score REAL NOT NULL,
@@ -258,6 +256,7 @@ func (d *DBAdapter) EraseDatabase() {
 	execDDL(d.DB, `DELETE FROM words`)
 	execDDL(d.DB, `DELETE FROM script_mfcc`)
 	execDDL(d.DB, `DELETE FROM word_mfcc`)
+	execDDL(d.DB, `DELETE FROM chars`)
 }
 
 func execDDL(db *sql.DB, sql string) {
@@ -400,12 +399,12 @@ func (d *DBAdapter) InsertAudioWords(words []Audio) ([]Audio, dataset.Status) {
 
 func (d *DBAdapter) InsertAudioChars(words []Audio) dataset.Status {
 	var status dataset.Status
-	query := `INSERT INTO chars(word_id, seq, norm, uroman, token, start_ts, end_ts, fa_score) VALUES (?,?,?,?,?,?,?,?)`
+	query := `INSERT INTO chars(word_id, seq, uroman, start_ts, end_ts, fa_score) VALUES (?,?,?,?,?,?)`
 	tx, stmt := d.prepareDML(query)
 	defer d.closeDef(stmt, `InsertChars stmt`)
 	for _, wd := range words {
 		for _, ch := range wd.Chars {
-			_, err := stmt.Exec(wd.WordId, ch.Seq, ch.Norm, ch.Uroman, ch.Token, ch.Start, ch.End, ch.Score)
+			_, err := stmt.Exec(wd.WordId, ch.Seq, ch.Uroman, ch.Start, ch.End, ch.Score)
 			if err != nil {
 				return log.Error(d.Ctx, 500, err, `Error while inserting Chars.`)
 			}
@@ -618,11 +617,11 @@ func (d *DBAdapter) SelectIdent() (Ident, dataset.Status) {
 	return results, status
 }
 
-// SelectLine selects by book, chapter, verseStr, and returns one line of script text
-func (d *DBAdapter) SelectLine(lineRef string) (string, dataset.Status) {
+// SelectUromanLine selects by book, chapter, verseStr, and returns one line of script text
+func (d *DBAdapter) SelectUromanLine(lineRef string) (string, dataset.Status) {
 	var result string
 	var status dataset.Status
-	query := `SELECT script_text FROM scripts WHERE book_id = ? AND chapter_num = ? AND verse_str = ? ORDER BY script_id`
+	query := `SELECT uroman FROM scripts WHERE book_id = ? AND chapter_num = ? AND verse_str = ?`
 	key := generic.NewLineRef(lineRef)
 	rows, err := d.DB.Query(query, key.BookId, key.ChapterNum, key.VerseStr)
 	if err != nil {
@@ -851,7 +850,7 @@ func (d *DBAdapter) SelectFACharTimestamps() ([]generic.AlignChar, dataset.Statu
 	var chars []generic.AlignChar
 	var status dataset.Status
 	var query = `SELECT s.audio_file, s.script_id, s.book_id, s.chapter_num, s.verse_str,
-				w.word_id, c.char_id, c.seq, c.norm, c.uroman, c.start_ts, c.end_ts, c.fa_score
+				w.word_id, w.word, c.char_id, c.seq, c.uroman, c.start_ts, c.end_ts, c.fa_score
 				FROM scripts s JOIN words w ON s.script_id = w.script_id
 				JOIN chars c ON w.word_id = c.word_id
 				WHERE w.ttype = 'W'
@@ -866,7 +865,7 @@ func (d *DBAdapter) SelectFACharTimestamps() ([]generic.AlignChar, dataset.Statu
 	for rows.Next() {
 		var ch generic.AlignChar
 		err = rows.Scan(&ch.AudioFile, &ch.LineId, &ref.BookId, &ref.ChapterNum, &ref.VerseStr,
-			&ch.WordId, &ch.CharId, &ch.CharSeq, &ch.CharNorm, &ch.CharUroman, &ch.BeginTS, &ch.EndTS,
+			&ch.WordId, &ch.Word, &ch.CharId, &ch.CharSeq, &ch.Uroman, &ch.BeginTS, &ch.EndTS,
 			&ch.FAScore)
 		if err != nil {
 			status = log.Error(d.Ctx, 500, err, "Error in SelectFACharTimestamps.")
@@ -1050,7 +1049,7 @@ func (d *DBAdapter) UpdateScriptTimestamps(scripts []Timestamp) dataset.Status {
 
 func (d *DBAdapter) UpdateEraseScriptText() dataset.Status {
 	var status dataset.Status
-	query := `UPDATE scripts SET script_text = ""`
+	query := `UPDATE scripts SET script_text = "", uroman = ""`
 	tx, stmt := d.prepareDML(query)
 	defer d.closeDef(stmt, "UpdateEraseScriptText stmt")
 	_, err := stmt.Exec()
@@ -1059,17 +1058,23 @@ func (d *DBAdapter) UpdateEraseScriptText() dataset.Status {
 		return status
 	}
 	status = d.commitDML(tx, query)
+	if status.IsErr {
+		return status
+	}
+	execDDL(d.DB, `DELETE FROM words`)
+	execDDL(d.DB, `DELETE FROM word_mfcc`)
+	execDDL(d.DB, `DELETE FROM chars`)
 	return status
 }
 
 func (d *DBAdapter) UpdateScriptText(audio []Audio) (int, dataset.Status) {
 	var rowsUpdated int64
 	var status dataset.Status
-	query := `UPDATE scripts SET script_text = ? WHERE script_id = ?`
+	query := `UPDATE scripts SET script_text = ?, uroman = ? WHERE script_id = ?`
 	tx, stmt := d.prepareDML(query)
 	defer d.closeDef(stmt, "UpdateScriptText stmt")
 	for _, rec := range audio {
-		res, err := stmt.Exec(rec.Text, rec.ScriptId)
+		res, err := stmt.Exec(rec.Text, rec.Uroman, rec.ScriptId)
 		if err != nil {
 			status = log.Error(d.Ctx, 500, err, `Error while updating script text.`)
 			return int(rowsUpdated), status
