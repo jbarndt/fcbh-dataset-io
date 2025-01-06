@@ -33,6 +33,7 @@ type Controller struct {
 func NewController(ctx context.Context, yamlContent []byte) Controller {
 	var c Controller
 	c.ctx = ctx
+	log.Info(ctx, "Request: ", string(yamlContent))
 	c.yamlRequest = yamlContent
 	c.bucket = run_control.NewRunBucket(ctx, yamlContent)
 	c.bucket.IsUnitTest = false // set to true when testing to make RunBucket work.
