@@ -104,9 +104,14 @@ func (b *RunBucket) PersistToBucket() dataset.Status {
 
 func (b *RunBucket) parseYaml(name string) string {
 	var result string
-	start := strings.Index(b.yamlContent, name+`:`) + len(name) + 1
-	end := strings.Index(b.yamlContent[start:], "\n")
-	result = strings.TrimSpace(b.yamlContent[start : start+end])
+	index := strings.Index(b.yamlContent, name+":")
+	if index == -1 {
+		result = "unknown-" + name
+	} else {
+		start := index + len(name) + 1
+		end := strings.Index(b.yamlContent[start:], "\n")
+		result = strings.TrimSpace(b.yamlContent[start : start+end])
+	}
 	return result
 }
 
