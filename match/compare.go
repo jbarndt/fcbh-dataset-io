@@ -39,6 +39,7 @@ type Verse struct {
 	verse    string
 	verseEnd string
 	text     string
+	uRoman   string
 	beginTS  float64
 	endTS    float64
 }
@@ -156,6 +157,7 @@ func (c *Compare) process(conn db.DBAdapter, bookId string, chapterNum int) ([]V
 		vs.verse = script.VerseStr
 		vs.verseEnd = script.VerseEnd
 		vs.text = script.ScriptText
+		vs.uRoman = script.URoman
 		vs.beginTS = script.ScriptBeginTS
 		vs.endTS = script.ScriptEndTS
 		lines = append(lines, vs)
@@ -394,14 +396,14 @@ func (c *Compare) diff(verses1 []Verse, verses2 []Verse) {
 		if ok {
 			didMatch[vs1.verse] = true
 		}
-		p := pair{bookId: vs1.bookId, chapter: vs1.chapter, num: vs1.verse, beginTS: vs1.beginTS, endTS: vs1.endTS, text1: vs1.text, text2: vs2.text}
+		p := pair{bookId: vs1.bookId, chapter: vs1.chapter, num: vs1.verse, beginTS: vs1.beginTS, endTS: vs1.endTS, text1: vs1.uRoman, text2: vs2.uRoman}
 		pairs = append(pairs, p)
 	}
 	// pick up any verse2 that did not match verse1
 	for _, vs2 := range verses2 {
 		_, ok := didMatch[vs2.verse]
 		if !ok {
-			p := pair{bookId: vs2.bookId, chapter: vs2.chapter, num: vs2.verse, beginTS: vs2.beginTS, endTS: vs2.endTS, text1: ``, text2: vs2.text}
+			p := pair{bookId: vs2.bookId, chapter: vs2.chapter, num: vs2.verse, beginTS: vs2.beginTS, endTS: vs2.endTS, text1: ``, text2: vs2.uRoman}
 			pairs = append(pairs, p)
 		}
 	}

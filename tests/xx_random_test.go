@@ -9,7 +9,8 @@ import (
 )
 
 func TestRandomDirect(t *testing.T) {
-	filename := "N2MKDMBS_proof.yaml"
+	//filename := "N2MKDMBS_proof.yaml"
+	filename := "N2HOYWFW_compare.yaml"
 	filePath := filepath.Join(os.Getenv("HOME"), filename)
 	request, err := os.ReadFile(filePath)
 	if err != nil {

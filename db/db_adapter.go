@@ -648,7 +648,7 @@ func (d *DBAdapter) SelectUromanLine(lineRef string) (string, dataset.Status) {
 func (d *DBAdapter) SelectScriptsByChapter(bookId string, chapterNum int) ([]Script, dataset.Status) {
 	var results []Script
 	var status dataset.Status
-	sqlStmt := `SELECT script_id, verse_str, script_text, script_begin_ts, script_end_ts FROM scripts 
+	sqlStmt := `SELECT script_id, verse_str, script_text, uroman, script_begin_ts, script_end_ts FROM scripts 
 			WHERE book_id=? AND chapter_num=?
 			ORDER BY script_id`
 	rows, err := d.DB.Query(sqlStmt, bookId, chapterNum)
@@ -661,7 +661,7 @@ func (d *DBAdapter) SelectScriptsByChapter(bookId string, chapterNum int) ([]Scr
 		var vs Script
 		vs.BookId = bookId
 		vs.ChapterNum = chapterNum
-		err = rows.Scan(&vs.ScriptId, &vs.VerseStr, &vs.ScriptText, &vs.ScriptBeginTS, &vs.ScriptEndTS)
+		err = rows.Scan(&vs.ScriptId, &vs.VerseStr, &vs.ScriptText, &vs.URoman, &vs.ScriptBeginTS, &vs.ScriptEndTS)
 		if err != nil {
 			status = log.Error(d.Ctx, 500, err, `Error scanning in ReadScriptByChapter`)
 			return results, status

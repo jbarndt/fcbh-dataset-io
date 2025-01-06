@@ -37,6 +37,7 @@ type Script struct {
 	Person        string
 	Actor         string
 	ScriptText    string
+	URoman        string
 	ScriptTexts   []string
 	ScriptBeginTS float64
 	ScriptEndTS   float64
