@@ -166,12 +166,12 @@ func (m *MMSAlign) normalizeURoman(text string) string {
 	text = strings.ToLower(text)
 	text = strings.ReplaceAll(text, "\u2019", "'")
 	re1 := regexp.MustCompile("[^a-z' ]")
-	text = re1.ReplaceAllString(text, " ")
+	text2 := re1.ReplaceAllString(text, " ")
 	re2 := regexp.MustCompile(" +")
-	text = re2.ReplaceAllString(text, " ")
+	text2 = re2.ReplaceAllString(text2, " ")
 	// This line is only to be used when doing one word at a time
 	// It is needed to maintain the word alignment.
-	text2 := strings.ReplaceAll(text, " ", "")
+	text2 = strings.ReplaceAll(text2, " ", "")
 	if text2 != text {
 		log.Warn(m.ctx, "Changed:", text, " To:", text2)
 	}
