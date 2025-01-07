@@ -19,9 +19,10 @@ func (a *AlignSilence) compareLines2ASR(lines []generic.AlignLine, asrConn db.DB
 		} else {
 			//result = append(result, line) // Duplicate line for debugging
 			var newLine generic.AlignLine
+			lineId := line.Chars[0].LineId
 			lineRef := line.Chars[0].LineRef
 			var asrText string
-			asrText, status = asrConn.SelectUromanLine(lineRef)
+			asrText, status = asrConn.SelectUromanLine(lineId)
 			if status.IsErr {
 				return result, status
 			}

@@ -22,7 +22,7 @@ func TestAlignWriter(t *testing.T) {
 		t.Fatal(status)
 	}
 	fmt.Println(len(faLines), len(filenameMap))
-	writer := NewAlignWriter(ctx)
+	writer := NewAlignWriter(ctx, conn)
 	filename, status := writer.WriteReport(dataset, faLines, filenameMap)
 	fmt.Println("Report Filename", filename)
 	revisedName := filepath.Join(os.Getenv("GOPROJ"), "dataset", "match", dataset+".html")

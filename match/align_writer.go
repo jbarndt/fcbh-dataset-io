@@ -3,6 +3,7 @@ package match
 import (
 	"context"
 	"dataset"
+	"dataset/db"
 	"dataset/generic"
 	log "dataset/logger"
 	"math"
@@ -16,6 +17,7 @@ import (
 
 type AlignWriter struct {
 	ctx         context.Context
+	conn        db.DBAdapter
 	datasetName string
 	out         *os.File
 	lineNum     int
@@ -25,9 +27,10 @@ type AlignWriter struct {
 	questGaps   int
 }
 
-func NewAlignWriter(ctx context.Context) AlignWriter {
+func NewAlignWriter(ctx context.Context, conn db.DBAdapter) AlignWriter {
 	var a AlignWriter
 	a.ctx = ctx
+	a.conn = conn
 	return a
 }
 
@@ -85,6 +88,7 @@ func (a *AlignWriter) WriteHeading() {
 		<th>Button</th>
         <th>Ref</th>
 		<th>Script</th>
+		<th>Source</th>
     </tr>
     </thead>
     <tbody>
@@ -146,7 +150,15 @@ func (a *AlignWriter) WriteLine(chars []generic.AlignChar) {
 			text = append(text, char)
 		}
 	}
+	text = append(text, `<div class="source-text" style="display:none;">`)
+	sourceText, status := a.conn.SelectScriptLine(chars[0].LineId)
+	if status.IsErr {
+		panic(status)
+	}
+	text = append(text, sourceText)
+	text = append(text, `</div>`)
 	a.writeCell(strings.Join(text, ""))
+	a.writeCell(`<button class="toggle-source-text">Show</button>`)
 	_, _ = a.out.WriteString("</tr>\n")
 }
 
@@ -302,6 +314,14 @@ func (a *AlignWriter) WriteEnd(filenameMap string) {
 			}
 		}
 	}
+	$(document).ready(function() {
+	  $('.toggle-source-text').on('click', function() {
+    	$(this).closest('tr').find('.source-text').toggle();
+		$(this).text(function(i, text) {
+		  return text === 'Hide' ? 'Show' : 'Hide';
+		});
+	  });
+	});
     </script>
 </body>
 </html>

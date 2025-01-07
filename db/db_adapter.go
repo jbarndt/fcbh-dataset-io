@@ -617,30 +617,36 @@ func (d *DBAdapter) SelectIdent() (Ident, dataset.Status) {
 	return results, status
 }
 
-// SelectUromanLine selects by book, chapter, verseStr, and returns one line of script text
-func (d *DBAdapter) SelectUromanLine(lineRef string) (string, dataset.Status) {
+// SelectScriptLine selects by script_id and returns one line of script text
+func (d *DBAdapter) SelectScriptLine(lineId int64) (string, dataset.Status) {
+	return d.selectLine(lineId, `SELECT script_text FROM scripts WHERE script_id = ?`)
+}
+
+// SelectUromanLine selects by script_id and returns one line of script text
+func (d *DBAdapter) SelectUromanLine(lineId int64) (string, dataset.Status) {
+	return d.selectLine(lineId, `SELECT uroman FROM scripts WHERE script_id = ?`)
+}
+
+func (d *DBAdapter) selectLine(lineId int64, query string) (string, dataset.Status) {
 	var result string
 	var status dataset.Status
-	query := `SELECT uroman FROM scripts WHERE book_id = ? AND chapter_num = ? AND verse_str = ?`
-	key := generic.NewLineRef(lineRef)
-	rows, err := d.DB.Query(query, key.BookId, key.ChapterNum, key.VerseStr)
+	rows, err := d.DB.Query(query, lineId)
 	if err != nil {
-		status = log.Error(d.Ctx, 500, err, `Error reading rows in SelectLine`)
+		status = log.Error(d.Ctx, 500, err, `Error reading rows in selectLine`)
 		return result, status
 	}
-	defer d.closeDef(rows, `SelectLine`)
+	defer d.closeDef(rows, `selectLine`)
 	if rows.Next() {
 		err = rows.Scan(&result)
 		if err != nil {
-			status = log.Error(d.Ctx, 500, err, `Error scanning in SelectLine`)
+			status = log.Error(d.Ctx, 500, err, `Error scanning in selectLine`)
 			return result, status
 		}
 	}
 	err = rows.Err()
 	if err != nil {
-		status = log.Error(d.Ctx, 500, err, `Error at end of rows in SelectLine`)
+		status = log.Error(d.Ctx, 500, err, `Error at end of rows in selectLine`)
 	}
-	//result = strings.ReplaceAll(result, "\n", " ")
 	return result, status
 }
 
