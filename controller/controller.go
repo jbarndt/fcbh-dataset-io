@@ -424,7 +424,7 @@ func (c *Controller) audioProofing(audioFiles []input.InputFile) (string, datase
 	if status.IsErr {
 		return filename, status
 	}
-	writer := match.NewAlignWriter(c.ctx)
+	writer := match.NewAlignWriter(c.ctx, textConn)
 	filename, status = writer.WriteReport(c.req.DatasetName, faLines, filenameMap)
 	return filename, status
 }
