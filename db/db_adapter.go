@@ -1073,6 +1073,25 @@ func (d *DBAdapter) UpdateEraseScriptText() dataset.Status {
 	return status
 }
 
+func (d *DBAdapter) UpdateUromanText(scripts []Script) (int, dataset.Status) {
+	var rowsUpdated int64
+	var status dataset.Status
+	query := `UPDATE scripts SET uroman = ? WHERE script_id = ?`
+	tx, stmt := d.prepareDML(query)
+	defer d.closeDef(stmt, "UpdateUromanText stmt")
+	for _, rec := range scripts {
+		res, err := stmt.Exec(rec.URoman, rec.ScriptId)
+		if err != nil {
+			status = log.Error(d.Ctx, 500, err, `Error while updating uroman text.`)
+			return int(rowsUpdated), status
+		}
+		affected, _ := res.RowsAffected()
+		rowsUpdated += affected
+	}
+	status = d.commitDML(tx, query)
+	return int(rowsUpdated), status
+}
+
 func (d *DBAdapter) UpdateScriptText(audio []Audio) (int, dataset.Status) {
 	var rowsUpdated int64
 	var status dataset.Status
