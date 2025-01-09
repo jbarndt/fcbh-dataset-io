@@ -62,6 +62,10 @@ func (b *RunBucket) AddOutput(outputPath string) {
 	}
 }
 
+func (b *RunBucket) GetOutputPaths() []string {
+	return b.outputs
+}
+
 func (b *RunBucket) PersistToBucket() dataset.Status {
 	var allStatus []dataset.Status
 	var status dataset.Status

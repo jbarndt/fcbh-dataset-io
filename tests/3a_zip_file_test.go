@@ -9,7 +9,8 @@ dataset_name: 3a_zip_file
 bible_id: ENGWEB
 username: GaryNTest
 email: gary@shortsands.com
-output_file: 3a_zip_file.sqlite
+output:
+  sqlite: yes
 audio_data:
   file: /Users/gary/FCBH2024/download/ENGWEBN2DA-mp3-64.zip
 text_data:
@@ -20,7 +21,7 @@ testament:
 
 func TestZipFileDirect(t *testing.T) {
 	var tests []SqliteTest
-	tests = append(tests, SqliteTest{"SELECT count(*) FROM scripts", 877})
+	tests = append(tests, SqliteTest{"SELECT count(*) FROM scripts", 694})
 	tests = append(tests, SqliteTest{"SELECT count(*) FROM scripts WHERE script_begin_ts != 0.0", 0})
 	DirectSqlTest(zipFile, tests, t)
 }

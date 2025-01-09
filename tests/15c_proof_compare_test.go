@@ -9,7 +9,6 @@ dataset_name: 15c_proof_compare_audio
 bible_id: ENGWEB
 username: GaryNTest
 email: gary@shortsands.com
-output_file: 15c_proof_compare.html
 testament:
   nt: yes
 audio_data:
@@ -19,8 +18,9 @@ audio_proof:
   html_report: yes
   base_dataset: 15c_proof_compare
 compare:
+  html_report: yes
   base_dataset: 15c_proof_compare
-  compare_settings: 
+  compare_settings:
     lower_case: y
     remove_prompt_chars: y
     remove_punctuation: y

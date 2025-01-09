@@ -14,8 +14,8 @@ dataset_name: ScriptTextScript_{bibleId}
 bible_id: {bibleId}
 username: GaryNTest
 email: gary@shortsands.com
-output_file: 08__compare_plain_edit_2_script.html
 compare:
+  html_report: yes
   base_dataset: PlainTextEditScript_{bibleId}
   compare_settings: # Mark yes, all settings that apply
     lower_case: n

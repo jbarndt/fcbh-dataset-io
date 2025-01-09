@@ -5,39 +5,36 @@ import (
 	"dataset"
 	"io"
 	"os"
-	"strings"
+	"path/filepath"
 )
 
-func CLIProcessEntry(yaml []byte) (string, dataset.Status) {
-	var result string
+func CLIProcessEntry(yaml []byte) (OutputFiles, dataset.Status) {
+	var output OutputFiles
+	var status dataset.Status
 	var ctx = context.WithValue(context.Background(), `runType`, `cli`)
 	var control = NewController(ctx, yaml)
-	filename, status := control.Process()
+	output, status = control.ProcessV2()
 	if status.IsErr {
-		result = status.String()
+		return output, status
 	}
-	outputFile := findOutputFilename(yaml)
 	var err error
-	if strings.HasSuffix(outputFile, ".sqlite") {
-		err = copyFile(filename, outputFile)
-	} else {
-		err = os.Rename(filename, outputFile)
+	for i, file := range output.FilePaths {
+		ext := filepath.Ext(file)
+		filename := filepath.Base(file)
+		var targetPath string
+		if ext == ".db" {
+			filename = filename[:len(filename)-len(ext)] + ".sqlite"
+			targetPath = filepath.Join(output.Directory, filename)
+			err = copyFile(file, targetPath)
+		} else {
+			targetPath = filepath.Join(output.Directory, filename)
+			err = os.Rename(file, targetPath)
+		}
+		if err == nil {
+			output.FilePaths[i] = targetPath
+		}
 	}
-	if err != nil {
-		result = filename
-	} else {
-		result = outputFile
-	}
-	return result, status
-}
-
-func findOutputFilename(request []byte) string {
-	var result string
-	req := string(request)
-	start := strings.Index(req, `output_file:`) + 12
-	end := strings.Index(req[start:], "\n")
-	result = strings.TrimSpace(req[start : start+end])
-	return result
+	return output, status
 }
 
 func copyFile(src, dst string) error {

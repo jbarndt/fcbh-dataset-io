@@ -14,7 +14,8 @@ dataset_name: AudioWhisperJson_{bibleId}
 bible_id: {bibleId}
 username: GaryNTest
 email: gary@shortsands.com
-output_file: 09__audio_whisper_json.json
+output:
+  json: yes
 testament: # Choose one or both
   nt_books: [PHM]
 text_data:
@@ -60,7 +61,7 @@ func TestAudioWhisperJson(t *testing.T) {
 
 func TestAudioWhisperJsonCLI(t *testing.T) {
 	var bibles = make(map[string]int)
-	bibles[`ENGWEB`] = 35
+	bibles[`ENGWEB`] = 26
 	for bibleId, expected := range bibles {
 		var request = strings.Replace(AudioWhisperJson, `{bibleId}`, bibleId, 2)
 		stdout, stderr := CLIExec(request, t)

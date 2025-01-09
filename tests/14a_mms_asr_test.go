@@ -4,12 +4,13 @@ import (
 	"testing"
 )
 
-const MMSASRTest = `is_new: yes
+const mMSASRTest = `is_new: yes
 dataset_name: 14a_mms_asr
 bible_id: ENGWEB
 username: GaryNTest
 email: gary@shortsands.com
-output_file: 14a_mms_asr.sqlite
+output:
+  sqlite: yes
 text_data:
   bible_brain:
     text_plain_edit: yes
@@ -29,5 +30,5 @@ func TestMMSASRDirect(t *testing.T) {
 	var tests []SqliteTest
 	tests = append(tests, SqliteTest{"SELECT count(*) FROM scripts", 26})
 	tests = append(tests, SqliteTest{"SELECT count(*) FROM scripts WHERE script_begin_ts != 0.0", 25})
-	DirectSqlTest(MMSASRTest, tests, t)
+	DirectSqlTest(mMSASRTest, tests, t)
 }

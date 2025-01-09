@@ -19,6 +19,11 @@ import (
 	"time"
 )
 
+type OutputFiles struct {
+	Directory string
+	FilePaths []string
+}
+
 type Controller struct {
 	ctx         context.Context
 	yamlRequest []byte
@@ -44,24 +49,41 @@ func (c *Controller) SetPostFiles(postFiles *input.PostFiles) {
 	c.postFiles = postFiles
 }
 
+// Process is deprecated for production, but is a test only convenience method
 func (c *Controller) Process() (string, dataset.Status) {
+	output, status := c.ProcessV2()
+	if status.IsErr {
+		return "", status
+	}
+	if len(output.FilePaths) > 0 {
+		return output.FilePaths[0], status
+	} else {
+		return "NO OUTPUT", status
+	}
+}
+
+// ProcessV2 is the production means to execute the controller
+func (c *Controller) ProcessV2() (OutputFiles, dataset.Status) {
 	var start = time.Now()
 	if c.postFiles != nil {
 		defer c.postFiles.RemoveDir()
 	}
 	log.Debug(c.ctx)
-	var filename, status = c.processSteps()
+	var status = c.processSteps()
 	if status.IsErr {
-		filename = c.outputStatus(status)
+		filename := c.outputStatus(status)
 		c.bucket.AddOutput(filename)
 	}
+	var output OutputFiles
+	output.Directory = c.req.Output.Directory
+	output.FilePaths = c.bucket.GetOutputPaths()
 	log.Info(c.ctx, "Duration", time.Since(start))
 	log.Debug(c.ctx)
 	c.bucket.PersistToBucket()
-	return filename, status
+	return output, status
 }
 
-func (c *Controller) processSteps() (string, dataset.Status) {
+func (c *Controller) processSteps() dataset.Status {
 	var filename string
 	var status dataset.Status
 	// Decode YAML Request File
@@ -69,32 +91,32 @@ func (c *Controller) processSteps() (string, dataset.Status) {
 	reqDecoder := request.NewRequestDecoder(c.ctx)
 	c.req, status = reqDecoder.Process(c.yamlRequest)
 	if status.IsErr {
-		return filename, status
+		return status
 	}
 	c.ctx = context.WithValue(c.ctx, `request`, string(c.yamlRequest))
 	// Get User
 	log.Info(c.ctx, "Fetch Bible Brain data.")
 	c.user, status = fetch.GetDBPUser(c.req)
 	if status.IsErr {
-		return filename, status
+		return status
 	}
 	// Open Database
 	c.database, status = db.NewerDBAdapter(c.ctx, c.req.IsNew, c.user.Username, c.req.DatasetName)
 	if status.IsErr {
-		return filename, status
+		return status
 	}
 	defer c.database.Close()
 	c.bucket.AddDatabase(c.database)
 	// Fetch Ident Data from Ident
 	c.ident, status = c.database.SelectIdent()
 	if status.IsErr {
-		return filename, status
+		return status
 	}
 	// Update Ident Data from DBP
 	c.ident, status = c.fetchData()
 	if status.IsErr {
 		if c.req.TextData.AnyBibleBrain() || c.req.AudioData.AnyBibleBrain() {
-			return filename, status
+			return status
 		}
 	}
 	// Collect Text Input
@@ -103,7 +125,7 @@ func (c *Controller) processSteps() (string, dataset.Status) {
 		log.Info(c.ctx, "Load text files.")
 		textFiles, status = c.collectTextInput()
 		if status.IsErr {
-			return filename, status
+			return status
 		}
 	}
 	// Collect Audio Input
@@ -112,20 +134,20 @@ func (c *Controller) processSteps() (string, dataset.Status) {
 		log.Info(c.ctx, "Load audio files.")
 		audioFiles, status = c.collectAudioInput()
 		if status.IsErr {
-			return filename, status
+			return status
 		}
 	}
 	// Update Ident Table
 	status = input.UpdateIdent(c.database, &c.ident, textFiles, audioFiles)
 	if status.IsErr {
-		return filename, status
+		return status
 	}
 	// Read Text Data
 	if !c.req.TextData.NoText {
 		log.Info(c.ctx, "Read and parse text files.")
 		status = c.readText(textFiles)
 		if status.IsErr {
-			return filename, status
+			return status
 		}
 	}
 	// Timestamps
@@ -133,7 +155,7 @@ func (c *Controller) processSteps() (string, dataset.Status) {
 		log.Info(c.ctx, "Read or create audio timestamp data.")
 		status = c.timestamps(audioFiles)
 		if status.IsErr {
-			return filename, status
+			return status
 		}
 	}
 	// Copy for STT
@@ -143,12 +165,12 @@ func (c *Controller) processSteps() (string, dataset.Status) {
 		// This makes a copy of database, and closes it.  Names the new database *_audio, and returns new
 		c.database, status = c.database.CopyDatabase(`_audio`)
 		if status.IsErr {
-			return filename, status
+			return status
 		}
 		c.bucket.AddDatabase(c.database)
 		status = c.database.UpdateEraseScriptText()
 		if status.IsErr {
-			return filename, status
+			return status
 		}
 	}
 	// Speech to Text
@@ -156,7 +178,7 @@ func (c *Controller) processSteps() (string, dataset.Status) {
 		log.Info(c.ctx, "Perform speech to text.")
 		status = c.speechToText(audioFiles)
 		if status.IsErr {
-			return filename, status
+			return status
 		}
 	}
 	// Encode Audio
@@ -164,7 +186,7 @@ func (c *Controller) processSteps() (string, dataset.Status) {
 		log.Info(c.ctx, "Perform audio encoding.")
 		status = c.encodeAudio(audioFiles)
 		if status.IsErr {
-			return filename, status
+			return status
 		}
 	}
 	// Encode Text
@@ -172,7 +194,7 @@ func (c *Controller) processSteps() (string, dataset.Status) {
 		log.Info(c.ctx, "Perform text encoding.")
 		status = c.encodeText()
 		if status.IsErr {
-			return filename, status
+			return status
 		}
 	}
 	// Audio Proofing
@@ -180,28 +202,29 @@ func (c *Controller) processSteps() (string, dataset.Status) {
 		log.Info(c.ctx, "Perform audio proof Report.")
 		filename, status = c.audioProofing(audioFiles)
 		if status.IsErr {
-			return filename, status
+			return status
 		}
 		c.bucket.AddOutput(filename)
 	}
 	// Compare
-	if c.req.OutputFormat.HTML {
+	if c.req.Compare.HTMLReport {
 		log.Info(c.ctx, "Perform text comparison.")
 		filename, status = c.matchText()
 		if status.IsErr {
-			return filename, status
+			return status
 		}
 		c.bucket.AddOutput(filename)
 	}
 	// Prepare output
 	log.Info(c.ctx, "Generate output.")
-	if c.req.OutputFormat.Sqlite {
-		filename = c.database.DatabasePath
-	} else {
-		filename, status = c.output()
-		c.bucket.AddOutput(filename)
+	if c.req.Output.Sqlite {
+		c.bucket.AddOutput(c.database.DatabasePath)
 	}
-	return filename, status
+	if c.req.Output.CSV || c.req.Output.JSON {
+		status = c.output()
+		// added to bucket in c.output()
+	}
+	return status
 }
 
 func (c *Controller) fetchData() (db.Ident, dataset.Status) {
@@ -437,7 +460,7 @@ func (c *Controller) matchText() (string, dataset.Status) {
 	return filename, status
 }
 
-func (c *Controller) output() (string, dataset.Status) {
+func (c *Controller) output() dataset.Status {
 	var filename string
 	var status dataset.Status
 	var out = output.NewOutput(c.ctx, c.database, c.req.DatasetName, false, false)
@@ -448,28 +471,31 @@ func (c *Controller) output() (string, dataset.Status) {
 	} else {
 		records, meta = out.PrepareWords()
 	}
-	if c.req.OutputFormat.CSV {
+	if c.req.Output.CSV {
 		filename, status = out.WriteCSV(records, meta)
 		if status.IsErr {
-			return filename, status
+			return status
 		}
-	} else if c.req.OutputFormat.JSON {
+		c.bucket.AddOutput(filename)
+	}
+	if c.req.Output.JSON {
 		filename, status = out.WriteJSON(records, meta)
 		if status.IsErr {
-			return filename, status
+			return status
 		}
+		c.bucket.AddOutput(filename)
 	}
 	records = nil
-	return filename, status
+	return status
 }
 
 func (c *Controller) outputStatus(status dataset.Status) string {
 	var filename string
 	var status2 dataset.Status
 	var out = output.NewOutput(c.ctx, db.DBAdapter{}, c.req.DatasetName, false, false)
-	if c.req.OutputFormat.CSV {
+	if c.req.Output.CSV {
 		filename, status2 = out.CSVStatus(status, true)
-	} else if c.req.OutputFormat.JSON {
+	} else if c.req.Output.JSON {
 		filename, status2 = out.JSONStatus(status, true)
 	} else {
 		filename = status.String()

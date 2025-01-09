@@ -21,6 +21,8 @@ func main() {
 		_, _ = fmt.Fprintln(os.Stderr, status.String())
 		os.Exit(1)
 	} else {
-		_, _ = fmt.Fprintln(os.Stdout, `Success:`, outputFile)
+		for _, file := range outputFile.FilePaths {
+			_, _ = fmt.Fprintln(os.Stdout, `Success:`, file)
+		}
 	}
 }

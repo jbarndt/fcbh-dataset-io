@@ -8,9 +8,14 @@ dataset_name: Test1_ATIWBT # Use a unique name to keep runs separate, or reuse a
 bible_id: ATIWBT
 username: GaryNGriswold
 email: gary@shortsands.com
-output_file: myRun.json # Allowed file types are .json, .csv, .sqlite, and .html for compare tasks
 alt_language: # To force the use of an alternate language, use this field
 # The remaining configuration choices are all optional, but something must be selected in order for some processing to be done.
+
+output: #
+  directory: # Enter the directory path where output should be written
+  csv: # Mark yes for csv output
+  json: # Mark yes for json output
+  sqlite: # Mark yes for sqlite output
 
 testament: # Choose one or both
   nt: yes # Mark Yes for entire New Testament
@@ -82,6 +87,7 @@ audio_proof:
   base_dataset: # Use only when is_new: false to identify the USX dataset, the dataset_name must be the ASR dataset
 
 compare: # To do a compare, put the names of the two projects here
+  html_report: # Mark yes to receive compare report
   base_dataset:  # Name of dataset to compare to this one
 ## compare entries go here
 ## edit check, the two projects must exist, and both must have a text source.

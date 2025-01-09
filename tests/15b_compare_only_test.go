@@ -12,10 +12,10 @@ dataset_name: JMDYPM_audio
 bible_id: JMDYPM
 username: GaryNTest
 email: gary@shortsands.com
-output_file: 15b_compare_only.html
 testament:
   nt_books: [MAT,MRK,LUK,JHN,ACT]
 compare:
+  html_report: yes
   base_dataset: JMDYPM_text
   compare_settings: 
     lower_case: y
@@ -38,7 +38,7 @@ func TestTwoCompareDirect(t *testing.T) {
 	DirectSqlTest(compareOnly, tests, t)
 }
 
-func TestTwoCompareEnglistDirect(t *testing.T) {
+func TestTwoCompareEnglishDirect(t *testing.T) {
 	var yaml = compareOnly
 	yaml = strings.Replace(yaml, "JMDYPM_audio", "AudioWhisperJson_ENGWEB_STT", 1)
 	yaml = strings.Replace(yaml, "JMDYPM", "ENGWEB", 1)

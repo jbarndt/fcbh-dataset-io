@@ -5,12 +5,13 @@ import (
 	"testing"
 )
 
-const TSBibleBrain = `is_new: yes
-dataset_name: TS_BB
+const tSBibleBrain = `is_new: yes
+dataset_name: 13a_ts_bb
 bible_id: {bibleId}
 username: GaryNTest
 email: gary@shortsands.com
-output_file: 13a_ts_bb.sqlite
+output:
+  sqlite: yes
 text_data:
   bible_brain:
     text_plain_edit: yes
@@ -27,7 +28,7 @@ func TestTSBB(t *testing.T) {
 	var tests []SqliteTest
 	tests = append(tests, SqliteTest{"SELECT count(*) FROM scripts", 694})
 	tests = append(tests, SqliteTest{"SELECT count(*) FROM scripts WHERE script_begin_ts != 0.0", 678})
-	testName := strings.Replace(TSBibleBrain, "{bibleId}", "ENGWEB", -1)
+	testName := strings.Replace(tSBibleBrain, "{bibleId}", "ENGWEB", -1)
 	DirectSqlTest(testName, tests, t)
 }
 

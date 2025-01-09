@@ -5,12 +5,11 @@ import (
 	"testing"
 )
 
-const MMSASRCompare = `is_new: yes
-dataset_name: MMSASRCompare
+const mMSASRCompare = `is_new: yes
+dataset_name: 15a_mms_asr
 bible_id: ENGWEB
 username: GaryNTest
 email: gary@shortsands.com
-output_file: 15a_mms_asr_compare.html
 text_data:
   bible_brain:
     text_usx_edit: yes
@@ -24,6 +23,7 @@ testament:
 speech_to_text:
   mms_asr: yes
 compare:
+  html_report: yes
   compare_settings: 
     lower_case: y
     remove_prompt_chars: y
@@ -44,5 +44,5 @@ func TestMMSASRCompare(t *testing.T) {
 		TextType: request.TextUSXEdit, AudioNTId: "ENGWEBN2DA", Language: "eng"})
 	//tests = append(tests, CtlTest{BibleId: "APFCMU", Expected: 16, TextNtId: "APFCMUN_ET-usx",
 	//	AudioNTId: `APFCMUN1DA`, TextType: request.TextUSXEdit, Language: "apf"})
-	DirectTestUtility(MMSASRCompare, tests, t)
+	DirectTestUtility(mMSASRCompare, tests, t)
 }

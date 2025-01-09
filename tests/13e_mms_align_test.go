@@ -9,7 +9,8 @@ dataset_name: 13e_mms_align
 bible_id: ENGWEB
 username: GaryNTest
 email: gary@shortsands.com
-output_file: 13e_mms_align.sqlite
+output:
+  sqlite: yes
 text_data:
   bible_brain:
     text_plain_edit: yes

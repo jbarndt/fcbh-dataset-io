@@ -12,7 +12,8 @@ dataset_name: 01a_plain_text_{bibleId}
 bible_id: {bibleId}
 username: GaryNTest
 email: gary@shortsands.com
-output_file: 01a_plain_text_{bibleId}.sqlite
+output:
+  sqlite: yes
 text_data:
   bible_brain:
     text_plain: yes

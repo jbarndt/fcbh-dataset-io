@@ -14,8 +14,8 @@ dataset_name: AudioWhisperJson_{bibleId}
 bible_id: {bibleId}
 username: GaryNTest
 email: gary@shortsands.com
-output_file: 10__compare_usx_edit_2_stt.html
 compare:
+  html_report: yes
   base_dataset: USX Text Edit Script_{bibleId}
   compare_settings: # Mark yes, all settings that apply
     lower_case: y

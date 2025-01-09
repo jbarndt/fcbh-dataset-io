@@ -17,7 +17,8 @@ dataset_name: 3b_usx_vs_plain_{BIBLE_ID}
 bible_id: {BIBLE_ID}
 username: GaryNTest
 email: gary@shortsands.com
-output_file: 3b_{TEXT_TYPE}_{BIBLE_ID}.sqlite
+output:
+  sqlite: yes
 text_data:
   bible_brain:
     {TEXT_TYPE}: yes

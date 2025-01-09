@@ -5,12 +5,13 @@ import (
 	"testing"
 )
 
-const Librosa = `is_new: yes
-dataset_name: librosa
+const librosa = `is_new: yes
+dataset_name: 12a_librosa
 bible_id: {bibleId}
 username: GaryNTest
 email: gary@shortsands.com
-output_file: 12a_librosa.sqlite
+output:
+  sqlite: yes
 text_data:
   bible_brain:
     text_plain_edit: yes
@@ -31,6 +32,6 @@ func TestLibrosaDirect(t *testing.T) {
 	tests = append(tests, SqliteTest{"SELECT count(*) FROM scripts WHERE script_begin_ts != 0.0", 678})
 	tests = append(tests, SqliteTest{"SELECT count(*) FROM script_mfcc", 694})
 	tests = append(tests, SqliteTest{"SELECT count(*) FROM word_mfcc", 0})
-	testName := strings.Replace(Librosa, "{bibleId}", "ENGWEB", -1)
+	testName := strings.Replace(librosa, "{bibleId}", "ENGWEB", -1)
 	DirectSqlTest(testName, tests, t)
 }

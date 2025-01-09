@@ -6,8 +6,8 @@ type Request struct {
 	BibleId       string        `yaml:"bible_id"`
 	Username      string        `yaml:"username"`
 	Email         string        `yaml:"email"`
-	OutputFile    string        `yaml:"output_file"`
 	AltLanguage   string        `yaml:"alt_language,omitempty"`
+	Output        Output        `yaml:"output,omitempty"`
 	Testament     Testament     `yaml:"testament,omitempty"`
 	AudioData     AudioData     `yaml:"audio_data,omitempty"`
 	TextData      TextData      `yaml:"text_data,omitempty"`
@@ -16,9 +16,16 @@ type Request struct {
 	Detail        Detail        `yaml:"detail,omitempty"`
 	AudioEncoding AudioEncoding `yaml:"audio_encoding,omitempty"`
 	TextEncoding  TextEncoding  `yaml:"text_encoding,omitempty"`
-	OutputFormat  OutputFormat  `yaml:"output_format,omitempty"` // Set by request.Depend, not user
 	AudioProof    AudioProof    `yaml:"audio_proof,omitempty"`
 	Compare       Compare       `yaml:"compare,omitempty"`
+}
+
+type Output struct {
+	Directory string `yaml:"directory"`
+	CSV       bool   `yaml:"csv,omitempty"`
+	JSON      bool   `yaml:"json,omitempty"`
+	Sqlite    bool   `yaml:"sqlite,omitempty"`
+	//HTML      bool   `yaml:"html,omitempty"`
 }
 
 type Testament struct {
@@ -219,19 +226,13 @@ type TextEncoding struct {
 	NoEncoding bool `yaml:"no_encoding,omitempty"`
 }
 
-type OutputFormat struct {
-	CSV    bool `yaml:"csv,omitempty"`
-	JSON   bool `yaml:"json,omitempty"`
-	Sqlite bool `yaml:"sqlite,omitempty"`
-	HTML   bool `yaml:"html,omitempty"`
-}
-
 type AudioProof struct {
 	HTMLReport  bool   `yaml:"html_report,omitempty"`
 	BaseDataset string `yaml:"base_dataset,omitempty"`
 }
 
 type Compare struct {
+	HTMLReport      bool            `yaml:"html_report,omitempty"`
 	BaseDataset     string          `yaml:"base_dataset,omitempty"`
 	CompareSettings CompareSettings `yaml:"compare_settings,omitempty"`
 }

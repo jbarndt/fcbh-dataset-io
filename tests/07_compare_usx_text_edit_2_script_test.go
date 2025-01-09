@@ -10,7 +10,8 @@ dataset_name: 07_USXTextEditScript_{bibleId}
 bible_id: {bibleId}
 username: GaryNTest
 email: gary@shortsands.com
-output_file: 07__usx_text_edit_script.json
+output:
+  json: yes
 text_data:
   bible_brain:
     text_usx_edit: yes
@@ -21,7 +22,8 @@ dataset_name: 07_ScriptTextScript_{bibleId}
 bible_id: {bibleId}
 username: GaryNTest
 email: gary@shortsands.com
-output_file: 07__script_text_script.csv
+output:
+  csv: yes
 text_data:
   file: /Users/gary/FCBH2024/download/ATIWBT/ATIWBTN2ST.xlsx
 `
@@ -31,7 +33,8 @@ dataset_name: 07_ScriptTextScript_{bibleId}
 bible_id: {bibleId}
 username: GaryNTest
 email: gary@shortsands.com
-output_file: 07__script_text_script.csv
+output:
+  csv: yes
 text_data:
   file: /Users/gary/FCBH2024/download/BGGWFW/BGGWFWN2ST.xlsx
 `
@@ -41,8 +44,8 @@ dataset_name: 07_ScriptTextScript_{bibleId}
 bible_id: {bibleId}
 username: GaryNTest
 email: gary@shortsands.com
-output_file: 07__compare_usx_text_edit_2_script.html
 compare:
+  html_report: yes
   base_dataset: 07_USXTextEditScript_{bibleId}
   compare_settings: # Mark yes, all settings that apply
     lower_case: n

@@ -23,11 +23,16 @@ func DirectTestUtility(requestYaml string, tests []CtlTest, t *testing.T) {
 	ctx := context.Background()
 	for _, tst := range tests {
 		var req = strings.Replace(requestYaml, `{bibleId}`, tst.BibleId, 3)
-		var control = controller.NewController(ctx, []byte(req))
-		filename, status := control.Process()
+		output, status := controller.CLIProcessEntry([]byte(req))
+		//var control = controller.NewController(ctx, []byte(req))
+		//filename, status := control.Process()
 		if status.IsErr {
 			t.Fatal(status)
 		}
+		if len(output.FilePaths) == 0 {
+			t.Fatal("There were no output reports")
+		}
+		filename := output.FilePaths[0]
 		fmt.Println(filename)
 		numLines := NumFileLines(filename, t)
 		if numLines != tst.Expected {

@@ -4,12 +4,13 @@ import (
 	"testing"
 )
 
-const WhisperTest = `is_new: yes
+const whisperTest = `is_new: yes
 dataset_name: 14b_whisper
 bible_id: ENGWEB
 username: GaryNTest
 email: gary@shortsands.com
-output_file: 14b_whisper.sqlite
+output:
+  sqlite: yes
 testament: 
   nt_books: [PHM]
 text_data:
@@ -30,5 +31,5 @@ func TestWhisperDirect(t *testing.T) {
 	var tests []SqliteTest
 	tests = append(tests, SqliteTest{"SELECT count(*) FROM scripts", 26})
 	tests = append(tests, SqliteTest{"SELECT count(*) FROM scripts WHERE script_begin_ts != 0.0", 25})
-	DirectSqlTest(WhisperTest, tests, t)
+	DirectSqlTest(whisperTest, tests, t)
 }

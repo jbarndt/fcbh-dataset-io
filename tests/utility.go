@@ -32,9 +32,16 @@ type SqliteTest struct {
 
 // DirectSqlTest requires a sqlite database as output to perform tests on the result
 func DirectSqlTest(request string, tests []SqliteTest, t *testing.T) string {
-	database, status := controller.CLIProcessEntry([]byte(request))
+	output, status := controller.CLIProcessEntry([]byte(request))
 	if status.IsErr {
 		t.Fatal(status)
+	}
+	var database string
+	for _, file := range output.FilePaths {
+		if strings.HasSuffix(file, ".sqlite") {
+			database = file
+			break
+		}
 	}
 	fmt.Println("Test output", database)
 	conn, err := sql.Open("sqlite3", database)
@@ -91,15 +98,14 @@ func CLIExec(requestYaml string, t *testing.T) (string, string) {
 	return stdoutBuf.String(), stderrBuf.String()
 }
 
-func ExtractFilename(yaml string) string {
-	return ExtractFilenaame(yaml)
-}
-
-// Deprecated
-func ExtractFilenaame(yaml string) string {
-	start := strings.Index(yaml, `output_file:`) + 12
-	end := strings.Index(yaml[start:], "\n")
-	filename := strings.TrimSpace(yaml[start : start+end])
+func ExtractFilename(stdout string) string {
+	var filename string
+	start := strings.Index(stdout, `Success:`)
+	if start > -1 {
+		start += 9
+		end := strings.Index(stdout[start:], "\n")
+		filename = strings.TrimSpace(stdout[start : start+end])
+	}
 	return filename
 }
 

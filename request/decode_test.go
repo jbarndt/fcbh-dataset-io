@@ -30,8 +30,12 @@ dataset_name: Test1  # should be a unique name
 bible_id: ENGWEB
 username: GaryNGriswold
 email: gary@gmail.com
-output_file: myfile.json
 alt_language: en
+output:
+  directory: /Users/gary
+  csv: Yes
+  json: Yes
+  sqlite: Yes
 testament:
   ot: 
   ot_books: [GEN,EXO,LEV,NUM,DEU]
@@ -85,6 +89,7 @@ audio_proof:
   html_report: yes
   base_dataset: UseProject1
 compare:
+  html_report: yes
   base_dataset: UseProject1
   compare_settings:
     lower_case: yes
@@ -115,6 +120,9 @@ compare:
 	}
 	_, _ = r.Encode(req)
 	var boolTests = []bool{
+		req.Output.CSV,
+		req.Output.JSON,
+		req.Output.Sqlite,
 		//req.Testament.OT,
 		req.Testament.NT,
 		req.AudioData.BibleBrain.MP3_64,
@@ -144,9 +152,8 @@ compare:
 		req.AudioEncoding.NoEncoding,
 		req.TextEncoding.FastText,
 		req.TextEncoding.NoEncoding,
-		//req.OutputFormat.CSV,
-		//req.OutputFormat.JSON,
-		//req.OutputFormat.Sqlite,
+		req.AudioProof.HTMLReport,
+		req.Compare.HTMLReport,
 		req.Compare.CompareSettings.LowerCase,
 		req.Compare.CompareSettings.RemovePromptChars,
 		req.Compare.CompareSettings.RemovePunctuation,
@@ -170,7 +177,7 @@ compare:
 		req.BibleId,
 		req.Username,
 		req.Email,
-		req.OutputFile,
+		req.Output.Directory,
 		req.AudioData.File,
 		req.AudioData.AWSS3,
 		req.TextData.File,

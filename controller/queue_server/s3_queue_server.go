@@ -44,7 +44,7 @@ func main() {
 		first = false
 		if !status.IsErr && object != nil {
 			var control = controller.NewController(ctx, object)
-			_, status = control.Process()
+			_, status = control.ProcessV2()
 			var folder string
 			if status.IsErr {
 				folder = failedFolder

@@ -15,7 +15,8 @@ dataset_name: ScriptTextScript_{bibleId}
 bible_id: {bibleId}
 username: GaryNTest
 email: gary@shortsands.com
-output_file: 04__script_text_script.sqlite
+output:
+  sqlite: yes
 text_data:
   file: /Users/gary/FCBH2024/download/ATIWBT/ATIWBTN2ST.xlsx
 `

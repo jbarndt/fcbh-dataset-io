@@ -16,7 +16,8 @@ dataset_name: PostAudioWhisperJson_{bibleId}
 bible_id: {bibleId}
 username: GaryNTest
 email: gary@shortsands.com
-output_file: 11__post_audio_whisper.json
+output:
+  json: yes
 audio_data:
   post: {namev4}
 speech_to_text:

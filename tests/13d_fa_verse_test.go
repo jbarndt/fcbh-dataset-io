@@ -4,12 +4,13 @@ import (
 	"testing"
 )
 
-const FAVerseTest = `is_new: yes
+const fAVerseTest = `is_new: yes
 dataset_name: 13d_fa_verse
 bible_id: ENGWEB
 username: GaryNTest
 email: gary@shortsands.com
-output_file: 13d_fa_verse.sqlite
+output:
+  sqlite: yes
 text_data:
   bible_brain:
     text_plain_edit: yes
@@ -26,5 +27,5 @@ func TestFAVerseDirect(t *testing.T) {
 	var tests []SqliteTest
 	tests = append(tests, SqliteTest{"SELECT count(*) FROM scripts", 26})
 	tests = append(tests, SqliteTest{"SELECT count(*) FROM scripts WHERE script_begin_ts != 0.0", 25})
-	DirectSqlTest(FAVerseTest, tests, t)
+	DirectSqlTest(fAVerseTest, tests, t)
 }

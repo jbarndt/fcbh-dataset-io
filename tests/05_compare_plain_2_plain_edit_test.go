@@ -14,8 +14,8 @@ dataset_name: PlainTextScript_{bibleId}
 bible_id: {bibleId}
 username: GaryNTest
 email: gary@shortsands.com
-output_file: 05__compare_plain_2_edit.html
 compare:
+  html_report: yes
   base_dataset: PlainTextEditScript_{bibleId}
   compare_settings: # Mark yes, all settings that apply
     lower_case: 
@@ -50,7 +50,7 @@ func TestComparePlain2PlainEditScriptCLI(t *testing.T) {
 	stdout, stderr := CLIExec(req, t)
 	fmt.Println(`STDOUT:`, stdout)
 	fmt.Println(`STDERR:`, stderr)
-	filename := ExtractFilename(req)
+	filename := ExtractFilename(stdout)
 	count := NumHTMLFileLines(filename, t)
 	expected := 260
 	if count != expected {
