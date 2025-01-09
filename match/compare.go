@@ -6,6 +6,7 @@ import (
 	"dataset/db"
 	"dataset/fetch"
 	log "dataset/logger"
+	"dataset/mms"
 	"dataset/request"
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"golang.org/x/text/unicode/norm"
@@ -21,6 +22,7 @@ type Compare struct {
 	dataset     string
 	baseDb      db.DBAdapter
 	database    db.DBAdapter
+	lang        string
 	baseIdent   db.Ident
 	compIdent   db.Ident
 	testament   request.Testament
@@ -45,13 +47,14 @@ type Verse struct {
 }
 
 func NewCompare(ctx context.Context, user fetch.DBPUser, baseDSet string, db db.DBAdapter,
-	testament request.Testament, settings request.CompareSettings) Compare {
+	lang string, testament request.Testament, settings request.CompareSettings) Compare {
 	var c Compare
 	c.ctx = ctx
 	c.user = user
 	c.baseDataset = baseDSet
 	c.dataset = strings.Split(db.Database, `.`)[0]
 	c.database = db
+	c.lang = lang
 	c.testament = testament
 	c.settings = settings
 	c.replacer = c.cleanUpSetup()
@@ -63,6 +66,10 @@ func (c *Compare) Process() (string, dataset.Status) {
 	var filename string
 	var status dataset.Status
 	c.baseDb, status = db.NewerDBAdapter(c.ctx, false, c.user.Username, c.baseDataset)
+	if status.IsErr {
+		return filename, status
+	}
+	status = mms.EnsureUroman(c.baseDb, c.lang)
 	if status.IsErr {
 		return filename, status
 	}
@@ -335,6 +342,7 @@ func (c *Compare) cleanUpSetup() *strings.Replacer {
 func (c *Compare) cleanUpVerses(verses []Verse) []Verse {
 	for i, vs := range verses {
 		verses[i].text = c.cleanup(vs.text)
+		verses[i].uRoman = c.cleanup(vs.uRoman)
 	}
 	return verses
 }

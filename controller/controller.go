@@ -455,7 +455,7 @@ func (c *Controller) audioProofing(audioFiles []input.InputFile) (string, datase
 func (c *Controller) matchText() (string, dataset.Status) {
 	var filename string
 	var status dataset.Status
-	compare := match.NewCompare(c.ctx, c.user, c.req.Compare.BaseDataset, c.database, c.req.Testament, c.req.Compare.CompareSettings)
+	compare := match.NewCompare(c.ctx, c.user, c.req.Compare.BaseDataset, c.database, c.ident.LanguageISO, c.req.Testament, c.req.Compare.CompareSettings)
 	filename, status = compare.Process()
 	return filename, status
 }
