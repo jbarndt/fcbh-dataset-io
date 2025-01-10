@@ -153,7 +153,7 @@ func (m *MMSAlign) prepareText(lang string, bookId string, chapter int) ([]strin
 
 func (m *MMSAlign) convertNum2Words(text string) string {
 	for _, ch := range []rune(text) {
-		if !unicode.IsDigit(ch) {
+		if !unicode.IsDigit(ch) && ch != '.' && ch != ',' {
 			return text
 		}
 	}

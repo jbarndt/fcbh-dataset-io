@@ -324,15 +324,28 @@ func updateIdentAudio(ident *db.Ident, files []InputFile) bool {
 }
 
 var corrections = map[string]string{
+	"PSM": "PSA", // Psalms
+	"PRV": "PRO", // Proverbs
+	"SOS": "SNG", // Song of Solomon
 	"EZE": "EZK", // Ezekiel
-	"JMS": "JAS", // James
 	"JOE": "JOL", // Joel
 	"NAH": "NAM", // Nahum
-	"PRV": "PRO", // Proverbs
-	"PSM": "PSA", // Psalms
-	"SOS": "SNG", // Song of Solomon
+	"MRC": "MRK", // Mark
+	"LUC": "LUK", // Luke
+	"JUA": "JHN", // John
+	"HEC": "ACT", // Acts
+	"EFE": "EPH", // Ephesians
+	"FHP": "PHP", // Philippians
+	"1TE": "1TH", // 1 Thessalonians
+	"2TE": "2TH", // 2 Thessalonians
+	"TTO": "TIT", // Titus
 	"TTL": "TIT", // Titus
-	"TTS": "TIT"} // Titus
+	"TTS": "TIT", // Titus
+	"FHM": "PHM", // Philemon
+	"JMS": "JAS", // James
+	"SNT": "JAS", // James
+	"APO": "REV", // Revelation
+}
 
 func validateBookId(ctx context.Context, bookId string) (string, dataset.Status) {
 	var status dataset.Status
