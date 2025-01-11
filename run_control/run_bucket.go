@@ -34,7 +34,7 @@ func NewRunBucket(ctx context.Context, yaml []byte) RunBucket {
 	var b RunBucket
 	b.ctx = ctx
 	b.start = time.Now()
-	b.bucket = "dataset-io"
+	b.bucket = os.Getenv("FCBH_DATASET_IO_BUCKET")
 	b.yamlContent = string(yaml)
 	b.username = b.parseYaml(`username`)
 	b.dataset = b.parseYaml(`dataset_name`)

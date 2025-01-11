@@ -10,6 +10,7 @@ import (
 	log "dataset/logger"
 	"dataset/match"
 	"dataset/mms"
+	"dataset/mms/fa_score_analysis"
 	"dataset/output"
 	"dataset/read"
 	"dataset/request"
@@ -373,6 +374,11 @@ func (c *Controller) timestamps(audioFiles []input.InputFile) dataset.Status {
 		var ts mms.MMSAlign
 		ts = mms.NewMMSAlign(c.ctx, c.database, c.ident.LanguageISO, c.req.AltLanguage)
 		status = ts.ProcessFiles(audioFiles)
+		if status.IsErr {
+			return status
+		}
+		analysisRpt, _ := fa_score_analysis.FAScoreAnalysis(c.database)
+		c.bucket.AddOutput(analysisRpt)
 	}
 	return status
 }

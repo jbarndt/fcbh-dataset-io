@@ -18,7 +18,6 @@ import (
 )
 
 const (
-	bucketName   = `dataset-queue`
 	inputFolder  = `input/`
 	sucessFolder = `success/`
 	failedFolder = `failed/`
@@ -36,6 +35,7 @@ func main() {
 	client := s3.NewFromConfig(cfg)
 	first := true
 	for {
+		bucketName := os.Getenv("FCBH_DATASET_QUEUE")
 		object, key, status := getOldestObject(ctx, client, bucketName)
 		if first && status.IsErr {
 			_, _ = fmt.Fprintln(os.Stderr, err, "Reading First Input Failed In Queue Main")
