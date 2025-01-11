@@ -12,12 +12,6 @@ import (
 	"strings"
 )
 
-const (
-	criticalThreshold = 0.0001 // 0.001
-	questionThreshold = 0.001  // 0.001
-	//silenceStdevs     = 4.0    // intended to make it rare
-)
-
 type ErrorType int
 
 const (

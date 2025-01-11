@@ -12,6 +12,20 @@ import (
 	"strconv"
 )
 
+func GetFAScoreThresholds(conn db.DBAdapter) (float64, float64, dataset.Status) {
+	var criticalThreshold float64
+	var questionThreshold float64
+	var status dataset.Status
+	faErrors, status := getFAErrors(conn)
+	if status.IsErr {
+		return criticalThreshold, questionThreshold, status
+	}
+	sort.Float64s(faErrors)
+	criticalThreshold = stat.Quantile(0.999, stat.Empirical, faErrors, nil)
+	questionThreshold = stat.Quantile(0.997, stat.Empirical, faErrors, nil)
+	return criticalThreshold, questionThreshold, status
+}
+
 func FAScoreAnalysis(conn db.DBAdapter) (string, dataset.Status) {
 	var status dataset.Status
 	var project = filepath.Base(conn.Database)
@@ -25,13 +39,9 @@ func FAScoreAnalysis(conn db.DBAdapter) (string, dataset.Status) {
 	defer file.Close()
 	write(file, project, " FA Error Analysis\n")
 
-	chars, status := conn.SelectFACharTimestamps()
+	faErrors, status := getFAErrors(conn)
 	if status.IsErr {
 		return filename, status
-	}
-	var faErrors []float64
-	for _, char := range chars {
-		faErrors = append(faErrors, -math.Log10(char.FAScore))
 	}
 	mean := stat.Mean(faErrors, nil)
 	write(file, "Mean: ", strconv.FormatFloat(mean, 'f', 2, 64))
@@ -59,9 +69,10 @@ func FAScoreAnalysis(conn db.DBAdapter) (string, dataset.Status) {
 	// Percentile
 	write(file, "\nPercentiles")
 	sort.Float64s(faErrors)
-	for _, percent := range []float64{0.95, 0.96, 0.97, 0.98, 0.99, 0.995, 0.996, 0.997, 0.998, 0.999} {
+	for _, percent := range []float64{0.990, 0.991, 0.992, 0.993, 0.994, 0.995, 0.996, 0.997, 0.998,
+		0.999, 0.9991, 0.9992, 0.9993, 0.9994, 0.9995, 0.9996, 0.9997, 0.9998, 0.9999} {
 		percentile := stat.Quantile(percent, stat.Empirical, faErrors, nil)
-		percentStr := strconv.FormatFloat((percent * 100.0), 'f', 1, 64)
+		percentStr := strconv.FormatFloat((percent * 100.0), 'f', 2, 64)
 		write(file, "Percentile ", percentStr, ": ", strconv.FormatFloat(percentile, 'f', 2, 64))
 	}
 	// Histogram
@@ -78,9 +89,22 @@ func FAScoreAnalysis(conn db.DBAdapter) (string, dataset.Status) {
 	numFAError := len(faErrors)
 	for _, cat := range keys {
 		pct := float64(histogram[cat]) / float64(numFAError) * 100.0
-		write(file, "Cat: ", strconv.Itoa(cat), "-", strconv.Itoa(cat+1), " = ", strconv.FormatFloat(pct, 'f', 4, 64))
+		write(file, "Cat: ", strconv.Itoa(cat), "-", strconv.Itoa(cat+1), " = ", strconv.FormatFloat(pct, 'f', 4, 64), "%")
 	}
 	return filename, status
+}
+
+func getFAErrors(conn db.DBAdapter) ([]float64, dataset.Status) {
+	var faErrors []float64
+	var status dataset.Status
+	chars, status := conn.SelectFACharTimestamps()
+	if status.IsErr {
+		return faErrors, status
+	}
+	for _, char := range chars {
+		faErrors = append(faErrors, -math.Log10(char.FAScore))
+	}
+	return faErrors, status
 }
 
 func write(file *os.File, args ...string) {
