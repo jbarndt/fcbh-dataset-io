@@ -21,8 +21,8 @@ func GetFAScoreThresholds(conn db.DBAdapter) (float64, float64, dataset.Status) 
 		return criticalThreshold, questionThreshold, status
 	}
 	sort.Float64s(faErrors)
-	criticalThreshold = stat.Quantile(0.999, stat.Empirical, faErrors, nil)
-	questionThreshold = stat.Quantile(0.997, stat.Empirical, faErrors, nil)
+	criticalThreshold = stat.Quantile(0.998, stat.Empirical, faErrors, nil)
+	questionThreshold = stat.Quantile(0.995, stat.Empirical, faErrors, nil)
 	return criticalThreshold, questionThreshold, status
 }
 
