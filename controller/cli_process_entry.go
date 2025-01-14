@@ -2,18 +2,19 @@ package controller
 
 import (
 	"context"
-	"dataset"
 	"io"
 	"os"
 	"path/filepath"
+
+	"dataset"
 )
 
 func CLIProcessEntry(yaml []byte) (OutputFiles, dataset.Status) {
 	var output OutputFiles
 	var status dataset.Status
-	var ctx = context.WithValue(context.Background(), `runType`, `cli`)
-	var control = NewController(ctx, yaml)
-	output, status = control.ProcessV2()
+	ctx := context.WithValue(context.Background(), `runType`, `cli`)
+	control := NewController(ctx, yaml)
+	output, status = control.ProcessV2() // calls main entry point with no parameters
 	if status.IsErr {
 		return output, status
 	}

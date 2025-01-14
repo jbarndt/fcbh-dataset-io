@@ -1,4 +1,4 @@
-package main
+package controller
 
 import (
 	"context"
@@ -25,6 +25,9 @@ const (
 	failedFolder = `failed/`
 )
 
+// main is the entry point for the ECS Task invocation.
+// it expects to receive one request (where?); it will invoke the main service entry point, then exit
+// FIXME: this is copied from queue_server and needs to be adapted to accept ECS input
 func main() {
 	ctx := context.WithValue(context.Background(), `runType`, `queue`)
 	cfg, err := config.LoadDefaultConfig(ctx,

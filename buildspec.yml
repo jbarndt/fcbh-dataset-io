@@ -1,0 +1,28 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      golang: 1.23
+    commands:
+      - export DOCKER_BUILDKIT=0
+      - cd backend
+      - yarn install --frozen-lockfile
+      - yarn global add serverless
+  pre_build:
+    commands:
+      - ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.us-west-2.amazonaws.com
+
+  build:
+    commands:
+      - echo $environment
+      # for notes on creating a docker image for ECR: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/create-container-image.html
+      - docker build -t fcbh-dataset-io .
+      - docker tag fcbh-dataset-io:latest $ecr_repo:latest
+      - docker push $ecr_repo:latest
+      - sls deploy --stage ${environment}
+
+  post_build:
+    commands:
+      - echo Build completed on `date`

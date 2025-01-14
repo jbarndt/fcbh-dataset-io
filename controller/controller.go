@@ -2,6 +2,8 @@ package controller
 
 import (
 	"context"
+	"time"
+
 	"dataset"
 	"dataset/db"
 	"dataset/encode"
@@ -17,7 +19,6 @@ import (
 	"dataset/run_control"
 	"dataset/speech_to_text"
 	"dataset/timestamp"
-	"time"
 )
 
 type OutputFiles struct {
@@ -52,7 +53,7 @@ func (c *Controller) SetPostFiles(postFiles *input.PostFiles) {
 
 // Process is deprecated for production, but is a test only convenience method
 func (c *Controller) Process() (string, dataset.Status) {
-	output, status := c.ProcessV2()
+	output, status := c.ProcessV2() // calls main entry point with no parameters
 	if status.IsErr {
 		return "", status
 	}
@@ -63,14 +64,15 @@ func (c *Controller) Process() (string, dataset.Status) {
 	}
 }
 
-// ProcessV2 is the production means to execute the controller
+// ProcessV2 is the production means to execute the controller.
+// This is the entry point to the 12factor app
 func (c *Controller) ProcessV2() (OutputFiles, dataset.Status) {
-	var start = time.Now()
+	start := time.Now()
 	if c.postFiles != nil {
 		defer c.postFiles.RemoveDir()
 	}
 	log.Debug(c.ctx)
-	var status = c.processSteps()
+	status := c.processSteps()
 	if status.IsErr {
 		filename := c.outputStatus(status)
 		c.bucket.AddOutput(filename)
@@ -250,7 +252,7 @@ func (c *Controller) fetchData() (db.Ident, dataset.Status) {
 func (c *Controller) collectTextInput() ([]input.InputFile, dataset.Status) {
 	var files []input.InputFile
 	var status dataset.Status
-	var expectFiles = true
+	expectFiles := true
 	bb := c.req.TextData.BibleBrain
 	if bb.TextPlain || bb.TextPlainEdit || bb.TextUSXEdit {
 		files, status = input.DBPDirectory(c.ctx, c.req.BibleId, c.ident.TextSource, c.ident.TextOTId,
@@ -273,7 +275,7 @@ func (c *Controller) collectTextInput() ([]input.InputFile, dataset.Status) {
 func (c *Controller) collectAudioInput() ([]input.InputFile, dataset.Status) {
 	var files []input.InputFile
 	var status dataset.Status
-	var expectFiles = true
+	expectFiles := true
 	bb := c.req.AudioData.BibleBrain
 	if bb.MP3_64 || bb.MP3_16 || bb.OPUS {
 		bibleId := c.req.BibleId
@@ -345,7 +347,7 @@ func (c *Controller) timestamps(audioFiles []input.InputFile) dataset.Status {
 		//
 		// Why isn't Bible Brain just processing input??
 		//
-		var filesetIds = []string{c.ident.AudioOTId, c.ident.AudioNTId}
+		filesetIds := []string{c.ident.AudioOTId, c.ident.AudioNTId}
 		for _, filesetId := range filesetIds {
 			if filesetId != `` {
 				api := fetch.NewAPIDBPTimestamps(c.database, filesetId)
@@ -391,10 +393,10 @@ func (c *Controller) speechToText(audioFiles []input.InputFile) dataset.Status {
 		asr = mms.NewMMSASR(c.ctx, c.database, c.ident.LanguageISO, c.req.AltLanguage)
 		status = asr.ProcessFiles(audioFiles)
 	} else {
-		var whisperModel = c.req.SpeechToText.Whisper.Model.String()
+		whisperModel := c.req.SpeechToText.Whisper.Model.String()
 		if whisperModel != `` {
-			var lang2 = c.req.AltLanguage
-			var whisper = speech_to_text.NewWhisper(bibleId, c.database, whisperModel, lang2)
+			lang2 := c.req.AltLanguage
+			whisper := speech_to_text.NewWhisper(bibleId, c.database, whisperModel, lang2)
 			status = whisper.ProcessFiles(audioFiles)
 			if status.IsErr {
 				return status
@@ -469,7 +471,7 @@ func (c *Controller) matchText() (string, dataset.Status) {
 func (c *Controller) output() dataset.Status {
 	var filename string
 	var status dataset.Status
-	var out = output.NewOutput(c.ctx, c.database, c.req.DatasetName, false, false)
+	out := output.NewOutput(c.ctx, c.database, c.req.DatasetName, false, false)
 	var records []any
 	var meta []output.Meta
 	if c.req.Detail.Lines {
@@ -498,7 +500,7 @@ func (c *Controller) output() dataset.Status {
 func (c *Controller) outputStatus(status dataset.Status) string {
 	var filename string
 	var status2 dataset.Status
-	var out = output.NewOutput(c.ctx, db.DBAdapter{}, c.req.DatasetName, false, false)
+	out := output.NewOutput(c.ctx, db.DBAdapter{}, c.req.DatasetName, false, false)
 	if c.req.Output.CSV {
 		filename, status2 = out.CSVStatus(status, true)
 	} else if c.req.Output.JSON {

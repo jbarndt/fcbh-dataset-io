@@ -4,15 +4,17 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"dataset/request"
 	"fmt"
-	"gopkg.in/yaml.v3"
 	"io"
 	"mime/multipart"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"dataset/request"
+
+	"gopkg.in/yaml.v3"
 )
 
 func main() {
@@ -196,7 +198,7 @@ func GetConfig() Config {
 	if isChanged {
 		bytes, err := yaml.Marshal(&cfg)
 		Catch(err)
-		file, err = os.OpenFile(cfgPath, os.O_WRONLY|os.O_CREATE, 0666)
+		file, err = os.OpenFile(cfgPath, os.O_WRONLY|os.O_CREATE, 0o666)
 		Catch(err)
 		_, err = file.Write(bytes)
 		Catch(err)

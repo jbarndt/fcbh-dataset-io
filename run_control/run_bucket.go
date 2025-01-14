@@ -2,20 +2,23 @@ package run_control
 
 import (
 	"context"
-	"dataset"
-	"dataset/db"
-	log "dataset/logger"
 	"fmt"
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
+
+	"dataset"
+	"dataset/db"
+	log "dataset/logger"
+
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
+// RunBucket represents the context associated with processing one request
 type RunBucket struct {
 	ctx         context.Context
 	IsUnitTest  bool // Set to true by run_bucket_test.

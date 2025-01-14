@@ -1,5 +1,9 @@
 package request
 
+/*
+Request defines the yaml-based request document.
+This is defined by the service and submitted by clients through a variety of protocols (HTTP, CLI)
+*/
 type Request struct {
 	IsNew         bool          `yaml:"is_new"`
 	DatasetName   string        `yaml:"dataset_name"`
@@ -25,7 +29,7 @@ type Output struct {
 	CSV       bool   `yaml:"csv,omitempty"`
 	JSON      bool   `yaml:"json,omitempty"`
 	Sqlite    bool   `yaml:"sqlite,omitempty"`
-	//HTML      bool   `yaml:"html,omitempty"`
+	// HTML      bool   `yaml:"html,omitempty"`
 }
 
 type Testament struct {
@@ -153,7 +157,7 @@ func (b BibleBrainText) TextType() MediaType {
 }
 
 func (t MediaType) IsFrom(ttype string) bool {
-	var result = false
+	result := false
 	switch t {
 	case TextUSXEdit:
 		result = ttype == `text_usx`

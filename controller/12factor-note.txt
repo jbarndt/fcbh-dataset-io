@@ -1,0 +1,24 @@
+The controller folder contains the main entry point into core logic, along with the protocol adapters for handling request/response. There is also a CLI which submits HTTP client requests
+
+Main entry point:
+controller.ProcessV2
+
+
+Protocol adapters
+S3: controller.queue_server
+HTTP: controller.api_server
+CLI: controller.dataset_cli (direct access)
+CLI: controller.FCBHDataset (http access)
+
+
+The refactor goal is to ensure that controller.ProcessV2 can be executed in parallel. 
+This means that controller.ProcessV2 must run in its own process space, with its own compute, memory and storage.
+We will create a Docker image with controller.ProcessV2 as the entry point
+The docker image will be executed on demand, as part of an AWS ECS Cluster; as a request is received, a new ECS Task instance will be started and provided the request info
+The ECS task will be configured with permission to access the DBP database and some S3 buckets. 
+Input will be a yaml file containing the request, 
+
+Required changes
+1) retrieve database connection string from environment (the database credentials will be provided to the ECS Task and are not an application concern)
+2) retrieve bucket ARNs from the environment (similarly, the ECS task will be configured with permission to perform the necessary operations on the buckets)
+3) The logic of the queue_server will be moved to other AWS resources and configured via terraform (S3 bucket, EventBridge, S3 Put Event, etc). 

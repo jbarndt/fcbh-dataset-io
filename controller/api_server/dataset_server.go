@@ -1,21 +1,28 @@
 package main
 
+/*
+12factor note:
+dataset_server provides an HTTP interface to the main service entry point
+FIXME: move this to a lambda and deploy via serverless.yml
+
+*/
 import (
 	"context"
-	"dataset/controller"
-	"dataset/input"
-	log "dataset/logger"
 	"io"
 	"mime/multipart"
 	"net/http"
-	//_ "net/http/pprof"
 	"os"
 	"strings"
 	"time"
+
+	"dataset/controller"
+	"dataset/input"
+	log "dataset/logger"
+	//_ "net/http/pprof"
 )
 
 func main() {
-	var ctx = context.Background()
+	ctx := context.Background()
 	http.HandleFunc("/upload", uploadHandler)
 	http.HandleFunc("/request", handler)
 	log.Info(ctx, "Server starting on port 7777...")
@@ -26,8 +33,8 @@ func main() {
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
-	var start = time.Now()
-	var ctx = context.WithValue(context.Background(), `runType`, `server`)
+	start := time.Now()
+	ctx := context.WithValue(context.Background(), `runType`, `server`)
 	if r.Method != `POST` {
 		errorResponse(ctx, w, http.StatusMethodNotAllowed, nil, `Only POST method is allowed`)
 	}
@@ -36,14 +43,14 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		errorResponse(ctx, w, http.StatusInternalServerError, err, `Error reading request to server`)
 		return
 	}
-	var control = controller.NewController(ctx, request)
+	control := controller.NewController(ctx, request)
 	responder(ctx, w, control)
 	log.Info(context.TODO(), time.Since(start))
 }
 
 func uploadHandler(w http.ResponseWriter, r *http.Request) {
-	var start = time.Now()
-	var ctx = context.WithValue(context.Background(), `runType`, `server`)
+	start := time.Now()
+	ctx := context.WithValue(context.Background(), `runType`, `server`)
 	if r.Method != `POST` {
 		errorResponse(ctx, w, http.StatusMethodNotAllowed, nil, `Only POST method is allowed`)
 	}
@@ -54,7 +61,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Read form parts, currently tested to handle yaml file and one content file, either text or audio key
-	var postFiles = input.NewPostFiles(ctx)
+	postFiles := input.NewPostFiles(ctx)
 	var request []byte
 	var yamlHeader *multipart.FileHeader
 	var dataHeader *multipart.FileHeader
@@ -81,14 +88,15 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	log.Info(ctx, "Files uploaded successfully:", dataHeader.Filename, yamlHeader.Filename)
-	var control = controller.NewController(ctx, request)
+	control := controller.NewController(ctx, request)
 	control.SetPostFiles(&postFiles)
 	responder(ctx, w, control)
 	log.Info(ctx, time.Since(start))
 }
 
 func responder(ctx context.Context, w http.ResponseWriter, control controller.Controller) {
-	var outputFiles, status = control.ProcessV2()
+	// 12factor note: this is a call to the main service entry point (control.ProcessV2)
+	outputFiles, status := control.ProcessV2()
 	if status.IsErr {
 		w.WriteHeader(status.Status)
 	} else {
