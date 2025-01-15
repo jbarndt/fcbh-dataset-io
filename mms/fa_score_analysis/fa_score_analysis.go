@@ -12,20 +12,6 @@ import (
 	"strconv"
 )
 
-func GetFAScoreThresholds(conn db.DBAdapter) (float64, float64, dataset.Status) {
-	var criticalThreshold float64
-	var questionThreshold float64
-	var status dataset.Status
-	faErrors, status := getFAErrors(conn)
-	if status.IsErr {
-		return criticalThreshold, questionThreshold, status
-	}
-	sort.Float64s(faErrors)
-	criticalThreshold = stat.Quantile(0.998, stat.Empirical, faErrors, nil)
-	questionThreshold = stat.Quantile(0.995, stat.Empirical, faErrors, nil)
-	return criticalThreshold, questionThreshold, status
-}
-
 func FAScoreAnalysis(conn db.DBAdapter) (string, dataset.Status) {
 	var status dataset.Status
 	var project = filepath.Base(conn.Database)

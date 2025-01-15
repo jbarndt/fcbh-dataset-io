@@ -6,7 +6,6 @@ import (
 	"dataset/db"
 	"dataset/generic"
 	log "dataset/logger"
-	"dataset/mms/fa_score_analysis"
 	"math"
 	"os"
 	"path/filepath"
@@ -17,17 +16,15 @@ import (
 )
 
 type AlignWriter struct {
-	ctx               context.Context
-	conn              db.DBAdapter
-	datasetName       string
-	criticalThreshold float64
-	questionThreshold float64
-	out               *os.File
-	lineNum           int
-	critErrors        int
-	questErrors       int
-	critGaps          int
-	questGaps         int
+	ctx         context.Context
+	conn        db.DBAdapter
+	datasetName string
+	out         *os.File
+	lineNum     int
+	critErrors  int
+	questErrors int
+	critGaps    int
+	questGaps   int
 }
 
 func NewAlignWriter(ctx context.Context, conn db.DBAdapter) AlignWriter {
@@ -41,10 +38,6 @@ func (a *AlignWriter) WriteReport(datasetName string, lines []generic.AlignLine,
 	var filename string
 	var status dataset.Status
 	var err error
-	a.criticalThreshold, a.questionThreshold, status = fa_score_analysis.GetFAScoreThresholds(a.conn)
-	if status.IsErr {
-		return filename, status
-	}
 	a.datasetName = datasetName
 	a.out, err = os.Create(filepath.Join(os.Getenv(`FCBH_DATASET_TMP`), datasetName+"_proof.html"))
 	if err != nil {
@@ -109,11 +102,11 @@ func (a *AlignWriter) WriteLine(chars []generic.AlignChar) {
 	var logMap = make(map[int64][]float64)
 	var countMap = a.countCharsInWords(chars)
 	for i, char := range chars {
-		logScore := -math.Log10(chars[i].FAScore)
-		if logScore >= a.criticalThreshold {
+		if chars[i].FAScore <= criticalThreshold {
 			chars[i].ScoreError = int(scoreCritical)
+			logScore := -math.Log10(chars[i].FAScore)
 			logMap[char.WordId] = append(logMap[char.WordId], logScore)
-		} else if logScore >= a.questionThreshold {
+		} else if chars[i].FAScore <= questionThreshold {
 			chars[i].ScoreError = int(scoreQuestion)
 		}
 		if char.IsASR && !unicode.IsSpace(char.Uroman) {
