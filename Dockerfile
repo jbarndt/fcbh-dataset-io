@@ -20,16 +20,16 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86
 ENV PATH=$CONDA_DIR/bin:$PATH
 
 # ---------- base ----------
-COPY environment_base.yml .
+COPY docker_conda_env/environment_base.yml .
 RUN conda env update -f environment_base.yml
 
 
 # ---------- aeneas ----------
-COPY environment_aeneas.yml .
-RUN conda env create -f environment_aeneas.yml
-RUN conda run -n aeneas apt-get install -y espeak libespeak-dev build-essential
-RUN conda run -n aeneas pip install numpy
-RUN conda run -n aeneas pip install aeneas
+COPY docker_conda_env/environment_aeneas.yml .
+RUN conda env create -f environment_aeneas.yml \
+    && conda run -n aeneas apt-get install -y espeak libespeak-dev build-essential \
+    && conda run -n aeneas pip install numpy \
+    && conda run -n aeneas pip install aeneas
 
 
 # ---------- fasttext ----------
@@ -37,45 +37,43 @@ RUN conda create -y -n fasttext --no-default-packages
 RUN git clone https://github.com/facebookresearch/fastText.git
 RUN mkdir build
 WORKDIR /app/fastText/build
-RUN cmake ..
-RUN make && make install 
+RUN cmake .. && make && make install 
 WORKDIR /app
 
 
 # ---------- librosa ----------
-COPY environment_librosa.yml .
-RUN conda env create -f environment_librosa.yml
-RUN conda run -n librosa pip install librosa
+COPY docker_conda_env/environment_librosa.yml .
+RUN conda env create -f environment_librosa.yml \
+    && conda run -n librosa pip install librosa
 
 
 # ---------- mms_asr ----------
-COPY environment_mms_asr.yml .
-RUN conda env create -f environment_mms_asr.yml
-RUN conda run -n mms_asr pip install accelerate datasets soundfile librosa 
-RUN conda run -n mms_asr pip install --upgrade transforms
-RUN conda run -n mms_asr pip install uroman
+COPY docker_conda_env/environment_mms_asr.yml .
+RUN conda env create -f environment_mms_asr.yml \
+    && conda run -n mms_asr pip install accelerate datasets soundfile librosa  \
+    && conda run -n mms_asr pip install --upgrade transforms \
+    && conda run -n mms_asr pip install uroman 
 RUN cp /opt/conda/envs/mms_asr/bin/uroman /opt/conda/envs/mms_asr/bin/uroman.pl
 
 
 # ---------- mms_fa ----------
-COPY environment_mms_fa.yml .
-RUN conda env create -f environment_mms_fa.yml
-RUN conda run -n mms_fa pip install sox uroman
+COPY docker_conda_env/environment_mms_fa.yml .
+RUN conda env create -f environment_mms_fa.yml \
+    && conda run -n mms_fa pip install sox uroman
 RUN cp /opt/conda/envs/mms_fa/bin/uroman /opt/conda/envs/mms_fa/bin/uroman.pl
 
 
 # ---------- whisper ----------
-COPY environment_whisper.yml .
-RUN conda env create -f environment_whisper.yml
-RUN conda run -n whisper pip install -U openai-whisper
+COPY docker_conda_env/environment_whisper.yml .
+RUN conda env create -f environment_whisper.yml \
+    && conda run -n whisper pip install -U openai-whisper
 
 
 # ---------- go ----------
 RUN wget https://go.dev/dl/go1.23.3.linux-amd64.tar.gz
 RUN tar -C /usr/local -xzf go1.23.3.linux-amd64.tar.gz
 ENV PATH=/usr/local/go/bin:$PATH
-RUN rm go1.23.3.linux-amd64.tar.gz
-RUN mkdir /app/go
+RUN rm go1.23.3.linux-amd64.tar.gz && mkdir /app/go
 ENV GOPATH=/app/go/
 
 
