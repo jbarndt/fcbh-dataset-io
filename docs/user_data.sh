@@ -157,12 +157,11 @@ cd $HOME
 mkdir go
 export GOPATH=$HOME/go
 
-# ---------- application server ----------
+# ---------- application code ----------
 
 mkdir $HOME/go/src
 cd $HOME/go/src
-git clone https://github.com/garygriswold/fcbh-dataset-io.git
-mv fcbh-dataset-io dataset  # Fix this hack
+git clone https://github.com/faithcomesbyhearing/fcbh-dataset-io.git dataset
 
 # Update and compile
 # cd $HOME/go/src/dataset
