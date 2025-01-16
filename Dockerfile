@@ -20,12 +20,12 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86
 ENV PATH=$CONDA_DIR/bin:$PATH
 
 # ---------- base ----------
-COPY environment_base.yml .
+COPY docker_conda_env/environment_base.yml .
 RUN conda env update -f environment_base.yml
 
 
 # ---------- aeneas ----------
-COPY environment_aeneas.yml .
+COPY docker_conda_env/environment_aeneas.yml .
 RUN conda env create -f environment_aeneas.yml
 RUN conda run -n aeneas apt-get install -y espeak libespeak-dev build-essential
 RUN conda run -n aeneas pip install numpy
@@ -43,13 +43,13 @@ WORKDIR /app
 
 
 # ---------- librosa ----------
-COPY environment_librosa.yml .
+COPY docker_conda_env/environment_librosa.yml .
 RUN conda env create -f environment_librosa.yml
 RUN conda run -n librosa pip install librosa
 
 
 # ---------- mms_asr ----------
-COPY environment_mms_asr.yml .
+COPY docker_conda_env/environment_mms_asr.yml .
 RUN conda env create -f environment_mms_asr.yml
 RUN conda run -n mms_asr pip install accelerate datasets soundfile librosa 
 RUN conda run -n mms_asr pip install --upgrade transforms
@@ -58,14 +58,14 @@ RUN cp /opt/conda/envs/mms_asr/bin/uroman /opt/conda/envs/mms_asr/bin/uroman.pl
 
 
 # ---------- mms_fa ----------
-COPY environment_mms_fa.yml .
+COPY docker_conda_env/environment_mms_fa.yml .
 RUN conda env create -f environment_mms_fa.yml
 RUN conda run -n mms_fa pip install sox uroman
 RUN cp /opt/conda/envs/mms_fa/bin/uroman /opt/conda/envs/mms_fa/bin/uroman.pl
 
 
 # ---------- whisper ----------
-COPY environment_whisper.yml .
+COPY docker_conda_env/environment_whisper.yml .
 RUN conda env create -f environment_whisper.yml
 RUN conda run -n whisper pip install -U openai-whisper
 
