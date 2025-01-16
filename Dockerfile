@@ -1,32 +1,6 @@
-FROM public.ecr.aws/docker/library/golang:1.23.4-alpine as builder
+FROM ubuntu:20.04
 
 WORKDIR /app
-
-# Copy Go modules and download dependencies
-COPY go.mod go.sum ./
-RUN go mod download
-
-# Copy the entire project
-COPY . .
-
-# Build the Go application
-RUN go build -o taskService controller/ecs_entry.go
-
-# Deployment stage
-FROM public.ecr.aws/amazonlinux/amazonlinux:latest
-
-WORKDIR /root/
-
-
-# Install necessary tools
-RUN yum update -y && \
-    # yum install -y wget tar xz && \
-    yum clean all
-
-
-
-
-FROM ubuntu:20.04
 
 # Install base utilities
 RUN apt-get update \
@@ -45,8 +19,6 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86
 # Put conda in path 
 ENV PATH=$CONDA_DIR/bin:$PATH
 
-WORKDIR /app
-
 # ---------- base ----------
 COPY environment_base.yml .
 RUN conda env update -f environment_base.yml
@@ -55,14 +27,9 @@ RUN conda env update -f environment_base.yml
 # ---------- aeneas ----------
 COPY environment_aeneas.yml .
 RUN conda env create -f environment_aeneas.yml
-RUN conda run -n aeneas apt-get install -y espeak 
-# RUN conda run -n aeneas pip install aeneas    TODO - figure out error
-
-
-# ---------- easy_mms ----------
-COPY environment_easy_mms.yml .
-RUN conda env create -f environment_easy_mms.yml
-#RUN conda run -n easy_mms pip install easymms    TODO - figure out error
+RUN conda run -n aeneas apt-get install -y espeak libespeak-dev build-essential
+RUN conda run -n aeneas pip install numpy
+RUN conda run -n aeneas pip install aeneas
 
 
 # ---------- fasttext ----------
@@ -113,10 +80,10 @@ ENV GOPATH=/app/go/
 
 
 # ---------- application server ----------
+# Copy the entire project
 RUN mkdir /app/go/src
 WORKDIR /app/go/src
-RUN git clone https://github.com/garygriswold/fcbh-dataset-io.git
-RUN mv fcbh-dataset-io dataset
+COPY . .
 
 WORKDIR /app
 RUN mkdir /app/data && mkdir /app/data/download && mkdir /app/data/tmp
@@ -142,12 +109,15 @@ ENV PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
 
 
+# Build the Go application
+# RUN go build -o taskService /app/go/src/controller/ecs_entry.go
+
 
 # Copy the built binary
-COPY --from=builder /app/taskService .
+# COPY --from=builder /app/taskService .
 
 # Ensure the binary is executable
-RUN chmod +x ./taskService
+# RUN chmod +x ./taskService
 
 # Use environment variable to determine the service to run
-ENTRYPOINT ["./taskService"]
+# ENTRYPOINT ["./taskService"]
