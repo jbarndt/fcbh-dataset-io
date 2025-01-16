@@ -1,0 +1,9 @@
+name: mms_asr
+channels:
+  - pytorch
+  - nvidia
+dependencies:
+  - python=3.11
+  - pytorch
+  - torchaudio
+  - pytorch-cuda=12.1
