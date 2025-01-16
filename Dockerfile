@@ -122,6 +122,25 @@ WORKDIR /app
 RUN mkdir /app/data && mkdir /app/data/download && mkdir /app/data/tmp
 
 
+# ---------- environment variables ----------
+ENV HOME=/app
+ENV GOPROJ=$GOPATH/src
+ENV PATH=$PATH:/usr/local/go/bin
+ENV FCBH_DATASET_DB=$HOME/data
+ENV FCBH_DATASET_FILES=$HOME/data/download
+ENV FCBH_DATASET_TMP=$HOME/data/tmp
+ENV FCBH_AENEAS_PYTHON=/opt/conda/envs/aeneas/bin/python
+ENV FCBH_FASTTEXT_EXE=/opt/conda/envs/fasttext/fastText/fasttext
+ENV FCBH_LIBROSA_PYTHON=/opt/conda/envs/librosa/bin/python
+ENV FCBH_MMS_ASR_PYTHON=/opt/conda/envs/mms_asr/bin/python
+ENV FCBH_MMS_FA_PYTHON=/opt/conda/envs/mms_fa/bin/python
+ENV FCBH_UROMAN_EXE=/opt/conda/envs/mms_fa/bin/uroman
+ENV FCBH_WHISPER_EXE=/opt/conda/envs/whisper/bin/whisper
+ENV FCBH_DATASET_LOG_FILE=$HOME/dataset.log
+ENV FCBH_DATASET_LOG_LEVEL=DEBUG
+ENV PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+
+
 
 
 # Copy the built binary
