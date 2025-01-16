@@ -18,10 +18,9 @@ phases:
     commands:
       - echo $environment
       # for notes on creating a docker image for ECR: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/create-container-image.html
-      - docker build -t fcbh-dataset-io .
-      - docker tag fcbh-dataset-io:latest $ecr_repo:latest
+      - docker build -t deep-learning .
+      - docker tag deep-learning:latest $ecr_repo:latest
       - docker push $ecr_repo:latest
-      - sls deploy --stage ${environment}
 
   post_build:
     commands:
