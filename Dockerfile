@@ -1,4 +1,5 @@
-FROM ubuntu:20.04
+FROM public.ecr.aws/docker/library/golang:1.23.4-alpine as builder
+
 
 WORKDIR /app
 
