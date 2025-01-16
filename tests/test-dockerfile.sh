@@ -1,0 +1,26 @@
+docker exec -it <container_id> bash
+# envvars built into image
+echo $HOME
+echo $GOPATH
+echo $PATH
+echo $FCBH_DATASET_DB
+echo $FCBH_DATASET_FILES
+echo $FCBH_DATASET_TMP
+echo $FCBH_AENEAS_PYTHON
+echo $FCBH_FASTTEXT_EXE
+echo $FCBH_LIBROSA_PYTHON
+echo $FCBH_MMS_ASR_PYTHON
+echo $FCBH_MMS_FA_PYTHON
+echo $FCBH_WHISPER_EXE
+echo $FCBH_DATASET_LOG_FILE
+echo $FCBH_DATASET_LOG_LEVEL
+echo $PYTORCH_CUDA_ALLOC_CONF
+
+# executables expected by application code
+$FCBH_AENEAS_PYTHON
+$FCBH_FASTTEXT_EXE
+$FCBH_LIBROSA_PYTHON
+$FCBH_MMS_ASR_PYTHON
+$FCBH_MMS_FA_PYTHON
+$FCBH_WHISPER_EXE
+
