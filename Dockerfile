@@ -24,7 +24,105 @@ RUN yum update -y && \
     yum clean all
 
 
-# TODO: include build instructions from docs/user_data.sh
+
+
+FROM ubuntu:20.04
+
+# Install base utilities
+RUN apt-get update \
+    && apt-get -y upgrade \
+    && apt-get install -y wget \
+    && apt-get install -y git \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y cmake \
+    && apt-get install -y build-essential
+
+
+# Install conda
+ENV CONDA_DIR /opt/conda
+RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
+    /bin/bash ~/miniconda.sh -b -p /opt/conda
+
+# Put conda in path 
+ENV PATH=$CONDA_DIR/bin:$PATH
+
+WORKDIR /app
+
+# ---------- base ----------
+COPY environment_base.yml .
+RUN conda env update -f environment_base.yml
+
+
+# ---------- aeneas ----------
+COPY environment_aeneas.yml .
+RUN conda env create -f environment_aeneas.yml
+RUN conda run -n aeneas apt-get install -y espeak 
+# RUN conda run -n aeneas pip install aeneas    TODO - figure out error
+
+
+# ---------- easy_mms ----------
+COPY environment_easy_mms.yml .
+RUN conda env create -f environment_easy_mms.yml
+#RUN conda run -n easy_mms pip install easymms    TODO - figure out error
+
+
+# ---------- fasttext ----------
+RUN conda create -y -n fasttext --no-default-packages
+RUN git clone https://github.com/facebookresearch/fastText.git
+RUN mkdir build
+WORKDIR /app/fastText/build
+RUN cmake ..
+RUN make && make install 
+WORKDIR /app
+
+
+# ---------- librosa ----------
+COPY environment_librosa.yml .
+RUN conda env create -f environment_librosa.yml
+RUN conda run -n librosa pip install librosa
+
+
+# ---------- mms_asr ----------
+COPY environment_mms_asr.yml .
+RUN conda env create -f environment_mms_asr.yml
+RUN conda run -n mms_asr pip install accelerate datasets soundfile librosa 
+RUN conda run -n mms_asr pip install --upgrade transforms
+RUN conda run -n mms_asr pip install uroman
+RUN cp /opt/conda/envs/mms_asr/bin/uroman /opt/conda/envs/mms_asr/bin/uroman.pl
+
+
+# ---------- mms_fa ----------
+COPY environment_mms_fa.yml .
+RUN conda env create -f environment_mms_fa.yml
+RUN conda run -n mms_fa pip install sox uroman
+RUN cp /opt/conda/envs/mms_fa/bin/uroman /opt/conda/envs/mms_fa/bin/uroman.pl
+
+
+# ---------- whisper ----------
+COPY environment_whisper.yml .
+RUN conda env create -f environment_whisper.yml
+RUN conda run -n whisper pip install -U openai-whisper
+
+
+# ---------- go ----------
+RUN wget https://go.dev/dl/go1.23.3.linux-amd64.tar.gz
+RUN tar -C /usr/local -xzf go1.23.3.linux-amd64.tar.gz
+ENV PATH=/usr/local/go/bin:$PATH
+RUN rm go1.23.3.linux-amd64.tar.gz
+RUN mkdir /app/go
+ENV GOPATH=/app/go/
+
+
+# ---------- application server ----------
+RUN mkdir /app/go/src
+WORKDIR /app/go/src
+RUN git clone https://github.com/garygriswold/fcbh-dataset-io.git
+RUN mv fcbh-dataset-io dataset
+
+WORKDIR /app
+RUN mkdir /app/data && mkdir /app/data/download && mkdir /app/data/tmp
+
+
+
 
 # Copy the built binary
 COPY --from=builder /app/taskService .

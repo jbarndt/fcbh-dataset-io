@@ -1,0 +1,12 @@
+name: mms_fa
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pytorch
+  - torchaudio
+  - pytorch-cuda=12.1
+  - pysoundfile
+  - ffmpeg-python
