@@ -55,8 +55,9 @@ RUN conda env update -f environment_base.yml
 # ---------- aeneas ----------
 COPY environment_aeneas.yml .
 RUN conda env create -f environment_aeneas.yml
-RUN conda run -n aeneas apt-get install -y espeak 
-# RUN conda run -n aeneas pip install aeneas    TODO - figure out error
+RUN conda run -n aeneas apt-get install -y espeak libespeak-dev build-essential
+RUN conda run -n aeneas pip install numpy
+RUN conda run -n aeneas pip install aeneas
 
 
 # ---------- easy_mms ----------
