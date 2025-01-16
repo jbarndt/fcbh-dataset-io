@@ -6,9 +6,7 @@ phases:
       golang: 1.23
     commands:
       - export DOCKER_BUILDKIT=0
-      - cd backend
       - yarn install --frozen-lockfile
-      - yarn global add serverless
   pre_build:
     commands:
       - ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
