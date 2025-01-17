@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"dataset"
-	"dataset/controller"
 	log "dataset/logger"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -26,8 +25,7 @@ const (
 )
 
 // main is the entry point for the ECS Task invocation.
-// it expects to receive one request (where?); it will invoke the main service entry point, then exit
-// FIXME: this is copied from queue_server and needs to be adapted to accept ECS input
+// it expects to receive one S3 object (which is a yaml file); it will invoke the main service entry point, then exit
 func main() {
 	ctx := context.WithValue(context.Background(), `runType`, `queue`)
 	cfg, err := config.LoadDefaultConfig(ctx,
@@ -38,28 +36,62 @@ func main() {
 		os.Exit(1)
 	}
 	client := s3.NewFromConfig(cfg)
-	first := true
-	for {
-		bucketName := os.Getenv("FCBH_DATASET_QUEUE")
-		object, key, status := getOldestObject(ctx, client, bucketName)
-		if first && status.IsErr {
-			_, _ = fmt.Fprintln(os.Stderr, err, "Reading First Input Failed In Queue Main")
-			os.Exit(1)
-		}
-		first = false
-		if !status.IsErr && object != nil {
-			control := controller.NewController(ctx, object)
-			_, status = control.ProcessV2() // calls main entry point
-			var folder string
-			if status.IsErr {
-				folder = failedFolder
-			} else {
-				folder = sucessFolder
-			}
-			_ = moveOnCompletion(ctx, client, bucketName, key, folder)
-		}
-		time.Sleep(time.Second * 10)
+
+	// An Eventbridge event will set two environment variables containing the bucket and key to be retrieved
+	// Permission to retrieve the object has been granted to the ECS task via terraform
+	// values: S3_BUCKET and S3_KEY
+	bucket := os.Getenv("S3_BUCKET")
+	key := os.Getenv("S3_KEY")
+
+	getInput := &s3.GetObjectInput{
+		Bucket: &bucket,
+		Key:    &key,
 	}
+	
+	status dataset.Status
+	object, err := client.GetObject(ctx, getInput)
+	if err != nil {
+		status = log.Error(ctx, 500, err, "Error Getting Object in Queue Input Folder")
+		return
+	}
+	var content []byte
+
+	content, err = io.ReadAll(object.Body)
+	_ = object.Body.Close()
+	if err != nil {
+		status = log.Error(ctx, 500, err, "Error reading yaml file from Queue Input Folder.")
+	}
+	control := controller.NewController(ctx, object)
+	_, status = control.ProcessV2() // calls main entry point
+	var folder string
+	if status.IsErr {
+		folder = failedFolder
+	} else {
+		folder = sucessFolder
+	}
+
+	// first := true
+	// for {
+	// 	bucketName := os.Getenv("FCBH_DATASET_QUEUE")
+	// 	object, key, status := getOldestObject(ctx, client, bucketName)
+	// 	if first && status.IsErr {
+	// 		_, _ = fmt.Fprintln(os.Stderr, err, "Reading First Input Failed In Queue Main")
+	// 		os.Exit(1)
+	// 	}
+	// 	first = false
+	// 	if !status.IsErr && object != nil {
+	// 		control := controller.NewController(ctx, object)
+	// 		_, status = control.ProcessV2() // calls main entry point
+	// 		var folder string
+	// 		if status.IsErr {
+	// 			folder = failedFolder
+	// 		} else {
+	// 			folder = sucessFolder
+	// 		}
+	// 		_ = moveOnCompletion(ctx, client, bucketName, key, folder)
+	// 	}
+	// 	time.Sleep(time.Second * 10)
+	// }
 }
 
 func getOldestObject(ctx context.Context, client *s3.Client, bucket string) ([]byte, string, dataset.Status) {
