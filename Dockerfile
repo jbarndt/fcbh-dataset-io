@@ -108,14 +108,10 @@ ENV PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
 
 # Build the Go application
-# RUN go build -o taskService /app/go/src/controller/ecs_entry.go
-
-
-# Copy the built binary
-# COPY --from=builder /app/taskService .
+RUN go build -o taskService /app/go/src/controller/ecs_entry.go
 
 # Ensure the binary is executable
-# RUN chmod +x ./taskService
+RUN chmod +x ./taskService
 
 # Use environment variable to determine the service to run
-# ENTRYPOINT ["./taskService"]
+ENTRYPOINT ["./taskService"]
