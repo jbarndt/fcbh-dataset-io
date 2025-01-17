@@ -108,6 +108,7 @@ ENV PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
 
 # Build the Go application
+WORKDIR /app/go/src
 RUN go build -o taskService /app/go/src/controller/ecs_entry/main.go
 
 # Ensure the binary is executable
