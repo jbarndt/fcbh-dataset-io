@@ -9,4 +9,5 @@
 *.sqlite
 *.flac
 user-data.sh
+test_data/*
 

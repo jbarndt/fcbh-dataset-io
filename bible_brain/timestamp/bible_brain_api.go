@@ -11,8 +11,8 @@ import (
 )
 
 type BiblesResponse struct {
-	Data []Bible `json:"data"`
-	Meta Meta    `json:"meta"`
+	Data []fetch.BibleInfoType `json:"data"`
+	Meta Meta                  `json:"meta"`
 }
 
 type Meta struct {
@@ -30,37 +30,8 @@ type Pagination struct {
 	Total       int    `json:"total"`
 }
 
-type Bible struct {
-	Abbr       string `json:"abbr"`
-	Name       string `json:"name"`
-	Vname      string `json:"vname"`
-	Autonym    string `json:"autonym"`
-	LanguageId int    `json:"language_id"`
-	Rolv_code  string `json:"rolv_code"`
-	Language   string `json:"language"`
-	ISOCode    string `json:"iso"`
-	Date       string `json:"date"`
-	Filesets   Bucket `json:"filesets"`
-}
-
-type Bucket struct {
-	DBPProd []Fileset `json:"dbp-prod"`
-	DBPVid  []Fileset `json:"dbp-vid"`
-}
-
-type Fileset struct {
-	FilesetId string `json:"id"`
-	Type      string `json:"type"`
-	Size      string `json:"size"`
-	StockNo   string `json:"stock_no"`
-	Bitrate   string `json:"bitrate"`
-	Codec     string `json:"codec"`
-	Container string `json:"container"`
-	Volume    string `json:"volume"`
-}
-
 func FetchBibles() dataset.Status {
-	var result []Bible
+	var result []fetch.BibleInfoType
 	var status dataset.Status
 	ctx := context.Background()
 	url := "https://4.dbt.io/api/bibles?v=4"
@@ -91,4 +62,19 @@ func FetchBibles() dataset.Status {
 		return log.Error(ctx, 500, err, "Error writing bibles API query")
 	}
 	return status
+}
+
+func ReadBibles() ([]fetch.BibleInfoType, dataset.Status) {
+	var bibles []fetch.BibleInfoType
+	var status dataset.Status
+	ctx := context.Background()
+	content, err := os.ReadFile("bible_brain_api.json")
+	if err != nil {
+		return bibles, log.Error(ctx, 500, err, "Reading file")
+	}
+	err = json.Unmarshal(content, &bibles)
+	if err != nil {
+		return bibles, log.Error(ctx, 500, err, "Error unmarshalling bibles")
+	}
+	return bibles, status
 }

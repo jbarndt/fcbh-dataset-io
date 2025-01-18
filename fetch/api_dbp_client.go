@@ -113,7 +113,7 @@ func (d *APIDBPClient) FindFilesets(info *BibleInfoType, audio request.BibleBrai
 
 func (d *APIDBPClient) searchPlainText(info *BibleInfoType, size string, textType request.MediaType) FilesetType {
 	for _, rec := range info.DbpProd.Filesets {
-		if rec.Type == `text_plain` && rec.Size == size {
+		if rec.Type == `text_plain` && d.hasSize(rec.Size, size) {
 			if textType == request.TextPlain || textType == request.TextPlainEdit {
 				return rec
 			}
@@ -124,7 +124,7 @@ func (d *APIDBPClient) searchPlainText(info *BibleInfoType, size string, textTyp
 
 func (d *APIDBPClient) searchUSXText(info *BibleInfoType, size string, textType request.MediaType) FilesetType {
 	for _, rec := range info.DbpProd.Filesets {
-		if rec.Type == `text_usx` && rec.Size == size {
+		if rec.Type == `text_usx` && d.hasSize(rec.Size, size) {
 			if textType == request.TextUSXEdit || textType == request.TextPlainEdit {
 				return rec
 			}
@@ -139,7 +139,7 @@ func (d *APIDBPClient) searchAudio(info *BibleInfoType, size string, audioType s
 			recCodec := strings.ToUpper(rec.Codec)
 			if recCodec == codec || (recCodec == `MP` && codec == `MP3`) {
 				if rec.Bitrate == bitrate || (rec.Bitrate == `3kbps` && bitrate == `64kbps`) {
-					if rec.Size == size {
+					if d.hasSize(rec.Size, size) {
 						if recCodec == `MP` {
 							rec.Codec = `MP3`
 						}
@@ -153,6 +153,19 @@ func (d *APIDBPClient) searchAudio(info *BibleInfoType, size string, audioType s
 		}
 	}
 	return FilesetType{}
+}
+
+func (d *APIDBPClient) hasSize(recSize string, size string) bool {
+	switch recSize {
+	case "C", "NTOTP", "OTNTP", "NTPOTP":
+		return true
+	case "NT", "NTP":
+		return size == "NT"
+	case "OT", "OTP":
+		return size == "OT"
+	default:
+		return false
+	}
 }
 
 func (d *APIDBPClient) UpdateIdent(id db.Ident, info BibleInfoType, req request.Request) (db.Ident, dataset.Status) {
