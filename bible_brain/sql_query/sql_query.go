@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"database/sql"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
@@ -18,11 +19,11 @@ func NewQueryProcessor(db *sql.DB) *QueryProcessor {
 }
 
 // ProcessQuery executes SELECT query and prints results in table format
-func (qp *QueryProcessor) ProcessQuery(query string, args ...interface{}) error {
+func (qp *QueryProcessor) ProcessQuery(query string, args ...any) error {
 	// Verify query starts with SELECT
-	if !strings.HasPrefix(strings.TrimSpace(strings.ToUpper(query)), "SELECT") {
-		return fmt.Errorf("only SELECT queries are allowed")
-	}
+	//if !strings.HasPrefix(strings.TrimSpace(strings.ToUpper(query)), "SELECT") {
+	//	return fmt.Errorf("only SELECT queries are allowed")
+	//}
 
 	// Execute query
 	rows, err := qp.db.Query(query, args...)
@@ -38,8 +39,8 @@ func (qp *QueryProcessor) ProcessQuery(query string, args ...interface{}) error 
 	}
 
 	// Prepare value holders
-	values := make([]interface{}, len(columns))
-	valuePtrs := make([]interface{}, len(columns))
+	values := make([]any, len(columns))
+	valuePtrs := make([]any, len(columns))
 	for i := range columns {
 		valuePtrs[i] = &values[i]
 	}
@@ -117,7 +118,7 @@ func printHorizontalLine(widths []int) {
 }
 
 // interfaceToString safely converts any value to string
-func interfaceToString(v interface{}) string {
+func interfaceToString(v any) string {
 	if v == nil {
 		return "NULL"
 	}
@@ -149,7 +150,6 @@ func GetDBPMySqlDSN() string {
 }
 
 func main() {
-	// Example usage:
 	dsn := GetDBPMySqlDSN()
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
@@ -158,20 +158,23 @@ func main() {
 	defer db.Close()
 
 	processor := NewQueryProcessor(db)
+	reader := bufio.NewReader(os.Stdin)
 
-	// Example query
-	query := `Select * from bible_files limit ?`
-
-	if err := processor.ProcessQuery(query, 25); err != nil {
-		panic(err)
+	for {
+		fmt.Print("mysql> ")
+		input, err := reader.ReadString('\n')
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error reading input: %v\n", err)
+			continue
+		}
+		// Trim whitespace and check for exit command
+		command := strings.TrimSpace(input)
+		if command == ".exit" {
+			fmt.Println("Bye")
+			return
+		}
+		if err := processor.ProcessQuery(command); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		}
 	}
-
-	// Output will look like:
-	// +----+----------+-------------------+---------------------+
-	// | id | name     | email            | created_at          |
-	// +----+----------+-------------------+---------------------+
-	// | 1  | John Doe | john@example.com | 2024-01-20 15:30:00|
-	// | 2  | Jane Doe | jane@example.com | 2024-01-21 09:45:00|
-	// +----+----------+-------------------+---------------------+
-	// 2 rows in set
 }
