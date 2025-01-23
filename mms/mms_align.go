@@ -153,7 +153,7 @@ func (m *MMSAlign) prepareText(lang string, bookId string, chapter int) ([]strin
 
 func (m *MMSAlign) convertNum2Words(text string) string {
 	for _, ch := range []rune(text) {
-		if !unicode.IsDigit(ch) && ch != '.' && ch != ',' {
+		if !unicode.IsDigit(ch) && ch != '.' && ch != ',' && ch != '-' {
 			return text
 		}
 	}
@@ -228,8 +228,10 @@ func (m *MMSAlign) processPyOutput(file input.InputFile, wordRefs []Word, respon
 		word.Text = ref.word
 		word.Uroman = ref.uroman
 		faWd := faWords[i]
-		word.BeginTS = faWd[0].Start
-		word.EndTS = faWd[len(faWd)-1].End
+		if len(faWd) > 0 {
+			word.BeginTS = faWd[0].Start
+			word.EndTS = faWd[len(faWd)-1].End
+		}
 		uromanChars := []rune(ref.uroman)
 		for j, ch := range faWd {
 			word.FAScore += ch.Score
