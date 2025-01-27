@@ -5,8 +5,8 @@ import (
 )
 
 func TestLineRef_Parse(t *testing.T) {
-	var b LineRef
-	a := b.ParseKey("NUM 22:12").(LineRef)
+	var a LineRef
+	a = NewLineRef("NUM 22:12")
 	if a.BookId != "NUM" {
 		t.Error("BookId should be NUM")
 	}

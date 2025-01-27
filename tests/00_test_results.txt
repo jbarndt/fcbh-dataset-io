@@ -1,4 +1,11 @@
+# 01a_plain_text
+go test ./tests -run TestPlainTextDirect
 
+# 01b_plain_text_edit
+go test ./tests -run TestPlainTextEditDirect
+
+# 01c_usx_text_edit
+go test ./tests -run TestUSXTextEditDirect
 
 # 3a_zip_file
 go test ./tests -run TestZipFileDirect
