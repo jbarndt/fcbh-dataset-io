@@ -2,7 +2,6 @@ package timestamp
 
 import (
 	"context"
-	"dataset"
 	"dataset/fetch"
 	log "dataset/logger"
 	"encoding/json"
@@ -30,9 +29,8 @@ type Pagination struct {
 	Total       int    `json:"total"`
 }
 
-func FetchBibles() dataset.Status {
+func FetchBibles() *log.Status {
 	var result []fetch.BibleInfoType
-	var status dataset.Status
 	ctx := context.Background()
 	url := "https://4.dbt.io/api/bibles?v=4"
 	for {
@@ -40,7 +38,7 @@ func FetchBibles() dataset.Status {
 			break
 		}
 		content, status := fetch.HttpGet(ctx, url, "")
-		if status.IsErr {
+		if status != nil {
 			return status
 		}
 		var response BiblesResponse
@@ -61,12 +59,11 @@ func FetchBibles() dataset.Status {
 	if err != nil {
 		return log.Error(ctx, 500, err, "Error writing bibles API query")
 	}
-	return status
+	return nil
 }
 
-func ReadBibles() ([]fetch.BibleInfoType, dataset.Status) {
+func ReadBibles() ([]fetch.BibleInfoType, *log.Status) {
 	var bibles []fetch.BibleInfoType
-	var status dataset.Status
 	ctx := context.Background()
 	content, err := os.ReadFile("bible_brain_api.json")
 	if err != nil {
@@ -76,5 +73,5 @@ func ReadBibles() ([]fetch.BibleInfoType, dataset.Status) {
 	if err != nil {
 		return bibles, log.Error(ctx, 500, err, "Error unmarshalling bibles")
 	}
-	return bibles, status
+	return bibles, nil
 }

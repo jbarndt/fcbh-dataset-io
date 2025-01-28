@@ -2,7 +2,6 @@ package input
 
 import (
 	"context"
-	"dataset"
 	log "dataset/logger"
 	"dataset/request"
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -19,9 +18,9 @@ import (
 
 // AWSS3Input is given a path prefix, that it uses to identify files.
 // Saves each file found to disk, and returns an array of input files
-func AWSS3Input(ctx context.Context, path string, testament request.Testament) ([]InputFile, dataset.Status) {
+func AWSS3Input(ctx context.Context, path string, testament request.Testament) ([]InputFile, *log.Status) {
 	var files []InputFile
-	var status dataset.Status
+	var status *log.Status
 	// Load the Shared AWS Configuration (~/.aws/config)
 	cfg, err := config.LoadDefaultConfig(ctx)
 	if err != nil {
@@ -32,7 +31,7 @@ func AWSS3Input(ctx context.Context, path string, testament request.Testament) (
 		o.Region = "us-west-2"
 	})
 	bucket, prefix, glob, status := parseGlob(ctx, path)
-	if status.IsErr {
+	if status != nil {
 		return files, status
 	}
 	list, err := client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
@@ -80,16 +79,16 @@ func AWSS3Input(ctx context.Context, path string, testament request.Testament) (
 		}
 	}
 	files, status = Unzip(ctx, files)
-	if status.IsErr {
+	if status != nil {
 		return files, status
 	}
 	for i := range files {
 		status = SetMediaType(ctx, &files[i])
-		if status.IsErr {
+		if status != nil {
 			return files, status
 		}
 		status = ParseFilenames(ctx, &files[i])
-		if status.IsErr {
+		if status != nil {
 			return files, status
 		}
 	}
@@ -97,25 +96,24 @@ func AWSS3Input(ctx context.Context, path string, testament request.Testament) (
 	return inputFiles, status
 }
 
-func EnsureDirectory(ctx context.Context, directory string) dataset.Status {
-	var status dataset.Status
+func EnsureDirectory(ctx context.Context, directory string) *log.Status {
 	_, err := os.Stat(directory)
 	if os.IsNotExist(err) {
 		err2 := os.MkdirAll(directory, os.ModePerm)
 		if err2 != nil {
-			status = log.Error(ctx, 400, err2, `Failed to create directory to download files`)
+			return log.Error(ctx, 400, err2, `Failed to create directory to download files`)
 		}
 	} else if err != nil {
-		status = log.Error(ctx, 400, err, `Failed to stat directory`)
+		return log.Error(ctx, 400, err, `Failed to stat directory`)
 	}
-	return status
+	return nil
 }
 
-func parseGlob(ctx context.Context, globKey string) (string, string, *regexp.Regexp, dataset.Status) {
+func parseGlob(ctx context.Context, globKey string) (string, string, *regexp.Regexp, *log.Status) {
 	var bucket string
 	var prefix string
 	var regex *regexp.Regexp
-	var status dataset.Status
+	var status *log.Status
 	if strings.HasPrefix(globKey, `s3://`) {
 		globKey = globKey[5:]
 	} else if strings.HasPrefix(globKey, `s3:/`) {
@@ -133,7 +131,7 @@ func parseGlob(ctx context.Context, globKey string) (string, string, *regexp.Reg
 		if strings.Contains(glob, `*`) {
 			prefix = globKey[firstSlash+1 : lastSlash+1]
 			regex, status = globPattern(ctx, glob)
-			if status.IsErr {
+			if status != nil {
 				return bucket, prefix, regex, status
 			}
 		}
@@ -141,18 +139,17 @@ func parseGlob(ctx context.Context, globKey string) (string, string, *regexp.Reg
 	return bucket, prefix, regex, status
 }
 
-func globPattern(ctx context.Context, glob string) (*regexp.Regexp, dataset.Status) {
+func globPattern(ctx context.Context, glob string) (*regexp.Regexp, *log.Status) {
 	var regex *regexp.Regexp
-	var status dataset.Status
 	var err error
 	glob = strings.Replace(glob, `.`, `\.`, -1)
 	glob = strings.Replace(glob, `*`, `.`, -1)
 	glob += `$`
 	regex, err = regexp.Compile(glob)
 	if err != nil {
-		status = log.Error(ctx, 400, err, `Failed to compile glob pattern on AWS input`)
+		return regex, log.Error(ctx, 400, err, `Failed to compile glob pattern on AWS input`)
 	}
-	return regex, status
+	return regex, nil
 }
 
 func findBibleIdMediaId(prefix string) (string, string) {

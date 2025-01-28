@@ -44,7 +44,7 @@ func LoadBBTimestamps(directory string, bibleId string, filesetId string) {
 	ctx := context.Background()
 	database := bibleId + `_TS`
 	conn, status := db.NewerDBAdapter(ctx, true, `GaryNGriswold`, database)
-	if status.IsErr {
+	if status != nil {
 		panic(status)
 	}
 	api := fetch.NewAPIDBPTimestamps(conn, filesetId)
@@ -54,8 +54,8 @@ func LoadBBTimestamps(directory string, bibleId string, filesetId string) {
 		for chap := 1; chap <= maxChap; chap++ {
 			fmt.Println(book, chap)
 			tsList, status := api.Timestamps(book, chap)
-			if status.IsErr {
-				panic(status.Message)
+			if status != nil {
+				panic(status)
 			}
 			//fmt.Println(book, chap, tsList)
 			results = append(results, tsList...)
@@ -147,7 +147,7 @@ func readWaha(directory string, isoCode string, book string, chap int) *WahaChap
 func readBBTS(api fetch.APIDBPTimestamps, book string, chap int) map[string]float64 {
 	var result = make(map[string]float64)
 	timestamps, status := api.Timestamps(book, chap)
-	if status.IsErr {
+	if status != nil {
 		panic(status)
 	}
 	//fmt.Println(timestamps)

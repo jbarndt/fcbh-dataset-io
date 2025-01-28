@@ -25,7 +25,7 @@ func TestForcedAlign_ProcessFiles(t *testing.T) {
 	file.Filename = "B01___22_Matthew_____ENGWEBN2DA.mp3"
 	files = append(files, file)
 	status = fa.ProcessFiles(files)
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 }
@@ -47,7 +47,7 @@ func TestForcedAlign_processPyOutput(t *testing.T) {
 		1127, 1128, 1129, 1130, 1131, 1132, 1133, 1134, 1135, 1136, 1137, 1138, 1139, 1140, 1141,
 		1142, 1143, 1144, 1145}
 	status = fa.processPyOutput(file, outputFile, references)
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 }

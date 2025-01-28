@@ -26,7 +26,7 @@ func DirectTestUtility(requestYaml string, tests []CtlTest, t *testing.T) {
 		output, status := controller.CLIProcessEntry([]byte(req))
 		//var control = controller.NewController(ctx, []byte(req))
 		//filename, status := control.Process()
-		if status.IsErr {
+		if status != nil {
 			t.Fatal(status)
 		}
 		if len(output.FilePaths) == 0 {
@@ -40,7 +40,7 @@ func DirectTestUtility(requestYaml string, tests []CtlTest, t *testing.T) {
 		}
 		var decoder = request.NewRequestDecoder(ctx)
 		reqObj, status := decoder.Decode([]byte(req))
-		if status.IsErr {
+		if status != nil {
 			t.Fatal(status)
 		}
 		identTest(reqObj.DatasetName, t, tst.TextType, ``,

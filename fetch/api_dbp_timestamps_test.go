@@ -15,8 +15,8 @@ func TestHavingTimestamps(t *testing.T) {
 	filesetId := `ENGWEBN2DA`
 	api := NewAPIDBPTimestamps(conn, filesetId)
 	timestampMap, status := api.HavingTimestamps()
-	if status.IsErr {
-		t.Error(status.Message)
+	if status != nil {
+		t.Error(status)
 	}
 	if len(timestampMap) != 344 {
 		t.Error(`344 filesetIds are expected`, len(timestampMap))
@@ -39,8 +39,8 @@ func TestTimestamps(t *testing.T) {
 	filesetId := `ENGWEBN2DA`
 	api := NewAPIDBPTimestamps(conn, filesetId)
 	timestamps, status := api.Timestamps(`MAT`, 5)
-	if status.IsErr {
-		t.Error(status.Message)
+	if status != nil {
+		t.Error(status)
 	}
 	if len(timestamps) != 49 {
 		t.Error(`344 timestamp is expected`, len(timestamps))
@@ -60,7 +60,7 @@ func TestLoadTimestamps(t *testing.T) {
 	bibleId := `ENGWEB`
 	database := bibleId + `_EDITTEXT`
 	conn, status := db.NewerDBAdapter(ctx, false, `GaryNGriswold`, database)
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 	filesetId := `ENGWEBN2DA`
@@ -68,8 +68,8 @@ func TestLoadTimestamps(t *testing.T) {
 	testament.BuildBookMaps()
 	api := NewAPIDBPTimestamps(conn, filesetId)
 	ok, status := api.LoadTimestamps(testament)
-	if status.IsErr {
-		t.Error(status.Message)
+	if status != nil {
+		t.Error(status)
 	}
 	if !ok {
 		t.Error(`ok should be true`)

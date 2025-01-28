@@ -14,11 +14,11 @@ func TestRequestYamlFile(t *testing.T) {
 		panic(err)
 	}
 	req, status := d.Decode(content)
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 	yaml, status := d.Encode(req)
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 	fmt.Println(yaml)
@@ -112,7 +112,7 @@ compare:
       normalize_nfkd: yes`
 	var r = NewRequestDecoder(context.Background())
 	req, status := r.Decode([]byte(test1))
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 	if !req.TextEncoding.FastText {

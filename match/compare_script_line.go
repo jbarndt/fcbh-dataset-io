@@ -1,20 +1,20 @@
 package match
 
 import (
-	"dataset"
 	"dataset/db"
+	log "dataset/logger"
 	"dataset/request"
 	"github.com/sergi/go-diff/diffmatchpatch"
 )
 
-func (c *Compare) CompareScriptLines() (string, dataset.Status) {
+func (c *Compare) CompareScriptLines() (string, *log.Status) {
 	var filename string
-	var status dataset.Status
+	var status *log.Status
 	filename = c.writer.WriteHeading(c.baseDataset)
 	// Build a map of the scripts to be compared
 	var scripts []db.Script
 	scripts, status = c.database.SelectScripts()
-	if status.IsErr {
+	if status != nil {
 		return filename, status
 	}
 	var compareMap = make(map[string]db.Script)
@@ -23,7 +23,7 @@ func (c *Compare) CompareScriptLines() (string, dataset.Status) {
 	}
 	// Select and increment over the base scripts
 	scripts, status = c.baseDb.SelectScripts()
-	if status.IsErr {
+	if status != nil {
 		return filename, status
 	}
 	for _, base := range scripts {

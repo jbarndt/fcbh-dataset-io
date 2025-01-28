@@ -16,8 +16,8 @@ func TestDBPTextReader1(t *testing.T) {
 	ntFileset := `ENGWEBN_ET`
 	testament := request.Testament{NTBooks: []string{`MAT`, `MRK`}, OTBooks: []string{`JOB`, `PSA`, `PRO`, `SNG`}}
 	files, status := input.DBPDirectory(ctx, bibleId, fsType, otFileset, ntFileset, testament)
-	if status.IsErr {
-		t.Error(status.Message)
+	if status != nil {
+		t.Error(status)
 	}
 	var database = bibleId + `_DBPTEXT.db`
 	db.DestroyDatabase(database)

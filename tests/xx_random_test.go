@@ -19,7 +19,7 @@ func TestRandomDirect(t *testing.T) {
 		t.Fatal(err)
 	}
 	database, status := controller.CLIProcessEntry(request)
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 	fmt.Println("Test output", database)

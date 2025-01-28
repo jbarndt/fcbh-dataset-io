@@ -2,7 +2,6 @@ package read
 
 import (
 	"context"
-	"dataset"
 	"dataset/db"
 	"dataset/input"
 	log "dataset/logger"
@@ -29,8 +28,8 @@ func NewDBPTextReader(conn db.DBAdapter, testament request.Testament) DBPTextRea
 	return d
 }
 
-func (d *DBPTextReader) ProcessFiles(files []input.InputFile) dataset.Status {
-	var status dataset.Status
+func (d *DBPTextReader) ProcessFiles(files []input.InputFile) *log.Status {
+	var status *log.Status
 	for _, file := range files {
 		filePath := filepath.Join(file.Directory, file.Filename)
 		content, err := os.ReadFile(filePath)

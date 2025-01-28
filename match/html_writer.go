@@ -2,7 +2,6 @@ package match
 
 import (
 	"context"
-	"dataset"
 	log "dataset/logger"
 	"math"
 	"os"
@@ -19,11 +18,11 @@ type HTMLWriter struct {
 	lineNum     int
 }
 
-func NewHTMLWriter(ctx context.Context, datasetName string) (HTMLWriter, dataset.Status) {
+func NewHTMLWriter(ctx context.Context, datasetName string) (HTMLWriter, *log.Status) {
 	var h HTMLWriter
 	h.ctx = ctx
 	h.datasetName = datasetName
-	var status dataset.Status
+	var status *log.Status
 	var err error
 	h.out, err = os.Create(filepath.Join(os.Getenv(`FCBH_DATASET_TMP`), datasetName+"_compare.html"))
 	//h.out, err = os.CreateTemp(os.Getenv(`FCBH_DATASET_TMP`), datasetName+"_compare.html")

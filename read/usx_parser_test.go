@@ -17,20 +17,20 @@ func TestUSXParser(t *testing.T) {
 	testament := request.Testament{NTBooks: []string{`MAT`, `MRK`}, OTBooks: []string{`JOB`, `PSA`, `PRO`, `SNG`}}
 	testament.BuildBookMaps()
 	files, status := input.DBPDirectory(ctx, bibleId, fsType, otFileset, ntFileset, testament)
-	if status.IsErr {
-		t.Error(status.Message)
+	if status != nil {
+		t.Error(status)
 	}
 	var database = bibleId + `_USXEDIT.db`
 	db.DestroyDatabase(database)
 	var conn = db.NewDBAdapter(ctx, database)
 	parser := NewUSXParser(conn)
 	status = parser.ProcessFiles(files)
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 	count, stat2 := conn.CountScriptRows()
-	if stat2.IsErr {
-		t.Error(stat2.Message)
+	if stat2 != nil {
+		t.Error(stat2)
 	}
 	if count != 11755 {
 		t.Error(`Expected 11755, but got`, count)

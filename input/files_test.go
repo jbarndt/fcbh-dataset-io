@@ -15,8 +15,8 @@ func TestPlainTextFileInput(t *testing.T) {
 	testament.BuildBookMaps()
 	search := filepath.Join(os.Getenv(`FCBH_DATASET_FILES`), bibleId, `*_ET.json`)
 	files, status := FileInput(ctx, search, testament)
-	if status.IsErr {
-		t.Error(status.Message)
+	if status != nil {
+		t.Error(status)
 	}
 	if len(files) != 2 {
 		t.Error(`Test should have found 2 files`, len(files))
@@ -31,8 +31,8 @@ func TestUSXTextFileInput(t *testing.T) {
 	testament.BuildBookMaps()
 	search := filepath.Join(os.Getenv(`FCBH_DATASET_FILES`), bibleId, filesetId, `*.usx`)
 	files, status := FileInput(ctx, search, testament)
-	if status.IsErr {
-		t.Error(status.Message)
+	if status != nil {
+		t.Error(status)
 	}
 	if len(files) != 3 {
 		t.Error(`Test should have found 3 files`, len(files))
@@ -47,8 +47,8 @@ func TestAudioFileInput(t *testing.T) {
 	testament.BuildBookMaps()
 	search := filepath.Join(os.Getenv(`FCBH_DATASET_FILES`), bibleId, filesetId, `*.mp3`)
 	files, status := FileInput(ctx, search, testament)
-	if status.IsErr {
-		t.Error(status.Message)
+	if status != nil {
+		t.Error(status)
 	}
 	if len(files) != 25 {
 		t.Error(`Test should have found 25 files`, len(files))

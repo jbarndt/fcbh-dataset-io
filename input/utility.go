@@ -3,7 +3,6 @@ package input
 import (
 	"archive/zip"
 	"context"
-	"dataset"
 	"dataset/db"
 	log "dataset/logger"
 	"dataset/request"
@@ -15,14 +14,12 @@ import (
 	"strings"
 )
 
-func Glob(ctx context.Context, search string) ([]InputFile, dataset.Status) {
+func Glob(ctx context.Context, search string) ([]InputFile, *log.Status) {
 	var results []InputFile
-	var status dataset.Status
 	if search != `` {
 		files, err := filepath.Glob(search)
 		if err != nil {
-			status = log.Error(ctx, 500, err, `Error reading directory`)
-			return results, status
+			return results, log.Error(ctx, 500, err, `Error reading directory`)
 		}
 		for _, file := range files {
 			var input InputFile
@@ -31,17 +28,15 @@ func Glob(ctx context.Context, search string) ([]InputFile, dataset.Status) {
 			results = append(results, input)
 		}
 	}
-	return results, status
+	return results, nil
 }
 
-func Unzip(ctx context.Context, files []InputFile) ([]InputFile, dataset.Status) {
+func Unzip(ctx context.Context, files []InputFile) ([]InputFile, *log.Status) {
 	var results []InputFile
-	var status dataset.Status
 	if len(files) == 1 && filepath.Ext(files[0].Filename) == `.zip` {
 		r, err := zip.OpenReader(files[0].FilePath())
 		if err != nil {
-			status = log.Error(ctx, 500, err, `Error unzipping file`)
-			return results, status
+			return results, log.Error(ctx, 500, err, `Error unzipping file`)
 		}
 		defer r.Close()
 		dest := files[0].Directory
@@ -51,8 +46,7 @@ func Unzip(ctx context.Context, files []InputFile) ([]InputFile, dataset.Status)
 			}
 			rc, err2 := f.Open()
 			if err2 != nil {
-				status = log.Error(ctx, 500, err2, `Error reading zip file`)
-				return results, status
+				return results, log.Error(ctx, 500, err2, `Error reading zip file`)
 			}
 			defer rc.Close()
 			if f.FileInfo().IsDir() {
@@ -63,15 +57,13 @@ func Unzip(ctx context.Context, files []InputFile) ([]InputFile, dataset.Status)
 			path := filepath.Join(dest, f.FileInfo().Name())
 			outFile, err3 := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
 			if err3 != nil {
-				status = log.Error(ctx, 500, err3, `Error opening file to unzip into`)
-				return results, status
+				return results, log.Error(ctx, 500, err3, `Error opening file to unzip into`)
 			}
 			defer outFile.Close()
 			_, err = io.Copy(outFile, rc)
 			_ = rc.Close()
 			if err != nil {
-				status = log.Error(ctx, 500, err, `Error copying file during unzip`)
-				return results, status
+				return results, log.Error(ctx, 500, err, `Error copying file during unzip`)
 			}
 			results = append(results, InputFile{Filename: f.FileInfo().Name(), Directory: dest})
 		}
@@ -81,12 +73,11 @@ func Unzip(ctx context.Context, files []InputFile) ([]InputFile, dataset.Status)
 	} else {
 		results = files
 	}
-	return results, status
+	return results, nil
 }
 
 // SetMediaType function looks at names and sets the Media Type
-func SetMediaType(ctx context.Context, file *InputFile) dataset.Status {
-	var status dataset.Status
+func SetMediaType(ctx context.Context, file *InputFile) *log.Status {
 	fN := file.Filename
 	if strings.HasSuffix(fN, `_ET`) || strings.HasSuffix(fN, `_ET.json`) {
 		file.MediaType = request.TextPlainEdit
@@ -112,13 +103,13 @@ func SetMediaType(ctx context.Context, file *InputFile) dataset.Status {
 		}
 	}
 	if file.MediaType == `` {
-		status = log.ErrorNoErr(ctx, 400, `Could not identify media type from filename`)
+		return log.ErrorNoErr(ctx, 400, `Could not identify media type from filename`)
 	}
-	return status
+	return nil
 }
 
-func ParseFilenames(ctx context.Context, file *InputFile) dataset.Status {
-	var status dataset.Status
+func ParseFilenames(ctx context.Context, file *InputFile) *log.Status {
+	var status *log.Status
 	if file.MediaType == request.TextPlain || file.MediaType == request.TextPlainEdit ||
 		file.MediaType == request.TextCSV {
 		file.MediaId = strings.Split(file.Filename, `.`)[0]
@@ -143,7 +134,7 @@ func ParseFilenames(ctx context.Context, file *InputFile) dataset.Status {
 			return log.ErrorNoErr(ctx, 400, `USX files are expected in the format 001GEN.usx or GEN.usx`)
 		}
 		file.BookId, status = validateBookId(ctx, tmpBookId)
-		if status.IsErr {
+		if status != nil {
 			return status
 		}
 		file.BookSeq = tmpBookSeq
@@ -167,7 +158,7 @@ func ParseFilenames(ctx context.Context, file *InputFile) dataset.Status {
 		} else {
 			status = ParseV4AudioFilename(ctx, file)
 		}
-		if status.IsErr {
+		if status != nil {
 			return status
 		}
 	} else {
@@ -176,8 +167,8 @@ func ParseFilenames(ctx context.Context, file *InputFile) dataset.Status {
 	return status
 }
 
-func ParseV2AudioFilename(ctx context.Context, file *InputFile) dataset.Status {
-	var status dataset.Status
+func ParseV2AudioFilename(ctx context.Context, file *InputFile) *log.Status {
+	var status *log.Status
 	var err error
 	file.FileExt = filepath.Ext(file.Filename)
 	filename := file.Filename[:len(file.Filename)-len(file.FileExt)]
@@ -199,8 +190,8 @@ func ParseV2AudioFilename(ctx context.Context, file *InputFile) dataset.Status {
 	return status
 }
 
-func ParseV4AudioFilename(ctx context.Context, file *InputFile) dataset.Status {
-	var status dataset.Status
+func ParseV4AudioFilename(ctx context.Context, file *InputFile) *log.Status {
+	var status *log.Status
 	var err error
 	file.FileExt = filepath.Ext(file.Filename)
 	filename := file.Filename[:len(file.Filename)-len(file.FileExt)]
@@ -218,7 +209,7 @@ func ParseV4AudioFilename(ctx context.Context, file *InputFile) dataset.Status {
 	}
 	if len(parts) > 2 {
 		file.BookId, status = validateBookId(ctx, parts[2])
-		if status.IsErr {
+		if status != nil {
 			return status
 		}
 	}
@@ -243,8 +234,8 @@ func ParseV4AudioFilename(ctx context.Context, file *InputFile) dataset.Status {
 	return status
 }
 
-func ParseVOXAudioFilename(ctx context.Context, file *InputFile) dataset.Status {
-	var status dataset.Status
+func ParseVOXAudioFilename(ctx context.Context, file *InputFile) *log.Status {
+	var status *log.Status
 	var err error
 	parts := strings.Split(file.Filename, `_`)
 	if len(parts) != 7 {
@@ -264,7 +255,7 @@ func ParseVOXAudioFilename(ctx context.Context, file *InputFile) dataset.Status 
 	versionCode := parts[2]
 	file.BookSeq = parts[3]
 	file.BookId, status = validateBookId(ctx, parts[4])
-	if status.IsErr {
+	if status != nil {
 		return status
 	}
 	file.Chapter, err = strconv.Atoi(parts[5])
@@ -285,8 +276,8 @@ func PruneBooksByRequest(files []InputFile, testament request.Testament) []Input
 	return results
 }
 
-func UpdateIdent(conn db.DBAdapter, ident *db.Ident, textFiles []InputFile, audioFiles []InputFile) dataset.Status {
-	var status dataset.Status
+func UpdateIdent(conn db.DBAdapter, ident *db.Ident, textFiles []InputFile, audioFiles []InputFile) *log.Status {
+	var status *log.Status
 	_ = updateIdentText(ident, textFiles)
 	_ = updateIdentAudio(ident, audioFiles)
 	status = conn.InsertReplaceIdent(*ident)
@@ -347,17 +338,16 @@ var corrections = map[string]string{
 	"APO": "REV", // Revelation
 }
 
-func validateBookId(ctx context.Context, bookId string) (string, dataset.Status) {
-	var status dataset.Status
+func validateBookId(ctx context.Context, bookId string) (string, *log.Status) {
 	corrected, found := corrections[bookId]
 	if found {
 		bookId = corrected
 	}
 	_, ok := db.BookChapterMap[bookId]
 	if !ok {
-		status = log.ErrorNoErr(ctx, 500, "BookId", bookId, "is not known. Corrections:", corrections)
+		return bookId, log.ErrorNoErr(ctx, 500, "BookId", bookId, "is not known. Corrections:", corrections)
 	}
-	return bookId, status
+	return bookId, nil
 }
 
 // Parse DBP4 Audio names

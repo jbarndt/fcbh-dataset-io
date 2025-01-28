@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"dataset"
 	"dataset/db"
 	log "dataset/logger"
 	"fmt"
@@ -34,29 +33,29 @@ func NewFastText(ctx context.Context, conn db.DBAdapter) FastText {
 	return f
 }
 
-func (f *FastText) Process() dataset.Status {
+func (f *FastText) Process() *log.Status {
 	var words, status = f.conn.SelectWords()
-	if status.IsErr {
+	if status != nil {
 		return status
 	}
 	inputFile, status := f.createFile(words)
-	if status.IsErr {
+	if status != nil {
 		return status
 	}
 	outputModel, status := f.executeFastText(inputFile)
-	if status.IsErr {
+	if status != nil {
 		return status
 	}
 	words, status = f.getWordEncodings(outputModel, words)
-	if status.IsErr {
+	if status != nil {
 		return status
 	}
 	f.conn.UpdateWordEncodings(words)
 	return status
 }
 
-func (f *FastText) createFile(words []db.Word) (string, dataset.Status) {
-	var status dataset.Status
+func (f *FastText) createFile(words []db.Word) (string, *log.Status) {
+	var status *log.Status
 	var fp, err = os.CreateTemp(os.Getenv(`FCBH_DATASET_TMP`), `fasttextinput`)
 	if err != nil {
 		status = log.Error(f.ctx, 500, err, `Unable to open temp file for fasttext`)
@@ -73,8 +72,8 @@ func (f *FastText) createFile(words []db.Word) (string, dataset.Status) {
 	return fp.Name(), status
 }
 
-func (f *FastText) executeFastText(inputFile string) (string, dataset.Status) {
-	var status dataset.Status
+func (f *FastText) executeFastText(inputFile string) (string, *log.Status) {
+	var status *log.Status
 	fastTextExe := os.Getenv("FCBH_FASTTEXT_EXE")
 	model := `skipgram` // or `cbow
 	outputModel := strings.Replace(f.conn.DatabasePath, `.db`, `_fasttext`, 1)
@@ -95,45 +94,39 @@ func (f *FastText) executeFastText(inputFile string) (string, dataset.Status) {
 	return outputModel, status
 }
 
-func (f *FastText) getWordEncodings(model string, words []db.Word) ([]db.Word, dataset.Status) {
-	var status dataset.Status
+func (f *FastText) getWordEncodings(model string, words []db.Word) ([]db.Word, *log.Status) {
+	var status *log.Status
 	fastTextExe := os.Getenv("FCBH_FASTTEXT_EXE")
 	cmd := exec.Command(fastTextExe, `print-word-vectors`, model+`.bin`)
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
-		status = log.Error(f.ctx, 500, err, `Unable to open stdin for writing to Fasttext`)
-		return words, status
+		return words, log.Error(f.ctx, 500, err, `Unable to open stdin for writing to Fasttext`)
 	}
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		status = log.Error(f.ctx, 500, err, `Unable to open stdout for writing to Fasttext`)
-		return words, status
+		return words, log.Error(f.ctx, 500, err, `Unable to open stdout for writing to Fasttext`)
 	}
 	err = cmd.Start()
 	if err != nil {
-		status = log.Error(f.ctx, 500, err, `Unable to start writing to Fasttext`)
-		return words, status
+		return words, log.Error(f.ctx, 500, err, `Unable to start writing to Fasttext`)
 	}
 	reader := bufio.NewReader(stdout)
 	for i, word := range words {
 		if word.TType == `W` {
 			_, err := io.WriteString(stdin, word.Word+"\n")
 			if err != nil {
-				status = log.Error(f.ctx, 500, err, `Error writing to Fasttext model`)
-				return words, status
+				return words, log.Error(f.ctx, 500, err, `Error writing to Fasttext model`)
 			}
 			line, err := reader.ReadString('\n')
 			if err != nil {
-				status = log.Error(f.ctx, 500, err, `Error reading from Fasttext model`)
-				return words, status
+				return words, log.Error(f.ctx, 500, err, `Error reading from Fasttext model`)
 			}
 			parts := strings.Split(strings.TrimSpace(line), ` `)
 			var encoding = make([]float64, 0, len(parts))
 			for _, strNum := range parts[1:] {
 				num, err := strconv.ParseFloat(strNum, 64)
 				if err != nil {
-					status = log.Error(f.ctx, 500, err, `Error converting encoding to float`)
-					return words, status
+					return words, log.Error(f.ctx, 500, err, `Error converting encoding to float`)
 				}
 				encoding = append(encoding, num)
 			}

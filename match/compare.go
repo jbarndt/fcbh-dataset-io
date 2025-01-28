@@ -2,7 +2,6 @@ package match
 
 import (
 	"context"
-	"dataset"
 	"dataset/db"
 	"dataset/fetch"
 	log "dataset/logger"
@@ -62,28 +61,28 @@ func NewCompare(ctx context.Context, user fetch.DBPUser, baseDSet string, db db.
 	return c
 }
 
-func (c *Compare) Process() (string, dataset.Status) {
+func (c *Compare) Process() (string, *log.Status) {
 	var filename string
-	var status dataset.Status
+	var status *log.Status
 	c.baseDb, status = db.NewerDBAdapter(c.ctx, false, c.user.Username, c.baseDataset)
-	if status.IsErr {
+	if status != nil {
 		return filename, status
 	}
 	status = mms.EnsureUroman(c.baseDb, c.lang)
-	if status.IsErr {
+	if status != nil {
 		return filename, status
 	}
 	c.writer, status = NewHTMLWriter(c.ctx, c.dataset)
-	if status.IsErr {
+	if status != nil {
 		return filename, status
 	}
 	var compHasVerse, compHasLine, baseHasVerse, baseHasLine bool
 	compHasVerse, compHasLine, c.compIdent, status = c.hasVerseLine(c.database)
-	if status.IsErr {
+	if status != nil {
 		return filename, status
 	}
 	baseHasVerse, baseHasLine, c.baseIdent, status = c.hasVerseLine(c.baseDb)
-	if status.IsErr {
+	if status != nil {
 		return filename, status
 	}
 	if compHasVerse && baseHasVerse {
@@ -96,31 +95,31 @@ func (c *Compare) Process() (string, dataset.Status) {
 	return filename, status
 }
 
-func (c *Compare) hasVerseLine(conn db.DBAdapter) (bool, bool, db.Ident, dataset.Status) {
+func (c *Compare) hasVerseLine(conn db.DBAdapter) (bool, bool, db.Ident, *log.Status) {
 	var hasVerse bool
 	var hasLine bool
 	var ident db.Ident
-	var status dataset.Status
+	var status *log.Status
 	ident, status = conn.SelectIdent()
-	if status.IsErr {
+	if status != nil {
 		return hasVerse, hasLine, ident, status
 	}
 	verseColLen, status := conn.SelectVerseLength()
-	if status.IsErr {
+	if status != nil {
 		return hasVerse, hasLine, ident, status
 	}
 	hasVerse = verseColLen > 0 || ident.TextSource == request.TextScript
 	lineColLen, status := conn.SelectScriptLineLength()
-	if status.IsErr {
+	if status != nil {
 		return hasVerse, hasLine, ident, status
 	}
 	hasLine = lineColLen > 0 && (ident.TextSource == request.TextScript || ident.TextSource == request.TextCSV)
 	return hasVerse, hasLine, ident, status
 }
 
-func (c *Compare) CompareVerses() (string, dataset.Status) {
+func (c *Compare) CompareVerses() (string, *log.Status) {
 	var filename string
-	var status dataset.Status
+	var status *log.Status
 	filename = c.writer.WriteHeading(c.baseDataset)
 	for _, bookId := range db.RequestedBooks(c.testament) {
 		var chapInBook, _ = db.BookChapterMap[bookId] // Need to check OK, because bookId could be in error?
@@ -128,11 +127,11 @@ func (c *Compare) CompareVerses() (string, dataset.Status) {
 		for chapter <= chapInBook {
 			var lines1, lines2 []Verse
 			lines1, status = c.process(c.baseDb, bookId, chapter)
-			if status.IsErr {
+			if status != nil {
 				return filename, status
 			}
 			lines2, status = c.process(c.database, bookId, chapter)
-			if status.IsErr {
+			if status != nil {
 				return filename, status
 			}
 			c.diff(lines1, lines2)
@@ -145,16 +144,16 @@ func (c *Compare) CompareVerses() (string, dataset.Status) {
 	return filename, status
 }
 
-func (c *Compare) process(conn db.DBAdapter, bookId string, chapterNum int) ([]Verse, dataset.Status) {
+func (c *Compare) process(conn db.DBAdapter, bookId string, chapterNum int) ([]Verse, *log.Status) {
 	var lines []Verse
-	var status dataset.Status
+	var status *log.Status
 	var ident db.Ident
 	ident, status = conn.SelectIdent()
-	if status.IsErr {
+	if status != nil {
 		return lines, status
 	}
 	scripts, status := conn.SelectScriptsByChapter(bookId, chapterNum)
-	if status.IsErr {
+	if status != nil {
 		return lines, status
 	}
 	for _, script := range scripts {
@@ -492,9 +491,9 @@ func (c *Compare) largestLength(diffs []diffmatchpatch.Diff) int {
 	return result
 }
 
-func (c *Compare) generateBookChapterFilenameMap() (string, dataset.Status) {
+func (c *Compare) generateBookChapterFilenameMap() (string, *log.Status) {
 	chapters, status := c.database.SelectBookChapterFilename()
-	if status.IsErr {
+	if status != nil {
 		return "", status
 	}
 	var result []string

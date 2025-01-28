@@ -2,7 +2,6 @@ package timestamp
 
 import (
 	"context"
-	"dataset"
 	"dataset/bible_brain"
 	log "dataset/logger"
 	"encoding/json"
@@ -22,7 +21,7 @@ type Frame struct {
 	PacketSize          string `json:"pkt_size"`
 }
 
-func GetBoundaries(ctx context.Context, file string, segments []bible_brain.Segment) ([]bible_brain.Segment, dataset.Status) {
+func GetBoundaries(ctx context.Context, file string, segments []bible_brain.Segment) ([]bible_brain.Segment, *log.Status) {
 	if len(segments) == 0 {
 		return segments, log.ErrorNoErr(ctx, 500, "no time segments provided")
 	}
@@ -75,5 +74,5 @@ func GetBoundaries(ctx context.Context, file string, segments []bible_brain.Segm
 			}
 		}
 	}
-	return segments, dataset.Status{}
+	return segments, nil
 }

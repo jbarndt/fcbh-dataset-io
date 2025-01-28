@@ -33,7 +33,7 @@ type SqliteTest struct {
 // DirectSqlTest requires a sqlite database as output to perform tests on the result
 func DirectSqlTest(request string, tests []SqliteTest, t *testing.T) string {
 	output, status := controller.CLIProcessEntry([]byte(request))
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 	var database string
@@ -170,11 +170,11 @@ func identTest(name string, t *testing.T, textType request.MediaType, textOTId s
 	textNTId string, audioOTId string, audioNTId string, language string) {
 	user, _ := fetch.GetTestUser()
 	conn, status := db.NewerDBAdapter(context.TODO(), false, user.Username, name)
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 	ident, status := conn.SelectIdent()
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 	conn.Close()

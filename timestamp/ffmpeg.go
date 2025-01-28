@@ -3,7 +3,6 @@ package timestamp
 import (
 	"bytes"
 	"context"
-	"dataset"
 	"dataset/db"
 	log "dataset/logger"
 	"fmt"
@@ -16,9 +15,8 @@ import (
 )
 
 // ChopByTimestamp uses timestamps to chop timestamps into files, and puts the filenames in timestamp record.
-func ChopByTimestamp(ctx context.Context, tempDir string, inputFile string, timestamps []db.Audio) ([]db.Audio, dataset.Status) {
+func ChopByTimestamp(ctx context.Context, tempDir string, inputFile string, timestamps []db.Audio) ([]db.Audio, *log.Status) {
 	var results []db.Audio
-	var status dataset.Status
 	var fileExt = filepath.Ext(inputFile)
 	var command []string
 	command = append(command, `-i`, inputFile)
@@ -47,15 +45,14 @@ func ChopByTimestamp(ctx context.Context, tempDir string, inputFile string, time
 	cmd.Stderr = &stderrBuf
 	err := cmd.Run()
 	if err != nil {
-		status = log.Error(ctx, 500, err, stderrBuf.String())
+		return results, log.Error(ctx, 500, err, stderrBuf.String())
 	}
-	return results, status
+	return results, nil
 }
 
 // ChopOneSegment uses timestamps extract one segment from an audio file
-func ChopOneSegment(ctx context.Context, tempDir string, inputFile string, beginTS float64, endTS float64) (string, dataset.Status) {
+func ChopOneSegment(ctx context.Context, tempDir string, inputFile string, beginTS float64, endTS float64) (string, *log.Status) {
 	var outputFile string
-	var status dataset.Status
 	outputFile = filepath.Join(tempDir, fmt.Sprintf("%d.wav", time.Now().UnixNano()))
 	err := ffmpeg.Input(inputFile).Output(outputFile, ffmpeg.KwArgs{
 		"codec:a": "copy",
@@ -65,14 +62,13 @@ func ChopOneSegment(ctx context.Context, tempDir string, inputFile string, begin
 		"to":      endTS,
 	}).Silent(true).OverWriteOutput().Run()
 	if err != nil {
-		status = log.Error(ctx, 500, err, "Error in ChopOneSegment")
+		return outputFile, log.Error(ctx, 500, err, "Error in ChopOneSegment")
 	}
-	return outputFile, status
+	return outputFile, nil
 }
 
-func ConvertMp3ToWav(ctx context.Context, tempDir string, inputFile string) (string, dataset.Status) {
+func ConvertMp3ToWav(ctx context.Context, tempDir string, inputFile string) (string, *log.Status) {
 	var outputPath string
-	var status dataset.Status
 	filename := filepath.Base(inputFile)
 	outputFilename := strings.TrimSuffix(filename, filepath.Ext(filename))
 	outputPath = filepath.Join(tempDir, outputFilename+".wav")
@@ -82,16 +78,15 @@ func ConvertMp3ToWav(ctx context.Context, tempDir string, inputFile string) (str
 		"ac":     "1",
 	}).Silent(true).OverWriteOutput().Run()
 	if err != nil {
-		status = log.Error(ctx, 500, err, "Error ")
+		return outputPath, log.Error(ctx, 500, err, "Error ")
 	}
-	return outputPath, status
+	return outputPath, nil
 }
 
 // ConvertMp3toWav
-func OldConvertMp3ToWav(ctx context.Context, tempDir string, filePath string) (string, dataset.Status) {
+func OldConvertMp3ToWav(ctx context.Context, tempDir string, filePath string) (string, *log.Status) {
 	// ffmpeg -i filename.mp3 -acodec pcm_s16le -ar 16000 output.wav
 	var outputPath string
-	var status dataset.Status
 	filename := filepath.Base(filePath)
 	outputFilename := strings.TrimSuffix(filename, filepath.Ext(filename))
 	outputPath = filepath.Join(tempDir, outputFilename+".wav")
@@ -107,7 +102,7 @@ func OldConvertMp3ToWav(ctx context.Context, tempDir string, filePath string) (s
 	cmd.Stderr = &stderrBuf
 	err := cmd.Run()
 	if err != nil {
-		status = log.Error(ctx, 500, err, stderrBuf.String())
+		return outputPath, log.Error(ctx, 500, err, stderrBuf.String())
 	}
-	return outputPath, status
+	return outputPath, nil
 }

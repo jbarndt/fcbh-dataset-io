@@ -7,7 +7,7 @@ import (
 
 func TestFindFilesets(t *testing.T) {
 	bibles, status := FindFilesets()
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 	fmt.Println("num bibles, ", len(bibles))
@@ -15,11 +15,11 @@ func TestFindFilesets(t *testing.T) {
 
 func TestGenerateYaml(t *testing.T) {
 	bibles, status := FindFilesets()
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 	status = GenerateYaml(bibles)
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 
@@ -29,7 +29,7 @@ func TestGenerateYaml(t *testing.T) {
 
 func TestSizeRecognition(t *testing.T) {
 	bibles, status := ReadBibles()
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 	for _, bible := range bibles {

@@ -2,9 +2,9 @@ package match
 
 import (
 	"context"
-	"dataset"
 	"dataset/db"
 	"dataset/generic"
+	log "dataset/logger"
 	"dataset/timestamp"
 	"fmt"
 	"gonum.org/v1/gonum/stat"
@@ -53,11 +53,11 @@ func NewAlignSilence(ctx context.Context, conn db.DBAdapter, asrConn db.DBAdapte
 	return a
 }
 
-func (a *AlignSilence) Process(audioDirectory string) ([]generic.AlignLine, string, dataset.Status) {
+func (a *AlignSilence) Process(audioDirectory string) ([]generic.AlignLine, string, *log.Status) {
 	var faLines []generic.AlignLine
-	var status dataset.Status
+	var status *log.Status
 	faChars, status := a.conn.SelectFACharTimestamps()
-	if status.IsErr {
+	if status != nil {
 		return faLines, "", status
 	}
 	for i := 0; i < len(faChars)-1; i++ {
@@ -95,7 +95,7 @@ func (a *AlignSilence) Process(audioDirectory string) ([]generic.AlignLine, stri
 	a.markSilenceOutliers(faChars, charLimit, wordLimit, verseLimit, chapLimit)
 	faLines = a.groupByLine(faChars)
 	faLines, status = a.compareLines2ASR(faLines, a.asrConn)
-	if status.IsErr {
+	if status != nil {
 		return faLines, "", status
 	}
 	filenameMap, status := a.generateBookChapterFilenameMap()
@@ -182,9 +182,9 @@ func (a *AlignSilence) groupByLine(chars []generic.AlignChar) []generic.AlignLin
 	return result
 }
 
-func (a *AlignSilence) generateBookChapterFilenameMap() (string, dataset.Status) {
+func (a *AlignSilence) generateBookChapterFilenameMap() (string, *log.Status) {
 	chapters, status := a.conn.SelectBookChapterFilename()
-	if status.IsErr {
+	if status != nil {
 		return "", status
 	}
 	var result []string

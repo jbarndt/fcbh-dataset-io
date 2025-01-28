@@ -12,7 +12,7 @@ func TestGetAudioDuration(t *testing.T) {
 	directory := filepath.Join(os.Getenv("FCBH_DATASET_FILES"), "ENGWEB", "ENGWEBN2DA-mp3-64")
 	filename := "B04___09_John________ENGWEBN2DA.mp3"
 	result, status := GetAudioDuration(ctx, directory, filename)
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 	if result != 363.493878 {
@@ -25,7 +25,7 @@ func TestGetAudioSize(t *testing.T) {
 	directory := filepath.Join(os.Getenv("FCBH_DATASET_FILES"), "ENGWEB", "ENGWEBN2DA-mp3-64")
 	filename := "B04___09_John________ENGWEBN2DA.mp3"
 	result, status := GetAudioSize(ctx, directory, filename)
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 	if result != 2908464 {
@@ -38,7 +38,7 @@ func TestGetAudioBitrate(t *testing.T) {
 	directory := filepath.Join(os.Getenv("FCBH_DATASET_FILES"), "ENGWEB", "ENGWEBN2DA-mp3-64")
 	filename := "B04___09_John________ENGWEBN2DA.mp3"
 	result, status := GetAudioBitrate(ctx, directory, filename)
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 	if result != 64011 {

@@ -1,7 +1,7 @@
 package fetch
 
 import (
-	"dataset"
+	log "dataset/logger"
 	"dataset/request"
 )
 
@@ -10,18 +10,16 @@ type DBPUser struct {
 	Email    string `json:"email"`
 }
 
-func GetDBPUser(req request.Request) (DBPUser, dataset.Status) {
-	var status dataset.Status
+func GetDBPUser(req request.Request) (DBPUser, *log.Status) {
 	var u DBPUser
 	u.Username = req.Username
 	u.Email = req.Email
-	return u, status
+	return u, nil
 }
 
-func GetTestUser() (DBPUser, dataset.Status) {
-	var status dataset.Status
+func GetTestUser() (DBPUser, *log.Status) {
 	var u DBPUser
 	u.Username = `GaryNTest`
 	u.Email = `gary@shortsands.com`
-	return u, status
+	return u, nil
 }

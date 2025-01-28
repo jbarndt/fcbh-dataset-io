@@ -2,7 +2,6 @@ package mms
 
 import (
 	"context"
-	"dataset"
 	"dataset/db"
 	"dataset/generic"
 	"dataset/input"
@@ -55,8 +54,8 @@ func NewMMSAlign(ctx context.Context, conn db.DBAdapter, lang string, sttLang st
 }
 
 // ProcessFiles will perform Forced Alignment on these files
-func (m *MMSAlign) ProcessFiles(files []input.InputFile) dataset.Status {
-	var status dataset.Status
+func (m *MMSAlign) ProcessFiles(files []input.InputFile) *log.Status {
+	var status *log.Status
 	var err error
 	m.tempDir, err = os.MkdirTemp(os.Getenv(`FCBH_DATASET_TMP`), "mms_fa_")
 	if err != nil {
@@ -65,20 +64,20 @@ func (m *MMSAlign) ProcessFiles(files []input.InputFile) dataset.Status {
 	defer os.RemoveAll(m.tempDir)
 	uromanPath := filepath.Join(os.Getenv("GOPROJ"), "dataset", "mms", "uroman_stdio.py")
 	m.uroman, status = utility.NewStdioExec(m.ctx, os.Getenv(`FCBH_MMS_FA_PYTHON`), uromanPath, "-l", m.lang)
-	if status.IsErr {
+	if status != nil {
 		return status
 	}
 	defer m.uroman.Close()
 	pythonScript := filepath.Join(os.Getenv("GOPROJ"), "dataset/mms/mms_align.py")
 	m.mmsAlign, status = utility.NewStdioExec(m.ctx, os.Getenv(`FCBH_MMS_FA_PYTHON`), pythonScript)
-	if status.IsErr {
+	if status != nil {
 		return status
 	}
 	defer m.mmsAlign.Close()
 	for _, file := range files {
 		log.Info(m.ctx, "MMS Align", file.BookId, file.Chapter)
 		status = m.processFile(file)
-		if status.IsErr {
+		if status != nil {
 			return status
 		}
 	}
@@ -86,16 +85,16 @@ func (m *MMSAlign) ProcessFiles(files []input.InputFile) dataset.Status {
 }
 
 // processFile will process one audio file through mms forced alignment
-func (m *MMSAlign) processFile(file input.InputFile) dataset.Status {
-	var status dataset.Status
+func (m *MMSAlign) processFile(file input.InputFile) *log.Status {
+	var status *log.Status
 	var faInput MMSAlign_Input
 	faInput.AudioFile, status = timestamp.ConvertMp3ToWav(m.ctx, m.tempDir, file.FilePath())
-	if status.IsErr {
+	if status != nil {
 		return status
 	}
 	var wordList []Word
 	faInput.NormWords, wordList, status = m.prepareText(m.lang, file.BookId, file.Chapter)
-	if status.IsErr {
+	if status != nil {
 		return status
 	}
 	content, err := json.Marshal(faInput)
@@ -108,7 +107,7 @@ func (m *MMSAlign) processFile(file input.InputFile) dataset.Status {
 	//	panic(err2)
 	//}
 	response, status := m.mmsAlign.Process(string(content))
-	if status.IsErr {
+	if status != nil {
 		return status
 	}
 	// development
@@ -121,11 +120,11 @@ func (m *MMSAlign) processFile(file input.InputFile) dataset.Status {
 	return status
 }
 
-func (m *MMSAlign) prepareText(lang string, bookId string, chapter int) ([]string, []Word, dataset.Status) {
+func (m *MMSAlign) prepareText(lang string, bookId string, chapter int) ([]string, []Word, *log.Status) {
 	var textList []string
 	var refList []Word
 	var dbWords, status = m.conn.SelectWordsByBookChapter(bookId, chapter)
-	if status.IsErr {
+	if status != nil {
 		return textList, refList, status
 	}
 	for _, wd := range dbWords {
@@ -136,7 +135,7 @@ func (m *MMSAlign) prepareText(lang string, bookId string, chapter int) ([]strin
 		ref.wordSeq = wd.WordSeq
 		ref.word = norm.NFC.String(wd.Word)
 		uRoman, status2 := m.uroman.Process(ref.word)
-		if status2.IsErr {
+		if status2 != nil {
 			return textList, refList, status2
 		}
 		word := m.convertNum2Words(uRoman) // This does NOT handle isolated digits, only whole word numbers
@@ -184,8 +183,8 @@ type MMSAlignResult struct {
 	Tokens     [][][]float64  `json:"tokens"`
 }
 
-func (m *MMSAlign) processPyOutput(file input.InputFile, wordRefs []Word, response string) dataset.Status {
-	var status dataset.Status
+func (m *MMSAlign) processPyOutput(file input.InputFile, wordRefs []Word, response string) *log.Status {
+	var status *log.Status
 	var mmsAlign MMSAlignResult
 	err := json.Unmarshal([]byte(response), &mmsAlign)
 	if err != nil {
@@ -250,11 +249,11 @@ func (m *MMSAlign) processPyOutput(file input.InputFile, wordRefs []Word, respon
 	verses = m.summarizeByVerse(wordsByLine)
 	verses = m.midPoint(verses)
 	status = m.conn.UpdateScriptFATimestamps(verses)
-	if status.IsErr {
+	if status != nil {
 		return status
 	}
 	status = m.conn.UpdateWordFATimestamps(words)
-	if status.IsErr {
+	if status != nil {
 		return status
 	}
 	status = m.conn.InsertAudioChars(words)

@@ -11,7 +11,7 @@ func TestAPIClient(t *testing.T) {
 	ctx := context.Background()
 	url := "https://4.dbt.io/api/languages/apf?v=4"
 	content, status := HttpGet(ctx, url, "test")
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 	//fmt.Println(string(content))

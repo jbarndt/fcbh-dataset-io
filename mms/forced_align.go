@@ -3,7 +3,6 @@ package mms
 import (
 	"bytes"
 	"context"
-	"dataset"
 	"dataset/db"
 	"dataset/input"
 	log "dataset/logger"
@@ -42,15 +41,15 @@ func NewForcedAlign(ctx context.Context, conn db.DBAdapter, lang string, sttLang
 }
 
 // ProcessFiles will perform Forced Alignment on these files
-func (f *ForcedAlign) ProcessFiles(files []input.InputFile) dataset.Status {
+func (f *ForcedAlign) ProcessFiles(files []input.InputFile) *log.Status {
 	lang, status := checkLanguage(f.ctx, f.lang, f.sttLang, "mms_asr") // is this correct for mms_fa
-	if status.IsErr {
+	if status != nil {
 		return status
 	}
 	for _, file := range files {
 		log.Info(f.ctx, "Word FA", file.BookId, file.Chapter)
 		status = f.processFile(file, lang)
-		if status.IsErr {
+		if status != nil {
 			return status
 		}
 	}
@@ -58,20 +57,20 @@ func (f *ForcedAlign) ProcessFiles(files []input.InputFile) dataset.Status {
 }
 
 // processFile will process one audio file through mms forced alignment
-func (f *ForcedAlign) processFile(file input.InputFile, lang string) dataset.Status {
-	var status dataset.Status
+func (f *ForcedAlign) processFile(file input.InputFile, lang string) *log.Status {
+	var status *log.Status
 	tempDir, err := os.MkdirTemp(os.Getenv(`FCBH_DATASET_TMP`), "mms_forced_align_")
 	if err != nil {
 		return log.Error(f.ctx, 500, err, `Error creating temp dir`)
 	}
 	defer os.RemoveAll(tempDir)
 	wavAudioFile, status := timestamp.ConvertMp3ToWav(f.ctx, tempDir, file.FilePath())
-	if status.IsErr {
+	if status != nil {
 		return status
 	}
 	var verses []db.Script
 	verses, status = f.conn.SelectScriptsByChapter(file.BookId, file.Chapter)
-	if status.IsErr {
+	if status != nil {
 		return status
 	}
 	var verseRef []int64
@@ -86,16 +85,16 @@ func (f *ForcedAlign) processFile(file input.InputFile, lang string) dataset.Sta
 		return log.Error(f.ctx, 500, err, `Error creating text file`)
 	}
 	outputFile, status := f.forcedAlign(wavAudioFile, textFilePath, lang, tempDir)
-	if status.IsErr {
+	if status != nil {
 		return status
 	}
-	f.processPyOutput(file, outputFile, verseRef)
+	status = f.processPyOutput(file, outputFile, verseRef)
 	return status
 }
 
-func (f *ForcedAlign) forcedAlign(audioFile string, textFile string, lang string, tempDir string) (string, dataset.Status) {
+func (f *ForcedAlign) forcedAlign(audioFile string, textFile string, lang string, tempDir string) (string, *log.Status) {
 	var result string
-	var status dataset.Status
+	var status *log.Status
 	MMSFAPYTHON := os.Getenv("FCBH_MMS_FA_PYTHON")
 	pythonScript := filepath.Join(os.Getenv("GOPROJ"), "dataset/mms/forced_align/align_and_segment.py")
 	outputDir := filepath.Join(tempDir, `output`)
@@ -126,8 +125,8 @@ type FAOutput struct {
 	UromanTokens   string  `json:"uroman_tokens"`
 }
 
-func (f *ForcedAlign) processPyOutput(file input.InputFile, outputFile string, references []int64) dataset.Status {
-	var status dataset.Status
+func (f *ForcedAlign) processPyOutput(file input.InputFile, outputFile string, references []int64) *log.Status {
+	var status *log.Status
 	content, err := os.ReadFile(outputFile)
 	if err != nil {
 		return log.Error(f.ctx, 500, err, `Error reading output file`)
@@ -155,7 +154,7 @@ func (f *ForcedAlign) processPyOutput(file input.InputFile, outputFile string, r
 		results = append(results, rec)
 	}
 	status = f.conn.UpdateScriptFATimestamps(results)
-	if status.IsErr {
+	if status != nil {
 		return status
 	}
 	return status

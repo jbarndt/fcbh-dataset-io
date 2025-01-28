@@ -14,11 +14,11 @@ func TestFAScoreAnalysis(t *testing.T) {
 	list := []string{"N2KTB_ESB", "N2CFM_BSM", "N2CHF_TBL", "N2CUL_MNT"}
 	for _, database := range list {
 		conn, status := db.NewerDBAdapter(ctx, false, user.Username, database)
-		if status.IsErr {
+		if status != nil {
 			t.Fatal(status)
 		}
 		output, status := FAScoreAnalysis(conn)
-		if status.IsErr {
+		if status != nil {
 			t.Fatal(status)
 		}
 		conn.Close()

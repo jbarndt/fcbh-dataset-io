@@ -3,7 +3,6 @@ package request
 import (
 	"bytes"
 	"context"
-	"dataset"
 	log "dataset/logger"
 	"gopkg.in/yaml.v3"
 	"strings"
@@ -20,46 +19,44 @@ func NewRequestDecoder(ctx context.Context) RequestDecoder {
 	return r
 }
 
-func (r *RequestDecoder) Process(yamlRequest []byte) (Request, dataset.Status) {
+func (r *RequestDecoder) Process(yamlRequest []byte) (Request, *log.Status) {
 	var request Request
-	var status dataset.Status
+	var status *log.Status
 	request, status = r.Decode(yamlRequest)
-	if status.IsErr {
+	if status != nil {
 		return request, status
 	}
 	r.Validate(&request)
 	r.Prereq(&request)
 	r.Depend(request)
 	if len(r.errors) > 0 {
-		status.IsErr = true
+		var status1 log.Status
 		status.Status = 400
 		status.Message = strings.Join(r.errors, "\n")
+		return request, &status1
 	}
-	return request, status
+	return request, nil
 }
 
-func (r *RequestDecoder) Decode(requestYaml []byte) (Request, dataset.Status) {
+func (r *RequestDecoder) Decode(requestYaml []byte) (Request, *log.Status) {
 	var resp Request
-	var status dataset.Status
 	reader := bytes.NewReader(requestYaml)
 	decoder := yaml.NewDecoder(reader)
 	decoder.KnownFields(true)
 	err := decoder.Decode(&resp)
 	if err != nil {
-		status = log.Error(r.ctx, 400, err, `Error decoding YAML to request`)
+		return resp, log.Error(r.ctx, 400, err, `Error decoding YAML to request`)
 	}
 	resp.Testament.BuildBookMaps() // Builds Map for t.HasOT(bookId), t.HasNT(bookId)
-	return resp, status
+	return resp, nil
 }
 
-func (r *RequestDecoder) Encode(req Request) (string, dataset.Status) {
+func (r *RequestDecoder) Encode(req Request) (string, *log.Status) {
 	var result string
-	var status dataset.Status
 	d, err := yaml.Marshal(&req)
 	if err != nil {
-		status = log.Error(r.ctx, 500, err, `Error encoding request to YAML`)
-		return result, status
+		return result, log.Error(r.ctx, 500, err, `Error encoding request to YAML`)
 	}
 	result = string(d)
-	return result, status
+	return result, nil
 }

@@ -12,6 +12,9 @@ go test ./tests -run TestZipFileDirect
 mac ok      dataset/tests   5.166s
 ### This test will not run on AWS without setup.
 
+# 3b_usx_vs_plain_test
+go test ./tests -run TestTextReadDirect
+
  # 12a_librosa [MRK]
  go test ./tests -run TestLibrosaDirect
  mac ok     dataset/tests   21.745s

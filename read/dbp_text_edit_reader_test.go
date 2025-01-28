@@ -18,12 +18,12 @@ func TestDBPEditTextReader(t *testing.T) {
 	var db1 = db.NewDBAdapter(ctx, database)
 	reader := NewDBPTextEditReader(db1, req)
 	status := reader.Process()
-	if status.IsErr {
-		t.Error(status.Message)
+	if status != nil {
+		t.Error(status)
 	}
 	count, status := db1.CountScriptRows()
-	if status.IsErr {
-		t.Error(status.Message)
+	if status != nil {
+		t.Error(status)
 	}
 	if count != 4629 {
 		t.Error(`Expected count to be 4629`, count)

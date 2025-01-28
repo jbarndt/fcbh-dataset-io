@@ -2,9 +2,9 @@ package main
 
 import (
 	"context"
-	"dataset"
 	"dataset/cli_misc"
 	"dataset/fetch"
+	log "dataset/logger"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -75,8 +75,8 @@ func catchErr(err error) {
 	}
 }
 
-func catchStatus(status dataset.Status) {
-	if status.IsErr {
+func catchStatus(status *log.Status) {
+	if status != nil {
 		fmt.Println(status)
 		os.Exit(1)
 	}

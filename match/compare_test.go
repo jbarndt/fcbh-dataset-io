@@ -35,7 +35,7 @@ func TestCompare(t *testing.T) {
 		cfg.Hyphen.Remove = true
 		cfg.DiacriticalMarks.NormalizeNFD = true
 		conn := db.NewDBAdapter(ctx, tst.baseDB)
-		compare := NewCompare(ctx, user, tst.project, conn, testament, cfg)
+		compare := NewCompare(ctx, user, tst.project, conn, "eng", testament, cfg)
 		filename, status := compare.Process()
 		fmt.Println(status, filename)
 		if compare.diffCount != tst.expect {

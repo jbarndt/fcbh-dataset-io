@@ -2,7 +2,6 @@ package fetch
 
 import (
 	"context"
-	"dataset"
 	"dataset/db"
 	log "dataset/logger"
 	"dataset/request"
@@ -25,12 +24,12 @@ func NewAPIDBPTimestamps(conn db.DBAdapter, audioId string) APIDBPTimestamps {
 	return a
 }
 
-func (a *APIDBPTimestamps) LoadTimestamps(testament request.Testament) (bool, dataset.Status) {
+func (a *APIDBPTimestamps) LoadTimestamps(testament request.Testament) (bool, *log.Status) {
 	var result bool
-	var status dataset.Status
+	var status *log.Status
 	var audioIdMap map[string]bool
 	audioIdMap, status = a.HavingTimestamps()
-	if status.IsErr {
+	if status != nil {
 		return false, status
 	}
 	coreId := strings.Split(a.audioId, "-")[0]
@@ -40,7 +39,7 @@ func (a *APIDBPTimestamps) LoadTimestamps(testament request.Testament) (bool, da
 		return false, status
 	}
 	scripts, status := a.conn.SelectScriptIds()
-	if status.IsErr {
+	if status != nil {
 		return false, status
 	}
 	if len(scripts) == 0 {
@@ -61,7 +60,7 @@ func (a *APIDBPTimestamps) LoadTimestamps(testament request.Testament) (bool, da
 			if testament.HasNT(scp.BookId) || testament.HasOT(scp.BookId) {
 				//fmt.Println("Getting Timestamps", scp.BookId, scp.ChapterNum)
 				timestamp, status := a.Timestamps(scp.BookId, scp.ChapterNum)
-				if status.IsErr {
+				if status != nil {
 					return false, status
 				}
 				var dbTimestamps []db.Timestamp
@@ -88,12 +87,12 @@ func (a *APIDBPTimestamps) LoadTimestamps(testament request.Testament) (bool, da
 	return result, status
 }
 
-func (a *APIDBPTimestamps) HavingTimestamps() (map[string]bool, dataset.Status) {
+func (a *APIDBPTimestamps) HavingTimestamps() (map[string]bool, *log.Status) {
 	var result = make(map[string]bool)
-	var status dataset.Status
+	var status *log.Status
 	var get = `https://4.dbt.io/api/timestamps?v=4`
 	body, status := httpGet(a.ctx, get, false, `timestamps`)
-	if status.IsErr {
+	if status != nil {
 		return result, status
 	}
 	var response []map[string]string
@@ -126,22 +125,21 @@ type TimestampsResp struct {
 	Data []Timestamp `json:"data"`
 }
 
-func (a *APIDBPTimestamps) Timestamps(bookId string, chapter int) ([]Timestamp, dataset.Status) {
+func (a *APIDBPTimestamps) Timestamps(bookId string, chapter int) ([]Timestamp, *log.Status) {
 	var result []Timestamp
-	var status dataset.Status
+	var status *log.Status
 	chapterStr := strconv.Itoa(chapter)
 	coreId := strings.Split(a.audioId, "-")[0]
 	var get = `https://4.dbt.io/api/timestamps/` + coreId + `/` + bookId + `/` + chapterStr + `?v=4`
 	body, status := httpGet(a.ctx, get, false, `timestamps`)
-	if status.IsErr {
+	if status != nil {
 		return result, status
 	}
 	//fmt.Println("BODY:", string(body))
 	var response TimestampsResp
 	err := json.Unmarshal(body, &response)
 	if err != nil {
-		status := log.Error(a.ctx, 500, err, "Error decoding DBP API /timestamp JSON")
-		return result, status
+		return result, log.Error(a.ctx, 500, err, "Error decoding DBP API /timestamp JSON")
 	}
 	result = response.Data
 	return result, status

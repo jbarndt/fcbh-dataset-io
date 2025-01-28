@@ -1,16 +1,16 @@
 package match
 
 import (
-	"dataset"
 	"dataset/db"
 	"dataset/generic"
+	log "dataset/logger"
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"strings"
 )
 
-func (a *AlignSilence) compareLines2ASR(lines []generic.AlignLine, asrConn db.DBAdapter) ([]generic.AlignLine, dataset.Status) {
+func (a *AlignSilence) compareLines2ASR(lines []generic.AlignLine, asrConn db.DBAdapter) ([]generic.AlignLine, *log.Status) {
 	var result []generic.AlignLine
-	var status dataset.Status
+	var status *log.Status
 	for _, line := range lines {
 		line.Chars = a.InsertSpaces(line.Chars)
 		var silencePos = a.FindSilencePos(line.Chars)
@@ -23,7 +23,7 @@ func (a *AlignSilence) compareLines2ASR(lines []generic.AlignLine, asrConn db.DB
 			lineRef := line.Chars[0].LineRef
 			var asrText string
 			asrText, status = asrConn.SelectUromanLine(lineId)
-			if status.IsErr {
+			if status != nil {
 				return result, status
 			}
 			alignedText := a.GetOriginalText(line.Chars)

@@ -10,7 +10,7 @@ import (
 func TestNewDBPAdapter(t *testing.T) {
 	ctx := context.Background()
 	_, status := NewDBPAdapter(ctx)
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 
@@ -19,7 +19,7 @@ func TestNewDBPAdapter(t *testing.T) {
 func TestNewDBPAdapter2(t *testing.T) {
 	ctx := context.Background()
 	dbp, status := NewDBPAdapter(ctx)
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 	var count int

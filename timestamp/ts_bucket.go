@@ -2,7 +2,6 @@ package timestamp
 
 import (
 	"context"
-	"dataset"
 	"dataset/db"
 	"dataset/input"
 	log "dataset/logger"
@@ -36,65 +35,61 @@ type TSBucket struct {
 	client *s3.Client
 }
 
-func NewTSBucket(ctx context.Context, conn db.DBAdapter) (TSBucket, dataset.Status) {
+func NewTSBucket(ctx context.Context, conn db.DBAdapter) (TSBucket, *log.Status) {
 	var t TSBucket
-	var status dataset.Status
 	t.ctx = ctx
 	t.conn = conn
 	cfg, err := config.LoadDefaultConfig(ctx)
 	if err != nil {
-		status = log.Error(ctx, 400, err, "Failed to load AWS S3 Config.")
+		status := log.Error(ctx, 400, err, "Failed to load AWS S3 Config.")
 		return t, status
 	}
 	t.client = s3.NewFromConfig(cfg, func(o *s3.Options) {
 		o.Region = "us-west-2"
 	})
-	return t, status
+	return t, nil
 }
 
-func (t *TSBucket) ListObjects(bucket, prefix string) ([]string, dataset.Status) {
+func (t *TSBucket) ListObjects(bucket, prefix string) ([]string, *log.Status) {
 	var results []string
-	var status dataset.Status
 	list, err := t.client.ListObjectsV2(t.ctx, &s3.ListObjectsV2Input{
 		Bucket: aws.String(bucket),
 		Prefix: aws.String(prefix),
 	})
 	if err != nil {
-		status = log.Error(t.ctx, 500, err, "Error listing S3 bucket objects.")
+		status := log.Error(t.ctx, 500, err, "Error listing S3 bucket objects.")
 		return results, status
 	}
 	for _, obj := range list.Contents {
 		key := aws.ToString(obj.Key)
 		results = append(results, key)
 	}
-	return results, status
+	return results, nil
 }
 
-func (t *TSBucket) ListPrefix(bucket, prefix string) ([]string, dataset.Status) {
+func (t *TSBucket) ListPrefix(bucket, prefix string) ([]string, *log.Status) {
 	var results []string
-	var status dataset.Status
 	list, err := t.client.ListObjectsV2(t.ctx, &s3.ListObjectsV2Input{
 		Bucket:    aws.String(bucket),
 		Prefix:    aws.String(prefix),
 		Delimiter: aws.String(`/`),
 	})
 	if err != nil {
-		status = log.Error(t.ctx, 500, err, "Failed to list S3 bucket objects.")
+		status := log.Error(t.ctx, 500, err, "Failed to list S3 bucket objects.")
 		return results, status
 	}
 	for _, obj := range list.CommonPrefixes {
 		pref := aws.ToString(obj.Prefix)
 		results = append(results, pref)
 	}
-	return results, status
+	return results, nil
 }
 
-func (t *TSBucket) ProcessFiles(files []input.InputFile) dataset.Status {
-	var status dataset.Status
+func (t *TSBucket) ProcessFiles(files []input.InputFile) *log.Status {
 	for _, file := range files {
-		var scripts []db.Script
-		scripts, status = t.conn.SelectScriptsByChapter(file.BookId, file.Chapter)
-		if status.IsErr {
+		//var scripts []db.Script
+		scripts, status := t.conn.SelectScriptsByChapter(file.BookId, file.Chapter)
+		if status != nil {
 			return status
 		}
 		var verseMap = make(map[string]int)
@@ -103,7 +98,7 @@ func (t *TSBucket) ProcessFiles(files []input.InputFile) dataset.Status {
 		}
 		var timestamps []db.Audio
 		timestamps, status = t.GetTimestamps(VerseAeneas, file.MediaId, file.BookId, file.Chapter)
-		if status.IsErr {
+		if status != nil {
 			return status
 		}
 		for i := range timestamps {
@@ -114,18 +109,21 @@ func (t *TSBucket) ProcessFiles(files []input.InputFile) dataset.Status {
 			timestamps[i].ScriptId = int64(scriptId)
 		}
 		status = t.conn.UpdateScriptFATimestamps(timestamps)
+		if status != nil {
+			return status
+		}
 	}
-	return status
+	return nil
 }
 
-func (t *TSBucket) GetTimestamps(tsType string, mediaId string, bookId string, chapterNum int) ([]db.Audio, dataset.Status) {
+func (t *TSBucket) GetTimestamps(tsType string, mediaId string, bookId string, chapterNum int) ([]db.Audio, *log.Status) {
 	var results []db.Audio
 	key, status := t.GetKey(tsType, mediaId, bookId, chapterNum)
-	if status.IsErr {
+	if status != nil {
 		return results, status
 	}
 	object, status := t.GetObject(TSBucketName, key)
-	if status.IsErr {
+	if status != nil {
 		return results, status
 	}
 	for i, row := range strings.Split(string(object), "\n") {
@@ -150,42 +148,39 @@ func (t *TSBucket) GetTimestamps(tsType string, mediaId string, bookId string, c
 			results = append(results, ts)
 		}
 	}
-	return results, status
+	return results, nil
 }
 
-func (t *TSBucket) GetObject(bucket string, key string) ([]byte, dataset.Status) {
-	var status dataset.Status
+func (t *TSBucket) GetObject(bucket string, key string) ([]byte, *log.Status) {
 	response, err := t.client.GetObject(t.ctx, &s3.GetObjectInput{
 		Bucket: aws.String(bucket),
 		Key:    aws.String(key),
 	})
 	if err != nil {
-		status = log.Error(t.ctx, 400, err, "Error getting S3 bucket object.")
-		return []byte{}, status
+		return []byte{}, log.Error(t.ctx, 400, err, "Error getting S3 bucket object.")
 	}
 	defer response.Body.Close()
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
-		status = log.Error(t.ctx, 500, err, "Error reading S3 object body.")
+		return body, log.Error(t.ctx, 500, err, "Error reading S3 object body.")
 	}
-	return body, status
+	return body, nil
 }
 
-func (t *TSBucket) DownloadObject(bucket string, key string, path string) dataset.Status {
+func (t *TSBucket) DownloadObject(bucket string, key string, path string) *log.Status {
 	content, status := t.GetObject(bucket, key)
-	if status.IsErr {
+	if status != nil {
 		return status
 	}
 	err := os.WriteFile(path, content, 0644)
 	if err != nil {
-		status = log.Error(t.ctx, 500, err, "DownloadObject failed.")
+		return log.Error(t.ctx, 500, err, "DownloadObject failed.")
 	}
-	return status
+	return nil
 }
 
-func (t *TSBucket) GetKey(tsType string, mediaId string, bookId string, chapterNum int) (string, dataset.Status) {
+func (t *TSBucket) GetKey(tsType string, mediaId string, bookId string, chapterNum int) (string, *log.Status) {
 	var result []string
-	var status dataset.Status
 	if mediaId[7] == '1' {
 		result = append(result, LatinN1)
 	} else {
@@ -206,9 +201,9 @@ func (t *TSBucket) GetKey(tsType string, mediaId string, bookId string, chapterN
 	case Script:
 		result = append(result, Script)
 		prefix := strings.Join(result, "")
-		var list []string
-		list, status = t.ListObjects(TSBucketName, prefix)
-		if status.IsErr {
+		//var list []string
+		list, status := t.ListObjects(TSBucketName, prefix)
+		if status != nil {
 			return "", status
 		}
 		if len(list) != 1 {
@@ -216,7 +211,7 @@ func (t *TSBucket) GetKey(tsType string, mediaId string, bookId string, chapterN
 		}
 		result = []string{list[0]}
 	}
-	return strings.Join(result, ""), status
+	return strings.Join(result, ""), nil
 }
 
 func (t *TSBucket) GetAeneasKey(bookId string, chapterNum int) string {

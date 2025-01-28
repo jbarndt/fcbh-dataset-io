@@ -33,13 +33,13 @@ func TestScriptTextScript(t *testing.T) {
 	var req = strings.Replace(ScriptTextScript, `{bibleId}`, bibleId, 2)
 	var control = controller.NewController(ctx, []byte(req))
 	filename, status := control.Process()
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 	fmt.Println("Filename:", filename)
 	conn := db.NewDBAdapter(context.TODO(), filename)
 	count, status := conn.CountScriptRows()
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 	var expected = 9747

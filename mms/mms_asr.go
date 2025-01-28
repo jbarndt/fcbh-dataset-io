@@ -3,7 +3,6 @@ package mms
 import (
 	"bufio"
 	"context"
-	"dataset"
 	"dataset/db"
 	"dataset/input"
 	log "dataset/logger"
@@ -33,26 +32,26 @@ func NewMMSASR(ctx context.Context, conn db.DBAdapter, lang string, sttLang stri
 }
 
 // ProcessFiles will perform Auto Speech Recognition on these files
-func (a *MMSASR) ProcessFiles(files []input.InputFile) dataset.Status {
+func (a *MMSASR) ProcessFiles(files []input.InputFile) *log.Status {
 	lang, status := checkLanguage(a.ctx, a.lang, a.sttLang, "mms_asr")
-	if status.IsErr {
+	if status != nil {
 		return status
 	}
 	pythonScript := filepath.Join(os.Getenv("GOPROJ"), "dataset/mms/mms_asr.py")
 	writer, reader, status := callStdIOScript(a.ctx, os.Getenv(`FCBH_MMS_ASR_PYTHON`), pythonScript, lang)
-	if status.IsErr {
+	if status != nil {
 		return status
 	}
 	uromanPath := filepath.Join(os.Getenv("GOPROJ"), "dataset", "mms", "uroman_stdio.py")
 	a.uroman, status = utility.NewStdioExec(a.ctx, os.Getenv(`FCBH_MMS_FA_PYTHON`), uromanPath, "-l", a.lang)
-	if status.IsErr {
+	if status != nil {
 		return status
 	}
 	defer a.uroman.Close()
 	for _, file := range files {
 		log.Info(a.ctx, "MMS ASR", file.BookId, file.Chapter)
 		status = a.processFile(file, writer, reader)
-		if status.IsErr {
+		if status != nil {
 			return status
 		}
 	}
@@ -60,20 +59,20 @@ func (a *MMSASR) ProcessFiles(files []input.InputFile) dataset.Status {
 }
 
 // processFile
-func (a *MMSASR) processFile(file input.InputFile, writer *bufio.Writer, reader *bufio.Reader) dataset.Status {
-	var status dataset.Status
+func (a *MMSASR) processFile(file input.InputFile, writer *bufio.Writer, reader *bufio.Reader) *log.Status {
+	var status *log.Status
 	tempDir, err := os.MkdirTemp(os.Getenv(`FCBH_DATASET_TMP`), "mms_asr_")
 	if err != nil {
 		return log.Error(a.ctx, 500, err, `Error creating temp dir`)
 	}
 	defer os.RemoveAll(tempDir)
 	wavFile, status := timestamp.ConvertMp3ToWav(a.ctx, tempDir, file.FilePath())
-	if status.IsErr {
+	if status != nil {
 		return status
 	}
 	var timestamps []db.Audio
 	timestamps, status = a.conn.SelectFAScriptTimestamps(file.BookId, file.Chapter)
-	if status.IsErr {
+	if status != nil {
 		return status
 	}
 	timestamps, status = timestamp.ChopByTimestamp(a.ctx, tempDir, wavFile, timestamps)
@@ -96,7 +95,7 @@ func (a *MMSASR) processFile(file input.InputFile, writer *bufio.Writer, reader 
 		fmt.Println(ts.BookId, ts.ChapterNum, ts.VerseStr, ts.ScriptId, response)
 		timestamps[i].Text = response
 		uRoman, status2 := a.uroman.Process(response)
-		if status2.IsErr {
+		if status2 != nil {
 			return status2
 		}
 		timestamps[i].Uroman = uRoman

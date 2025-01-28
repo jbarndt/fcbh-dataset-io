@@ -3,7 +3,6 @@ package encode
 import (
 	"bytes"
 	"context"
-	"dataset"
 	"dataset/db"
 	"dataset/input"
 	log "dataset/logger"
@@ -36,8 +35,8 @@ func NewAeneas(ctx context.Context, conn db.DBAdapter, bibleId string, languageI
 	return a
 }
 
-func (a *Aeneas) ProcessFiles(audioFiles []input.InputFile) dataset.Status {
-	var status dataset.Status
+func (a *Aeneas) ProcessFiles(audioFiles []input.InputFile) *log.Status {
+	var status *log.Status
 	if a.detail.Lines {
 		status = a.processScripts(audioFiles)
 	}
@@ -47,11 +46,10 @@ func (a *Aeneas) ProcessFiles(audioFiles []input.InputFile) dataset.Status {
 	return status
 }
 
-func (a *Aeneas) processScripts(audioFiles []input.InputFile) dataset.Status {
-	var status dataset.Status
+func (a *Aeneas) processScripts(audioFiles []input.InputFile) *log.Status {
 	for _, aFile := range audioFiles {
 		scripts, status := a.conn.SelectScriptsByBookChapter(aFile.BookId, aFile.Chapter)
-		if status.IsErr {
+		if status != nil {
 			return status
 		}
 		var aeneasInp = make([]db.Timestamp, 0, len(scripts))
@@ -60,31 +58,30 @@ func (a *Aeneas) processScripts(audioFiles []input.InputFile) dataset.Status {
 			aeneasInp = append(aeneasInp, inp)
 		}
 		textFile, status := a.createFile(aFile.BookId, aFile.Chapter, aeneasInp)
-		if status.IsErr {
+		if status != nil {
 			return status
 		}
 		outputFile, status := a.executeAeneas(a.language, aFile.FilePath(), textFile)
-		if status.IsErr {
+		if status != nil {
 			return status
 		}
 		fragments, status := a.parseResponse(outputFile, aFile.Filename)
-		if status.IsErr {
+		if status != nil {
 			return status
 		}
 		status = a.conn.UpdateScriptTimestamps(fragments)
-		if status.IsErr {
+		if status != nil {
 			return status
 		}
 		scripts = nil
 	}
-	return status
+	return nil
 }
 
-func (a *Aeneas) processWords(audioFiles []input.InputFile) dataset.Status {
-	var status dataset.Status
+func (a *Aeneas) processWords(audioFiles []input.InputFile) *log.Status {
 	for _, aFile := range audioFiles {
 		words, status := a.conn.SelectWordsByBookChapter(aFile.BookId, aFile.Chapter)
-		if status.IsErr {
+		if status != nil {
 			return status
 		}
 		var aeneasInp = make([]db.Timestamp, 0, len(words))
@@ -93,53 +90,49 @@ func (a *Aeneas) processWords(audioFiles []input.InputFile) dataset.Status {
 			aeneasInp = append(aeneasInp, inp)
 		}
 		textFile, status := a.createFile(aFile.BookId, aFile.Chapter, aeneasInp)
-		if status.IsErr {
+		if status != nil {
 			return status
 		}
 		outputFile, status := a.executeAeneas(a.language, aFile.FilePath(), textFile)
-		if status.IsErr {
+		if status != nil {
 			return status
 		}
 		fragments, status := a.parseResponse(outputFile, aFile.Filename)
-		if status.IsErr {
+		if status != nil {
 			return status
 		}
 		status = a.conn.UpdateWordTimestamps(fragments)
-		if status.IsErr {
+		if status != nil {
 			return status
 		}
 		words = nil
 	}
-	return status
+	return nil
 }
 
-func (a *Aeneas) createFile(bookId string, chapter int, texts []db.Timestamp) (string, dataset.Status) {
-	var status dataset.Status
+func (a *Aeneas) createFile(bookId string, chapter int, texts []db.Timestamp) (string, *log.Status) {
 	var fp, err = os.CreateTemp(os.Getenv(`FCBH_DATASET_TMP`), a.bibleId+bookId+strconv.Itoa(chapter)+`_`)
 	if err != nil {
-		status = log.Error(a.ctx, 500, err, `Unable to open temp file for scripts`)
-		return ``, status
+		return "", log.Error(a.ctx, 500, err, `Unable to open temp file for scripts`)
 	}
 	for _, text := range texts {
-		fp.WriteString(strconv.Itoa(text.Id))
-		fp.WriteString("|")
-		fp.WriteString(text.Text)
+		_, _ = fp.WriteString(strconv.Itoa(text.Id))
+		_, _ = fp.WriteString("|")
+		_, _ = fp.WriteString(text.Text)
 		if !strings.HasSuffix(text.Text, "\n") {
-			fp.WriteString("\n")
+			_, _ = fp.WriteString("\n")
 		}
 	}
 	fp.Close()
-	return fp.Name(), status
+	return fp.Name(), nil
 }
 
-func (a *Aeneas) executeAeneas(language string, audioFile string, textFile string) (string, dataset.Status) {
-	var status dataset.Status
+func (a *Aeneas) executeAeneas(language string, audioFile string, textFile string) (string, *log.Status) {
 	fname := filepath.Base(audioFile)
 	fname = strings.Split(fname, `.`)[0]
 	var output, err = os.CreateTemp(os.Getenv(`FCBH_DATASET_TMP`), fname+`_`)
 	if err != nil {
-		status = log.Error(a.ctx, 500, err, `Error creating temp output file in Aeneas`)
-		return "", status
+		return "", log.Error(a.ctx, 500, err, `Error creating temp output file in Aeneas`)
 	}
 	language = `epo` // Esperanto - This should only be used when a language is not supported
 	pythonPath := os.Getenv(`FCBH_AENEAS_PYTHON`)
@@ -154,13 +147,12 @@ func (a *Aeneas) executeAeneas(language string, audioFile string, textFile strin
 	cmd.Stderr = &stderrBuf
 	err = cmd.Run()
 	if err != nil {
-		status = log.Error(a.ctx, 500, err, stdoutBuf.String())
-		return output.Name(), status
+		return output.Name(), log.Error(a.ctx, 500, err, stdoutBuf.String())
 	}
 	if stdoutBuf.Len() > 0 {
 		fmt.Println("STDOUT", stdoutBuf.String())
 	}
-	return output.Name(), status
+	return output.Name(), nil
 }
 
 type AeneasRec struct {
@@ -176,39 +168,33 @@ type AeneasResp struct {
 	Fragments []AeneasRec `json:"fragments"`
 }
 
-func (a *Aeneas) parseResponse(filename string, audioFile string) ([]db.Timestamp, dataset.Status) {
+func (a *Aeneas) parseResponse(filename string, audioFile string) ([]db.Timestamp, *log.Status) {
 	var results []db.Timestamp
-	var status dataset.Status
 	var content, err = os.ReadFile(filename)
 	if err != nil {
-		status = log.Error(a.ctx, 500, err, `Failed to open Aeneas output file`)
-		return results, status
+		return results, log.Error(a.ctx, 500, err, `Failed to open Aeneas output file`)
 	}
 	var response AeneasResp
 	err = json.Unmarshal(content, &response)
 	if err != nil {
-		status = log.Error(a.ctx, 500, err, `Error parsing Aeneas output json`)
-		return results, status
+		return results, log.Error(a.ctx, 500, err, `Error parsing Aeneas output json`)
 	}
 	for _, rec := range response.Fragments {
 		var ts db.Timestamp
 		ts.AudioFile = audioFile
 		ts.Id, err = strconv.Atoi(rec.Id)
 		if err != nil {
-			status = log.Error(a.ctx, 500, err, `Could not parse ScriptId or WordId`)
-			return results, status
+			return results, log.Error(a.ctx, 500, err, `Could not parse ScriptId or WordId`)
 		}
 		ts.BeginTS, err = strconv.ParseFloat(rec.Begin, 64)
 		if err != nil {
-			status = log.Error(a.ctx, 500, err, `Could not parse begin TS from Aeneas`)
-			return results, status
+			return results, log.Error(a.ctx, 500, err, `Could not parse begin TS from Aeneas`)
 		}
 		ts.EndTS, err = strconv.ParseFloat(rec.End, 64)
 		if err != nil {
-			status = log.Error(a.ctx, 500, err, `Could not parse end TS from Aeneas`)
-			return results, status
+			return results, log.Error(a.ctx, 500, err, `Could not parse end TS from Aeneas`)
 		}
 		results = append(results, ts)
 	}
-	return results, status
+	return results, nil
 }

@@ -19,17 +19,17 @@ func TestFastText(t *testing.T) {
 		`ENGWEBN_ET`, testament)
 	reader := read.NewDBPTextReader(conn, testament)
 	status = reader.ProcessFiles(files)
-	if status.IsErr {
-		t.Error(status.Message)
+	if status != nil {
+		t.Error(status)
 	}
 	words := read.NewWordParser(conn)
 	status = words.Parse()
-	if status.IsErr {
-		t.Error(status.Message)
+	if status != nil {
+		t.Error(status)
 	}
 	var fast = NewFastText(ctx, conn)
 	status = fast.Process()
-	if status.IsErr {
-		t.Error(status.Message)
+	if status != nil {
+		t.Error(status)
 	}
 }

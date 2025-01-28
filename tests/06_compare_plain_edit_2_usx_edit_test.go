@@ -50,7 +50,7 @@ func TestComparePlainEdit2USXEditScript(t *testing.T) {
 	var req = strings.Replace(ComparePlainEdit2USXEditScript, `{bibleId}`, bibleId, 3)
 	var control = controller.NewController(ctx, []byte(req))
 	filename, status := control.Process()
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 	fmt.Println("Filename", filename)

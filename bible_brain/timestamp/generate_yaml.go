@@ -2,7 +2,6 @@ package timestamp
 
 import (
 	"context"
-	"dataset"
 	"dataset/fetch"
 	log "dataset/logger"
 	"dataset/request"
@@ -12,7 +11,7 @@ import (
 	"strings"
 )
 
-func FindFilesets() ([]fetch.BibleInfoType, dataset.Status) {
+func FindFilesets() ([]fetch.BibleInfoType, *log.Status) {
 	var result []fetch.BibleInfoType
 	ctx := context.Background()
 	testament := request.Testament{NT: true, OT: true}
@@ -23,7 +22,7 @@ func FindFilesets() ([]fetch.BibleInfoType, dataset.Status) {
 	noTextCount := 0
 	noTextOrAudioCount := 0
 	bibles, status := ReadBibles()
-	if status.IsErr {
+	if status != nil {
 		return result, status
 	}
 	for _, bible := range bibles {
@@ -69,8 +68,8 @@ func DisplayBibleError(error string, bible fetch.BibleInfoType) {
 	fmt.Println()
 }
 
-func GenerateYaml(bibles []fetch.BibleInfoType) dataset.Status {
-	var status dataset.Status
+func GenerateYaml(bibles []fetch.BibleInfoType) *log.Status {
+	var status *log.Status
 	for _, bible := range bibles {
 		if bible.AudioNTFileset.Id != "" {
 			if bible.TextNTUSXFileset.Id != "" {
@@ -78,7 +77,7 @@ func GenerateYaml(bibles []fetch.BibleInfoType) dataset.Status {
 			} else if bible.TextNTPlainFileset.Id != "" {
 				status = GenerateOneYaml(bible, bible.AudioNTFileset, bible.TextNTPlainFileset)
 			}
-			if status.IsErr {
+			if status != nil {
 				return status
 			}
 		}
@@ -88,7 +87,7 @@ func GenerateYaml(bibles []fetch.BibleInfoType) dataset.Status {
 			} else if bible.TextOTPlainFileset.Id != "" {
 				status = GenerateOneYaml(bible, bible.AudioOTFileset, bible.TextOTPlainFileset)
 			}
-			if status.IsErr {
+			if status != nil {
 				return status
 			}
 		}
@@ -96,8 +95,8 @@ func GenerateYaml(bibles []fetch.BibleInfoType) dataset.Status {
 	return status
 }
 
-func GenerateOneYaml(bible fetch.BibleInfoType, audio fetch.FilesetType, text fetch.FilesetType) dataset.Status {
-	var status dataset.Status
+func GenerateOneYaml(bible fetch.BibleInfoType, audio fetch.FilesetType, text fetch.FilesetType) *log.Status {
+	// var status *log.Status
 	ctx := context.Background()
 	var list []string
 	list = write(list, 0, "is_new", "yes")
@@ -183,7 +182,7 @@ func GenerateOneYaml(bible fetch.BibleInfoType, audio fetch.FilesetType, text fe
 	if err != nil {
 		return log.Error(ctx, 500, err, "Writing yaml file")
 	}
-	return status
+	return nil
 }
 
 func write(list []string, indent int, name string, value string) []string {

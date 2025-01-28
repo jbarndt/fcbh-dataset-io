@@ -27,8 +27,8 @@ func (o *Output) PrepareScripts() ([]any, []Meta) {
 	var script Script
 	meta := o.ReflectStruct(script)
 	scripts, status := o.LoadScriptStruct(o.conn)
-	if status.IsErr {
-		panic(status.Message)
+	if status != nil {
+		panic(status)
 	}
 	numMFCC := o.FindNumScriptMFCC(scripts)
 	o.SetNumMFCC(&meta, numMFCC)
@@ -48,8 +48,8 @@ func (o *Output) PrepareWords() ([]any, []Meta) {
 	var word Word
 	meta := o.ReflectStruct(word)
 	words, status := o.LoadWordStruct(o.conn)
-	if status.IsErr {
-		panic(status.Message)
+	if status != nil {
+		panic(status)
 	}
 	numMFCC := o.FindNumWordMFCC(words)
 	o.SetNumMFCC(&meta, numMFCC)

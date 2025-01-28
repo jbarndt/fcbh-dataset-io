@@ -15,8 +15,8 @@ func TestWhisper(t *testing.T) {
 	testament := request.Testament{NTBooks: []string{`TIT`, `PHM`, `3JN`}}
 	testament.BuildBookMaps()
 	files, status := input.DBPDirectory(ctx, bibleId, `audio`, ``, filesetId, testament)
-	if status.IsErr {
-		t.Error(status.Message)
+	if status != nil {
+		t.Error(status)
 	}
 	var database = bibleId + `_WHISPER.db`
 	db.DestroyDatabase(database)
@@ -24,8 +24,8 @@ func TestWhisper(t *testing.T) {
 	var whisp = NewWhisper(bibleId, conn, `tiny`, `en`)
 	status = whisp.ProcessFiles(files)
 
-	if status.IsErr {
-		t.Error(status.Message)
+	if status != nil {
+		t.Error(status)
 	}
 	count, status := conn.CountScriptRows()
 	if count != 120 {

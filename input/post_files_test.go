@@ -24,7 +24,7 @@ func TestPostFiles(t *testing.T) {
 		post.ReadFile("text", file, filepath.Base(filename))
 	}
 	input, status := post.PostInput("text", request.Testament{NT: true})
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 	if len(input) != 1 {

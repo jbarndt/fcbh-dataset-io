@@ -17,13 +17,13 @@ func TestAPIDBPClient1(t *testing.T) {
 	ctx := context.Background()
 	client := NewAPIDBPClient(ctx, req.BibleId)
 	var info, status = client.BibleInfo()
-	if status.IsErr {
+	if status != nil {
 		t.Error(`Failure in BibleInfo`, status)
 	}
 	client.FindFilesets(&info, req.AudioData.BibleBrain, req.TextData.BibleBrain, req.Testament)
 	var identRec db.Ident
 	identRec, status = client.UpdateIdent(identRec, info, req)
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 	expect := db.Ident{BibleId: `ENGWEB`, AudioOTId: ``, AudioNTId: `ENGWEBN2DA-mp3-64`,

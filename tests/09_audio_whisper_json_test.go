@@ -47,7 +47,7 @@ func TestAudioWhisperJson(t *testing.T) {
 		ctrl := controller.NewController(ctx, []byte(req))
 		filename, status := ctrl.Process()
 		fmt.Println("Filename", filename, status)
-		if status.IsErr {
+		if status != nil {
 			t.Fatal(status)
 		}
 		numLines := NumJSONFileLines(filename, t)

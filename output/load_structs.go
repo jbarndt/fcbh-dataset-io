@@ -2,25 +2,23 @@ package output
 
 import (
 	"database/sql"
-	"dataset"
 	"dataset/db"
 	log "dataset/logger"
 	"encoding/json"
 	"strconv"
 )
 
-func (o *Output) LoadScriptStruct(d db.DBAdapter) ([]Script, dataset.Status) {
+func (o *Output) LoadScriptStruct(d db.DBAdapter) ([]Script, *log.Status) {
 	var results []Script
-	var status dataset.Status
-	query := `SELECT scripts.script_id, book_id, chapter_num, chapter_end, audio_file, script_num, 
+	var status *log.Status
+	query := `SELECT scripts.script_id, book_id, chapter_num, chapter_end, audio_file, script_num,
 		usfm_style, person, actor, verse_str, verse_end, script_text, 
 		script_begin_ts, script_end_ts, rows, cols, mfcc_json
 		FROM scripts LEFT OUTER JOIN script_mfcc ON script_mfcc.script_id = scripts.script_id
 		ORDER BY scripts.script_id`
 	rows, err := d.DB.Query(query)
 	if err != nil {
-		status = log.Error(d.Ctx, 500, err, "Error during select scripts")
-		return results, status
+		return results, log.Error(d.Ctx, 500, err, "Error during select scripts")
 	}
 	defer rows.Close()
 	for rows.Next() {
@@ -54,10 +52,10 @@ func (o *Output) LoadScriptStruct(d db.DBAdapter) ([]Script, dataset.Status) {
 	return results, status
 }
 
-func (o *Output) LoadWordStruct(d db.DBAdapter) ([]Word, dataset.Status) {
+func (o *Output) LoadWordStruct(d db.DBAdapter) ([]Word, *log.Status) {
 	var results []Word
-	var status dataset.Status
-	query := `SELECT words.word_id, words.script_id, book_id, chapter_num, chapter_end, verse_str, 
+	var status *log.Status
+	query := `SELECT words.word_id, words.script_id, book_id, chapter_num, chapter_end, verse_str,
 		verse_end, words.verse_num, usfm_style, person, actor, 
 		word_seq, word, word_begin_ts, word_end_ts, word_enc, rows, cols, mfcc_json
 		FROM words JOIN scripts ON words.script_id = scripts.script_id

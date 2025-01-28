@@ -3,7 +3,6 @@ package xxxtobedeleted
 import (
 	"context"
 	"database/sql"
-	"dataset"
 	log "dataset/logger"
 	"os"
 	"path/filepath"
@@ -15,9 +14,9 @@ type Sil639 struct {
 	Name  string
 }
 
-func FindWhisperCompatibility(ctx context.Context, iso3 string) ([]Sil639, dataset.Status) {
+func FindWhisperCompatibility(ctx context.Context, iso3 string) ([]Sil639, log.Status) {
 	var iso639s []Sil639
-	var status dataset.Status
+	var status log.Status
 	var database = "iso_639_3.db"
 	databasePath := filepath.Join(os.Getenv(`FCBH_DATASET_DB`), database)
 	conn, err := sql.Open("sqlite3", databasePath)
@@ -38,7 +37,7 @@ func FindWhisperCompatibility(ctx context.Context, iso3 string) ([]Sil639, datas
 	return iso639s, status
 }
 
-func SelectOnPart1(ctx context.Context, conn *sql.DB, iso639 string) ([]Sil639, dataset.Status) {
+func SelectOnPart1(ctx context.Context, conn *sql.DB, iso639 string) ([]Sil639, log.Status) {
 	var query = `SELECT w.Part1, l.Id, l.Ref_Name
 		FROM whisper w
 		JOIN languages l ON w.Part1 = l.Part1
@@ -46,7 +45,7 @@ func SelectOnPart1(ctx context.Context, conn *sql.DB, iso639 string) ([]Sil639, 
 	return genericLangQuery(ctx, conn, iso639, query)
 }
 
-func SelectOnMacro(ctx context.Context, conn *sql.DB, iso639 string) ([]Sil639, dataset.Status) {
+func SelectOnMacro(ctx context.Context, conn *sql.DB, iso639 string) ([]Sil639, log.Status) {
 	var query = `SELECT w.Part1, l.Id, l.Ref_Name
 		FROM whisper w
 		JOIN languages l ON w.Part1 = l.Part1
@@ -55,7 +54,7 @@ func SelectOnMacro(ctx context.Context, conn *sql.DB, iso639 string) ([]Sil639, 
 	return genericLangQuery(ctx, conn, iso639, query)
 }
 
-func SelectOnCountry(ctx context.Context, conn *sql.DB, iso639 string) ([]Sil639, dataset.Status) {
+func SelectOnCountry(ctx context.Context, conn *sql.DB, iso639 string) ([]Sil639, log.Status) {
 	var query = `SELECT w.Part1, lc1.LangId, lc1.CountryId
 		FROM language_country lc1
 		JOIN language_country lc2 ON lc1.CountryId = lc2.CountryId
@@ -66,9 +65,9 @@ func SelectOnCountry(ctx context.Context, conn *sql.DB, iso639 string) ([]Sil639
 	return genericLangQuery(ctx, conn, iso639, query)
 }
 
-func genericLangQuery(ctx context.Context, conn *sql.DB, iso3 string, query string) ([]Sil639, dataset.Status) {
+func genericLangQuery(ctx context.Context, conn *sql.DB, iso3 string, query string) ([]Sil639, log.Status) {
 	var iso639s []Sil639
-	var status dataset.Status
+	var status log.Status
 	rows, err := conn.Query(query, iso3)
 	if err != nil {
 		status = log.Error(ctx, 500, err, query)

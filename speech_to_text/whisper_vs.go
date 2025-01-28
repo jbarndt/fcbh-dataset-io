@@ -14,9 +14,9 @@ import (
 	"strconv"
 )
 
-func (w *Whisper) ChopByTimestamp(file input.InputFile, timestamps []db.Timestamp) ([]db.Timestamp, dataset.Status) {
+func (w *Whisper) ChopByTimestamp(file input.InputFile, timestamps []db.Timestamp) ([]db.Timestamp, *log.Status) {
 	var results []db.Timestamp
-	var status dataset.Status
+	var status *log.Status
 	var command []string
 	command = append(command, `-i`, file.FilePath())
 	command = append(command, `-codec:a`, `copy`)
@@ -74,8 +74,8 @@ type WhisperOutputType struct {
 	Language string               `json:"language"`
 }
 
-func (w *Whisper) loadWhisperOutput(outputFile string, file input.InputFile) ([]db.Script, dataset.Status) {
-	var status dataset.Status
+func (w *Whisper) loadWhisperOutput(outputFile string, file input.InputFile) ([]db.Script, *log.Status) {
+	var status *log.Status
 	var records = make([]db.Script, 0, 100)
 	content, err := os.ReadFile(outputFile)
 	if err != nil {
@@ -105,9 +105,9 @@ func (w *Whisper) loadWhisperOutput(outputFile string, file input.InputFile) ([]
 }
 
 func (w *Whisper) loadWhisperVerses(outputFile string, file input.InputFile,
-	pieceNum int, piece db.Timestamp) (db.Script, dataset.Status) {
+	pieceNum int, piece db.Timestamp) (db.Script, *log.Status) {
 	var rec db.Script
-	var status dataset.Status
+	var status *log.Status
 	content, err := os.ReadFile(outputFile)
 	if err != nil {
 		return rec, log.Error(w.ctx, 500, err, `Error reading file`)

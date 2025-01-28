@@ -2,7 +2,6 @@ package controller
 
 import (
 	"context"
-	"dataset"
 	"dataset/db"
 	"dataset/encode"
 	"dataset/fetch"
@@ -51,9 +50,9 @@ func (c *Controller) SetPostFiles(postFiles *input.PostFiles) {
 }
 
 // Process is deprecated for production, but is a test only convenience method
-func (c *Controller) Process() (string, dataset.Status) {
+func (c *Controller) Process() (string, *log.Status) {
 	output, status := c.ProcessV2()
-	if status.IsErr {
+	if status != nil {
 		return "", status
 	}
 	if len(output.FilePaths) > 0 {
@@ -64,15 +63,15 @@ func (c *Controller) Process() (string, dataset.Status) {
 }
 
 // ProcessV2 is the production means to execute the controller
-func (c *Controller) ProcessV2() (OutputFiles, dataset.Status) {
+func (c *Controller) ProcessV2() (OutputFiles, *log.Status) {
 	var start = time.Now()
 	if c.postFiles != nil {
 		defer c.postFiles.RemoveDir()
 	}
 	log.Debug(c.ctx)
 	var status = c.processSteps()
-	if status.IsErr {
-		filename := c.outputStatus(status)
+	if status != nil {
+		filename := c.outputStatus(*status)
 		c.bucket.AddOutput(filename)
 	}
 	var output OutputFiles
@@ -84,38 +83,38 @@ func (c *Controller) ProcessV2() (OutputFiles, dataset.Status) {
 	return output, status
 }
 
-func (c *Controller) processSteps() dataset.Status {
+func (c *Controller) processSteps() *log.Status {
 	var filename string
-	var status dataset.Status
+	var status *log.Status
 	// Decode YAML Request File
 	log.Info(c.ctx, "Parse .yaml file.")
 	reqDecoder := request.NewRequestDecoder(c.ctx)
 	c.req, status = reqDecoder.Process(c.yamlRequest)
-	if status.IsErr {
+	if status != nil {
 		return status
 	}
 	c.ctx = context.WithValue(c.ctx, `request`, string(c.yamlRequest))
 	// Get User
 	log.Info(c.ctx, "Fetch Bible Brain data.")
 	c.user, status = fetch.GetDBPUser(c.req)
-	if status.IsErr {
+	if status != nil {
 		return status
 	}
 	// Open Database
 	c.database, status = db.NewerDBAdapter(c.ctx, c.req.IsNew, c.user.Username, c.req.DatasetName)
-	if status.IsErr {
+	if status != nil {
 		return status
 	}
 	defer c.database.Close()
 	c.bucket.AddDatabase(c.database)
 	// Fetch Ident Data from Ident
 	c.ident, status = c.database.SelectIdent()
-	if status.IsErr {
+	if status != nil {
 		return status
 	}
 	// Update Ident Data from DBP
 	c.ident, status = c.fetchData()
-	if status.IsErr {
+	if status != nil {
 		if c.req.TextData.AnyBibleBrain() || c.req.AudioData.AnyBibleBrain() {
 			return status
 		}
@@ -125,7 +124,7 @@ func (c *Controller) processSteps() dataset.Status {
 	if !c.req.TextData.NoText {
 		log.Info(c.ctx, "Load text files.")
 		textFiles, status = c.collectTextInput()
-		if status.IsErr {
+		if status != nil {
 			return status
 		}
 	}
@@ -134,20 +133,20 @@ func (c *Controller) processSteps() dataset.Status {
 	if !c.req.AudioData.NoAudio {
 		log.Info(c.ctx, "Load audio files.")
 		audioFiles, status = c.collectAudioInput()
-		if status.IsErr {
+		if status != nil {
 			return status
 		}
 	}
 	// Update Ident Table
 	status = input.UpdateIdent(c.database, &c.ident, textFiles, audioFiles)
-	if status.IsErr {
+	if status != nil {
 		return status
 	}
 	// Read Text Data
 	if !c.req.TextData.NoText {
 		log.Info(c.ctx, "Read and parse text files.")
 		status = c.readText(textFiles)
-		if status.IsErr {
+		if status != nil {
 			return status
 		}
 	}
@@ -155,7 +154,7 @@ func (c *Controller) processSteps() dataset.Status {
 	if !c.req.Timestamps.NoTimestamps {
 		log.Info(c.ctx, "Read or create audio timestamp data.")
 		status = c.timestamps(audioFiles)
-		if status.IsErr {
+		if status != nil {
 			return status
 		}
 	}
@@ -165,12 +164,12 @@ func (c *Controller) processSteps() dataset.Status {
 		c.req.AudioProof.BaseDataset = c.database.Project // ? should there be one BaseDataset ?
 		// This makes a copy of database, and closes it.  Names the new database *_audio, and returns new
 		c.database, status = c.database.CopyDatabase(`_audio`)
-		if status.IsErr {
+		if status != nil {
 			return status
 		}
 		c.bucket.AddDatabase(c.database)
 		status = c.database.UpdateEraseScriptText()
-		if status.IsErr {
+		if status != nil {
 			return status
 		}
 	}
@@ -178,7 +177,7 @@ func (c *Controller) processSteps() dataset.Status {
 	if !c.req.SpeechToText.NoSpeechToText {
 		log.Info(c.ctx, "Perform speech to text.")
 		status = c.speechToText(audioFiles)
-		if status.IsErr {
+		if status != nil {
 			return status
 		}
 	}
@@ -186,7 +185,7 @@ func (c *Controller) processSteps() dataset.Status {
 	if !c.req.AudioEncoding.NoEncoding {
 		log.Info(c.ctx, "Perform audio encoding.")
 		status = c.encodeAudio(audioFiles)
-		if status.IsErr {
+		if status != nil {
 			return status
 		}
 	}
@@ -194,7 +193,7 @@ func (c *Controller) processSteps() dataset.Status {
 	if !c.req.TextEncoding.NoEncoding {
 		log.Info(c.ctx, "Perform text encoding.")
 		status = c.encodeText()
-		if status.IsErr {
+		if status != nil {
 			return status
 		}
 	}
@@ -202,7 +201,7 @@ func (c *Controller) processSteps() dataset.Status {
 	if c.req.AudioProof.HTMLReport {
 		log.Info(c.ctx, "Perform audio proof Report.")
 		filename, status = c.audioProofing(audioFiles)
-		if status.IsErr {
+		if status != nil {
 			return status
 		}
 		c.bucket.AddOutput(filename)
@@ -211,7 +210,7 @@ func (c *Controller) processSteps() dataset.Status {
 	if c.req.Compare.HTMLReport {
 		log.Info(c.ctx, "Perform text comparison.")
 		filename, status = c.matchText()
-		if status.IsErr {
+		if status != nil {
 			return status
 		}
 		c.bucket.AddOutput(filename)
@@ -228,28 +227,28 @@ func (c *Controller) processSteps() dataset.Status {
 	return status
 }
 
-func (c *Controller) fetchData() (db.Ident, dataset.Status) {
-	var status dataset.Status
+func (c *Controller) fetchData() (db.Ident, *log.Status) {
+	var status *log.Status
 	var info fetch.BibleInfoType
 	client := fetch.NewAPIDBPClient(c.ctx, c.req.BibleId)
 	info, status = client.BibleInfo()
-	if status.IsErr {
+	if status != nil {
 		c.ident, status = client.UpdateIdent(c.ident, info, c.req)
 		return c.ident, status
 	}
 	client.FindFilesets(&info, c.req.AudioData.BibleBrain, c.req.TextData.BibleBrain, c.req.Testament)
 	download := fetch.NewAPIDownloadClient(c.ctx, c.req.BibleId, c.req.Testament)
 	status = download.Download(info)
-	if status.IsErr {
+	if status != nil {
 		return c.ident, status
 	}
 	c.ident, status = client.UpdateIdent(c.ident, info, c.req)
 	return c.ident, status
 }
 
-func (c *Controller) collectTextInput() ([]input.InputFile, dataset.Status) {
+func (c *Controller) collectTextInput() ([]input.InputFile, *log.Status) {
 	var files []input.InputFile
-	var status dataset.Status
+	var status *log.Status
 	var expectFiles = true
 	bb := c.req.TextData.BibleBrain
 	if bb.TextPlain || bb.TextPlainEdit || bb.TextUSXEdit {
@@ -264,15 +263,18 @@ func (c *Controller) collectTextInput() ([]input.InputFile, dataset.Status) {
 	} else {
 		expectFiles = false
 	}
-	if expectFiles && len(files) == 0 {
-		status = log.ErrorNoErr(c.ctx, 400, `No text files found for`, c.ident.TextSource)
+	if status != nil {
+		return files, status
 	}
-	return files, status
+	if expectFiles && len(files) == 0 {
+		return files, log.ErrorNoErr(c.ctx, 400, `No text files found for`, c.ident.TextSource)
+	}
+	return files, nil
 }
 
-func (c *Controller) collectAudioInput() ([]input.InputFile, dataset.Status) {
+func (c *Controller) collectAudioInput() ([]input.InputFile, *log.Status) {
 	var files []input.InputFile
-	var status dataset.Status
+	var status *log.Status
 	var expectFiles = true
 	bb := c.req.AudioData.BibleBrain
 	if bb.MP3_64 || bb.MP3_16 || bb.OPUS {
@@ -294,39 +296,39 @@ func (c *Controller) collectAudioInput() ([]input.InputFile, dataset.Status) {
 	return files, status
 }
 
-func (c *Controller) readText(textFiles []input.InputFile) dataset.Status {
-	var status dataset.Status
+func (c *Controller) readText(textFiles []input.InputFile) *log.Status {
+	var status *log.Status
 	if len(textFiles) == 0 {
 		return status
 	}
 	if textFiles[0].MediaType == request.TextUSXEdit {
 		reader := read.NewUSXParser(c.database)
 		status = reader.ProcessFiles(textFiles)
-		if status.IsErr {
+		if status != nil {
 			return status
 		}
 	} else if textFiles[0].MediaType == request.TextPlainEdit {
 		reader := read.NewDBPTextEditReader(c.database, c.req)
 		status = reader.Process()
-		if status.IsErr {
+		if status != nil {
 			return status
 		}
 	} else if textFiles[0].MediaType == request.TextPlain {
 		reader := read.NewDBPTextReader(c.database, c.req.Testament)
 		status = reader.ProcessFiles(textFiles)
-		if status.IsErr {
+		if status != nil {
 			return status
 		}
 	} else if textFiles[0].MediaType == request.TextScript {
 		reader := read.NewScriptReader(c.database, c.req.Testament)
 		status = reader.ProcessFiles(textFiles)
-		if status.IsErr {
+		if status != nil {
 			return status
 		}
 	} else if textFiles[0].MediaType == request.TextCSV {
 		reader := read.NewCSVReader(c.database)
 		status = reader.ProcessFiles(textFiles)
-		if status.IsErr {
+		if status != nil {
 			return status
 		}
 	} else {
@@ -339,8 +341,8 @@ func (c *Controller) readText(textFiles []input.InputFile) dataset.Status {
 	return status
 }
 
-func (c *Controller) timestamps(audioFiles []input.InputFile) dataset.Status {
-	var status dataset.Status
+func (c *Controller) timestamps(audioFiles []input.InputFile) *log.Status {
+	var status *log.Status
 	if c.req.Timestamps.BibleBrain {
 		//
 		// Why isn't Bible Brain just processing input??
@@ -351,7 +353,7 @@ func (c *Controller) timestamps(audioFiles []input.InputFile) dataset.Status {
 				api := fetch.NewAPIDBPTimestamps(c.database, filesetId)
 				// Load returns bool, which could be used to invoke aeneas
 				_, status = api.LoadTimestamps(c.req.Testament)
-				if status.IsErr {
+				if status != nil {
 					return status
 				}
 			}
@@ -363,7 +365,7 @@ func (c *Controller) timestamps(audioFiles []input.InputFile) dataset.Status {
 	} else if c.req.Timestamps.TSBucket {
 		var ts timestamp.TSBucket
 		ts, status = timestamp.NewTSBucket(c.ctx, c.database)
-		if !status.IsErr {
+		if status == nil {
 			status = ts.ProcessFiles(audioFiles)
 		}
 	} else if c.req.Timestamps.MMSFAVerse {
@@ -374,7 +376,7 @@ func (c *Controller) timestamps(audioFiles []input.InputFile) dataset.Status {
 		var ts mms.MMSAlign
 		ts = mms.NewMMSAlign(c.ctx, c.database, c.ident.LanguageISO, c.req.AltLanguage)
 		status = ts.ProcessFiles(audioFiles)
-		if status.IsErr {
+		if status != nil {
 			return status
 		}
 		analysisRpt, _ := fa_score_analysis.FAScoreAnalysis(c.database)
@@ -383,8 +385,8 @@ func (c *Controller) timestamps(audioFiles []input.InputFile) dataset.Status {
 	return status
 }
 
-func (c *Controller) speechToText(audioFiles []input.InputFile) dataset.Status {
-	var status dataset.Status
+func (c *Controller) speechToText(audioFiles []input.InputFile) *log.Status {
+	var status *log.Status
 	bibleId := c.req.BibleId
 	if c.req.SpeechToText.MMS {
 		var asr mms.MMSASR
@@ -396,7 +398,7 @@ func (c *Controller) speechToText(audioFiles []input.InputFile) dataset.Status {
 			var lang2 = c.req.AltLanguage
 			var whisper = speech_to_text.NewWhisper(bibleId, c.database, whisperModel, lang2)
 			status = whisper.ProcessFiles(audioFiles)
-			if status.IsErr {
+			if status != nil {
 				return status
 			}
 			c.ident.TextSource = request.TextSTT
@@ -412,21 +414,21 @@ func (c *Controller) speechToText(audioFiles []input.InputFile) dataset.Status {
 	return status
 }
 
-func (c *Controller) encodeAudio(audioFiles []input.InputFile) dataset.Status {
-	var status dataset.Status
+func (c *Controller) encodeAudio(audioFiles []input.InputFile) *log.Status {
+	var status *log.Status
 	bibleId := c.req.BibleId
 	if c.req.AudioEncoding.MFCC {
 		mfcc := encode.NewMFCC(c.ctx, c.database, bibleId, c.req.Detail, 7)
 		status = mfcc.ProcessFiles(audioFiles)
-		if status.IsErr {
+		if status != nil {
 			return status
 		}
 	}
 	return status
 }
 
-func (c *Controller) encodeText() dataset.Status {
-	var status dataset.Status
+func (c *Controller) encodeText() *log.Status {
+	var status *log.Status
 	if c.req.TextEncoding.FastText {
 		fast := encode.NewFastText(c.ctx, c.database)
 		status = fast.Process()
@@ -434,23 +436,23 @@ func (c *Controller) encodeText() dataset.Status {
 	return status
 }
 
-func (c *Controller) audioProofing(audioFiles []input.InputFile) (string, dataset.Status) {
+func (c *Controller) audioProofing(audioFiles []input.InputFile) (string, *log.Status) {
 	// Using audioFiles here should be tempoary, once the timestamps are updated with duration
 	// there should be no need for the audio files to be present.
 	var filename string
-	var status dataset.Status
+	var status *log.Status
 	if len(audioFiles) == 0 {
 		return filename, log.ErrorNoErr(c.ctx, 400, "There are no audio files to AudioProof")
 	}
 	audioDir := audioFiles[0].Directory
 	var textConn db.DBAdapter
 	textConn, status = db.NewerDBAdapter(c.ctx, false, c.user.Username, c.req.AudioProof.BaseDataset)
-	if status.IsErr {
+	if status != nil {
 		return filename, status
 	}
 	calc := match.NewAlignSilence(c.ctx, textConn, c.database) // c.database is ASR result
 	faLines, filenameMap, status := calc.Process(audioDir)
-	if status.IsErr {
+	if status != nil {
 		return filename, status
 	}
 	writer := match.NewAlignWriter(c.ctx, textConn)
@@ -458,17 +460,17 @@ func (c *Controller) audioProofing(audioFiles []input.InputFile) (string, datase
 	return filename, status
 }
 
-func (c *Controller) matchText() (string, dataset.Status) {
+func (c *Controller) matchText() (string, *log.Status) {
 	var filename string
-	var status dataset.Status
+	var status *log.Status
 	compare := match.NewCompare(c.ctx, c.user, c.req.Compare.BaseDataset, c.database, c.ident.LanguageISO, c.req.Testament, c.req.Compare.CompareSettings)
 	filename, status = compare.Process()
 	return filename, status
 }
 
-func (c *Controller) output() dataset.Status {
+func (c *Controller) output() *log.Status {
 	var filename string
-	var status dataset.Status
+	var status *log.Status
 	var out = output.NewOutput(c.ctx, c.database, c.req.DatasetName, false, false)
 	var records []any
 	var meta []output.Meta
@@ -479,14 +481,14 @@ func (c *Controller) output() dataset.Status {
 	}
 	if c.req.Output.CSV {
 		filename, status = out.WriteCSV(records, meta)
-		if status.IsErr {
+		if status != nil {
 			return status
 		}
 		c.bucket.AddOutput(filename)
 	}
 	if c.req.Output.JSON {
 		filename, status = out.WriteJSON(records, meta)
-		if status.IsErr {
+		if status != nil {
 			return status
 		}
 		c.bucket.AddOutput(filename)
@@ -495,9 +497,9 @@ func (c *Controller) output() dataset.Status {
 	return status
 }
 
-func (c *Controller) outputStatus(status dataset.Status) string {
+func (c *Controller) outputStatus(status log.Status) string {
 	var filename string
-	var status2 dataset.Status
+	var status2 *log.Status
 	var out = output.NewOutput(c.ctx, db.DBAdapter{}, c.req.DatasetName, false, false)
 	if c.req.Output.CSV {
 		filename, status2 = out.CSVStatus(status, true)
@@ -506,7 +508,7 @@ func (c *Controller) outputStatus(status dataset.Status) string {
 	} else {
 		filename = status.String()
 	}
-	if status2.IsErr {
+	if status2 != nil {
 		filename = status2.String()
 	}
 	return filename

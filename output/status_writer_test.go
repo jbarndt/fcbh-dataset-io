@@ -2,7 +2,6 @@ package output
 
 import (
 	"context"
-	"dataset"
 	"dataset/db"
 	log "dataset/logger"
 	"dataset/request"
@@ -31,7 +30,7 @@ func TestJSONStatus(t *testing.T) {
 	status, ctx := prepareError(t)
 	var out = NewOutput(ctx, db.DBAdapter{}, `TestStatus`, false, false)
 	filename, status2 := out.JSONStatus(status, true)
-	if status2.IsErr {
+	if status2 != nil {
 		t.Fatal(status2)
 	}
 	fmt.Println(filename)
@@ -47,13 +46,13 @@ func TestCSVStatus(t *testing.T) {
 	if len(filename) != 342 {
 		t.Error(`Result should be len 342`, len(filename))
 	}
-	if status2.IsErr {
+	if status2 != nil {
 		t.Fatal(status2)
 	}
 	fmt.Println(filename)
 }
 
-func prepareError(t *testing.T) (dataset.Status, context.Context) {
+func prepareError(t *testing.T) (log.Status, context.Context) {
 	var req request.Request
 	req.DatasetName = `Test1`
 	req.BibleId = `ENGWEB`
@@ -62,11 +61,11 @@ func prepareError(t *testing.T) (dataset.Status, context.Context) {
 	ctx := context.Background()
 	reqDecoder := request.NewRequestDecoder(ctx)
 	yaml, status := reqDecoder.Encode(req)
-	if status.IsErr {
-		t.Error(status.Message)
+	if status != nil {
+		t.Error(status)
 	}
 	ctx = context.WithValue(context.Background(), `request`, yaml)
 	err := errors.New("test err")
 	status = log.Error(ctx, 400, err, "my error message")
-	return status, ctx
+	return *status, ctx
 }

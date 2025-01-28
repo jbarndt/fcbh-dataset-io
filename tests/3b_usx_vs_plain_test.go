@@ -6,7 +6,6 @@ import (
 	"dataset/generic"
 	"fmt"
 	"github.com/sergi/go-diff/diffmatchpatch"
-	"os"
 	"regexp"
 	"strings"
 	"testing"
@@ -29,28 +28,27 @@ detail:
 func TestTextReadDirect(t *testing.T) {
 	var tests1 []SqliteTest
 	tests1 = append(tests1, SqliteTest{"SELECT count(*) FROM scripts", 8213})
-	tests1 = append(tests1, SqliteTest{"SELECT count(*) FROM words", 381444})
+	tests1 = append(tests1, SqliteTest{"SELECT count(*) FROM words where ttype='W'", 175764})
 	test1 := strings.ReplaceAll(usxVsPlain, "{BIBLE_ID}", "ENGWEB")
 	test1USX := strings.ReplaceAll(test1, "{TEXT_TYPE}", "text_usx_edit")
 	database1 := DirectSqlTest(test1USX, tests1, t)
 	var tests2 []SqliteTest
 	tests2 = append(tests2, SqliteTest{"SELECT count(*) FROM scripts", 8218})
-	tests2 = append(tests2, SqliteTest{"SELECT count(*) FROM words", 381444})
+	tests2 = append(tests2, SqliteTest{"SELECT count(*) FROM words where ttype='W'", 175764})
 	text2TXT := strings.ReplaceAll(test1, "{TEXT_TYPE}", "text_plain_edit")
 	database2 := DirectSqlTest(text2TXT, tests2, t)
 	diffCount := DifferenceTest(database1, database2)
-	if diffCount != 53 {
-		t.Error("DiffCount is expected to be 53")
+	if diffCount != 0 {
+		t.Error("DiffCount is expected to be 0, but was", diffCount)
 	}
 }
 
 func DifferenceTest(database1 string, database2 string) int {
-	os.Setenv("FORCE_COLOR", "1")
 	ctx := context.Background()
 	diffMatch := diffmatchpatch.New()
 	conn1 := db.NewDBAdapter(ctx, "./"+database1)
 	records1, status := conn1.SelectScripts()
-	if status.IsErr {
+	if status != nil {
 		panic(status)
 	}
 	var usxMap = make(map[string]string)
@@ -84,7 +82,10 @@ func DifferenceTest(database1 string, database2 string) int {
 		plainTxt = strings.ReplaceAll(plainTxt, "  ", " ")
 		diffs := diffMatch.DiffMain(usxTxt, plainTxt, false)
 		diffs = diffMatch.DiffCleanupMerge(diffs)
-		//diffs = removeWhitespaceErrors(diffs)
+		if len(diffs) > 1 {
+			diffs = removeWhitespaceErrors(diffs)
+			diffs = diffMatch.DiffCleanupMerge(diffs)
+		}
 		if len(diffs) > 1 || len(diffs) > 0 && diffs[0].Type != diffmatchpatch.DiffEqual {
 			diffCount++
 			fmt.Println(lineRef, "usxTxt", usxTxt)
@@ -109,9 +110,5 @@ func removeWhitespaceErrors(diffs []diffmatchpatch.Diff) []diffmatchpatch.Diff {
 			unEqualCount++
 		}
 	}
-	if unEqualCount > 0 {
-		return cleanDiffs
-	} else {
-		return []diffmatchpatch.Diff{}
-	}
+	return cleanDiffs
 }

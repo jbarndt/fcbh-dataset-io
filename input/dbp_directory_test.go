@@ -2,7 +2,7 @@ package input
 
 import (
 	"context"
-	"dataset"
+	log "dataset/logger"
 	"dataset/request"
 	"fmt"
 	"testing"
@@ -16,8 +16,8 @@ func TestPlainText1(t *testing.T) {
 	ntFileset := `ENGWEBN_ET`
 	testament := request.Testament{NT: true, OTBooks: []string{`JOB`, `PSA`, `PRO`, `SNG`}}
 	files, status := DBPDirectory(ctx, bibleId, fsType, otFileset, ntFileset, testament)
-	if status.IsErr {
-		t.Error(status.Message)
+	if status != nil {
+		t.Error(status)
 	}
 	if len(files) != 2 {
 		t.Error(`There should be 2 files`)
@@ -39,8 +39,8 @@ func TestPlainText2(t *testing.T) {
 	ntFileset := `ENGWEBN_ET`
 	testament := request.Testament{NT: true}
 	files, status := DBPDirectory(ctx, bibleId, fsType, otFileset, ntFileset, testament)
-	if status.IsErr {
-		t.Error(status.Message)
+	if status != nil {
+		t.Error(status)
 	}
 	if len(files) != 1 {
 		t.Error(`There should be 1 file1`)
@@ -63,8 +63,8 @@ func TestUSXText1(t *testing.T) {
 	testament := request.Testament{NT: true, OTBooks: []string{`JOB`, `PSA`, `PRO`, `SNG`}}
 	testament.BuildBookMaps()
 	files, status := DBPDirectory(ctx, bibleId, fsType, otFileset, ntFileset, testament)
-	if status.IsErr {
-		t.Error(status.Message)
+	if status != nil {
+		t.Error(status)
 	}
 	if len(files) != 31 {
 		t.Error(`There should be 31 files`, len(files))
@@ -93,8 +93,8 @@ func TestUSXText2(t *testing.T) {
 	testament := request.Testament{OTBooks: []string{`JOB`, `PSA`, `PRO`, `SNG`}}
 	testament.BuildBookMaps()
 	files, status := DBPDirectory(ctx, bibleId, fsType, otFileset, ntFileset, testament)
-	if status.IsErr {
-		t.Error(status.Message)
+	if status != nil {
+		t.Error(status)
 	}
 	if len(files) != 4 {
 		t.Error(`There should be 4 files`, len(files))
@@ -123,8 +123,8 @@ func TestAudio1(t *testing.T) {
 	testament := request.Testament{NTBooks: []string{`ROM`, `EPH`, `COL`, `HEB`}}
 	testament.BuildBookMaps()
 	files, status := DBPDirectory(ctx, bibleId, fsType, otFileset, ntFileset, testament)
-	if status.IsErr {
-		t.Error(status.Message)
+	if status != nil {
+		t.Error(status)
 	}
 	if len(files) != 39 {
 		t.Error(`There should be 39 files`, len(files))
@@ -153,8 +153,8 @@ func TestAudio2(t *testing.T) {
 	testament := request.Testament{NT: true, NTBooks: []string{`ROM`, `EPH`, `COL`, `HEB`}}
 	testament.BuildBookMaps()
 	files, status := DBPDirectory(ctx, bibleId, fsType, otFileset, ntFileset, testament)
-	if status.IsErr {
-		t.Error(status.Message)
+	if status != nil {
+		t.Error(status)
 	}
 	if len(files) != 260 {
 		t.Error(`There should be 260 files`, len(files))
@@ -193,8 +193,8 @@ func TestIncorrectFileset(t *testing.T) {
 	testament := request.Testament{NT: true, NTBooks: []string{`ROM`, `EPH`, `COL`, `HEB`}}
 	testament.BuildBookMaps()
 	files, status := DBPDirectory(ctx, bibleId, fsType, otFileset, ntFileset, testament)
-	if status.IsErr {
-		t.Error(status.Message)
+	if status != nil {
+		t.Error(status)
 	}
 	if len(files) != 0 {
 		t.Error(`There should be 0 files`, len(files))
@@ -211,8 +211,8 @@ func TestIncorrectBibleId(t *testing.T) {
 	testament := request.Testament{NT: true, NTBooks: []string{`ROM`, `EPH`, `COL`, `HEB`}}
 	testament.BuildBookMaps()
 	files, status := DBPDirectory(ctx, bibleId, fsType, otFileset, ntFileset, testament)
-	if status.IsErr {
-		t.Error(status.Message)
+	if status != nil {
+		t.Error(status)
 	}
 	if len(files) != 0 {
 		t.Error(`There should be 0 files`, len(files))
@@ -229,8 +229,8 @@ func TestIncorrectBooks(t *testing.T) {
 	testament := request.Testament{NTBooks: []string{`RO1`, `EP1`, `CO1`, `HE1`}}
 	testament.BuildBookMaps()
 	files, status := DBPDirectory(ctx, bibleId, fsType, otFileset, ntFileset, testament)
-	if status.IsErr {
-		t.Error(status.Message)
+	if status != nil {
+		t.Error(status)
 	}
 	if len(files) != 0 {
 		t.Error(`There should be 0 files`, len(files))
@@ -240,12 +240,12 @@ func TestIncorrectBooks(t *testing.T) {
 
 func TestParseV4AudioFilename(t *testing.T) {
 	ctx := context.Background()
-	var status dataset.Status
+	var status *log.Status
 	var file InputFile
 	file.Filename = `ENGESVN2DA_B001_MAT_001.mp3`
 	status = ParseV4AudioFilename(ctx, &file)
-	if status.IsErr {
-		t.Error(status.Message)
+	if status != nil {
+		t.Error(status)
 	}
 	if file.MediaId != `ENGESVN2DA` {
 		t.Error(`mediaId is incorrect`, file.MediaId)
@@ -269,8 +269,8 @@ func TestParseV4AudioFilename(t *testing.T) {
 	var file2 InputFile
 	file2.Filename = `IRUNLCP1DA_B013_1TH_001_001-001_010.mp3`
 	status = ParseV4AudioFilename(ctx, &file2)
-	if status.IsErr {
-		t.Error(status.Message)
+	if status != nil {
+		t.Error(status)
 	}
 	if file2.Verse != `001` {
 		t.Error(`Verse is incorrect`, file2.Verse)

@@ -2,7 +2,6 @@ package input
 
 import (
 	"context"
-	"dataset"
 	log "dataset/logger"
 	"dataset/request"
 	"io"
@@ -33,8 +32,8 @@ func NewPostFiles(ctx context.Context) PostFiles {
 	return p
 }
 
-func (p *PostFiles) ReadFile(ftype string, source io.Reader, filename string) dataset.Status {
-	var status dataset.Status
+func (p *PostFiles) ReadFile(ftype string, source io.Reader, filename string) *log.Status {
+	var status *log.Status
 	var file InputFile
 	target, err := os.Create(filepath.Join(p.dir, filename))
 	if err != nil {
@@ -57,8 +56,8 @@ func (p *PostFiles) ReadFile(ftype string, source io.Reader, filename string) da
 	return status
 }
 
-func (p *PostFiles) PostInput(ftype string, testament request.Testament) ([]InputFile, dataset.Status) {
-	var status dataset.Status
+func (p *PostFiles) PostInput(ftype string, testament request.Testament) ([]InputFile, *log.Status) {
+	var status *log.Status
 	var files []InputFile
 	if ftype == "text" {
 		files = p.text
@@ -66,16 +65,16 @@ func (p *PostFiles) PostInput(ftype string, testament request.Testament) ([]Inpu
 		files = p.audio
 	}
 	files, status = Unzip(p.ctx, files)
-	if status.IsErr {
+	if status != nil {
 		return files, status
 	}
 	for i, _ := range files {
 		status = SetMediaType(p.ctx, &files[i])
-		if status.IsErr {
+		if status != nil {
 			return files, status
 		}
 		status = ParseFilenames(p.ctx, &files[i])
-		if status.IsErr {
+		if status != nil {
 			return files, status
 		}
 	}

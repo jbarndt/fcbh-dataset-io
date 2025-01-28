@@ -30,19 +30,19 @@ func TestRunBucket(t *testing.T) {
 	}
 	b.AddLogFile(os.Getenv("FCBH_DATASET_LOG_FILE"))
 	database1, status := db.NewerDBAdapter(ctx, true, b.username, "TestRunBucket1")
-	if status.IsErr {
-		t.Fatal(status.String())
+	if status != nil {
+		t.Fatal(status)
 	}
 	b.AddDatabase(database1)
 	database2, status := db.NewerDBAdapter(ctx, true, b.username, "TestRunBucket2")
-	if status.IsErr {
-		t.Fatal(status.String())
+	if status != nil {
+		t.Fatal(status)
 	}
 	b.AddDatabase(database2)
 	b.AddOutput("../tests/02__plain_text_edit_script.csv")
 	b.AddOutput("../tests/02__plain_text_edit_script.json")
 	status = b.PersistToBucket()
-	if status.IsErr {
-		t.Fatal(status.String())
+	if status != nil {
+		t.Fatal(status)
 	}
 }

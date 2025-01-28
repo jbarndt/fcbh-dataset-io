@@ -65,7 +65,7 @@ func TestUSXTextEditScript(t *testing.T) {
 	var req = strings.Replace(uSXTextEditScript, `{bibleId}`, bibleId, 2)
 	var control = controller.NewController(ctx, []byte(req))
 	filename, status := control.Process()
-	if status.IsErr {
+	if status != nil {
 		t.Error(status)
 	}
 	fmt.Println(filename)

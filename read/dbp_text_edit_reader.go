@@ -2,9 +2,9 @@ package read
 
 import (
 	"context"
-	"dataset"
 	"dataset/db"
 	"dataset/input"
+	log "dataset/logger"
 	"dataset/request"
 	"strconv"
 )
@@ -36,33 +36,34 @@ func NewDBPTextEditReader(conn db.DBAdapter, req request.Request) DBPTextEditRea
 	return d
 }
 
-func (d *DBPTextEditReader) Process() dataset.Status {
-	var status dataset.Status
+func (d *DBPTextEditReader) Process() *log.Status {
+	var status *log.Status
 	testament := d.req.Testament
 	var usxDB db.DBAdapter
 	usxDB, status = d.createUSXEDITText(testament)
-	if status.IsErr {
+	if status != nil {
 		return status
 	}
 	titleMap, chapMap, status := d.readUSXHeadings(usxDB) //testament)
-	if status.IsErr {
+	if status != nil {
 		return status
 	}
 	var textDB db.DBAdapter
 	textDB, status = d.createDBPText(testament)
-	if status.IsErr {
+	if status != nil {
 		return status
 	}
 	records, status := d.combineHeadings(textDB, titleMap, chapMap)
-	if !status.IsErr {
-		status = d.conn.InsertScripts(records)
+	if status != nil {
+		return status
 	}
+	status = d.conn.InsertScripts(records)
 	return status
 }
 
-func (d *DBPTextEditReader) createDBPText(testament request.Testament) (db.DBAdapter, dataset.Status) {
+func (d *DBPTextEditReader) createDBPText(testament request.Testament) (db.DBAdapter, *log.Status) {
 	var database db.DBAdapter
-	var status dataset.Status
+	var status *log.Status
 	var otMediaId string
 	var ntMediaId string
 	if testament.OT || len(testament.OTBooks) > 0 {
@@ -73,7 +74,7 @@ func (d *DBPTextEditReader) createDBPText(testament request.Testament) (db.DBAda
 	}
 	files, status := input.DBPDirectory(d.ctx, d.bibleId, request.TextPlainEdit, otMediaId,
 		ntMediaId, testament)
-	if status.IsErr {
+	if status != nil {
 		return database, status
 	}
 	database = db.NewDBAdapter(d.ctx, ":memory:")
@@ -82,12 +83,12 @@ func (d *DBPTextEditReader) createDBPText(testament request.Testament) (db.DBAda
 	return database, status
 }
 
-func (d *DBPTextEditReader) createUSXEDITText(testament request.Testament) (db.DBAdapter, dataset.Status) {
+func (d *DBPTextEditReader) createUSXEDITText(testament request.Testament) (db.DBAdapter, *log.Status) {
 	var database db.DBAdapter
-	var status dataset.Status
+	var status *log.Status
 	files, status := input.DBPDirectory(d.ctx, d.bibleId, request.TextUSXEdit, d.bibleId+`O_ET-usx`,
 		d.bibleId+`N_ET-usx`, testament)
-	if status.IsErr {
+	if status != nil {
 		return database, status
 	}
 	database = db.NewDBAdapter(d.ctx, ":memory:")
@@ -96,14 +97,14 @@ func (d *DBPTextEditReader) createUSXEDITText(testament request.Testament) (db.D
 	return database, status
 }
 
-func (d *DBPTextEditReader) readUSXHeadings(conn4 db.DBAdapter) (map[string]db.Script, map[string]db.Script, dataset.Status) {
+func (d *DBPTextEditReader) readUSXHeadings(conn4 db.DBAdapter) (map[string]db.Script, map[string]db.Script, *log.Status) {
 	var bookTitle = make(map[string]db.Script)
 	var chapTitle = make(map[string]db.Script)
-	var status dataset.Status
+	var status *log.Status
 	var records []db.Script
 	records, status = conn4.SelectScriptHeadings()
 	conn4.Close()
-	if !status.IsErr {
+	if status == nil {
 		for _, rec := range records {
 			if rec.UsfmStyle == `para.h` {
 				key := rec.BookId + `:` + strconv.Itoa(rec.ChapterNum)
@@ -117,14 +118,14 @@ func (d *DBPTextEditReader) readUSXHeadings(conn4 db.DBAdapter) (map[string]db.S
 }
 
 func (d *DBPTextEditReader) combineHeadings(conn db.DBAdapter, bookTitle map[string]db.Script,
-	chapTitle map[string]db.Script) ([]db.Script, dataset.Status) {
+	chapTitle map[string]db.Script) ([]db.Script, *log.Status) {
 	var results = make([]db.Script, 0, 5000)
 	var lastBookId = ``
 	var lastChapter = -1
 	var scriptNum = 0
 	var records, status = conn.SelectScripts()
 	conn.Close()
-	if status.IsErr {
+	if status != nil {
 		return results, status
 	}
 	for _, rec := range records {

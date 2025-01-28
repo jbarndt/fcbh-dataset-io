@@ -18,7 +18,7 @@ func TestAlignWriter(t *testing.T) {
 	calc := NewAlignSilence(ctx, conn, asrConn)
 	audioDir := filepath.Join(os.Getenv("FCBH_DATASET_FILES"), "ENGWEB", "ENGWEBN2DA-mp3-64")
 	faLines, filenameMap, status := calc.Process(audioDir)
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 	fmt.Println(len(faLines), len(filenameMap))

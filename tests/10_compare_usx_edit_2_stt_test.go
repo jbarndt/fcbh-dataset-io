@@ -52,7 +52,7 @@ func TestCompareUsXTextEdit2STT(t *testing.T) {
 	var req = strings.Replace(CompareUsXTextEdit2STT, `{bibleId}`, bibleId, 3)
 	var control = controller.NewController(ctx, []byte(req))
 	filename, status := control.Process()
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 	fmt.Println("Filename", filename)

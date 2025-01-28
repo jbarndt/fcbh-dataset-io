@@ -2,9 +2,9 @@ package timestamp
 
 import (
 	"context"
-	"dataset"
 	"dataset/bible_brain"
 	"dataset/db"
+	log "dataset/logger"
 )
 
 const (
@@ -17,19 +17,19 @@ type UpdateTimestamps struct {
 	dbpConn bible_brain.DBPAdapter
 }
 
-func (d *UpdateTimestamps) Process(filesetId string) dataset.Status {
-	var status dataset.Status
+func (d *UpdateTimestamps) Process(filesetId string) *log.Status {
+	var status *log.Status
 	status = d.dbpConn.DeleteTimestamps(filesetId)
-	if status.IsErr {
+	if status != nil {
 		return status
 	}
 	var hashId string
 	hashId, status = d.dbpConn.SelectHashId(filesetId)
-	if status.IsErr {
+	if status != nil {
 		return status
 	}
 	status = d.dbpConn.UpdateFilesetTimingEstTag(hashId, mmsAlignTimingEstErr)
-	if status.IsErr {
+	if status != nil {
 		return status
 	}
 	var books []string
@@ -40,18 +40,18 @@ func (d *UpdateTimestamps) Process(filesetId string) dataset.Status {
 		for chap := 1; chap <= lastChapter; chap++ {
 			var timestamps []db.Audio
 			timestamps, status = d.conn.SelectFAScriptTimestamps(book, chap)
-			if status.IsErr {
+			if status != nil {
 				return status
 			}
 			if len(timestamps) > 0 {
 				var bibleFileId int64
 				bibleFileId, status = d.dbpConn.SelectFileId(filesetId,
 					timestamps[0].BookId, timestamps[0].ChapterNum)
-				if status.IsErr {
+				if status != nil {
 					return status
 				}
 				status = d.dbpConn.UpdateTimestamps(bibleFileId, timestamps)
-				if status.IsErr {
+				if status != nil {
 					return status
 				}
 			}

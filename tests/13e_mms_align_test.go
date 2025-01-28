@@ -23,13 +23,17 @@ testament:
   nt_books: [PHM]
 `
 
+// These counts are 2 words short  and 11 letters short, because I removed
+// the chapter heading from the first chapter of each book.
+// When I restore that the counts will need to be increased.
+
 func TestMMSAlignDirect(t *testing.T) {
 	var tests []SqliteTest
 	tests = append(tests, SqliteTest{"SELECT count(*) FROM scripts", 26})
 	tests = append(tests, SqliteTest{"SELECT count(*) FROM scripts WHERE script_begin_ts != 0.0", 25})
-	tests = append(tests, SqliteTest{"SELECT count(*) FROM words WHERE ttype='W'", 448})
-	tests = append(tests, SqliteTest{"SELECT count(*) FROM words WHERE word_begin_ts != 0.0", 448})
-	tests = append(tests, SqliteTest{"SELECT count(*) FROM chars", 1796})
-	tests = append(tests, SqliteTest{"SELECT count(distinct(word_id)) FROM chars", 448})
+	tests = append(tests, SqliteTest{"SELECT count(*) FROM words WHERE ttype='W'", 446})
+	tests = append(tests, SqliteTest{"SELECT count(*) FROM words WHERE word_begin_ts != 0.0", 446})
+	tests = append(tests, SqliteTest{"SELECT count(*) FROM chars", 1785})
+	tests = append(tests, SqliteTest{"SELECT count(distinct(word_id)) FROM chars", 446})
 	DirectSqlTest(mmsAlignTest, tests, t)
 }

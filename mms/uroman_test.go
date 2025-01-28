@@ -32,7 +32,7 @@ func TestURoman(t *testing.T) {
 	}
 	conn := db.NewDBAdapter(ctx, ":memory:")
 	status := conn.InsertScripts(scripts)
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 	rows, status := conn.SelectScripts()
@@ -40,12 +40,12 @@ func TestURoman(t *testing.T) {
 		fmt.Println(r.ScriptId, r.ScriptText, r.URoman)
 	}
 	status = EnsureUroman(conn, "rus")
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 	var hasUroman bool
 	hasUroman, status = CheckUroman(conn)
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 	if !hasUroman {

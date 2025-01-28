@@ -2,7 +2,6 @@ package run_control
 
 import (
 	"context"
-	"dataset"
 	"dataset/db"
 	log "dataset/logger"
 	"fmt"
@@ -66,9 +65,9 @@ func (b *RunBucket) GetOutputPaths() []string {
 	return b.outputs
 }
 
-func (b *RunBucket) PersistToBucket() dataset.Status {
-	var allStatus []dataset.Status
-	var status dataset.Status
+func (b *RunBucket) PersistToBucket() *log.Status {
+	var allStatus []*log.Status
+	var status *log.Status
 	if !testing.Testing() || b.IsUnitTest {
 		cfg, err := config.LoadDefaultConfig(b.ctx, config.WithRegion("us-west-2"))
 		if err != nil {
@@ -97,7 +96,7 @@ func (b *RunBucket) PersistToBucket() dataset.Status {
 		status = b.uploadString(client, run, "duration", time.Since(b.start).String(), "")
 		allStatus = append(allStatus, status)
 		for _, stat := range allStatus {
-			if stat.IsErr {
+			if stat != nil {
 				status = stat
 				break
 			}
@@ -119,9 +118,9 @@ func (b *RunBucket) parseYaml(name string) string {
 	return result
 }
 
-func (b *RunBucket) findLastRun(client *s3.Client) (int, dataset.Status) {
+func (b *RunBucket) findLastRun(client *s3.Client) (int, *log.Status) {
 	var result int
-	var status dataset.Status
+	var status *log.Status
 	prefix := b.username + "/" + b.dataset + "/"
 	output, err := client.ListObjectsV2(b.ctx, &s3.ListObjectsV2Input{
 		Bucket: &b.bucket,
@@ -149,8 +148,8 @@ func (b *RunBucket) findLastRun(client *s3.Client) (int, dataset.Status) {
 	return maxRun, status
 }
 
-func (b *RunBucket) uploadString(client *s3.Client, run int, typ string, filename string, content string) dataset.Status {
-	var status dataset.Status
+func (b *RunBucket) uploadString(client *s3.Client, run int, typ string, filename string, content string) *log.Status {
+	var status *log.Status
 	key := b.createKey(run, typ, filename)
 	input := &s3.PutObjectInput{
 		Bucket: &b.bucket,
@@ -164,8 +163,8 @@ func (b *RunBucket) uploadString(client *s3.Client, run int, typ string, filenam
 	return status
 }
 
-func (b *RunBucket) uploadFile(client *s3.Client, run int, typ string, filePath string) dataset.Status {
-	var status dataset.Status
+func (b *RunBucket) uploadFile(client *s3.Client, run int, typ string, filePath string) *log.Status {
+	var status *log.Status
 	file, err := os.Open(filePath)
 	if err != nil {
 		log.Warn(b.ctx, 500, err, "Error opening file to upload to S3.")

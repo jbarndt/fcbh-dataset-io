@@ -12,7 +12,7 @@ import (
 func TestCSVReader(t *testing.T) {
 	ctx := context.Background()
 	conn, status := db.NewerDBAdapter(ctx, true, `GaryNTest`, `tugutil_test`)
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 	reader := NewCSVReader(conn)
@@ -27,7 +27,7 @@ func TestCSVReader(t *testing.T) {
 	file.Directory = filepath.Join(os.Getenv(`FCBH_DATASET_DB`), `tugutil`)
 	files = append(files, file)
 	status = reader.ProcessFiles(files)
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 }

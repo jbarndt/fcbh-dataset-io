@@ -2,7 +2,6 @@ package read
 
 import (
 	"context"
-	"dataset"
 	"dataset/db"
 	"dataset/input"
 	log "dataset/logger"
@@ -27,16 +26,16 @@ func NewCSVReader(db db.DBAdapter) CSVReader {
 	return d
 }
 
-func (r CSVReader) ProcessFiles(files []input.InputFile) dataset.Status {
-	var status dataset.Status
+func (r CSVReader) ProcessFiles(files []input.InputFile) *log.Status {
+	var status *log.Status
 	for _, file := range files {
 		status = r.Read(file.FilePath())
 	}
 	return status
 }
 
-func (r CSVReader) Read(filePath string) dataset.Status {
-	var status dataset.Status
+func (r CSVReader) Read(filePath string) *log.Status {
+	var status *log.Status
 	file, err := os.Open(filePath)
 	if err != nil {
 		return log.Error(r.ctx, 500, err, "Error: could not open", filePath)
@@ -57,7 +56,7 @@ func (r CSVReader) Read(filePath string) dataset.Status {
 		if first {
 			first = false
 			col, status = r.FindColIndexes(row)
-			if status.IsErr {
+			if status != nil {
 				return status
 			}
 		} else {
@@ -103,7 +102,7 @@ type CSVIndex struct {
 	TextCol    int
 }
 
-func (r CSVReader) FindColIndexes(heading []string) (CSVIndex, dataset.Status) {
+func (r CSVReader) FindColIndexes(heading []string) (CSVIndex, *log.Status) {
 	var c CSVIndex
 	c.BookCol = -1
 	c.ChapterCol = -1
@@ -137,9 +136,8 @@ func (r CSVReader) FindColIndexes(heading []string) (CSVIndex, dataset.Status) {
 	if c.TextCol < 0 {
 		msgs = append(msgs, `Text column was not found`)
 	}
-	var status dataset.Status
 	if len(msgs) > 0 {
-		status = log.ErrorNoErr(r.ctx, 500, `Columns missing in csv file`, strings.Join(msgs, `; `))
+		return c, log.ErrorNoErr(r.ctx, 500, `Columns missing in csv file`, strings.Join(msgs, `; `))
 	}
-	return c, status
+	return c, nil
 }

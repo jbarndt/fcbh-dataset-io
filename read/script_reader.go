@@ -2,7 +2,6 @@ package read
 
 import (
 	"context"
-	"dataset"
 	"dataset/db"
 	"dataset/input"
 	log "dataset/logger"
@@ -28,16 +27,16 @@ func NewScriptReader(db db.DBAdapter, testament request.Testament) ScriptReader 
 	return d
 }
 
-func (r ScriptReader) ProcessFiles(files []input.InputFile) dataset.Status {
-	var status dataset.Status
+func (r ScriptReader) ProcessFiles(files []input.InputFile) *log.Status {
+	var status *log.Status
 	for _, file := range files {
 		status = r.Read(file.FilePath())
 	}
 	return status
 }
 
-func (r ScriptReader) Read(filePath string) dataset.Status {
-	var status dataset.Status
+func (r ScriptReader) Read(filePath string) *log.Status {
+	var status *log.Status
 	file, err := excelize.OpenFile(filePath)
 	if err != nil {
 		return log.Error(r.ctx, 500, err, "Error: could not open", filePath)
@@ -54,7 +53,7 @@ func (r ScriptReader) Read(filePath string) dataset.Status {
 	for i, row := range rows {
 		if i == 0 {
 			col, status = r.FindColIndexes(row)
-			if status.IsErr {
+			if status != nil {
 				return status
 			}
 			continue
@@ -108,7 +107,7 @@ type ColIndex struct {
 	TextCol      int
 }
 
-func (r ScriptReader) FindColIndexes(heading []string) (ColIndex, dataset.Status) {
+func (r ScriptReader) FindColIndexes(heading []string) (ColIndex, *log.Status) {
 	var c ColIndex
 	for col, head := range heading {
 		switch strings.ToLower(head) {
@@ -139,7 +138,7 @@ func (r ScriptReader) FindColIndexes(heading []string) (ColIndex, dataset.Status
 	if c.TextCol == 0 {
 		msgs = append(msgs, `Text column was not found`)
 	}
-	var status dataset.Status
+	var status *log.Status
 	if len(msgs) > 0 {
 		status = log.ErrorNoErr(r.ctx, 500, `Columns missing in script`, strings.Join(msgs, `; `))
 	}

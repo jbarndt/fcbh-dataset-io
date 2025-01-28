@@ -29,8 +29,8 @@ func AWSS3USX(key string, t *testing.T) {
 	_ = os.Remove(filepath.Join(directory, `042LUK.usx`))
 	_ = os.Remove(filepath.Join(directory, `043JHN.usx`))
 	files, status := AWSS3Input(ctx, key, testament)
-	if status.IsErr {
-		t.Error(status.Message)
+	if status != nil {
+		t.Error(status)
 	}
 	if len(files) != 27 {
 		t.Error(`len(files) should be 27`, len(files))
@@ -65,8 +65,8 @@ func AWSS3Audio(key string, expect int, t *testing.T) {
 	_ = os.Remove(filepath.Join(directory, `B27___19_Revelation__ENGWEBN2DA.mp3`))
 	_ = os.Remove(filepath.Join(directory, `B27___20_Revelation__ENGWEBN2DA.mp3`))
 	files, status := AWSS3Input(ctx, key, testament)
-	if status.IsErr {
-		t.Error(status.Message)
+	if status != nil {
+		t.Error(status)
 	}
 	if len(files) != expect {
 		t.Error(`len(files) should be `, expect, len(files))
@@ -90,8 +90,8 @@ func NotYetTestAWSS3Zip(t *testing.T) {
 	//os.Remove(filepath.Join(directory, `042LUK.usx`))
 	//os.Remove(filepath.Join(directory, `043JHN.usx`))
 	files, status := AWSS3Input(ctx, key, testament)
-	if status.IsErr {
-		t.Error(status.Message)
+	if status != nil {
+		t.Error(status)
 	}
 	if len(files) != 1 {
 		t.Error(`len(files) should be 260`, len(files))

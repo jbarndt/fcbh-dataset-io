@@ -33,33 +33,33 @@ func NewUSXParser(conn db.DBAdapter) USXParser {
 	return p
 }
 
-func (p *USXParser) ProcessFiles(inputFiles []input.InputFile) dataset.Status {
-	var status dataset.Status
+func (p *USXParser) ProcessFiles(inputFiles []input.InputFile) *log.Status {
+	var status *log.Status
 	for _, file := range inputFiles {
 		filename := filepath.Join(file.Directory, file.Filename)
 		var records []db.Script
 		var titles titleDesc
 		records, titles, status = p.decode(p.ctx, filename) // Also edits out non-script elements
-		if !status.IsErr {
-			records = p.addChapterHeading(records, titles)
-			records = p.correctScriptNum(records)
-			status = p.conn.InsertScripts(records)
-			if status.IsErr {
-				return status
-			}
+		if status != nil {
+			return status
+		}
+		records = p.addChapterHeading(records, titles)
+		records = p.correctScriptNum(records)
+		status = p.conn.InsertScripts(records)
+		if status != nil {
+			return status
 		}
 	}
 	return status
 }
 
-func (p *USXParser) decode(ctx context.Context, filename string) ([]db.Script, titleDesc, dataset.Status) {
+func (p *USXParser) decode(ctx context.Context, filename string) ([]db.Script, titleDesc, *log.Status) {
 	var records []db.Script
 	var titles titleDesc
-	var status dataset.Status
+	var status *log.Status
 	xmlFile, err := os.Open(filename)
 	if err != nil {
-		status = log.Error(ctx, 500, err, "USXParser could not open USX File.")
-		return records, titles, status
+		return records, titles, log.Error(ctx, 500, err, "USXParser could not open USX File.")
 	}
 	defer xmlFile.Close()
 	var stack Stack
@@ -78,8 +78,7 @@ func (p *USXParser) decode(ctx context.Context, filename string) ([]db.Script, t
 			break // End of file
 		}
 		if err != nil {
-			status = log.Error(ctx, 500, err, "Error parsing USX.")
-			return records, titles, status
+			return records, titles, log.Error(ctx, 500, err, "Error parsing USX.")
 		}
 		switch se := token.(type) {
 		//[StartElement], [EndElement], [CharData], [Comment], [ProcInst], [Directive].

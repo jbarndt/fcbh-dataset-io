@@ -34,7 +34,7 @@ func compareScriptAndWords(database string, t *testing.T) {
 	conn := db.NewDBAdapter(ctx, database)
 	var words = make([]string, 0, 100)
 	var records, status = conn.SelectScripts()
-	if status.IsErr {
+	if status != nil {
 		t.Error(status)
 	}
 	for _, rec := range records {

@@ -3,7 +3,6 @@ package encode
 import (
 	"bytes"
 	"context"
-	"dataset"
 	"dataset/db"
 	"dataset/input"
 	log "dataset/logger"
@@ -34,23 +33,23 @@ func NewMFCC(ctx context.Context, conn db.DBAdapter, bibleId string,
 	return m
 }
 
-func (m *MFCC) ProcessFiles(audioFiles []input.InputFile) dataset.Status {
-	var status dataset.Status
+func (m *MFCC) ProcessFiles(audioFiles []input.InputFile) *log.Status {
+	var status *log.Status
 	for _, aFile := range audioFiles {
 		var mfccResp MFCCResp
 		mfccResp, status = m.executeLibrosa(aFile.FilePath())
-		if status.IsErr {
+		if status != nil {
 			return status
 		}
 		if m.detail.Lines {
 			status = m.processScripts(mfccResp, aFile.BookId, aFile.Chapter)
-			if status.IsErr {
+			if status != nil {
 				return status
 			}
 		}
 		if m.detail.Words {
 			status = m.processWords(mfccResp, aFile.BookId, aFile.Chapter)
-			if status.IsErr {
+			if status != nil {
 				return status
 			}
 		}
@@ -68,9 +67,8 @@ type MFCCResp struct {
 	MFCC       [][]float32 `json:"mfccs"`
 }
 
-func (m *MFCC) executeLibrosa(audioFile string) (MFCCResp, dataset.Status) {
+func (m *MFCC) executeLibrosa(audioFile string) (MFCCResp, *log.Status) {
 	var result MFCCResp
-	var status dataset.Status
 	pythonPath := os.Getenv(`FCBH_LIBROSA_PYTHON`)
 	mfccLibrosaPath := filepath.Join(os.Getenv(`GOPROJ`), `dataset`, `encode`, `mfcc_librosa.py`)
 	cmd := exec.Command(pythonPath, mfccLibrosaPath, audioFile, strconv.Itoa(m.numMFCC))
@@ -79,34 +77,35 @@ func (m *MFCC) executeLibrosa(audioFile string) (MFCCResp, dataset.Status) {
 	cmd.Stderr = &stderrBuf
 	err := cmd.Run()
 	if err != nil {
-		status = log.Error(m.ctx, 500, err, `Error executing mfcc_librosa.py`)
+		_ = log.Error(m.ctx, 500, err, `Error executing mfcc_librosa.py`)
 		// Don't return here, need to see stderr
 	}
 	if stderrBuf.Len() > 0 {
-		status = log.ErrorNoErr(m.ctx, 500, `mfcc_librosa.py stderr:`, stderrBuf.String())
-		return result, status
+		return result, log.ErrorNoErr(m.ctx, 500, `mfcc_librosa.py stderr:`, stderrBuf.String())
 	}
 	if stdoutBuf.Len() == 0 {
-		status = log.ErrorNoErr(m.ctx, 500, `mfcc_librosa.py has no output.`)
-		return result, status
+		return result, log.ErrorNoErr(m.ctx, 500, `mfcc_librosa.py has no output.`)
 	}
 	err = json.Unmarshal(stdoutBuf.Bytes(), &result)
 	if err != nil {
-		status = log.Error(m.ctx, 500, err, `Error parsing json from librosa`)
+		return result, log.Error(m.ctx, 500, err, `Error parsing json from librosa`)
 	}
-	return result, status
+	return result, nil
 }
 
-func (m *MFCC) processScripts(mfcc MFCCResp, bookId string, chapterNum int) dataset.Status {
-	var status dataset.Status
+func (m *MFCC) processScripts(mfcc MFCCResp, bookId string, chapterNum int) *log.Status {
+	var status *log.Status
 	timestamps, status := m.conn.SelectScriptTimestamps(bookId, chapterNum)
+	if status != nil {
+		return status
+	}
 	mfccs := m.segmentMFCC(timestamps, mfcc)
 	status = m.conn.InsertScriptMFCCS(mfccs)
 	return status
 }
 
-func (m *MFCC) processWords(mfcc MFCCResp, bookId string, chapterNum int) dataset.Status {
-	var status dataset.Status
+func (m *MFCC) processWords(mfcc MFCCResp, bookId string, chapterNum int) *log.Status {
+	var status *log.Status
 	timestamps, status := m.conn.SelectWordTimestamps(bookId, chapterNum)
 	mfccs := m.segmentMFCC(timestamps, mfcc)
 	status = m.conn.InsertWordMFCCS(mfccs)

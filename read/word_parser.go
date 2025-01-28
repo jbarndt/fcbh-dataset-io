@@ -2,7 +2,6 @@ package read
 
 import (
 	"context"
-	"dataset"
 	"dataset/db"
 	log "dataset/logger"
 	"strconv"
@@ -39,7 +38,7 @@ func NewWordParser(conn db.DBAdapter) WordParser {
 	return w
 }
 
-func (w *WordParser) Parse() dataset.Status {
+func (w *WordParser) Parse() *log.Status {
 	const (
 		begin = iota + 1
 		space
@@ -53,7 +52,7 @@ func (w *WordParser) Parse() dataset.Status {
 	var label = []string{"", "BEGIN", "SPACE", "WORD", "WORDPUNCT", "VERSENUM", "INVERSENUM", "ENDVERSENUM",
 		"NEXTVERSENUM"}
 	var records, status = w.conn.SelectScripts()
-	if status.IsErr {
+	if status != nil {
 		return status
 	}
 	for _, rec := range records {
@@ -200,8 +199,8 @@ func (w *WordParser) Parse() dataset.Status {
 	return status
 }
 
-func (w *WordParser) addWord(scriptId int, verseNum int, ttype string, text []rune) dataset.Status {
-	var status dataset.Status
+func (w *WordParser) addWord(scriptId int, verseNum int, ttype string, text []rune) *log.Status {
+	var status *log.Status
 	if w.lastScriptId != scriptId {
 		w.lastScriptId = scriptId
 		w.wordSeq = 0
@@ -221,6 +220,6 @@ func (w *WordParser) addWord(scriptId int, verseNum int, ttype string, text []ru
 	return status
 }
 
-func (w *WordParser) logError(expected string, actual rune) dataset.Status {
+func (w *WordParser) logError(expected string, actual rune) *log.Status {
 	return log.ErrorNoErr(w.ctx, 500, "Expected: ", expected, ", but found: ", string(actual))
 }

@@ -1,30 +1,30 @@
 package match
 
 import (
-	"dataset"
 	"dataset/db"
+	log "dataset/logger"
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"strings"
 )
 
-func (c *Compare) CompareChapters() (string, dataset.Status) {
+func (c *Compare) CompareChapters() (string, *log.Status) {
 	var filename string
-	var status dataset.Status
+	var status *log.Status
 	filename = c.writer.WriteHeading(c.baseDataset)
 	var scripts []db.Script
 	scripts, status = c.database.SelectBookChapter()
-	if status.IsErr {
+	if status != nil {
 		return filename, status
 	}
 	for _, scp := range scripts {
 		var baseText, text string
 		baseText, status = c.concatText(c.baseDb, scp.BookId, scp.ChapterNum)
-		if status.IsErr {
+		if status != nil {
 			return ``, status
 		}
 		baseText = c.cleanup(baseText)
 		text, status = c.concatText(c.database, scp.BookId, scp.ChapterNum)
-		if status.IsErr {
+		if status != nil {
 			return ``, status
 		}
 		text = c.cleanup(text)
@@ -36,10 +36,10 @@ func (c *Compare) CompareChapters() (string, dataset.Status) {
 	return filename, status
 }
 
-func (c *Compare) concatText(conn db.DBAdapter, bookId string, chapter int) (string, dataset.Status) {
+func (c *Compare) concatText(conn db.DBAdapter, bookId string, chapter int) (string, *log.Status) {
 	var results []string
 	scripts, status := conn.SelectScriptsByChapter(bookId, chapter)
-	if status.IsErr {
+	if status != nil {
 		return ``, status
 	}
 	var priorText string

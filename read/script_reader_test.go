@@ -22,7 +22,7 @@ func TestScriptReader(t *testing.T) {
 	filename := filepath.Join(os.Getenv(`FCBH_DATASET_FILES`), bibleId, bibleId+`N2ST.xlsx`)
 	fmt.Println(`Filename:`, filename)
 	status := script.Read(filename)
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 	//}

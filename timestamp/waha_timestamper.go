@@ -2,7 +2,6 @@ package timestamp
 
 import (
 	"context"
-	"dataset"
 	"dataset/db"
 	log "dataset/logger"
 	"encoding/json"
@@ -34,20 +33,17 @@ func NewWahaTimestamper(ctx context.Context) WahaTimestamper {
 	return w
 }
 
-func (w *WahaTimestamper) GetTimestamps(tsType string, mediaId string, bookId string, chapterNum int) ([]db.Audio, dataset.Status) {
+func (w *WahaTimestamper) GetTimestamps(tsType string, mediaId string, bookId string, chapterNum int) ([]db.Audio, *log.Status) {
 	var result []db.Audio
-	var status dataset.Status
 	var filename = os.Getenv("HOME") + "/miniconda3/envs/torch1/waha-ai-timestamper-cli/MRK_1.json"
 	bytes, err := os.ReadFile(filename)
 	if err != nil {
-		status = log.Error(w.ctx, 500, err, "Error reading timestamps file")
-		return result, status
+		return result, log.Error(w.ctx, 500, err, "Error reading timestamps file")
 	}
 	var response []Waha
 	err = json.Unmarshal(bytes, &response)
 	if err != nil {
-		status = log.Error(w.ctx, 500, err, "Error parsing timestamps json file")
-		return result, status
+		return result, log.Error(w.ctx, 500, err, "Error parsing timestamps json file")
 	}
 	fmt.Println("json", response)
 	var chapter = response[0]
@@ -64,12 +60,11 @@ func (w *WahaTimestamper) GetTimestamps(tsType string, mediaId string, bookId st
 			aud.BeginTS = seg.Timings[0]
 			aud.EndTS = seg.Timings[1]
 		} else {
-			status = log.ErrorNoErr(w.ctx, 500, "Missing Timestamps for "+seg.VerseId)
-			return result, status
+			return result, log.ErrorNoErr(w.ctx, 500, "Missing Timestamps for "+seg.VerseId)
 		}
 		result = append(result, aud)
 	}
-	return result, status
+	return result, nil
 }
 
 /*

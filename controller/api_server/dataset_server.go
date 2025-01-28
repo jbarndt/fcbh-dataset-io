@@ -75,7 +75,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		} else {
 			dataHeader = header
 			status := postFiles.ReadFile(key, file, header.Filename)
-			if status.IsErr {
+			if status != nil {
 				errorResponse(ctx, w, status.Status, nil, status.Message+status.Error())
 			}
 		}
@@ -89,7 +89,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 
 func responder(ctx context.Context, w http.ResponseWriter, control controller.Controller) {
 	var outputFiles, status = control.ProcessV2()
-	if status.IsErr {
+	if status != nil {
 		w.WriteHeader(status.Status)
 	} else {
 		w.WriteHeader(200)

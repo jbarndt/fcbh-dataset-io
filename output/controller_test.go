@@ -19,12 +19,12 @@ func TestPrepareScripts(t *testing.T) {
 	structs, meta := out.PrepareScripts()
 	fmt.Println("Loaded Scripts", len(structs))
 	filename, status := out.WriteCSV(structs, meta)
-	if status.IsErr {
+	if status != nil {
 		t.Error(status)
 	}
 	fmt.Println("CoSV File", filename)
 	filename, status = out.WriteJSON(structs, meta)
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 	fmt.Println("JSON File", filename)
@@ -38,12 +38,12 @@ func TestPrepareWords(t *testing.T) {
 	structs, meta := out.PrepareWords()
 	fmt.Println("Loaded Scripts", len(structs))
 	filename, status := out.WriteCSV(structs, meta)
-	if status.IsErr {
+	if status != nil {
 		t.Error(status)
 	}
 	fmt.Println("CSV File", filename)
 	filename, status = out.WriteJSON(structs, meta)
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 	fmt.Println("JSON File", filename)
@@ -55,22 +55,22 @@ func prepareTimestampAndFMCCData(conn db.DBAdapter, bibleId string, filesetId st
 	testament := request.Testament{NTBooks: []string{`MRK`}}
 	testament.BuildBookMaps()
 	_, status := api.LoadTimestamps(testament)
-	if status.IsErr {
-		t.Error(status.Message)
+	if status != nil {
+		t.Error(status)
 	}
 	files, status := input.DBPDirectory(ctx, bibleId, `audio`, ``, filesetId, testament)
-	if status.IsErr {
-		t.Error(status.Message)
+	if status != nil {
+		t.Error(status)
 	}
 	aeneas := encode.NewAeneas(ctx, conn, bibleId, `eng`, request.Detail{Words: true})
 	status = aeneas.ProcessFiles(files)
-	if status.IsErr {
-		t.Error(status.Message)
+	if status != nil {
+		t.Error(status)
 	}
 	var detail = request.Detail{Lines: true, Words: true}
 	mfcc := encode.NewMFCC(ctx, conn, bibleId, detail, 7)
 	status = mfcc.ProcessFiles(files)
-	if status.IsErr {
-		t.Error(status.Message)
+	if status != nil {
+		t.Error(status)
 	}
 }

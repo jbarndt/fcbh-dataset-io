@@ -15,21 +15,21 @@ func TestTSBucket(t *testing.T) {
 	ctx := context.Background()
 	conn := db.NewDBAdapter(ctx, ":memory:")
 	ts, status := NewTSBucket(ctx, conn)
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 	key, status := ts.GetKey(ScriptTS, `ENGWEBN2DA`, `REV`, 22)
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 	fmt.Println(key)
 	object, status := ts.GetObject(TSBucketName, key)
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 	fmt.Println(string(object))
 	timestamps, status := ts.GetTimestamps(ScriptTS, `ENGWEBN2DA`, `REV`, 22)
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 	for _, time := range timestamps {
@@ -41,21 +41,21 @@ func TestTSBucket_GetTimestamps(t *testing.T) {
 	ctx := context.Background()
 	conn := db.NewDBAdapter(ctx, ":memory:")
 	ts, status := NewTSBucket(ctx, conn)
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 	key, status := ts.GetKey(VerseAeneas, `ENGWEBN2DA`, `REV`, 22)
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 	fmt.Println(key)
 	object, status := ts.GetObject(TSBucketName, key)
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 	fmt.Println(string(object))
 	timestamps, status := ts.GetTimestamps(VerseAeneas, `ENGWEBN2DA`, `REV`, 22)
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 	for _, time := range timestamps {
@@ -69,7 +69,7 @@ func TestTSBucket_LoadTimestamps(t *testing.T) {
 	db.DestroyDatabase(database)
 	var conn = db.NewDBAdapter(ctx, database)
 	ts, status := NewTSBucket(ctx, conn)
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 	var files []input.InputFile
@@ -82,11 +82,11 @@ func TestTSBucket_LoadTimestamps(t *testing.T) {
 	files = append(files, file)
 	parser := read.NewUSXParser(conn)
 	status = parser.ProcessFiles(files)
-	if status.IsErr {
+	if status != nil {
 		t.Error(status)
 	}
 	status = ts.ProcessFiles(files)
-	if status.IsErr {
+	if status != nil {
 		t.Error(status)
 	}
 }

@@ -2,7 +2,6 @@ package fetch
 
 import (
 	"context"
-	"dataset"
 	"dataset/db"
 	log "dataset/logger"
 	"dataset/request"
@@ -67,13 +66,13 @@ type BibleInfoRespType struct {
 	Data BibleInfoType `json:"data"`
 }
 
-func (d *APIDBPClient) BibleInfo() (BibleInfoType, dataset.Status) {
+func (d *APIDBPClient) BibleInfo() (BibleInfoType, *log.Status) {
 	var result BibleInfoType
-	var status dataset.Status
+	var status *log.Status
 	var get = `https://4.dbt.io/api/bibles/` + d.bibleId + `?v=4`
 	var response BibleInfoRespType
 	body, status := httpGet(d.ctx, get, false, d.bibleId)
-	if status.IsErr {
+	if status != nil {
 		return result, status
 	}
 	//fmt.Println(string(body))
@@ -168,8 +167,8 @@ func (d *APIDBPClient) hasSize(recSize string, size string) bool {
 	}
 }
 
-func (d *APIDBPClient) UpdateIdent(id db.Ident, info BibleInfoType, req request.Request) (db.Ident, dataset.Status) {
-	var status dataset.Status
+func (d *APIDBPClient) UpdateIdent(id db.Ident, info BibleInfoType, req request.Request) (db.Ident, *log.Status) {
+	var status *log.Status
 	if id.BibleId != `` && id.BibleId != req.BibleId {
 		return id, log.ErrorNoErr(d.ctx, 400, "Request.yaml has BibleId:", req.BibleId, ", but dataset has BibleId:", id.BibleId)
 	}

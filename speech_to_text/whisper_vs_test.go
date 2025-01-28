@@ -2,10 +2,10 @@ package speech_to_text
 
 import (
 	"context"
-	"dataset"
 	"dataset/db"
 	"dataset/fetch"
 	"dataset/input"
+	log "dataset/logger"
 	"dataset/read"
 	"dataset/request"
 	"fmt"
@@ -68,7 +68,7 @@ func TestWhisperVs(t *testing.T) {
 		//testament := request.Testament{NTBooks: []string{`3JN`}}
 		testament.BuildBookMaps()
 		files, status := input.DBPDirectory(ctx, tst.bibleId, `audio`, ``, tst.mediaId, testament)
-		if status.IsErr {
+		if status != nil {
 			t.Fatal(status)
 		}
 		var database = tst.bibleId + `_WHISPER_VS.db`
@@ -77,12 +77,12 @@ func TestWhisperVs(t *testing.T) {
 		loadPlainText(tst.bibleId, conn, testament, t)
 		loadTimestamps(tst.mediaId, conn, testament, t)
 		newConn, status := conn.CopyDatabase(`_STT`)
-		if status.IsErr {
+		if status != nil {
 			t.Fatal(status)
 		}
 		var whisp = NewWhisper(tst.bibleId, newConn, `tiny`, tst.lang2)
 		status = whisp.ProcessFiles(files)
-		if status.IsErr {
+		if status != nil {
 			t.Fatal(status)
 		}
 		count, status := newConn.CountScriptRows()
@@ -95,14 +95,14 @@ func TestWhisperVs(t *testing.T) {
 
 func loadPlainText(bibleId string, conn db.DBAdapter,
 	testament request.Testament, t *testing.T) {
-	var status dataset.Status
+	var status *log.Status
 	req := request.Request{}
 	req.BibleId = bibleId
 	req.Testament = testament
 	parser := read.NewDBPTextEditReader(conn, req)
 	status = parser.Process()
-	if status.IsErr {
-		t.Error(status.Message)
+	if status != nil {
+		t.Error(status)
 	}
 }
 
@@ -110,7 +110,7 @@ func loadTimestamps(filesetId string, conn db.DBAdapter,
 	testament request.Testament, t *testing.T) {
 	api := fetch.NewAPIDBPTimestamps(conn, filesetId)
 	ok, status := api.LoadTimestamps(testament)
-	if status.IsErr {
+	if status != nil {
 		t.Error(status)
 	}
 	fmt.Println("Timestamps OK ", ok)

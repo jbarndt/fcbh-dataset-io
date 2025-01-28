@@ -26,7 +26,7 @@ func main() {
 	ctx := context.Background()
 	reqDecoder := request.NewRequestDecoder(ctx)
 	request, status := reqDecoder.Process(yamlRequest)
-	if status.IsErr {
+	if status != nil {
 		fmt.Println(status)
 		os.Exit(1)
 	}

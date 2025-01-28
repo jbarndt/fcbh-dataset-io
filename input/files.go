@@ -2,28 +2,28 @@ package input
 
 import (
 	"context"
-	"dataset"
+	log "dataset/logger"
 	"dataset/request"
 )
 
-func FileInput(ctx context.Context, path string, testament request.Testament) ([]InputFile, dataset.Status) {
+func FileInput(ctx context.Context, path string, testament request.Testament) ([]InputFile, *log.Status) {
 	var files []InputFile
-	var status dataset.Status
+	var status *log.Status
 	files, status = Glob(ctx, path)
-	if status.IsErr {
+	if status != nil {
 		return files, status
 	}
 	files, status = Unzip(ctx, files)
-	if status.IsErr {
+	if status != nil {
 		return files, status
 	}
 	for i, _ := range files {
 		status = SetMediaType(ctx, &files[i])
-		if status.IsErr {
+		if status != nil {
 			return files, status
 		}
 		status = ParseFilenames(ctx, &files[i])
-		if status.IsErr {
+		if status != nil {
 			return files, status
 		}
 	}

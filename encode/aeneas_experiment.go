@@ -2,7 +2,6 @@ package encode
 
 import (
 	"context"
-	"dataset"
 	"dataset/cli_misc"
 	"dataset/db"
 	"dataset/fetch"
@@ -78,7 +77,7 @@ func (a *AeneasExperiment) FindAudioFiles() map[string]string {
 	filePath := filepath.Join(os.Getenv(`FCBH_DATASET_FILES`), a.bibleId, a.audioMediaId, `*.mp3`)
 	testament := request.Testament{NT: true}
 	files, status := input.FileInput(a.ctx, filePath, testament)
-	if status.IsErr {
+	if status != nil {
 		panic(status)
 	}
 	var result = make(map[string]string)
@@ -91,7 +90,7 @@ func (a *AeneasExperiment) FindAudioFiles() map[string]string {
 
 func (a *AeneasExperiment) LoadScript() []db.Script {
 	var results []db.Script
-	var status dataset.Status
+	var status *log.Status
 	//ts := input.NewTSBucket(a.ctx)
 	key := a.ts.GetKey(cli_misc.Script, a.audioMediaId, ``, 0)
 	fmt.Println(`key:`, key)
@@ -103,7 +102,7 @@ func (a *AeneasExperiment) LoadScript() []db.Script {
 	reader := read.NewScriptReader(conn, testament)
 	reader.Read(filePath)
 	results, status = conn.SelectScripts()
-	if status.IsErr {
+	if status != nil {
 		panic(status)
 	}
 	//a.scriptIdMap, status = conn.SelectScriptIdScriptNum()
@@ -118,7 +117,7 @@ func (a *AeneasExperiment) LoadScript() []db.Script {
 func (a *AeneasExperiment) LoadPlainTextEdit() db.DBAdapter {
 	user, _ := fetch.GetTestUser()
 	conn, status := db.NewerDBAdapter(a.ctx, true, user.Username, `Plain_Text_Edit_`+a.bibleId)
-	if status.IsErr {
+	if status != nil {
 		panic(status)
 	}
 	var req request.Request
@@ -214,7 +213,7 @@ func (a *AeneasExperiment) GroupScriptByVerse(scripts []db.Script) []db.Script {
 func (a *AeneasExperiment) GetPlainTextEdit(conn db.DBAdapter, groups []db.Script) {
 	// scripts here is missing script_id do I need it?
 	scripts, status := conn.SelectScriptsByChapter(groups[0].BookId, groups[0].ChapterNum)
-	if status.IsErr {
+	if status != nil {
 		panic(status)
 	}
 	var beginMap = make(map[string]float64)
@@ -294,11 +293,11 @@ func (a *AeneasExperiment) ProcessAeneas(recs []db.Script) []db.Timestamp {
 		panic("audio file not found")
 	}
 	filename, status := aeneas.executeAeneas(a.languageISO, audioFile, fp.Name())
-	if status.IsErr {
+	if status != nil {
 		panic(status)
 	}
 	timestamps, status := aeneas.parseResponse(filename, audioFile)
-	if status.IsErr {
+	if status != nil {
 		panic(status)
 	}
 	for i, _ := range timestamps {

@@ -9,7 +9,7 @@ import (
 func TestUtility_validateBookId(t *testing.T) {
 	ctx := context.Background()
 	bookId, status := validateBookId(ctx, "TTL")
-	if status.IsErr {
+	if status != nil {
 		t.Error(status)
 	}
 	if bookId != "TIT" {
@@ -21,7 +21,7 @@ func TestUtility_parseFilenames(t *testing.T) {
 	ctx := context.Background()
 	test1 := InputFile{MediaType: request.TextUSXEdit, Directory: "/ABC/DEF", Filename: "001GEN.usx"}
 	status := ParseFilenames(ctx, &test1)
-	if status.IsErr {
+	if status != nil {
 		t.Error(status)
 	}
 	if test1.MediaId != "DEF" {
@@ -35,7 +35,7 @@ func TestUtility_parseFilenames(t *testing.T) {
 	}
 	test2 := InputFile{MediaType: request.TextUSXEdit, Directory: "/ABC/DEF", Filename: "GEN.usx"}
 	status = ParseFilenames(ctx, &test2)
-	if status.IsErr {
+	if status != nil {
 		t.Error(status)
 	}
 	if test2.BookId != "GEN" {
@@ -46,7 +46,7 @@ func TestUtility_parseFilenames(t *testing.T) {
 	}
 	test3 := InputFile{MediaType: request.TextUSXEdit, Directory: "/ABC/DEF", Filename: "1GEN.usx"}
 	status = ParseFilenames(ctx, &test3)
-	if !status.IsErr {
+	if status == nil {
 		t.Error(status)
 	}
 }

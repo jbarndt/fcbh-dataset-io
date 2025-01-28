@@ -16,15 +16,15 @@ func TestMFCCLines(t *testing.T) {
 	testament.BuildBookMaps()
 	var detail = request.Detail{Lines: true}
 	files, status := input.DBPDirectory(ctx, bibleId, `audio`, ``, filesetId, testament)
-	if status.IsErr {
-		t.Error(status.Message)
+	if status != nil {
+		t.Error(status)
 	}
 	var conn = db.NewDBAdapter(ctx, `ENGWEB_DBPTEXT.db`)
 	conn.DeleteMFCCs()
 	mfcc := NewMFCC(ctx, conn, bibleId, detail, 7)
 	status = mfcc.ProcessFiles(files)
-	if status.IsErr {
-		t.Error(status.Message)
+	if status != nil {
+		t.Error(status)
 	}
 	count, _ := conn.CountScriptMFCCRows()
 	if count != 678 {
@@ -44,14 +44,14 @@ func TestMFCCWords(t *testing.T) {
 	testament.BuildBookMaps()
 	var detail = request.Detail{Words: true}
 	files, status := input.DBPDirectory(ctx, bibleId, `audio`, ``, filesetId, testament)
-	if status.IsErr {
-		t.Error(status.Message)
+	if status != nil {
+		t.Error(status)
 	}
 	var conn = db.NewDBAdapter(ctx, `ENGWEB_DBPTEXT.db`)
 	mfcc := NewMFCC(ctx, conn, bibleId, detail, 7)
 	status = mfcc.ProcessFiles(files)
-	if status.IsErr {
-		t.Error(status.Message)
+	if status != nil {
+		t.Error(status)
 	}
 	count, _ := conn.CountScriptMFCCRows()
 	if count != 678 {

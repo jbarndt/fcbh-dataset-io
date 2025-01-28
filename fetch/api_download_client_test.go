@@ -19,7 +19,7 @@ func TestPlainText(t *testing.T) {
 	req.Testament.NT = true
 	client := NewAPIDBPClient(ctx, `ENGWEB`)
 	info, status := client.BibleInfo()
-	if status.IsErr {
+	if status != nil {
 		t.Error(`BibleInfo Error`, status.Err)
 	}
 	client.FindFilesets(&info, req.AudioData.BibleBrain, req.TextData.BibleBrain, req.Testament)
@@ -39,7 +39,7 @@ func TestPlainText(t *testing.T) {
 	}
 	download := NewAPIDownloadClient(ctx, info.BibleId, req.Testament)
 	status = download.Download(info)
-	if status.IsErr {
+	if status != nil {
 		t.Error("Unexpected Error", status.Message)
 	}
 	count, err := countFiles(info.BibleId, info.TextOTPlainFileset)
@@ -59,7 +59,7 @@ func TestUSXDownload(t *testing.T) {
 	req.Testament.NT = true
 	client := NewAPIDBPClient(ctx, `ENGWEB`)
 	info, status := client.BibleInfo()
-	if status.IsErr {
+	if status != nil {
 		t.Error(`BibleInfo Error`, status.Err)
 	}
 	client.FindFilesets(&info, req.AudioData.BibleBrain, req.TextData.BibleBrain, req.Testament)
@@ -77,7 +77,7 @@ func TestUSXDownload(t *testing.T) {
 	}
 	download := NewAPIDownloadClient(ctx, info.BibleId, req.Testament)
 	status = download.Download(info)
-	if status.IsErr {
+	if status != nil {
 		t.Error(`Download Err is unexpected`, status.Message)
 	}
 	count, err := countFiles(info.BibleId, info.TextNTUSXFileset)
@@ -97,7 +97,7 @@ func TestAudioDownload(t *testing.T) {
 	req.Testament.NT = true
 	client := NewAPIDBPClient(ctx, `ENGWEB`)
 	info, status := client.BibleInfo()
-	if status.IsErr {
+	if status != nil {
 		t.Error(`BibleInfo Error`, status.Err)
 	}
 	client.FindFilesets(&info, req.AudioData.BibleBrain, req.TextData.BibleBrain, req.Testament)
@@ -116,7 +116,7 @@ func TestAudioDownload(t *testing.T) {
 	}
 	download := NewAPIDownloadClient(ctx, info.BibleId, req.Testament)
 	status = download.Download(info)
-	if status.IsErr {
+	if status != nil {
 		t.Error(`Download Err is unexpected`, status.Message)
 	}
 	count, err := countFiles(info.BibleId, info.AudioNTFileset)
@@ -136,7 +136,7 @@ func Test403AndDownload(t *testing.T) {
 	req.Testament.NT = true
 	client := NewAPIDBPClient(ctx, `ENGESV`)
 	info, status := client.BibleInfo()
-	if status.IsErr {
+	if status != nil {
 		t.Error(`BibleInfo Error`, status.Err)
 	}
 	client.FindFilesets(&info, req.AudioData.BibleBrain, req.TextData.BibleBrain, req.Testament)
@@ -154,7 +154,7 @@ func Test403AndDownload(t *testing.T) {
 	}
 	download := NewAPIDownloadClient(ctx, info.BibleId, req.Testament)
 	status = download.Download(info)
-	if status.IsErr {
+	if status != nil {
 		t.Error(`Download error is unexpected`, status)
 	}
 }

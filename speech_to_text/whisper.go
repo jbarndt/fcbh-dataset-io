@@ -3,7 +3,6 @@ package speech_to_text
 import (
 	"bytes"
 	"context"
-	"dataset"
 	"dataset/db"
 	"dataset/input"
 	log "dataset/logger"
@@ -44,8 +43,8 @@ func NewWhisper(bibleId string, conn db.DBAdapter, model string, lang2 string) W
 	return w
 }
 
-func (w *Whisper) ProcessFiles(files []input.InputFile) dataset.Status {
-	var status dataset.Status
+func (w *Whisper) ProcessFiles(files []input.InputFile) *log.Status {
+	var status *log.Status
 	var outputFile string
 	var err error
 	w.tempDir, err = os.MkdirTemp(os.Getenv(`FCBH_DATASET_TMP`), "Whisper_")
@@ -74,17 +73,17 @@ func (w *Whisper) ProcessFiles(files []input.InputFile) dataset.Status {
 		fmt.Println(`INPUT FILE:`, file)
 		var timestamps []db.Timestamp
 		timestamps, status = w.conn.SelectScriptTimestamps(file.BookId, file.Chapter)
-		if status.IsErr {
+		if status != nil {
 			return status
 		}
 		status = w.conn.DeleteScripts(file.BookId, file.Chapter)
-		if status.IsErr {
+		if status != nil {
 			return status
 		}
 		var records []db.Script
 		if len(timestamps) > 0 {
 			timestamps, status = w.ChopByTimestamp(file, timestamps)
-			if status.IsErr {
+			if status != nil {
 				return status
 			}
 			for pieceNum, piece := range timestamps {
@@ -105,8 +104,8 @@ func (w *Whisper) ProcessFiles(files []input.InputFile) dataset.Status {
 	return status
 }
 
-func (w *Whisper) RunWhisper(audioFile string) (string, dataset.Status) {
-	var status dataset.Status
+func (w *Whisper) RunWhisper(audioFile string) (string, *log.Status) {
+	var status *log.Status
 	whisperPath := os.Getenv(`FCBH_WHISPER_EXE`)
 	cmd := exec.Command(whisperPath,
 		audioFile,

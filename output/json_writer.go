@@ -2,7 +2,6 @@ package output
 
 import (
 	"bufio"
-	"dataset"
 	log "dataset/logger"
 	"encoding/json"
 	"os"
@@ -11,9 +10,9 @@ import (
 	"strconv"
 )
 
-func (o *Output) WriteJSON(structs []any, meta []Meta) (string, dataset.Status) {
+func (o *Output) WriteJSON(structs []any, meta []Meta) (string, *log.Status) {
 	var filename string
-	var status dataset.Status
+	var status *log.Status
 	file, err := os.Create(filepath.Join(os.Getenv(`FCBH_DATASET_TMP`), o.requestName+".json"))
 	//file, err := os.CreateTemp(os.Getenv(`FCBH_DATASET_TMP`), o.requestName+"_*.json")
 	if err != nil {

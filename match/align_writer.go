@@ -2,7 +2,6 @@ package match
 
 import (
 	"context"
-	"dataset"
 	"dataset/db"
 	"dataset/generic"
 	log "dataset/logger"
@@ -34,9 +33,9 @@ func NewAlignWriter(ctx context.Context, conn db.DBAdapter) AlignWriter {
 	return a
 }
 
-func (a *AlignWriter) WriteReport(datasetName string, lines []generic.AlignLine, filenameMap string) (string, dataset.Status) {
+func (a *AlignWriter) WriteReport(datasetName string, lines []generic.AlignLine, filenameMap string) (string, *log.Status) {
 	var filename string
-	var status dataset.Status
+	var status *log.Status
 	var err error
 	a.datasetName = datasetName
 	a.out, err = os.Create(filepath.Join(os.Getenv(`FCBH_DATASET_TMP`), datasetName+"_proof.html"))
@@ -152,7 +151,7 @@ func (a *AlignWriter) WriteLine(chars []generic.AlignChar) {
 	}
 	text = append(text, `<div class="source-text" style="display:none;">`)
 	sourceText, status := a.conn.SelectScriptLine(chars[0].LineId)
-	if status.IsErr {
+	if status != nil {
 		panic(status)
 	}
 	text = append(text, sourceText)

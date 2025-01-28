@@ -2,7 +2,6 @@ package logger
 
 import (
 	"context"
-	"dataset"
 	"fmt"
 	"log"
 	"os"
@@ -114,35 +113,39 @@ func Fatal(ctx context.Context, param ...any) {
 	}
 }
 
-func Error(ctx context.Context, http int, err error, param ...any) dataset.Status {
-	return errorImpl(ctx, http, err.Error(), param...)
+func Error(ctx context.Context, http int, err error, param ...any) *Status {
+	status, ok := err.(*Status)
+	if ok {
+		return status
+	} else {
+		return errorImpl(ctx, http, err.Error(), param...)
+	}
 }
 
-func ErrorNoErr(ctx context.Context, http int, param ...any) dataset.Status {
+func ErrorNoErr(ctx context.Context, http int, param ...any) *Status {
 	return errorImpl(ctx, http, ``, param...)
 }
 
-func errorImpl(ctx context.Context, http int, err string, param ...any) dataset.Status {
+func errorImpl(ctx context.Context, http int, err string, param ...any) *Status {
 	var result []byte
 	for _, p := range param {
 		result = fmt.Append(result, p)
 		result = fmt.Append(result, ` `)
 	}
-	var e dataset.Status
-	e.IsErr = true
+	var e Status
 	e.Status = http
 	e.Err = err
 	e.Message = strings.TrimSpace(string(result))
 	e.Trace = dumpLines()
 	e.Request = requestInfo(ctx)
 	errorLog.Printf("%+v", e)
-	return e
+	return &e
 }
 
 // Warn will log the message with Println and then continue
 func Warn(ctx context.Context, param ...any) {
 	if logLevel >= LOGWARN {
-		warnLog.Println(param)
+		warnLog.Println(param...)
 		//warnLog.Println(dumpLines())
 	}
 }
@@ -150,7 +153,7 @@ func Warn(ctx context.Context, param ...any) {
 // Info will log the message with Println and then continue
 func Info(ctx context.Context, param ...any) {
 	if logLevel >= LOGINFO {
-		infoLog.Println(param)
+		infoLog.Println(param...)
 	}
 }
 

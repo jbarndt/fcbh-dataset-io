@@ -17,7 +17,7 @@ func main() {
 		os.Exit(1)
 	}
 	outputFile, status := controller.CLIProcessEntry(content)
-	if status.IsErr {
+	if status != nil {
 		_, _ = fmt.Fprintln(os.Stderr, status.String())
 		os.Exit(1)
 	} else {

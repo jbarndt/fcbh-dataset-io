@@ -1,7 +1,6 @@
 package output
 
 import (
-	"dataset"
 	log "dataset/logger"
 	"encoding/csv"
 	"os"
@@ -10,14 +9,12 @@ import (
 	"strconv"
 )
 
-func (o *Output) WriteCSV(structs []any, meta []Meta) (string, dataset.Status) {
+func (o *Output) WriteCSV(structs []any, meta []Meta) (string, *log.Status) {
 	var filename string
-	var status dataset.Status
 	file, err := os.Create(filepath.Join(os.Getenv(`FCBH_DATASET_TMP`), o.requestName+".csv"))
 	//file, err := os.CreateTemp(os.Getenv(`FCBH_DATASET_TMP`), o.requestName+"_*.csv")
 	if err != nil {
-		status = log.Error(o.ctx, 500, err, `failed to create temp file`)
-		return filename, status
+		return filename, log.Error(o.ctx, 500, err, `failed to create temp file`)
 	}
 	filename = file.Name()
 	writer := csv.NewWriter(file)
@@ -61,13 +58,13 @@ func (o *Output) WriteCSV(structs []any, meta []Meta) (string, dataset.Status) {
 	writer.Flush()
 	err = writer.Error()
 	if err != nil {
-		status = log.Error(o.ctx, 500, err, `failed to flush csv file`)
+		return filename, log.Error(o.ctx, 500, err, `failed to flush csv file`)
 	}
 	err = file.Close()
 	if err != nil {
-		status = log.Error(o.ctx, 500, err, `error closing json file`)
+		return filename, log.Error(o.ctx, 500, err, `error closing json file`)
 	}
-	return filename, status
+	return filename, nil
 }
 
 // ToString converts scalar values to string.  It does not convert the following kind.

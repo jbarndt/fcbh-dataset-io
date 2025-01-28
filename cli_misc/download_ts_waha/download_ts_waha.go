@@ -2,10 +2,10 @@ package main
 
 import (
 	"context"
-	"dataset"
 	"dataset/db"
 	"dataset/fetch"
 	"dataset/input"
+	log "dataset/logger"
 	"dataset/read"
 	"dataset/request"
 	"encoding/json"
@@ -32,11 +32,11 @@ func main() {
 
 func downloadBible(bibleId string, testament request.Testament) fetch.BibleInfoType {
 	var info fetch.BibleInfoType
-	var status dataset.Status
+	var status *log.Status
 	ctx := context.Background()
 	client := fetch.NewAPIDBPClient(ctx, bibleId)
 	info, status = client.BibleInfo()
-	if status.IsErr {
+	if status != nil {
 		panic(status)
 	}
 	audioData := request.BibleBrainAudio{MP3_64: true}
@@ -44,7 +44,7 @@ func downloadBible(bibleId string, testament request.Testament) fetch.BibleInfoT
 	client.FindFilesets(&info, audioData, textData, testament)
 	download := fetch.NewAPIDownloadClient(ctx, bibleId, testament)
 	status = download.Download(info)
-	if status.IsErr {
+	if status != nil {
 		panic(status)
 	}
 	return info
@@ -90,14 +90,14 @@ func chopupTextFile2Txt(outputDir string, bibleId string, info fetch.BibleInfoTy
 	file.MediaType = request.TextPlain
 	files = append(files, file)
 	status := reader.ProcessFiles(files)
-	if status.IsErr {
+	if status != nil {
 		panic(status)
 	}
 	for _, book := range db.RequestedBooks(testament) {
 		maxChap := db.BookChapterMap[book]
 		for chap := 1; chap <= maxChap; chap++ {
 			verses, status2 := conn.SelectScriptsByChapter(book, chap)
-			if status2.IsErr {
+			if status2 != nil {
 				panic(status2)
 			}
 			var results []string
@@ -138,7 +138,7 @@ func chopupTextFile2Json(outputDir string, bibleId string, info fetch.BibleInfoT
 		maxChap := db.BookChapterMap[book]
 		for chap := 1; chap <= maxChap; chap++ {
 			verses, status2 := conn.SelectScriptsByChapter(book, chap)
-			if status2.IsErr {
+			if status2 != nil {
 				panic(status2)
 			}
 			var results []PlainText

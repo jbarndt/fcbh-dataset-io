@@ -7,6 +7,7 @@ import (
 	"dataset/controller"
 	"dataset/db"
 	"dataset/fetch"
+	log "dataset/logger"
 	"dataset/request"
 	"fmt"
 	"gonum.org/v1/gonum/stat"
@@ -39,7 +40,7 @@ func main() {
 			break
 		}
 		fmt.Println("Doing", data.MediaId)
-		var status dataset.Status
+		var status *log.Status
 		var t TSCompare
 		t.ctx = ctx
 		t.bibleId = data.MediaId[:6]
@@ -47,18 +48,18 @@ func main() {
 		t.testament = testament
 		if t.HasTextAudio() {
 			t.baseConn, status = t.LazyDataset(BBTS, ntBooks)
-			if status.IsErr {
+			if status != nil {
 				fmt.Println(status)
 				continue
 			}
 			t.conn, status = t.LazyDataset(Aeneas1, ntBooks)
-			if status.IsErr {
+			if status != nil {
 				fmt.Println(status)
 				continue
 			}
 			var diffs []float64
 			diffs, status = t.CompareFileset()
-			if status.IsErr {
+			if status != nil {
 				fmt.Println(status)
 				continue
 			}
@@ -74,7 +75,7 @@ func main() {
 func (t *TSCompare) HasTextAudio() bool {
 	client := fetch.NewAPIDBPClient(t.ctx, t.bibleId)
 	info, status := client.BibleInfo()
-	if status.IsErr {
+	if status != nil {
 		return false
 	}
 	var req request.Request
@@ -87,7 +88,7 @@ func (t *TSCompare) HasTextAudio() bool {
 
 // LazyDataset is a lazy dataset creation method. Create if it does not exist.
 // The user name and the database name define it.
-func (t *TSCompare) LazyDataset(yaml string, books string) (db.DBAdapter, dataset.Status) {
+func (t *TSCompare) LazyDataset(yaml string, books string) (db.DBAdapter, *log.Status) {
 	var conn db.DBAdapter
 	ctx := context.Background()
 	var req = strings.Replace(yaml, `{bibleId}`, t.bibleId, 3)
@@ -95,13 +96,13 @@ func (t *TSCompare) LazyDataset(yaml string, books string) (db.DBAdapter, datase
 	reqBytes := []byte(req2)
 	decoder := request.NewRequestDecoder(ctx)
 	rq, status := decoder.Decode(reqBytes)
-	if status.IsErr {
+	if status != nil {
 		return conn, status
 	}
 	if !db.DatabaseExists(rq.Username, rq.DatasetName) {
 		var control = controller.NewController(ctx, reqBytes)
 		filename, status := control.Process()
-		if status.IsErr {
+		if status != nil {
 			return conn, status
 		}
 		fmt.Println("Created", filename)
@@ -109,15 +110,15 @@ func (t *TSCompare) LazyDataset(yaml string, books string) (db.DBAdapter, datase
 	return db.NewerDBAdapter(ctx, false, rq.Username, rq.DatasetName)
 }
 
-func (t *TSCompare) CompareFileset() ([]float64, dataset.Status) {
+func (t *TSCompare) CompareFileset() ([]float64, *log.Status) {
 	var totalDiffs []float64
-	var status dataset.Status
+	var status *log.Status
 	for _, bookId := range db.RequestedBooks(t.testament) {
 		lastChapter, _ := db.BookChapterMap[bookId]
 		for chap := 1; chap <= lastChapter; chap++ {
 			var diffs []float64
 			diffs, status = t.CompareChapter(bookId, chap)
-			if status.IsErr {
+			if status != nil {
 				return totalDiffs, status
 			}
 			mean, stddev := stat.MeanStdDev(diffs, nil)
@@ -130,10 +131,10 @@ func (t *TSCompare) CompareFileset() ([]float64, dataset.Status) {
 	return totalDiffs, status
 }
 
-func (t *TSCompare) CompareChapter(bookId string, chapter int) ([]float64, dataset.Status) {
+func (t *TSCompare) CompareChapter(bookId string, chapter int) ([]float64, *log.Status) {
 	var diffs []float64
 	var baseTS, status = t.baseConn.SelectScriptTimestamps(bookId, chapter)
-	if status.IsErr {
+	if status != nil {
 		return diffs, status
 	}
 	baseMap := make(map[int]db.Timestamp)
@@ -142,6 +143,9 @@ func (t *TSCompare) CompareChapter(bookId string, chapter int) ([]float64, datas
 	}
 	var compTS []db.Timestamp
 	compTS, status = t.conn.SelectScriptTimestamps(bookId, chapter)
+	if status != nil {
+		return diffs, status
+	}
 	for _, cts := range compTS {
 		bts, ok := baseMap[dataset.SafeVerseNum(cts.VerseStr)]
 		if !ok && bts.VerseStr != `0` {
@@ -154,5 +158,5 @@ func (t *TSCompare) CompareChapter(bookId string, chapter int) ([]float64, datas
 			diffs = append(diffs, diff)
 		}
 	}
-	return diffs, status
+	return diffs, nil
 }

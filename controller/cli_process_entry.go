@@ -2,19 +2,19 @@ package controller
 
 import (
 	"context"
-	"dataset"
+	log "dataset/logger"
 	"io"
 	"os"
 	"path/filepath"
 )
 
-func CLIProcessEntry(yaml []byte) (OutputFiles, dataset.Status) {
+func CLIProcessEntry(yaml []byte) (OutputFiles, *log.Status) {
 	var output OutputFiles
-	var status dataset.Status
+	var status *log.Status
 	var ctx = context.WithValue(context.Background(), `runType`, `cli`)
 	var control = NewController(ctx, yaml)
 	output, status = control.ProcessV2()
-	if status.IsErr {
+	if status != nil {
 		return output, status
 	}
 	var err error

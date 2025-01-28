@@ -1,7 +1,6 @@
 package fa_score_analysis
 
 import (
-	"dataset"
 	"dataset/db"
 	log "dataset/logger"
 	"gonum.org/v1/gonum/stat"
@@ -12,8 +11,8 @@ import (
 	"strconv"
 )
 
-func FAScoreAnalysis(conn db.DBAdapter) (string, dataset.Status) {
-	var status dataset.Status
+func FAScoreAnalysis(conn db.DBAdapter) (string, *log.Status) {
+	var status *log.Status
 	var project = filepath.Base(conn.Database)
 	var ext = filepath.Ext(project)
 	project = project[:len(project)-len(ext)]
@@ -26,7 +25,7 @@ func FAScoreAnalysis(conn db.DBAdapter) (string, dataset.Status) {
 	write(file, project, " FA Error Analysis\n")
 
 	faErrors, status := getFAErrors(conn)
-	if status.IsErr {
+	if status != nil {
 		return filename, status
 	}
 	mean := stat.Mean(faErrors, nil)
@@ -80,11 +79,11 @@ func FAScoreAnalysis(conn db.DBAdapter) (string, dataset.Status) {
 	return filename, status
 }
 
-func getFAErrors(conn db.DBAdapter) ([]float64, dataset.Status) {
+func getFAErrors(conn db.DBAdapter) ([]float64, *log.Status) {
 	var faErrors []float64
-	var status dataset.Status
+	var status *log.Status
 	chars, status := conn.SelectFACharTimestamps()
-	if status.IsErr {
+	if status != nil {
 		return faErrors, status
 	}
 	for _, char := range chars {

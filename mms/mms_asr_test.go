@@ -27,7 +27,7 @@ func TestMMSASR_ProcessFiles(t *testing.T) {
 	//file.Filename = "B02___01_Mark________ENGESVN1DA.mp3"
 	files = append(files, file)
 	status = asr.ProcessFiles(files)
-	if status.IsErr {
+	if status != nil {
 		t.Fatal(status)
 	}
 }
