@@ -131,7 +131,7 @@ func chopupTextFile2Json(outputDir string, bibleId string, info fetch.BibleInfoT
 	file.MediaType = request.TextPlain
 	files = append(files, file)
 	status := reader.ProcessFiles(files)
-	if status.IsErr {
+	if status != nil {
 		panic(status)
 	}
 	for _, book := range db.RequestedBooks(testament) {

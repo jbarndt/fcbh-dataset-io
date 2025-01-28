@@ -41,7 +41,7 @@ func main() {
 			os.Exit(1)
 		}
 		first = false
-		if !status != nil && object != nil {
+		if status == nil && object != nil {
 			var control = controller.NewController(ctx, object)
 			_, status = control.ProcessV2()
 			var folder string

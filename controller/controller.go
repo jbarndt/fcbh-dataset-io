@@ -30,7 +30,6 @@ type Controller struct {
 	yamlRequest []byte
 	req         request.Request
 	bucket      run_control.RunBucket
-	user        fetch.DBPUser
 	ident       db.Ident
 	database    db.DBAdapter
 	postFiles   *input.PostFiles
@@ -95,14 +94,8 @@ func (c *Controller) processSteps() *log.Status {
 		return status
 	}
 	c.ctx = context.WithValue(c.ctx, `request`, string(c.yamlRequest))
-	// Get User
-	log.Info(c.ctx, "Fetch Bible Brain data.")
-	c.user, status = fetch.GetDBPUser(c.req)
-	if status != nil {
-		return status
-	}
 	// Open Database
-	c.database, status = db.NewerDBAdapter(c.ctx, c.req.IsNew, c.user.Username, c.req.DatasetName)
+	c.database, status = db.NewerDBAdapter(c.ctx, c.req.IsNew, c.req.Username, c.req.DatasetName)
 	if status != nil {
 		return status
 	}
@@ -447,7 +440,7 @@ func (c *Controller) audioProofing(audioFiles []input.InputFile) (string, *log.S
 	}
 	audioDir := audioFiles[0].Directory
 	var textConn db.DBAdapter
-	textConn, status = db.NewerDBAdapter(c.ctx, false, c.user.Username, c.req.AudioProof.BaseDataset)
+	textConn, status = db.NewerDBAdapter(c.ctx, false, c.req.Username, c.req.AudioProof.BaseDataset)
 	if status != nil {
 		return filename, status
 	}
@@ -464,7 +457,7 @@ func (c *Controller) audioProofing(audioFiles []input.InputFile) (string, *log.S
 func (c *Controller) matchText() (string, *log.Status) {
 	var filename string
 	var status *log.Status
-	compare := diff.NewCompare(c.ctx, c.user, c.req.Compare.BaseDataset, c.database, c.ident.LanguageISO, c.req.Testament, c.req.Compare.CompareSettings)
+	compare := diff.NewCompare(c.ctx, c.req.Username, c.req.Compare.BaseDataset, c.database, c.ident.LanguageISO, c.req.Testament, c.req.Compare.CompareSettings)
 	filename, status = compare.Process()
 	return filename, status
 }

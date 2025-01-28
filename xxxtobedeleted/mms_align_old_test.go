@@ -3,9 +3,9 @@ package xxxtobedeleted
 import (
 	"context"
 	"dataset/db"
-	"dataset/fetch"
 	"dataset/input"
 	"dataset/mms"
+	"dataset/request"
 	"fmt"
 	"os"
 	"testing"
@@ -17,7 +17,7 @@ import (
 
 func TestMMSFAOLD_ProcessFiles(t *testing.T) {
 	ctx := context.Background()
-	user, _ := fetch.GetTestUser()
+	user, _ := request.GetTestUser()
 	conn, status := db.NewerDBAdapter(ctx, false, user.Username, "01c_usx_text_edit_ENGWEB")
 	if status.IsErr {
 		t.Fatal(status)
@@ -40,7 +40,7 @@ func TestMMSFAOLD_ProcessFiles(t *testing.T) {
 
 func TestMMSFAOld_prepareText(t *testing.T) {
 	ctx := context.Background()
-	user, _ := fetch.GetTestUser()
+	user, _ := request.GetTestUser()
 	database := "01c_usx_text_edit_ENGWEB"
 	conn, status := db.NewerDBAdapter(ctx, false, user.Username, database)
 	if status.IsErr {
@@ -61,7 +61,7 @@ func TestMMSFAOld_prepareText(t *testing.T) {
 
 func TestMMSFAOld_processPyOutput(t *testing.T) {
 	ctx := context.Background()
-	user, _ := fetch.GetTestUser()
+	user, _ := request.GetTestUser()
 	conn, status := db.NewerDBAdapter(ctx, false, user.Username, "01c_usx_text_edit_ENGWEB")
 	if status.IsErr {
 		t.Fatal(status)

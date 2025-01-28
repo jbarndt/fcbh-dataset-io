@@ -4,7 +4,6 @@ import (
 	"context"
 	"dataset/cli_misc"
 	"dataset/db"
-	"dataset/fetch"
 	"dataset/input"
 	log "dataset/logger"
 	"dataset/read"
@@ -115,8 +114,8 @@ func (a *AeneasExperiment) LoadScript() []db.Script {
 }
 
 func (a *AeneasExperiment) LoadPlainTextEdit() db.DBAdapter {
-	user, _ := fetch.GetTestUser()
-	conn, status := db.NewerDBAdapter(a.ctx, true, user.Username, `Plain_Text_Edit_`+a.bibleId)
+	user := request.GetTestUser()
+	conn, status := db.NewerDBAdapter(a.ctx, true, user, `Plain_Text_Edit_`+a.bibleId)
 	if status != nil {
 		panic(status)
 	}

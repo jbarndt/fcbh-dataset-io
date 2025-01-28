@@ -3,7 +3,6 @@ package diff
 import (
 	"context"
 	"dataset/db"
-	"dataset/fetch"
 	"dataset/request"
 	"fmt"
 	"testing"
@@ -23,8 +22,8 @@ func TestCompare(t *testing.T) {
 
 	for _, tst := range tests {
 		ctx := context.Background()
-		user, _ := fetch.GetTestUser()
-		user.Username = ``
+		user := request.GetTestUser()
+		user = ``
 		var testament = request.Testament{NT: true}
 		var cfg request.CompareSettings
 		cfg.LowerCase = true

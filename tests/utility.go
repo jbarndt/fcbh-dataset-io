@@ -6,7 +6,6 @@ import (
 	"database/sql"
 	"dataset/controller"
 	"dataset/db"
-	"dataset/fetch"
 	"dataset/request"
 	"encoding/csv"
 	"encoding/json"
@@ -168,8 +167,8 @@ func NumHTMLFileLines(filename string, t *testing.T) int {
 
 func identTest(name string, t *testing.T, textType request.MediaType, textOTId string,
 	textNTId string, audioOTId string, audioNTId string, language string) {
-	user, _ := fetch.GetTestUser()
-	conn, status := db.NewerDBAdapter(context.TODO(), false, user.Username, name)
+	user := request.GetTestUser()
+	conn, status := db.NewerDBAdapter(context.TODO(), false, user, name)
 	if status != nil {
 		t.Fatal(status)
 	}

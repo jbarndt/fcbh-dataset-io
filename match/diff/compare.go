@@ -3,7 +3,6 @@ package diff
 import (
 	"context"
 	"dataset/db"
-	"dataset/fetch"
 	log "dataset/logger"
 	"dataset/mms"
 	"dataset/request"
@@ -16,7 +15,7 @@ import (
 
 type Compare struct {
 	ctx         context.Context
-	user        fetch.DBPUser
+	user        string
 	baseDataset string
 	dataset     string
 	baseDb      db.DBAdapter
@@ -45,7 +44,7 @@ type Verse struct {
 	endTS    float64
 }
 
-func NewCompare(ctx context.Context, user fetch.DBPUser, baseDSet string, db db.DBAdapter,
+func NewCompare(ctx context.Context, user string, baseDSet string, db db.DBAdapter,
 	lang string, testament request.Testament, settings request.CompareSettings) Compare {
 	var c Compare
 	c.ctx = ctx
@@ -64,7 +63,7 @@ func NewCompare(ctx context.Context, user fetch.DBPUser, baseDSet string, db db.
 func (c *Compare) Process() (string, *log.Status) {
 	var filename string
 	var status *log.Status
-	c.baseDb, status = db.NewerDBAdapter(c.ctx, false, c.user.Username, c.baseDataset)
+	c.baseDb, status = db.NewerDBAdapter(c.ctx, false, c.user, c.baseDataset)
 	if status != nil {
 		return filename, status
 	}

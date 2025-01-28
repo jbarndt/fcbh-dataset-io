@@ -3,8 +3,8 @@ package mms
 import (
 	"context"
 	"dataset/db"
-	"dataset/fetch"
 	"dataset/input"
+	"dataset/request"
 	"os"
 	"path/filepath"
 	"testing"
@@ -12,8 +12,8 @@ import (
 
 func TestForcedAlign_ProcessFiles(t *testing.T) {
 	ctx := context.Background()
-	user, _ := fetch.GetTestUser()
-	conn, status := db.NewerDBAdapter(ctx, false, user.Username, "01c_usx_text_edit_ENGWEB_copy")
+	user := request.GetTestUser()
+	conn, status := db.NewerDBAdapter(ctx, false, user, "01c_usx_text_edit_ENGWEB_copy")
 	fa := NewForcedAlign(ctx, conn, "eng", "")
 	var files []input.InputFile
 	var file input.InputFile
@@ -32,8 +32,8 @@ func TestForcedAlign_ProcessFiles(t *testing.T) {
 
 func TestForcedAlign_processPyOutput(t *testing.T) {
 	ctx := context.Background()
-	user, _ := fetch.GetTestUser()
-	conn, status := db.NewerDBAdapter(ctx, false, user.Username, "PlainTextEditScript_ENGWEB")
+	user := request.GetTestUser()
+	conn, status := db.NewerDBAdapter(ctx, false, user, "PlainTextEditScript_ENGWEB")
 	fa := NewForcedAlign(ctx, conn, "eng", "")
 	var file input.InputFile
 	file.BookId = "MRK"

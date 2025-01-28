@@ -20,6 +20,11 @@ type Request struct {
 	Compare       Compare       `yaml:"compare,omitempty"`
 }
 
+// GetTestUser is used for testing when there is no full request object.
+func GetTestUser() string {
+	return `GaryNTest`
+}
+
 type Output struct {
 	Directory string `yaml:"directory"`
 	CSV       bool   `yaml:"csv,omitempty"`
