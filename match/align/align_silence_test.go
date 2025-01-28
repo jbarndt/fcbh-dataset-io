@@ -1,4 +1,4 @@
-package match
+package align
 
 import (
 	"context"
@@ -9,9 +9,8 @@ import (
 	"testing"
 )
 
-func TestAlignWriter(t *testing.T) {
+func TestNewAlignSilence(t *testing.T) {
 	ctx := context.Background()
-	dataset := "N2ENGWEB"
 	dbDir := filepath.Join(os.Getenv("GOPROJ"), "dataset", "match")
 	conn := db.NewDBAdapter(ctx, filepath.Join(dbDir, "N2ENGWEB.db"))
 	asrConn := db.NewDBAdapter(ctx, filepath.Join(dbDir, "N2ENGWEB_audio.db"))
@@ -21,11 +20,7 @@ func TestAlignWriter(t *testing.T) {
 	if status != nil {
 		t.Fatal(status)
 	}
-	fmt.Println(len(faLines), len(filenameMap))
-	writer := NewAlignWriter(ctx, conn)
-	filename, status := writer.WriteReport(dataset, faLines, filenameMap)
-	fmt.Println("Report Filename", filename)
-	revisedName := filepath.Join(os.Getenv("GOPROJ"), "dataset", "match", dataset+".html")
-	_ = os.Rename(filename, revisedName)
-	fmt.Println("Report Filename", revisedName)
+	fmt.Println(len(filenameMap))
+	calc.countErrors(faLines)
+	fmt.Println(len(faLines))
 }

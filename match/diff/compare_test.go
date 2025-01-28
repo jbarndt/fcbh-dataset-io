@@ -1,4 +1,4 @@
-package match
+package diff
 
 import (
 	"context"

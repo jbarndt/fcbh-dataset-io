@@ -7,7 +7,8 @@ import (
 	"dataset/fetch"
 	"dataset/input"
 	log "dataset/logger"
-	"dataset/match"
+	"dataset/match/align"
+	"dataset/match/diff"
 	"dataset/mms"
 	"dataset/mms/fa_score_analysis"
 	"dataset/output"
@@ -450,12 +451,12 @@ func (c *Controller) audioProofing(audioFiles []input.InputFile) (string, *log.S
 	if status != nil {
 		return filename, status
 	}
-	calc := match.NewAlignSilence(c.ctx, textConn, c.database) // c.database is ASR result
+	calc := align.NewAlignSilence(c.ctx, textConn, c.database) // c.database is ASR result
 	faLines, filenameMap, status := calc.Process(audioDir)
 	if status != nil {
 		return filename, status
 	}
-	writer := match.NewAlignWriter(c.ctx, textConn)
+	writer := align.NewAlignWriter(c.ctx, textConn)
 	filename, status = writer.WriteReport(c.req.DatasetName, faLines, filenameMap)
 	return filename, status
 }
@@ -463,7 +464,7 @@ func (c *Controller) audioProofing(audioFiles []input.InputFile) (string, *log.S
 func (c *Controller) matchText() (string, *log.Status) {
 	var filename string
 	var status *log.Status
-	compare := match.NewCompare(c.ctx, c.user, c.req.Compare.BaseDataset, c.database, c.ident.LanguageISO, c.req.Testament, c.req.Compare.CompareSettings)
+	compare := diff.NewCompare(c.ctx, c.user, c.req.Compare.BaseDataset, c.database, c.ident.LanguageISO, c.req.Testament, c.req.Compare.CompareSettings)
 	filename, status = compare.Process()
 	return filename, status
 }
