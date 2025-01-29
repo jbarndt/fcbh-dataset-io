@@ -64,7 +64,7 @@ source "amazon-ebs" "my-ami" {
 
   ami_description = "Custom deep-learning AMI built with Packer"
   tags = {
-    Name = "MyCustomAMI"
+    Name = "Deep Learning"
   }
 }
 

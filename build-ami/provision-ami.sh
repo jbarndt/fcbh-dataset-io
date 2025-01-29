@@ -217,12 +217,20 @@ export PATH=/usr/local/go/bin:$PATH
 rm go1.23.3.linux-amd64.tar.gz
  
 # Check go
-which go
-go version
-go env
+# which go
+# go version
+# go env
  
 # Set GOPATH
 cd $HOME
 mkdir go
 export GOPATH=$HOME/go
  
+# SSM agent
+sudo apt-get install -y amazon-ssm-agent
+sudo systemctl enable amazon-ssm-agent
+
+# Cloudwatch agent for NVIDIA
+# wget https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
+# sudo dpkg -i -E ./amazon-cloudwatch-agent.deb
+# sudo apt-get install -f
