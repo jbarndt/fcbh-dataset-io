@@ -2,8 +2,8 @@ package input
 
 import (
 	"context"
+	"dataset/decode_yaml/request"
 	log "dataset/logger"
-	"dataset/request"
 )
 
 func FileInput(ctx context.Context, path string, testament request.Testament) ([]InputFile, *log.Status) {

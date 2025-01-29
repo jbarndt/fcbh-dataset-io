@@ -30,7 +30,6 @@ type Output struct {
 	CSV       bool   `yaml:"csv,omitempty"`
 	JSON      bool   `yaml:"json,omitempty"`
 	Sqlite    bool   `yaml:"sqlite,omitempty"`
-	//HTML      bool   `yaml:"html,omitempty"`
 }
 
 type Testament struct {

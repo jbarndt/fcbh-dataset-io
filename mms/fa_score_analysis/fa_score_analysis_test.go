@@ -3,7 +3,7 @@ package fa_score_analysis
 import (
 	"context"
 	"dataset/db"
-	"dataset/request"
+	"dataset/decode_yaml/request"
 	"fmt"
 	"testing"
 )

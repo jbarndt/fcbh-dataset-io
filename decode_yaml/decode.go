@@ -1,8 +1,9 @@
-package request
+package decode_yaml
 
 import (
 	"bytes"
 	"context"
+	"dataset/decode_yaml/request"
 	log "dataset/logger"
 	"gopkg.in/yaml.v3"
 	"strings"
@@ -19,8 +20,8 @@ func NewRequestDecoder(ctx context.Context) RequestDecoder {
 	return r
 }
 
-func (r *RequestDecoder) Process(yamlRequest []byte) (Request, *log.Status) {
-	var request Request
+func (r *RequestDecoder) Process(yamlRequest []byte) (request.Request, *log.Status) {
+	var request request.Request
 	var status *log.Status
 	request, status = r.Decode(yamlRequest)
 	if status != nil {
@@ -38,8 +39,8 @@ func (r *RequestDecoder) Process(yamlRequest []byte) (Request, *log.Status) {
 	return request, nil
 }
 
-func (r *RequestDecoder) Decode(requestYaml []byte) (Request, *log.Status) {
-	var resp Request
+func (r *RequestDecoder) Decode(requestYaml []byte) (request.Request, *log.Status) {
+	var resp request.Request
 	reader := bytes.NewReader(requestYaml)
 	decoder := yaml.NewDecoder(reader)
 	decoder.KnownFields(true)
@@ -51,7 +52,7 @@ func (r *RequestDecoder) Decode(requestYaml []byte) (Request, *log.Status) {
 	return resp, nil
 }
 
-func (r *RequestDecoder) Encode(req Request) (string, *log.Status) {
+func (r *RequestDecoder) Encode(req request.Request) (string, *log.Status) {
 	var result string
 	d, err := yaml.Marshal(&req)
 	if err != nil {

@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"dataset/db"
+	"dataset/decode_yaml/request"
 	"dataset/fetch"
-	"dataset/request"
 	"encoding/json"
 	"fmt"
 	"gonum.org/v1/gonum/stat"

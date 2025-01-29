@@ -6,9 +6,10 @@ import (
 	"dataset/cli_misc"
 	"dataset/controller"
 	"dataset/db"
+	"dataset/decode_yaml"
+	"dataset/decode_yaml/request"
 	"dataset/fetch"
 	log "dataset/logger"
-	"dataset/request"
 	"fmt"
 	"gonum.org/v1/gonum/stat"
 	"strings"
@@ -94,7 +95,7 @@ func (t *TSCompare) LazyDataset(yaml string, books string) (db.DBAdapter, *log.S
 	var req = strings.Replace(yaml, `{bibleId}`, t.bibleId, 3)
 	req2 := strings.Replace(req, "{books}", books, 1)
 	reqBytes := []byte(req2)
-	decoder := request.NewRequestDecoder(ctx)
+	decoder := decode_yaml.NewRequestDecoder(ctx)
 	rq, status := decoder.Decode(reqBytes)
 	if status != nil {
 		return conn, status

@@ -3,6 +3,8 @@ package controller
 import (
 	"context"
 	"dataset/db"
+	"dataset/decode_yaml"
+	"dataset/decode_yaml/request"
 	"dataset/encode"
 	"dataset/fetch"
 	"dataset/input"
@@ -13,7 +15,6 @@ import (
 	"dataset/mms/fa_score_analysis"
 	"dataset/output"
 	"dataset/read"
-	"dataset/request"
 	"dataset/run_control"
 	"dataset/speech_to_text"
 	"dataset/timestamp"
@@ -88,7 +89,7 @@ func (c *Controller) processSteps() *log.Status {
 	var status *log.Status
 	// Decode YAML Request File
 	log.Info(c.ctx, "Parse .yaml file.")
-	reqDecoder := request.NewRequestDecoder(c.ctx)
+	reqDecoder := decode_yaml.NewRequestDecoder(c.ctx)
 	c.req, status = reqDecoder.Process(c.yamlRequest)
 	if status != nil {
 		return status

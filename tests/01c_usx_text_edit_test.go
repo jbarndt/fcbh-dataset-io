@@ -3,7 +3,7 @@ package tests
 import (
 	"context"
 	"dataset/controller"
-	"dataset/request"
+	"dataset/decode_yaml/request"
 	"fmt"
 	"strings"
 	"testing"

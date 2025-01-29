@@ -2,8 +2,8 @@ package input
 
 import (
 	"context"
+	"dataset/decode_yaml/request"
 	log "dataset/logger"
-	"dataset/request"
 	"io"
 	"os"
 	"path/filepath"

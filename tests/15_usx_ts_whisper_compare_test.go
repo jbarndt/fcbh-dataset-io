@@ -1,7 +1,7 @@
 package tests
 
 import (
-	"dataset/request"
+	"dataset/decode_yaml/request"
 	"testing"
 )
 

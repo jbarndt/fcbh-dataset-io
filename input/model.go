@@ -1,7 +1,7 @@
 package input
 
 import (
-	"dataset/request"
+	"dataset/decode_yaml/request"
 	"path/filepath"
 )
 

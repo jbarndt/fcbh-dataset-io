@@ -3,7 +3,8 @@ package tests
 import (
 	"context"
 	"dataset/controller"
-	"dataset/request"
+	"dataset/decode_yaml"
+	"dataset/decode_yaml/request"
 	"fmt"
 	"strings"
 	"testing"
@@ -38,7 +39,7 @@ func DirectTestUtility(requestYaml string, tests []CtlTest, t *testing.T) {
 		if numLines != tst.Expected {
 			t.Error(`Expected `, tst.Expected, `records, got`, numLines)
 		}
-		var decoder = request.NewRequestDecoder(ctx)
+		var decoder = decode_yaml.NewRequestDecoder(ctx)
 		reqObj, status := decoder.Decode([]byte(req))
 		if status != nil {
 			t.Fatal(status)

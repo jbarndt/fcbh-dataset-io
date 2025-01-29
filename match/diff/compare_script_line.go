@@ -2,8 +2,8 @@ package diff
 
 import (
 	"dataset/db"
+	"dataset/decode_yaml/request"
 	log "dataset/logger"
-	"dataset/request"
 	"github.com/sergi/go-diff/diffmatchpatch"
 )
 

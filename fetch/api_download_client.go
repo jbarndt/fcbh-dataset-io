@@ -3,8 +3,8 @@ package fetch
 import (
 	"context"
 	"dataset/db"
+	"dataset/decode_yaml/request"
 	log "dataset/logger"
-	"dataset/request"
 	"encoding/json"
 	"fmt"
 	"net/url"

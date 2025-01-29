@@ -3,10 +3,10 @@ package output
 import (
 	"context"
 	"dataset/db"
+	"dataset/decode_yaml/request"
 	"dataset/encode"
 	"dataset/fetch"
 	"dataset/input"
-	"dataset/request"
 	"fmt"
 	"testing"
 )

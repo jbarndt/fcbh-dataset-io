@@ -2,8 +2,8 @@ package input
 
 import (
 	"context"
+	"dataset/decode_yaml/request"
 	log "dataset/logger"
-	"dataset/request"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"

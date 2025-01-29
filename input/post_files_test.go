@@ -2,7 +2,7 @@ package input
 
 import (
 	"context"
-	"dataset/request"
+	"dataset/decode_yaml/request"
 	"fmt"
 	"os"
 	"path/filepath"

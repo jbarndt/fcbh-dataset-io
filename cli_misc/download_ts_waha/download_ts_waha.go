@@ -3,11 +3,11 @@ package main
 import (
 	"context"
 	"dataset/db"
+	"dataset/decode_yaml/request"
 	"dataset/fetch"
 	"dataset/input"
 	log "dataset/logger"
 	"dataset/read"
-	"dataset/request"
 	"encoding/json"
 	"fmt"
 	"os"

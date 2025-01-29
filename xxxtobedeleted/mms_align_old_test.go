@@ -3,9 +3,9 @@ package xxxtobedeleted
 import (
 	"context"
 	"dataset/db"
+	"dataset/decode_yaml/request"
 	"dataset/input"
 	"dataset/mms"
-	"dataset/request"
 	"fmt"
 	"os"
 	"testing"
@@ -17,9 +17,9 @@ import (
 
 func TestMMSFAOLD_ProcessFiles(t *testing.T) {
 	ctx := context.Background()
-	user, _ := request.GetTestUser()
-	conn, status := db.NewerDBAdapter(ctx, false, user.Username, "01c_usx_text_edit_ENGWEB")
-	if status.IsErr {
+	user := request.GetTestUser()
+	conn, status := db.NewerDBAdapter(ctx, false, user, "01c_usx_text_edit_ENGWEB")
+	if status != nil {
 		t.Fatal(status)
 	}
 	fa := mms.NewMMSAlign(ctx, conn, "eng", "")

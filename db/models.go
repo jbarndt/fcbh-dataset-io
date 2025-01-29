@@ -1,8 +1,8 @@
 package db
 
 import (
+	"dataset/decode_yaml/request"
 	"dataset/generic"
-	"dataset/request"
 )
 
 type Ident struct {

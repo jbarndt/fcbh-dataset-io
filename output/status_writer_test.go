@@ -3,8 +3,9 @@ package output
 import (
 	"context"
 	"dataset/db"
+	"dataset/decode_yaml"
+	"dataset/decode_yaml/request"
 	log "dataset/logger"
-	"dataset/request"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -59,7 +60,7 @@ func prepareError(t *testing.T) (log.Status, context.Context) {
 	req.IsNew = true
 	req.Testament.NT = true
 	ctx := context.Background()
-	reqDecoder := request.NewRequestDecoder(ctx)
+	reqDecoder := decode_yaml.NewRequestDecoder(ctx)
 	yaml, status := reqDecoder.Encode(req)
 	if status != nil {
 		t.Error(status)

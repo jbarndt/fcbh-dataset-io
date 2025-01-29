@@ -1,11 +1,12 @@
-package request
+package decode_yaml
 
 import (
+	"dataset/decode_yaml/request"
 	"reflect"
 	"strings"
 )
 
-func (r *RequestDecoder) Validate(req *Request) {
+func (r *RequestDecoder) Validate(req *request.Request) {
 	r.checkRequired(req)
 	r.checkTestament(&req.Testament)
 	r.checkAudioData(&req.AudioData, `AudioData`)
@@ -22,7 +23,7 @@ func (r *RequestDecoder) Validate(req *Request) {
 	r.checkForOne(reflect.ValueOf(req.Compare.CompareSettings.DiacriticalMarks), `DiscriticalMarks`)
 }
 
-func (r *RequestDecoder) checkRequired(req *Request) {
+func (r *RequestDecoder) checkRequired(req *request.Request) {
 	if req.DatasetName == `` {
 		r.errors = append(r.errors, `Required field dataset_name is empty`)
 	}
@@ -41,7 +42,7 @@ func (r *RequestDecoder) checkRequired(req *Request) {
 	}
 }
 
-func (r *RequestDecoder) checkTestament(req *Testament) {
+func (r *RequestDecoder) checkTestament(req *request.Testament) {
 	if !req.OT && !req.NT && len(req.NTBooks) == 0 && len(req.OTBooks) == 0 {
 		req.NT = true
 	}
@@ -49,7 +50,7 @@ func (r *RequestDecoder) checkTestament(req *Testament) {
 
 // checkAudioData Is checking that no more than one item is selected.
 // if none are selected, it will set the default: NoAudio
-func (r *RequestDecoder) checkAudioData(req *AudioData, fieldName string) {
+func (r *RequestDecoder) checkAudioData(req *request.AudioData, fieldName string) {
 	count := r.checkForOne(reflect.ValueOf(*req), fieldName)
 	if count == 0 {
 		req.NoAudio = true
@@ -58,14 +59,14 @@ func (r *RequestDecoder) checkAudioData(req *AudioData, fieldName string) {
 
 // checkTextData Is checking that no more than one item is selected.
 // if none are selected, it will set the default: NoAudio
-func (r *RequestDecoder) checkTextData(req *TextData, fieldName string) {
+func (r *RequestDecoder) checkTextData(req *request.TextData, fieldName string) {
 	count := r.checkForOne(reflect.ValueOf(*req), fieldName)
 	if count == 0 {
 		req.NoText = true
 	}
 }
 
-func (r *RequestDecoder) checkSpeechToText(req *SpeechToText, fieldName string) {
+func (r *RequestDecoder) checkSpeechToText(req *request.SpeechToText, fieldName string) {
 	//whisper := req.Whisper
 	count := r.checkForOne(reflect.ValueOf(*req), fieldName)
 	if count == 0 {
@@ -73,27 +74,27 @@ func (r *RequestDecoder) checkSpeechToText(req *SpeechToText, fieldName string) 
 	}
 }
 
-func (r *RequestDecoder) checkDetail(req *Detail) {
+func (r *RequestDecoder) checkDetail(req *request.Detail) {
 	if !req.Lines && !req.Words {
 		req.Lines = true
 	}
 }
 
-func (r *RequestDecoder) checkTimestamps(req *Timestamps, fieldName string) {
+func (r *RequestDecoder) checkTimestamps(req *request.Timestamps, fieldName string) {
 	count := r.checkForOne(reflect.ValueOf(*req), fieldName)
 	if count == 0 {
 		req.NoTimestamps = true
 	}
 }
 
-func (r *RequestDecoder) checkAudioEncoding(req *AudioEncoding, fieldName string) {
+func (r *RequestDecoder) checkAudioEncoding(req *request.AudioEncoding, fieldName string) {
 	count := r.checkForOne(reflect.ValueOf(*req), fieldName)
 	if count == 0 {
 		req.NoEncoding = true
 	}
 }
 
-func (r *RequestDecoder) checkTextEncoding(req *TextEncoding, fieldName string) {
+func (r *RequestDecoder) checkTextEncoding(req *request.TextEncoding, fieldName string) {
 	count := r.checkForOne(reflect.ValueOf(*req), fieldName)
 	if count == 0 {
 		req.NoEncoding = true

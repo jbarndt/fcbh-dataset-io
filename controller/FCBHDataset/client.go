@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"dataset/request"
+	"dataset/decode_yaml"
 	"fmt"
 	"gopkg.in/yaml.v3"
 	"io"
@@ -24,7 +24,7 @@ func main() {
 		os.Exit(1)
 	}
 	ctx := context.Background()
-	reqDecoder := request.NewRequestDecoder(ctx)
+	reqDecoder := decode_yaml.NewRequestDecoder(ctx)
 	request, status := reqDecoder.Process(yamlRequest)
 	if status != nil {
 		fmt.Println(status)
@@ -38,9 +38,20 @@ func main() {
 	} else {
 		httpReq = HttpPost(cfg, yamlRequest)
 	}
-	statusCode := Response(request.OutputFile, httpReq)
-	DisplayOutput(request.OutputFile)
-	fmt.Println(statusCode, request.OutputFile)
+	var fileType string
+	if request.Output.CSV {
+		fileType = ".csv"
+	} else if request.Output.JSON {
+		fileType = ".json"
+	} else if request.Output.Sqlite {
+		fileType = ".sqlite"
+	} else {
+		fileType = ".txt"
+	}
+	filename := filepath.Join(request.Output.Directory, request.DatasetName+fileType)
+	statusCode := Response(filename, httpReq)
+	DisplayOutput(filename)
+	fmt.Println(statusCode, filename)
 }
 
 func GetArguments() string {

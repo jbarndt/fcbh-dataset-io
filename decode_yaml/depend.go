@@ -1,12 +1,14 @@
-package request
+package decode_yaml
 
-func (r *RequestDecoder) Prereq(req *Request) {
+import "dataset/decode_yaml/request"
+
+func (r *RequestDecoder) Prereq(req *request.Request) {
 	if req.Timestamps.MMSAlign {
 		req.Detail.Words = true
 	}
 }
 
-func (r *RequestDecoder) Depend(req Request) {
+func (r *RequestDecoder) Depend(req request.Request) {
 	if !req.Timestamps.NoTimestamps {
 		if req.AudioData.NoAudio {
 			r.errors = append(r.errors, `Timestamps are requested, but there is no audio`)
