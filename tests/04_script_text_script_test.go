@@ -10,8 +10,8 @@ import (
 	"testing"
 )
 
-const ScriptTextScript = `is_new: yes
-dataset_name: ScriptTextScript_{bibleId}
+const scriptTextScript = `is_new: yes
+dataset_name: 01d_script_text_{bibleId}
 bible_id: {bibleId}
 username: GaryNTest
 email: gary@shortsands.com
@@ -21,16 +21,23 @@ text_data:
   file: /Users/gary/FCBH2024/download/ATIWBT/ATIWBTN2ST.xlsx
 `
 
+func TestScriptTextDirect(t *testing.T) {
+	var tests []SqliteTest
+	tests = append(tests, SqliteTest{"SELECT count(*) FROM scripts", 8213})
+	testName := strings.Replace(scriptTextScript, "{bibleId}", "ENGWEB", -1)
+	DirectSqlTest(testName, tests, t)
+}
+
 func TestScriptTextScriptAPI(t *testing.T) {
 	var cases []APITest
 	cases = append(cases, APITest{BibleId: `ATIWBT`, Expected: 9747})
-	APITestUtility(ScriptTextScript, cases, t)
+	APITestUtility(scriptTextScript, cases, t)
 }
 
 func TestScriptTextScript(t *testing.T) {
 	var bibleId = `ATIWBT`
 	ctx := context.Background()
-	var req = strings.Replace(ScriptTextScript, `{bibleId}`, bibleId, 2)
+	var req = strings.Replace(scriptTextScript, `{bibleId}`, bibleId, 2)
 	var control = controller.NewController(ctx, []byte(req))
 	filename, status := control.Process()
 	if status != nil {

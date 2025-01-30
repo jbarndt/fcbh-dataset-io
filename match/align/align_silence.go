@@ -5,7 +5,7 @@ import (
 	"dataset/db"
 	"dataset/generic"
 	log "dataset/logger"
-	"dataset/timestamp"
+	"dataset/utility/ffmpeg"
 	"fmt"
 	"gonum.org/v1/gonum/stat"
 	"strconv"
@@ -74,7 +74,7 @@ func (a *AlignSilence) Process(audioDirectory string) ([]generic.AlignLine, stri
 		} else {
 			faChars[i].SilencePos = int(betweenChapters)
 			var duration float64
-			duration, status = timestamp.GetAudioDuration(a.ctx, audioDirectory, faChars[i].AudioFile)
+			duration, status = ffmpeg.GetAudioDuration(a.ctx, audioDirectory, faChars[i].AudioFile)
 			faChars[i].Silence = duration - curr.EndTS
 		}
 	}

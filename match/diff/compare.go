@@ -5,7 +5,7 @@ import (
 	"dataset/db"
 	"dataset/decode_yaml/request"
 	log "dataset/logger"
-	"dataset/mms"
+	"dataset/utility/uroman"
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"golang.org/x/text/unicode/norm"
 	"regexp"
@@ -67,7 +67,7 @@ func (c *Compare) Process() (string, *log.Status) {
 	if status != nil {
 		return filename, status
 	}
-	status = mms.EnsureUroman(c.baseDb, c.lang)
+	status = uroman.EnsureUroman(c.baseDb, c.lang)
 	if status != nil {
 		return filename, status
 	}

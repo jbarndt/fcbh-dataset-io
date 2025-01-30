@@ -1,10 +1,10 @@
-package mms
+package uroman
 
 import (
 	"context"
 	"dataset/db"
 	log "dataset/logger"
-	"dataset/utility"
+	"dataset/utility/stdio_exec"
 	"os"
 	"path/filepath"
 )
@@ -50,8 +50,7 @@ func UpdateUroman(conn db.DBAdapter, lang string) *log.Status {
 }
 
 func SetUroman(ctx context.Context, lines []db.Script, lang string) ([]db.Script, *log.Status) {
-	uromanPath := filepath.Join(os.Getenv("GOPROJ"), "dataset", "mms", "uroman_stdio.py")
-	uroman, status := utility.NewStdioExec(ctx, os.Getenv(`FCBH_MMS_FA_PYTHON`), uromanPath, "-l", lang)
+	uroman, status := stdio_exec.NewStdioExec(ctx, os.Getenv(`FCBH_MMS_FA_PYTHON`), ScriptPath(), "-l", lang)
 	if status != nil {
 		return lines, status
 	}
@@ -63,4 +62,8 @@ func SetUroman(ctx context.Context, lines []db.Script, lang string) ([]db.Script
 		}
 	}
 	return lines, status
+}
+
+func ScriptPath() string {
+	return filepath.Join(os.Getenv("GOPROJ"), "dataset", "utility", "uroman", "uroman_stdio.py")
 }

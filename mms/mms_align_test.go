@@ -6,10 +6,10 @@ import (
 	"dataset/decode_yaml/request"
 	"dataset/input"
 	log "dataset/logger"
-	"dataset/utility"
+	"dataset/utility/stdio_exec"
+	"dataset/utility/uroman"
 	"fmt"
 	"os"
-	"path/filepath"
 	"testing"
 )
 
@@ -46,8 +46,7 @@ func TestMMSFA_prepareText(t *testing.T) {
 	conn := db.NewDBAdapter(ctx, database)
 	fa := NewMMSAlign(ctx, conn, "eng", "")
 	var status *log.Status
-	uromanPath := filepath.Join(os.Getenv("GOPROJ"), "dataset", "mms", "uroman_stdio.py")
-	fa.uroman, status = utility.NewStdioExec(ctx, os.Getenv(`FCBH_MMS_FA_PYTHON`), uromanPath)
+	fa.uroman, status = stdio_exec.NewStdioExec(ctx, os.Getenv(`FCBH_MMS_FA_PYTHON`), uroman.ScriptPath())
 	if status != nil {
 		t.Fatal(status)
 	}
@@ -71,8 +70,7 @@ func TestMMSFA_processPyOutput(t *testing.T) {
 		t.Fatal(status)
 	}
 	fa := NewMMSAlign(ctx, conn, "eng", "")
-	uromanPath := filepath.Join(os.Getenv("GOPROJ"), "dataset", "mms", "uroman_stdio.py")
-	fa.uroman, status = utility.NewStdioExec(ctx, os.Getenv(`FCBH_MMS_FA_PYTHON`), uromanPath)
+	fa.uroman, status = stdio_exec.NewStdioExec(ctx, os.Getenv(`FCBH_MMS_FA_PYTHON`), uroman.ScriptPath())
 	if status != nil {
 		t.Fatal(status)
 	}

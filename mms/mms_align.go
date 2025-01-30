@@ -6,8 +6,9 @@ import (
 	"dataset/generic"
 	"dataset/input"
 	log "dataset/logger"
-	"dataset/timestamp"
-	"dataset/utility"
+	"dataset/utility/ffmpeg"
+	"dataset/utility/stdio_exec"
+	"dataset/utility/uroman"
 	"encoding/json"
 	"github.com/divan/num2words"
 	"golang.org/x/text/unicode/norm"
@@ -40,8 +41,8 @@ type MMSAlign struct {
 	lang     string
 	sttLang  string
 	tempDir  string
-	uroman   utility.StdioExec
-	mmsAlign utility.StdioExec
+	uroman   stdio_exec.StdioExec
+	mmsAlign stdio_exec.StdioExec
 }
 
 func NewMMSAlign(ctx context.Context, conn db.DBAdapter, lang string, sttLang string) MMSAlign {
@@ -62,14 +63,13 @@ func (m *MMSAlign) ProcessFiles(files []input.InputFile) *log.Status {
 		return log.Error(m.ctx, 500, err, `Error creating temp dir`)
 	}
 	defer os.RemoveAll(m.tempDir)
-	uromanPath := filepath.Join(os.Getenv("GOPROJ"), "dataset", "mms", "uroman_stdio.py")
-	m.uroman, status = utility.NewStdioExec(m.ctx, os.Getenv(`FCBH_MMS_FA_PYTHON`), uromanPath, "-l", m.lang)
+	m.uroman, status = stdio_exec.NewStdioExec(m.ctx, os.Getenv(`FCBH_MMS_FA_PYTHON`), uroman.ScriptPath(), "-l", m.lang)
 	if status != nil {
 		return status
 	}
 	defer m.uroman.Close()
 	pythonScript := filepath.Join(os.Getenv("GOPROJ"), "dataset/mms/mms_align.py")
-	m.mmsAlign, status = utility.NewStdioExec(m.ctx, os.Getenv(`FCBH_MMS_FA_PYTHON`), pythonScript)
+	m.mmsAlign, status = stdio_exec.NewStdioExec(m.ctx, os.Getenv(`FCBH_MMS_FA_PYTHON`), pythonScript)
 	if status != nil {
 		return status
 	}
@@ -88,7 +88,7 @@ func (m *MMSAlign) ProcessFiles(files []input.InputFile) *log.Status {
 func (m *MMSAlign) processFile(file input.InputFile) *log.Status {
 	var status *log.Status
 	var faInput MMSAlign_Input
-	faInput.AudioFile, status = timestamp.ConvertMp3ToWav(m.ctx, m.tempDir, file.FilePath())
+	faInput.AudioFile, status = ffmpeg.ConvertMp3ToWav(m.ctx, m.tempDir, file.FilePath())
 	if status != nil {
 		return status
 	}

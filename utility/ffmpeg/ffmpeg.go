@@ -1,4 +1,4 @@
-package timestamp
+package ffmpeg
 
 import (
 	"bytes"

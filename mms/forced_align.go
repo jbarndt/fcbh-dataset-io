@@ -6,7 +6,7 @@ import (
 	"dataset/db"
 	"dataset/input"
 	log "dataset/logger"
-	"dataset/timestamp"
+	"dataset/utility/ffmpeg"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -64,7 +64,7 @@ func (f *ForcedAlign) processFile(file input.InputFile, lang string) *log.Status
 		return log.Error(f.ctx, 500, err, `Error creating temp dir`)
 	}
 	defer os.RemoveAll(tempDir)
-	wavAudioFile, status := timestamp.ConvertMp3ToWav(f.ctx, tempDir, file.FilePath())
+	wavAudioFile, status := ffmpeg.ConvertMp3ToWav(f.ctx, tempDir, file.FilePath())
 	if status != nil {
 		return status
 	}

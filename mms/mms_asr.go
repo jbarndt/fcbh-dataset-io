@@ -6,8 +6,9 @@ import (
 	"dataset/db"
 	"dataset/input"
 	log "dataset/logger"
-	"dataset/timestamp"
-	"dataset/utility"
+	"dataset/utility/ffmpeg"
+	"dataset/utility/stdio_exec"
+	"dataset/utility/uroman"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -19,7 +20,7 @@ type MMSASR struct {
 	conn    db.DBAdapter
 	lang    string
 	sttLang string
-	uroman  utility.StdioExec
+	uroman  stdio_exec.StdioExec
 }
 
 func NewMMSASR(ctx context.Context, conn db.DBAdapter, lang string, sttLang string) MMSASR {
@@ -42,8 +43,7 @@ func (a *MMSASR) ProcessFiles(files []input.InputFile) *log.Status {
 	if status != nil {
 		return status
 	}
-	uromanPath := filepath.Join(os.Getenv("GOPROJ"), "dataset", "mms", "uroman_stdio.py")
-	a.uroman, status = utility.NewStdioExec(a.ctx, os.Getenv(`FCBH_MMS_FA_PYTHON`), uromanPath, "-l", a.lang)
+	a.uroman, status = stdio_exec.NewStdioExec(a.ctx, os.Getenv(`FCBH_MMS_FA_PYTHON`), uroman.ScriptPath(), "-l", a.lang)
 	if status != nil {
 		return status
 	}
@@ -66,7 +66,7 @@ func (a *MMSASR) processFile(file input.InputFile, writer *bufio.Writer, reader 
 		return log.Error(a.ctx, 500, err, `Error creating temp dir`)
 	}
 	defer os.RemoveAll(tempDir)
-	wavFile, status := timestamp.ConvertMp3ToWav(a.ctx, tempDir, file.FilePath())
+	wavFile, status := ffmpeg.ConvertMp3ToWav(a.ctx, tempDir, file.FilePath())
 	if status != nil {
 		return status
 	}
@@ -75,7 +75,7 @@ func (a *MMSASR) processFile(file input.InputFile, writer *bufio.Writer, reader 
 	if status != nil {
 		return status
 	}
-	timestamps, status = timestamp.ChopByTimestamp(a.ctx, tempDir, wavFile, timestamps)
+	timestamps, status = ffmpeg.ChopByTimestamp(a.ctx, tempDir, wavFile, timestamps)
 	for i, ts := range timestamps {
 		timestamps[i].AudioFile = file.Filename
 		timestamps[i].AudioChapterWav = wavFile

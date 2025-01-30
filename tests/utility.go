@@ -33,6 +33,7 @@ type SqliteTest struct {
 func DirectSqlTest(request string, tests []SqliteTest, t *testing.T) string {
 	output, status := controller.CLIProcessEntry([]byte(request))
 	if status != nil {
+		fmt.Println(status.Trace)
 		t.Fatal(status)
 	}
 	var database string
