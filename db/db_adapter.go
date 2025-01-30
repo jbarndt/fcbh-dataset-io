@@ -3,9 +3,9 @@ package db
 import (
 	"context"
 	"database/sql"
-	"dataset"
 	"dataset/generic"
 	log "dataset/logger"
+	"dataset/utility/safe"
 	"encoding/json"
 	_ "github.com/mattn/go-sqlite3"
 	"io"
@@ -464,7 +464,7 @@ func (d *DBAdapter) InsertScripts(records []Script) *log.Status {
 	defer d.closeDef(stmt, "InsertScripts stmt")
 	for _, rec := range records {
 		rec.ScriptNum = zeroFill(rec.ScriptNum, 5)
-		text := dataset.SafeStringJoin(rec.ScriptTexts)
+		text := safe.SafeStringJoin(rec.ScriptTexts)
 		_, err := stmt.Exec(rec.BookId, rec.ChapterNum, rec.ChapterEnd, rec.AudioFile, rec.ScriptNum,
 			rec.UsfmStyle, rec.Person, rec.Actor, rec.VerseNum, rec.VerseStr, rec.VerseEnd, text,
 			rec.ScriptBeginTS, rec.ScriptEndTS)

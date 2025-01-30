@@ -1,4 +1,4 @@
-package dataset
+package safe
 
 import (
 	"strconv"

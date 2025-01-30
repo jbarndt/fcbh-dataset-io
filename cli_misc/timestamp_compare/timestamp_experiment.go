@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"dataset"
 	"dataset/cli_misc"
 	"dataset/controller"
 	"dataset/db"
@@ -10,6 +9,7 @@ import (
 	"dataset/decode_yaml/request"
 	"dataset/fetch"
 	log "dataset/logger"
+	"dataset/utility/safe"
 	"fmt"
 	"gonum.org/v1/gonum/stat"
 	"strings"
@@ -140,7 +140,7 @@ func (t *TSCompare) CompareChapter(bookId string, chapter int) ([]float64, *log.
 	}
 	baseMap := make(map[int]db.Timestamp)
 	for _, ts := range baseTS {
-		baseMap[dataset.SafeVerseNum(ts.VerseStr)] = ts
+		baseMap[safe.SafeVerseNum(ts.VerseStr)] = ts
 	}
 	var compTS []db.Timestamp
 	compTS, status = t.conn.SelectScriptTimestamps(bookId, chapter)
@@ -148,7 +148,7 @@ func (t *TSCompare) CompareChapter(bookId string, chapter int) ([]float64, *log.
 		return diffs, status
 	}
 	for _, cts := range compTS {
-		bts, ok := baseMap[dataset.SafeVerseNum(cts.VerseStr)]
+		bts, ok := baseMap[safe.SafeVerseNum(cts.VerseStr)]
 		if !ok && bts.VerseStr != `0` {
 			fmt.Println("Not found ", t.mediaId, bookId, chapter, bts.VerseStr)
 			fmt.Println("baseTS", baseTS)

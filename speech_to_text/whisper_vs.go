@@ -2,10 +2,10 @@ package speech_to_text
 
 import (
 	"bytes"
-	"dataset"
 	"dataset/db"
 	"dataset/input"
 	log "dataset/logger"
+	"dataset/utility/safe"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -121,7 +121,7 @@ func (w *Whisper) loadWhisperVerses(outputFile string, file input.InputFile,
 	rec.ChapterNum = file.Chapter
 	rec.AudioFile = file.Filename
 	rec.ScriptNum = strconv.Itoa(pieceNum + 1)
-	rec.VerseNum = dataset.SafeVerseNum(piece.VerseStr)
+	rec.VerseNum = safe.SafeVerseNum(piece.VerseStr)
 	rec.VerseStr = piece.VerseStr
 	for i, seg := range response.Segments {
 		rec.ScriptTexts = append(rec.ScriptTexts, seg.Text)

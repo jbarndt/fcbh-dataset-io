@@ -2,10 +2,10 @@ package read
 
 import (
 	"context"
-	"dataset"
 	"dataset/db"
 	"dataset/input"
 	log "dataset/logger"
+	"dataset/utility/safe"
 	"encoding/xml"
 	"io"
 	"os"
@@ -202,7 +202,7 @@ func (p *USXParser) findIntAttr(se xml.StartElement, name string) int {
 	if val == `` {
 		return 0
 	} else {
-		return dataset.SafeVerseNum(val)
+		return safe.SafeVerseNum(val)
 	}
 }
 
