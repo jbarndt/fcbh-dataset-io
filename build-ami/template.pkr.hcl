@@ -44,6 +44,7 @@ packer {
   }
 }
 
+# Note: The AMI is based on ubuntu 22.04
 source "amazon-ebs" "my-ami" {
   ami_name      = "${var.ami_name_prefix}-{{timestamp}}" 
   instance_type = var.instance_type 
@@ -62,7 +63,7 @@ source "amazon-ebs" "my-ami" {
   vpc_id           = var.vpc_id
   subnet_id        = var.subnet_id
 
-  ami_description = "Custom deep-learning AMI built with Packer"
+  ami_description = "Custom deep-learning AMI (ubuntu 22.04) built with Packer"
   tags = {
     Name = "Deep Learning"
   }
@@ -73,6 +74,35 @@ build {
     "source.amazon-ebs.my-ami"
   ]
 
+  provisioner "file" {
+    source      = "cloudwatch-nvidia.json"  
+    destination = "/tmp/cloudwatch-nvidia.json"
+  }
+  provisioner "file" {
+    source      = "env_vars_dev.txt"  
+    destination = "/tmp/env_vars.txt"
+  }
+  provisioner "shell" {
+      inline = [
+        "echo 'Setting environment variables from file:'",
+        // Read the file and set each variable
+        "while IFS='=' read -r var val; do",
+        "  echo \"Setting $var to $val\"",
+        "  echo \"export $var='$val'\" >> /home/ubuntu/.bashrc",
+        "done < /tmp/env_vars.txt",
+      ]
+  }
+
+  # temporary, to verify file was copied with root permissions
+  provisioner "shell" {
+    inline = [
+      "sudo mv /tmp/cloudwatch-nvidia.json  /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json",
+      "sudo chmod 644 /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json",
+      "echo 'export GOPATH=/home/ubuntu/go' >> /home/ubuntu/.bashrc",
+      "echo 'export PATH=$PATH:$GOPATH/bin' >> /home/ubuntu/.bashrc"      
+    ]
+  }
+  
   provisioner "shell" {
     script = "provision-ami.sh"
   }

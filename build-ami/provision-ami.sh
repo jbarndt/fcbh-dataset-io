@@ -208,29 +208,33 @@ pip install -U openai-whisper
 conda deactivate
  
 # ---------- go ----------
- 
-# install go
 #sudo yum -y install golang
-wget https://go.dev/dl/go1.23.3.linux-amd64.tar.gz
-sudo tar -C /usr/local -xzf go1.23.3.linux-amd64.tar.gz
-export PATH=/usr/local/go/bin:$PATH
-rm go1.23.3.linux-amd64.tar.gz
- 
+# wget https://go.dev/dl/go1.23.3.linux-amd64.tar.gz
+# sudo tar -C /usr/local -xzf go1.23.3.linux-amd64.tar.gz
+# export PATH=/usr/local/go/bin:$PATH
+# rm go1.23.3.linux-amd64.tar.gz
+sudo snap install go --classic
+
 # Check go
 # which go
 # go version
 # go env
  
-# Set GOPATH
-cd $HOME
-mkdir go
-export GOPATH=$HOME/go
+# # Set GOPATH
+# cd $HOME
+# mkdir go
+# export GOPATH=$HOME/go
  
-# SSM agent
-sudo apt-get install -y amazon-ssm-agent
-sudo systemctl enable amazon-ssm-agent
+# Cloudwatch agent 
+# the agent is pre-installed on ubuntu 22.04 from AWS
+sudo systemctl enable amazon-cloudwatch-agent
 
-# Cloudwatch agent for NVIDIA
-# wget https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
-# sudo dpkg -i -E ./amazon-cloudwatch-agent.deb
-# sudo apt-get install -f
+# SSM agent
+# the agent is pre-installed on ubuntu 22.04 via snap(need to verify)
+# sudo systemctl status snap.amazon-ssm-agent.amazon-ssm-agent.service
+
+# Shell connection
+# ssh -i ~/.ssh/deep-learning-dev.pem ubuntu@<IP address>
+# or
+# Via AWS Console, specify EC2 instance, then select EC2 Instance Connect with default user "root"
+# after connecting, "su ubuntu"
