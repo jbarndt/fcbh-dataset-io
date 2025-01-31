@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"context"
 	log "dataset/logger"
-	"github.com/garygriswold/lang_tree/search"
+	"dataset/utility/lang_tree/search"
 	"io"
 	"os/exec"
 	"strings"
