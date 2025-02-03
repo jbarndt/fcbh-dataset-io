@@ -2,9 +2,9 @@ package input
 
 import (
 	"context"
-	"dataset/decode_yaml/request"
-	log "dataset/logger"
 	"fmt"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/decode_yaml/request"
+	log "github.com/faithcomesbyhearing/fcbh-dataset-io/logger"
 	"testing"
 )
 

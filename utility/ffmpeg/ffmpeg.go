@@ -3,9 +3,9 @@ package ffmpeg
 import (
 	"bytes"
 	"context"
-	"dataset/db"
-	log "dataset/logger"
 	"fmt"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/db"
+	log "github.com/faithcomesbyhearing/fcbh-dataset-io/logger"
 	ffmpeg "github.com/u2takey/ffmpeg-go"
 	"os/exec"
 	"path/filepath"

@@ -2,10 +2,10 @@ package diff
 
 import (
 	"context"
-	"dataset/db"
-	"dataset/decode_yaml/request"
-	log "dataset/logger"
-	"dataset/utility/uroman"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/db"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/decode_yaml/request"
+	log "github.com/faithcomesbyhearing/fcbh-dataset-io/logger"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/utility/uroman"
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"golang.org/x/text/unicode/norm"
 	"regexp"

@@ -2,11 +2,11 @@ package main
 
 import (
 	"context"
-	"dataset/cli_misc"
-	"dataset/fetch"
-	log "dataset/logger"
 	"encoding/json"
 	"fmt"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/cli_misc"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/fetch"
+	log "github.com/faithcomesbyhearing/fcbh-dataset-io/logger"
 	"os"
 	"strconv"
 )

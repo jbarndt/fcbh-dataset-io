@@ -2,9 +2,9 @@ package uroman
 
 import (
 	"context"
-	"dataset/db"
-	log "dataset/logger"
-	"dataset/utility/stdio_exec"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/db"
+	log "github.com/faithcomesbyhearing/fcbh-dataset-io/logger"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/utility/stdio_exec"
 	"os"
 	"path/filepath"
 )
@@ -65,5 +65,5 @@ func SetUroman(ctx context.Context, lines []db.Script, lang string) ([]db.Script
 }
 
 func ScriptPath() string {
-	return filepath.Join(os.Getenv("GOPROJ"), "dataset", "utility", "uroman", "uroman_stdio.py")
+	return filepath.Join(os.Getenv("GOPROJ"), "utility", "uroman", "uroman_stdio.py")
 }

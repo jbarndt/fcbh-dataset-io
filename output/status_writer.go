@@ -1,9 +1,9 @@
 package output
 
 import (
-	log "dataset/logger"
 	"encoding/csv"
 	"encoding/json"
+	log "github.com/faithcomesbyhearing/fcbh-dataset-io/logger"
 	"os"
 	"path/filepath"
 	"strconv"

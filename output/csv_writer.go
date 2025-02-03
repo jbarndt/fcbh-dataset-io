@@ -1,8 +1,8 @@
 package output
 
 import (
-	log "dataset/logger"
 	"encoding/csv"
+	log "github.com/faithcomesbyhearing/fcbh-dataset-io/logger"
 	"os"
 	"path/filepath"
 	"reflect"

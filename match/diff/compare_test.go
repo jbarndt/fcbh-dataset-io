@@ -2,9 +2,9 @@ package diff
 
 import (
 	"context"
-	"dataset/db"
-	"dataset/decode_yaml/request"
 	"fmt"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/db"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/decode_yaml/request"
 	"testing"
 )
 

@@ -3,8 +3,8 @@ package mms
 import (
 	"bufio"
 	"context"
-	log "dataset/logger"
-	"dataset/utility/lang_tree/search"
+	log "github.com/faithcomesbyhearing/fcbh-dataset-io/logger"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/utility/lang_tree/search"
 	"io"
 	"os/exec"
 	"strings"

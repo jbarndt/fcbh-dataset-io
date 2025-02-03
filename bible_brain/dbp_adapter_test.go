@@ -2,8 +2,8 @@ package bible_brain
 
 import (
 	"context"
-	log "dataset/logger"
 	"fmt"
+	log "github.com/faithcomesbyhearing/fcbh-dataset-io/logger"
 	"testing"
 )
 

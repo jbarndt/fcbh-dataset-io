@@ -2,12 +2,12 @@ package timestamp
 
 import (
 	"context"
-	"dataset/db"
-	"dataset/input"
-	log "dataset/logger"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/db"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/input"
+	log "github.com/faithcomesbyhearing/fcbh-dataset-io/logger"
 	"io"
 	"os"
 	"strconv"

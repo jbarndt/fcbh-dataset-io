@@ -3,8 +3,8 @@ package bible_brain
 import (
 	"context"
 	"database/sql"
-	"dataset/db"
-	log "dataset/logger"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/db"
+	log "github.com/faithcomesbyhearing/fcbh-dataset-io/logger"
 	_ "github.com/go-sql-driver/mysql"
 	"os"
 )

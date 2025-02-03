@@ -2,15 +2,15 @@ package mms
 
 import (
 	"context"
-	"dataset/db"
-	"dataset/generic"
-	"dataset/input"
-	log "dataset/logger"
-	"dataset/utility/ffmpeg"
-	"dataset/utility/stdio_exec"
-	"dataset/utility/uroman"
 	"encoding/json"
 	"github.com/divan/num2words"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/db"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/generic"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/input"
+	log "github.com/faithcomesbyhearing/fcbh-dataset-io/logger"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/utility/ffmpeg"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/utility/stdio_exec"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/utility/uroman"
 	"golang.org/x/text/unicode/norm"
 	"math"
 	"os"
@@ -68,7 +68,7 @@ func (m *MMSAlign) ProcessFiles(files []input.InputFile) *log.Status {
 		return status
 	}
 	defer m.uroman.Close()
-	pythonScript := filepath.Join(os.Getenv("GOPROJ"), "dataset/mms/mms_align.py")
+	pythonScript := filepath.Join(os.Getenv("GOPROJ"), "mms/mms_align.py")
 	m.mmsAlign, status = stdio_exec.NewStdioExec(m.ctx, os.Getenv(`FCBH_MMS_FA_PYTHON`), pythonScript)
 	if status != nil {
 		return status

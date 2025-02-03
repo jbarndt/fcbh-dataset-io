@@ -2,8 +2,8 @@ package ffmpeg
 
 import (
 	"context"
-	log "dataset/logger"
 	"encoding/json"
+	log "github.com/faithcomesbyhearing/fcbh-dataset-io/logger"
 	ffmpeg "github.com/u2takey/ffmpeg-go"
 	"path/filepath"
 	"strconv"

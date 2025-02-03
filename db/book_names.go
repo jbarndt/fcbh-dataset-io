@@ -2,7 +2,7 @@ package db
 
 import (
 	"context"
-	log "dataset/logger"
+	log "github.com/faithcomesbyhearing/fcbh-dataset-io/logger"
 )
 
 func USFMBookId(ctx context.Context, bookName string) string {

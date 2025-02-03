@@ -1,8 +1,8 @@
 package fa_score_analysis
 
 import (
-	"dataset/db"
-	log "dataset/logger"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/db"
+	log "github.com/faithcomesbyhearing/fcbh-dataset-io/logger"
 	"gonum.org/v1/gonum/stat"
 	"math"
 	"os"

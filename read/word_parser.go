@@ -2,8 +2,8 @@ package read
 
 import (
 	"context"
-	"dataset/db"
-	log "dataset/logger"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/db"
+	log "github.com/faithcomesbyhearing/fcbh-dataset-io/logger"
 	"strconv"
 	"unicode"
 )

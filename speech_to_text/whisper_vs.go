@@ -2,12 +2,12 @@ package speech_to_text
 
 import (
 	"bytes"
-	"dataset/db"
-	"dataset/input"
-	log "dataset/logger"
-	"dataset/utility/safe"
 	"encoding/json"
 	"fmt"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/db"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/input"
+	log "github.com/faithcomesbyhearing/fcbh-dataset-io/logger"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/utility/safe"
 	"os"
 	"os/exec"
 	"path/filepath"

@@ -2,7 +2,7 @@ package output
 
 import (
 	"context"
-	"dataset/db"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/db"
 )
 
 type Output struct {

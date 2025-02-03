@@ -2,8 +2,8 @@ package align
 
 import (
 	"context"
-	"dataset/db"
 	"fmt"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/db"
 	"os"
 	"path/filepath"
 	"testing"
@@ -12,7 +12,7 @@ import (
 func TestAlignWriter(t *testing.T) {
 	ctx := context.Background()
 	dataset := "N2ENGWEB"
-	dbDir := filepath.Join(os.Getenv("GOPROJ"), "dataset", "match")
+	dbDir := filepath.Join(os.Getenv("GOPROJ"), "match")
 	conn := db.NewDBAdapter(ctx, filepath.Join(dbDir, "N2ENGWEB.db"))
 	asrConn := db.NewDBAdapter(ctx, filepath.Join(dbDir, "N2ENGWEB_audio.db"))
 	calc := NewAlignSilence(ctx, conn, asrConn)
@@ -25,7 +25,7 @@ func TestAlignWriter(t *testing.T) {
 	writer := NewAlignWriter(ctx, conn)
 	filename, status := writer.WriteReport(dataset, faLines, filenameMap)
 	fmt.Println("Report Filename", filename)
-	revisedName := filepath.Join(os.Getenv("GOPROJ"), "dataset", "match", dataset+".html")
+	revisedName := filepath.Join(os.Getenv("GOPROJ"), "match", dataset+".html")
 	_ = os.Rename(filename, revisedName)
 	fmt.Println("Report Filename", revisedName)
 }

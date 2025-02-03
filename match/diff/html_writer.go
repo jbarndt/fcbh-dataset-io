@@ -2,7 +2,7 @@ package diff
 
 import (
 	"context"
-	log "dataset/logger"
+	log "github.com/faithcomesbyhearing/fcbh-dataset-io/logger"
 	"math"
 	"os"
 	"path/filepath"

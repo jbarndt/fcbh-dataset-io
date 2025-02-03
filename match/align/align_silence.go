@@ -2,11 +2,11 @@ package align
 
 import (
 	"context"
-	"dataset/db"
-	"dataset/generic"
-	log "dataset/logger"
-	"dataset/utility/ffmpeg"
 	"fmt"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/db"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/generic"
+	log "github.com/faithcomesbyhearing/fcbh-dataset-io/logger"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/utility/ffmpeg"
 	"gonum.org/v1/gonum/stat"
 	"strconv"
 	"strings"

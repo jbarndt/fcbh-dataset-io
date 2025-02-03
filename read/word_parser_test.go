@@ -2,9 +2,9 @@ package read
 
 import (
 	"context"
-	"dataset/db"
-	log "dataset/logger"
 	"fmt"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/db"
+	log "github.com/faithcomesbyhearing/fcbh-dataset-io/logger"
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"strconv"
 	"strings"

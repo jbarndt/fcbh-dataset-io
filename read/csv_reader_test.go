@@ -2,8 +2,8 @@ package read
 
 import (
 	"context"
-	"dataset/db"
-	"dataset/input"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/db"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/input"
 	"os"
 	"path/filepath"
 	"testing"

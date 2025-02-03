@@ -2,15 +2,15 @@ package main
 
 import (
 	"context"
-	"dataset/cli_misc"
-	"dataset/controller"
-	"dataset/db"
-	"dataset/decode_yaml"
-	"dataset/decode_yaml/request"
-	"dataset/fetch"
-	log "dataset/logger"
-	"dataset/utility/safe"
 	"fmt"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/cli_misc"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/controller"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/db"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/decode_yaml"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/decode_yaml/request"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/fetch"
+	log "github.com/faithcomesbyhearing/fcbh-dataset-io/logger"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/utility/safe"
 	"gonum.org/v1/gonum/stat"
 	"strings"
 )

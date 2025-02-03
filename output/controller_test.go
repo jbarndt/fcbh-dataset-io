@@ -2,12 +2,12 @@ package output
 
 import (
 	"context"
-	"dataset/db"
-	"dataset/decode_yaml/request"
-	"dataset/encode"
-	"dataset/fetch"
-	"dataset/input"
 	"fmt"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/db"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/decode_yaml/request"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/encode"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/fetch"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/input"
 	"testing"
 )
 

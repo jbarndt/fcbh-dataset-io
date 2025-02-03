@@ -2,9 +2,9 @@ package output
 
 import (
 	"database/sql"
-	"dataset/db"
-	log "dataset/logger"
 	"encoding/json"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/db"
+	log "github.com/faithcomesbyhearing/fcbh-dataset-io/logger"
 	"strconv"
 )
 

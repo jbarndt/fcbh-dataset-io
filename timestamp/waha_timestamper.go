@@ -2,10 +2,10 @@ package timestamp
 
 import (
 	"context"
-	"dataset/db"
-	log "dataset/logger"
 	"encoding/json"
 	"fmt"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/db"
+	log "github.com/faithcomesbyhearing/fcbh-dataset-io/logger"
 	"os"
 )
 

@@ -2,8 +2,8 @@ package input
 
 import (
 	"context"
-	"dataset/decode_yaml/request"
-	log "dataset/logger"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/decode_yaml/request"
+	log "github.com/faithcomesbyhearing/fcbh-dataset-io/logger"
 )
 
 func FileInput(ctx context.Context, path string, testament request.Testament) ([]InputFile, *log.Status) {

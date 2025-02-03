@@ -3,10 +3,10 @@ package db
 import (
 	"context"
 	"database/sql"
-	"dataset/generic"
-	log "dataset/logger"
-	"dataset/utility/safe"
 	"encoding/json"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/generic"
+	log "github.com/faithcomesbyhearing/fcbh-dataset-io/logger"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/utility/safe"
 	_ "github.com/mattn/go-sqlite3"
 	"io"
 	"os"

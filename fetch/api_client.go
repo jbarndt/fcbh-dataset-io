@@ -2,7 +2,7 @@ package fetch
 
 import (
 	"context"
-	log "dataset/logger"
+	log "github.com/faithcomesbyhearing/fcbh-dataset-io/logger"
 	"io"
 	"net/http"
 	"os"

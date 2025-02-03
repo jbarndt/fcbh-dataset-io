@@ -3,11 +3,11 @@ package encode
 import (
 	"bytes"
 	"context"
-	"dataset/db"
-	"dataset/decode_yaml/request"
-	"dataset/input"
-	log "dataset/logger"
 	"encoding/json"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/db"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/decode_yaml/request"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/input"
+	log "github.com/faithcomesbyhearing/fcbh-dataset-io/logger"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -70,7 +70,7 @@ type MFCCResp struct {
 func (m *MFCC) executeLibrosa(audioFile string) (MFCCResp, *log.Status) {
 	var result MFCCResp
 	pythonPath := os.Getenv(`FCBH_LIBROSA_PYTHON`)
-	mfccLibrosaPath := filepath.Join(os.Getenv(`GOPROJ`), `dataset`, `encode`, `mfcc_librosa.py`)
+	mfccLibrosaPath := filepath.Join(os.Getenv(`GOPROJ`), `encode`, `mfcc_librosa.py`)
 	cmd := exec.Command(pythonPath, mfccLibrosaPath, audioFile, strconv.Itoa(m.numMFCC))
 	var stdoutBuf, stderrBuf bytes.Buffer
 	cmd.Stdout = &stdoutBuf

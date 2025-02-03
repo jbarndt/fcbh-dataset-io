@@ -2,12 +2,12 @@ package cli_misc
 
 import (
 	"context"
-	"dataset/db"
-	log "dataset/logger"
 	"encoding/json"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/db"
+	log "github.com/faithcomesbyhearing/fcbh-dataset-io/logger"
 	"io"
 	"os"
 	"strconv"

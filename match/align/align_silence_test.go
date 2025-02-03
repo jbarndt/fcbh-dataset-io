@@ -2,8 +2,8 @@ package align
 
 import (
 	"context"
-	"dataset/db"
 	"fmt"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/db"
 	"os"
 	"path/filepath"
 	"testing"
@@ -11,7 +11,7 @@ import (
 
 func TestNewAlignSilence(t *testing.T) {
 	ctx := context.Background()
-	dbDir := filepath.Join(os.Getenv("GOPROJ"), "dataset", "match")
+	dbDir := filepath.Join(os.Getenv("GOPROJ"), "match")
 	conn := db.NewDBAdapter(ctx, filepath.Join(dbDir, "N2ENGWEB.db"))
 	asrConn := db.NewDBAdapter(ctx, filepath.Join(dbDir, "N2ENGWEB_audio.db"))
 	calc := NewAlignSilence(ctx, conn, asrConn)

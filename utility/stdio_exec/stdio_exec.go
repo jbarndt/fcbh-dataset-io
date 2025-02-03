@@ -3,7 +3,7 @@ package stdio_exec
 import (
 	"bufio"
 	"context"
-	log "dataset/logger"
+	log "github.com/faithcomesbyhearing/fcbh-dataset-io/logger"
 	"io"
 	"os/exec"
 	"strings"

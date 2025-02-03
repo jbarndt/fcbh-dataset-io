@@ -2,11 +2,11 @@ package main
 
 import (
 	"context"
-	log "dataset/logger"
 	"fmt"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ses"
 	"github.com/aws/aws-sdk-go-v2/service/ses/types"
+	log "github.com/faithcomesbyhearing/fcbh-dataset-io/logger"
 )
 
 // This is just example code.  I need to have a verified email address to send from

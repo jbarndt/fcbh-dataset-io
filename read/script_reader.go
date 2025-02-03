@@ -2,10 +2,10 @@ package read
 
 import (
 	"context"
-	"dataset/db"
-	"dataset/decode_yaml/request"
-	"dataset/input"
-	log "dataset/logger"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/db"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/decode_yaml/request"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/input"
+	log "github.com/faithcomesbyhearing/fcbh-dataset-io/logger"
 	"github.com/xuri/excelize/v2"
 	"strconv"
 	"strings"

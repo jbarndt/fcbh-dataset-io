@@ -2,9 +2,9 @@ package timestamp
 
 import (
 	"context"
-	"dataset/bible_brain"
-	"dataset/db"
-	log "dataset/logger"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/bible_brain"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/db"
+	log "github.com/faithcomesbyhearing/fcbh-dataset-io/logger"
 )
 
 const (

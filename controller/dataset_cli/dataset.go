@@ -1,8 +1,8 @@
 package main
 
 import (
-	"dataset/controller"
 	"fmt"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/controller"
 	"os"
 )
 

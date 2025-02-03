@@ -2,9 +2,9 @@ package build
 
 import (
 	"context"
-	"dataset/utility/lang_tree/search"
 	"encoding/json"
 	"fmt"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/utility/lang_tree/search"
 	"os"
 	"path/filepath"
 	"sort"

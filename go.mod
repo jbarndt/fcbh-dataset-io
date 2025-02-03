@@ -1,4 +1,4 @@
-module dataset
+module github.com/faithcomesbyhearing/fcbh-dataset-io
 
 go 1.23.0
 

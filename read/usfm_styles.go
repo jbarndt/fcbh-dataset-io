@@ -2,7 +2,7 @@ package read
 
 import (
 	"context"
-	log "dataset/logger"
+	log "github.com/faithcomesbyhearing/fcbh-dataset-io/logger"
 )
 
 func include(style string) bool {

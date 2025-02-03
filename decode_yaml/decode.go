@@ -3,8 +3,8 @@ package decode_yaml
 import (
 	"bytes"
 	"context"
-	"dataset/decode_yaml/request"
-	log "dataset/logger"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/decode_yaml/request"
+	log "github.com/faithcomesbyhearing/fcbh-dataset-io/logger"
 	"gopkg.in/yaml.v3"
 	"strings"
 )

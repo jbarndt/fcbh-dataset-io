@@ -2,8 +2,8 @@ package fetch
 
 import (
 	"context"
-	"dataset/decode_yaml/request"
 	"fmt"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/decode_yaml/request"
 	"os"
 	"path/filepath"
 	"strings"

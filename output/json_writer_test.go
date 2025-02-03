@@ -2,9 +2,9 @@ package output
 
 import (
 	"context"
-	"dataset/db"
 	"encoding/json"
 	"fmt"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/db"
 	"gonum.org/v1/gonum/floats"
 	"os"
 	"strconv"

@@ -2,9 +2,9 @@ package tests
 
 import (
 	"context"
-	"dataset/controller"
-	"dataset/decode_yaml/request"
 	"fmt"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/controller"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/decode_yaml/request"
 	"strings"
 	"testing"
 	"time"

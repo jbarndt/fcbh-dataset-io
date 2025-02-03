@@ -2,8 +2,8 @@ package timestamp
 
 import (
 	"context"
-	"dataset/bible_brain"
 	"fmt"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/bible_brain"
 	"os"
 	"path/filepath"
 	"testing"

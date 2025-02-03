@@ -2,11 +2,11 @@ package main
 
 import (
 	"context"
-	"dataset/db"
-	"dataset/decode_yaml/request"
-	"dataset/fetch"
 	"encoding/json"
 	"fmt"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/db"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/decode_yaml/request"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/fetch"
 	"gonum.org/v1/gonum/stat"
 	"math"
 	"os"

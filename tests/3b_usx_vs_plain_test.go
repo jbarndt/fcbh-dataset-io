@@ -2,9 +2,9 @@ package tests
 
 import (
 	"context"
-	"dataset/db"
-	"dataset/generic"
 	"fmt"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/db"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/generic"
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"regexp"
 	"strings"

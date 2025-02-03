@@ -1,6 +1,6 @@
 package decode_yaml
 
-import "dataset/decode_yaml/request"
+import "github.com/faithcomesbyhearing/fcbh-dataset-io/decode_yaml/request"
 
 func (r *RequestDecoder) Prereq(req *request.Request) {
 	if req.Timestamps.MMSAlign {

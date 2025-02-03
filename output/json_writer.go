@@ -2,8 +2,8 @@ package output
 
 import (
 	"bufio"
-	log "dataset/logger"
 	"encoding/json"
+	log "github.com/faithcomesbyhearing/fcbh-dataset-io/logger"
 	"os"
 	"path/filepath"
 	"reflect"

@@ -2,9 +2,9 @@ package align
 
 import (
 	"context"
-	"dataset/db"
-	"dataset/generic"
-	log "dataset/logger"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/db"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/generic"
+	log "github.com/faithcomesbyhearing/fcbh-dataset-io/logger"
 	"math"
 	"os"
 	"path/filepath"

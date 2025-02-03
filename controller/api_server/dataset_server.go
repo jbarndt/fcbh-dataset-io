@@ -2,9 +2,9 @@ package main
 
 import (
 	"context"
-	"dataset/controller"
-	"dataset/input"
-	log "dataset/logger"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/controller"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/input"
+	log "github.com/faithcomesbyhearing/fcbh-dataset-io/logger"
 	"io"
 	"mime/multipart"
 	"net/http"

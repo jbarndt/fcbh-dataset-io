@@ -1,8 +1,8 @@
 package db
 
 import (
-	"dataset/decode_yaml/request"
-	"dataset/generic"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/decode_yaml/request"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/generic"
 )
 
 type Ident struct {

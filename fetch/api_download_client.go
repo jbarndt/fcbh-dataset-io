@@ -2,11 +2,11 @@ package fetch
 
 import (
 	"context"
-	"dataset/db"
-	"dataset/decode_yaml/request"
-	log "dataset/logger"
 	"encoding/json"
 	"fmt"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/db"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/decode_yaml/request"
+	log "github.com/faithcomesbyhearing/fcbh-dataset-io/logger"
 	"net/url"
 	"os"
 	"path/filepath"

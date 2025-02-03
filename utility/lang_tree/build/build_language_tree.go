@@ -1,11 +1,11 @@
 package build
 
 import (
-	"dataset/utility/lang_tree/search"
 	"embed"
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/utility/lang_tree/search"
 	"io"
 	"os"
 	"path/filepath"

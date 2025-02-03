@@ -3,13 +3,13 @@ package mms
 import (
 	"bufio"
 	"context"
-	"dataset/db"
-	"dataset/input"
-	log "dataset/logger"
-	"dataset/utility/ffmpeg"
-	"dataset/utility/stdio_exec"
-	"dataset/utility/uroman"
 	"fmt"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/db"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/input"
+	log "github.com/faithcomesbyhearing/fcbh-dataset-io/logger"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/utility/ffmpeg"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/utility/stdio_exec"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/utility/uroman"
 	"os"
 	"path/filepath"
 	"strings"
@@ -38,7 +38,7 @@ func (a *MMSASR) ProcessFiles(files []input.InputFile) *log.Status {
 	if status != nil {
 		return status
 	}
-	pythonScript := filepath.Join(os.Getenv("GOPROJ"), "dataset/mms/mms_asr.py")
+	pythonScript := filepath.Join(os.Getenv("GOPROJ"), "mms/mms_asr.py")
 	writer, reader, status := callStdIOScript(a.ctx, os.Getenv(`FCBH_MMS_ASR_PYTHON`), pythonScript, lang)
 	if status != nil {
 		return status

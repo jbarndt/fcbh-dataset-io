@@ -2,10 +2,10 @@ package timestamp
 
 import (
 	"context"
-	"dataset/bible_brain"
-	log "dataset/logger"
 	"encoding/json"
 	"fmt"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/bible_brain"
+	log "github.com/faithcomesbyhearing/fcbh-dataset-io/logger"
 	ffmpeg "github.com/u2takey/ffmpeg-go"
 	"math"
 	"strconv"

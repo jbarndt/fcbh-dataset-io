@@ -3,12 +3,12 @@ package mms
 import (
 	"bytes"
 	"context"
-	"dataset/db"
-	"dataset/input"
-	log "dataset/logger"
-	"dataset/utility/ffmpeg"
 	"encoding/json"
 	"fmt"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/db"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/input"
+	log "github.com/faithcomesbyhearing/fcbh-dataset-io/logger"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/utility/ffmpeg"
 	"math"
 	"os"
 	"os/exec"
@@ -96,7 +96,7 @@ func (f *ForcedAlign) forcedAlign(audioFile string, textFile string, lang string
 	var result string
 	var status *log.Status
 	MMSFAPYTHON := os.Getenv("FCBH_MMS_FA_PYTHON")
-	pythonScript := filepath.Join(os.Getenv("GOPROJ"), "dataset/mms/forced_align/align_and_segment.py")
+	pythonScript := filepath.Join(os.Getenv("GOPROJ"), "/mms/forced_align/align_and_segment.py")
 	outputDir := filepath.Join(tempDir, `output`)
 	cmd := exec.Command(MMSFAPYTHON,
 		pythonScript,

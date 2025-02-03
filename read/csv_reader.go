@@ -2,10 +2,10 @@ package read
 
 import (
 	"context"
-	"dataset/db"
-	"dataset/input"
-	log "dataset/logger"
 	"encoding/csv"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/db"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/input"
+	log "github.com/faithcomesbyhearing/fcbh-dataset-io/logger"
 	"io"
 	"os"
 	"strconv"

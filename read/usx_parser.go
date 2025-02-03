@@ -2,11 +2,11 @@ package read
 
 import (
 	"context"
-	"dataset/db"
-	"dataset/input"
-	log "dataset/logger"
-	"dataset/utility/safe"
 	"encoding/xml"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/db"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/input"
+	log "github.com/faithcomesbyhearing/fcbh-dataset-io/logger"
+	"github.com/faithcomesbyhearing/fcbh-dataset-io/utility/safe"
 	"io"
 	"os"
 	"path/filepath"
