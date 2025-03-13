@@ -173,3 +173,5 @@ a text type of "text_plain_edit", which is text_plain with book and chapter
 headings added.
 
 Both text_plain_edit, and text_usx_edit formats will compare well with a script.
+
+test_change
